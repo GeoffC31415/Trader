@@ -222,6 +222,7 @@ function Ship() {
   const ship = useGameStore(s => s.ship);
   const hasRig = ship.canMine;
   const groupRef = useRef<THREE.Group>(null);
+  const power = ship.enginePower || 0;
 
   useFrame((_: unknown, dt: number) => {
     const g = groupRef.current;
@@ -276,7 +277,11 @@ function Ship() {
         </mesh>
         <mesh position={[0, 0, -0.4]}>
           <sphereGeometry args={[0.18, 12, 12]} />
-          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.8} />
+          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.15 + 1.2 * power} />
+        </mesh>
+        <mesh position={[0, 0, -0.9]} rotation={[Math.PI / 2, 0, 0]} scale={[0.6 + 0.6 * power, 1, Math.max(0.1, 1.2 * power)]}>
+          <cylinderGeometry args={[0.02, 0.32, 1.2, 16]} />
+          <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.3 + 0.9 * power} transparent opacity={0.25 + 0.45 * power} roughness={0.2} metalness={0} />
         </mesh>
       </group>
       <group position={[0, -0.2, -3.4]}>
@@ -286,7 +291,11 @@ function Ship() {
         </mesh>
         <mesh position={[0, 0, -0.4]}>
           <sphereGeometry args={[0.18, 12, 12]} />
-          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.8} />
+          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.15 + 1.2 * power} />
+        </mesh>
+        <mesh position={[0, 0, -0.9]} rotation={[Math.PI / 2, 0, 0]} scale={[0.6 + 0.6 * power, 1, Math.max(0.1, 1.2 * power)]}>
+          <cylinderGeometry args={[0.02, 0.32, 1.2, 16]} />
+          <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.3 + 0.9 * power} transparent opacity={0.25 + 0.45 * power} roughness={0.2} metalness={0} />
         </mesh>
       </group>
       <group position={[1.0, -0.2, -3.4]}>
@@ -296,7 +305,11 @@ function Ship() {
         </mesh>
         <mesh position={[0, 0, -0.4]}>
           <sphereGeometry args={[0.18, 12, 12]} />
-          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.8} />
+          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.15 + 1.2 * power} />
+        </mesh>
+        <mesh position={[0, 0, -0.9]} rotation={[Math.PI / 2, 0, 0]} scale={[0.6 + 0.6 * power, 1, Math.max(0.1, 1.2 * power)]}>
+          <cylinderGeometry args={[0.02, 0.32, 1.2, 16]} />
+          <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.3 + 0.9 * power} transparent opacity={0.25 + 0.45 * power} roughness={0.2} metalness={0} />
         </mesh>
       </group>
       {/* Antennas */}
@@ -429,6 +442,7 @@ export function SceneRoot() {
   const belts = useGameStore(s => s.belts);
   const tick = useGameStore(s => s.tick);
   const thrust = useGameStore(s => s.thrust);
+  const setEngineTarget = useGameStore(s => s.setEngineTarget);
   const tryDock = useGameStore(s => s.tryDock);
   const undock = useGameStore(s => s.undock);
   const mine = useGameStore(s => s.mine);
@@ -459,6 +473,9 @@ export function SceneRoot() {
     if (dir.lengthSq() > 0) {
       dir.normalize();
       thrust([dir.x, dir.y, dir.z], dt);
+      setEngineTarget(1);
+    } else {
+      setEngineTarget(0);
     }
     
     tick(dt);

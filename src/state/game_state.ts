@@ -31,6 +31,8 @@ export type Ship = {
   maxCargo: number;
   dockedStationId?: string;
   canMine: boolean;
+  enginePower: number; // 0..1 smoothed visual power
+  engineTarget: number; // 0 or 1 based on thrust input
   stats: {
     acc: number; // units/s^2
     drag: number; // s^-1
@@ -62,6 +64,7 @@ export type GameState = {
   getSuggestedRoutes: (opts?: { limit?: number; prioritizePerDistance?: boolean }) => RouteSuggestion[];
   tick: (dt: number) => void;
   thrust: (dir: [number, number, number], dt: number) => void;
+  setEngineTarget: (target: number) => void;
   tryDock: () => void;
   undock: () => void;
   mine: () => void;
@@ -141,6 +144,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     cargo: {},
     maxCargo: 100,
     canMine: false,
+    enginePower: 0,
+    engineTarget: 0,
     stats: { acc: 12, drag: 1.0, vmax: 12 },
   },
   tradeLog: [],
@@ -259,6 +264,11 @@ export const useGameStore = create<GameState>((set, get) => ({
       state.ship.position[2] + vz * dt,
     ];
 
+    // Smooth engine power towards target (visual only)
+    const k = 10; // responsiveness
+    const a = 1 - Math.exp(-k * dt);
+    const enginePower = state.ship.enginePower + (state.ship.engineTarget - state.ship.enginePower) * a;
+
     // Lightweight price fluctuation: every ~0.5s, tweak a handful of items per station
     const jitterChance = Math.min(1, dt * 2);
     let stations = state.stations;
@@ -281,7 +291,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
     }
 
-    return { ship: { ...state.ship, position, velocity: [vx, vy, vz] }, stations } as Partial<GameState> as GameState;
+    return { ship: { ...state.ship, position, velocity: [vx, vy, vz], enginePower }, stations } as Partial<GameState> as GameState;
   }),
   thrust: (dir, dt) => set((state) => {
     if (state.ship.dockedStationId) return state;
@@ -291,7 +301,13 @@ export const useGameStore = create<GameState>((set, get) => ({
       state.ship.velocity[1] + dir[1] * acc * dt,
       state.ship.velocity[2] + dir[2] * acc * dt,
     ];
-    return { ship: { ...state.ship, velocity } } as Partial<GameState> as GameState;
+    return { ship: { ...state.ship, velocity, engineTarget: 1 } } as Partial<GameState> as GameState;
+  }),
+  setEngineTarget: (target) => set((state) => {
+    if (state.ship.dockedStationId) target = 0;
+    const t = Math.max(0, Math.min(1, target));
+    if (state.ship.engineTarget === t) return state;
+    return { ship: { ...state.ship, engineTarget: t } } as Partial<GameState> as GameState;
   }),
   tryDock: () => set((state) => {
     if (state.ship.dockedStationId) return state;
@@ -440,7 +456,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     const stats = { ...state.ship.stats };
     if (type === 'acc') stats.acc += amount;
-    if (type === 'drag') stats.drag = Math.max(0.2, stats.drag + amount);
     if (type === 'vmax') stats.vmax += amount;
     return { ship: { ...state.ship, credits: state.ship.credits - cost, stats } } as Partial<GameState> as GameState;
   }),
