@@ -40,7 +40,7 @@ export function Minimap() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const cssSize = { w: 220, h: 220 };
+    const cssSize = { w: 320, h: 320 };
     const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
     canvas.width = cssSize.w * dpr;
     canvas.height = cssSize.h * dpr;
@@ -48,7 +48,7 @@ export function Minimap() {
     canvas.style.height = cssSize.h + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    const padding = 10;
+    const padding = 14;
     const drawW = cssSize.w - padding * 2;
     const drawH = cssSize.h - padding * 2;
 
@@ -124,8 +124,8 @@ export function Minimap() {
 
     // HUD text
     ctx.fillStyle = 'rgba(229,231,235,0.8)';
-    ctx.font = '12px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
-    ctx.fillText('System Map', padding, cssSize.h - 8);
+    ctx.font = '16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
+    ctx.fillText('System Map', padding, cssSize.h - 10);
   }, [planets, stations, belts, ship.position, ship.velocity, bounds]);
 
   return (

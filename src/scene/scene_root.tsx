@@ -11,7 +11,7 @@ function Planet({ position, radius, name }: { position: [number, number, number]
         <sphereGeometry args={[radius, 32, 32]} />
         <meshStandardMaterial color={new THREE.Color('#1f2937')} roughness={1} metalness={0} />
       </mesh>
-      <Html center distanceFactor={8}><div style={{ fontSize: 12, opacity: 0.8 }}>{name}</div></Html>
+      <Html center distanceFactor={40}><div style={{ fontSize: 28, opacity: 0.8 }}>{name}</div></Html>
     </group>
   );
 }
@@ -23,7 +23,7 @@ function StationBox({ position, name, color = '#7dd3fc' }: { position: [number, 
         <boxGeometry args={[4, 2, 4]} />
         <meshStandardMaterial color={new THREE.Color(color)} roughness={0.7} metalness={0.1} />
       </mesh>
-      <Html center distanceFactor={10}><div style={{ fontSize: 12 }}>{name}</div></Html>
+      <Html center distanceFactor={50}><div style={{ fontSize: 28 }}>{name}</div></Html>
     </group>
   );
 }
@@ -39,7 +39,7 @@ function ShipyardVisual({ position, name }: { position: [number, number, number]
         <cylinderGeometry args={[2, 2, 1, 24]} />
         <meshStandardMaterial color={new THREE.Color('#065f46')} metalness={0.3} roughness={0.6} />
       </mesh>
-      <Html center distanceFactor={10}><div style={{ fontSize: 12 }}>{name}</div></Html>
+      <Html center distanceFactor={50}><div style={{ fontSize: 28 }}>{name}</div></Html>
     </group>
   );
 }
@@ -212,7 +212,7 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
         <ShipyardVisual position={[0,0,0] as any} name={name} />
       )}
       {type !== 'shipyard' && (
-        <Html center distanceFactor={10}><div style={{ fontSize: 12 }}>{name}</div></Html>
+        <Html center distanceFactor={50}><div style={{ fontSize: 28 }}>{name}</div></Html>
       )}
     </group>
   );
@@ -511,8 +511,8 @@ export function SceneRoot() {
               ship.position[2]-b.position[2]
             ) - b.radius
           ) < 6 && !ship.dockedStationId && (
-            <Html position={[b.position[0], b.position[1]+3, b.position[2]]} center distanceFactor={12}>
-              <div style={{ background:'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: 4, fontSize: 12 }}>
+            <Html position={[b.position[0], b.position[1]+3, b.position[2]]} center distanceFactor={60}>
+              <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6, fontSize: 24 }}>
                 {ship.canMine ? 'Press M to Mine' : 'Dock at a shipyard to buy Mining Rig'}
               </div>
             </Html>
@@ -528,8 +528,8 @@ export function SceneRoot() {
             ship.position[1]-s.position[1],
             ship.position[2]-s.position[2]
           ) < 8 && !ship.dockedStationId && (
-            <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center distanceFactor={12}>
-              <div style={{ background:'rgba(0,0,0,0.6)', padding: '4px 8px', borderRadius: 4, fontSize: 12 }}>
+            <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center distanceFactor={60}>
+              <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6, fontSize: 24 }}>
                 Press E to Dock
               </div>
             </Html>
