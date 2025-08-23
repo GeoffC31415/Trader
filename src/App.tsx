@@ -21,7 +21,9 @@ export function App() {
         <Minimap />
         <Canvas camera={{ position: [0, 30, 60], fov: 60 }}>
           <color attach="background" args={[0x03060b]} />
-          <ambientLight intensity={0.3} />
+          <ambientLight intensity={0.35} />
+          <hemisphereLight args={["#cfe8ff", "#0b1020", 0.6]} />
+          <directionalLight position={[-30, 40, 20]} intensity={1.0} />
           <pointLight position={[50, 50, 50]} intensity={1.5} />
           <Stars radius={200} depth={50} count={2000} factor={4} saturation={0} fade speed={1} />
           <SceneRoot />
