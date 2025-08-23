@@ -218,11 +218,13 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
   );
 }
 
-function Ship() {
+function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; turnRight?: boolean }) {
   const ship = useGameStore(s => s.ship);
   const hasRig = ship.canMine;
   const groupRef = useRef<THREE.Group>(null);
   const power = ship.enginePower || 0;
+  const turnLeftPower = turnLeft ? 1 : 0;
+  const turnRightPower = turnRight ? 1 : 0;
 
   useFrame((_: unknown, dt: number) => {
     const g = groupRef.current;
@@ -310,6 +312,35 @@ function Ship() {
         <mesh position={[0, 0, -0.9]} rotation={[Math.PI / 2, 0, 0]} scale={[0.6 + 0.6 * power, 1, Math.max(0.1, 1.2 * power)]}>
           <cylinderGeometry args={[0.02, 0.32, 1.2, 16]} />
           <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#fc8d0d')} emissiveIntensity={0.3 + 0.9 * power} transparent opacity={0.75 * power} roughness={0.2} metalness={0} />
+        </mesh>
+      </group>
+      {/* Side thrusters for turning (front section) */}
+      <group position={[-2.2, 0.0, 2.4]}>
+        <mesh rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.28, 0.36, 0.6, 16]} />
+          <meshStandardMaterial color={new THREE.Color('#6b7280')} metalness={0.8} roughness={0.3} />
+        </mesh>
+        <mesh position={[-0.4, 0, 0]}>
+          <sphereGeometry args={[0.18, 12, 12]} />
+          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#ebc334')} emissiveIntensity={0.15 + 1.2 * turnLeftPower} />
+        </mesh>
+        <mesh position={[-0.9, 0, 0]} rotation={[0, 0, Math.PI / 2]} scale={[0.6 + 0.6 * turnLeftPower, 1, Math.max(0.1, 1.2 * turnLeftPower)]}>
+          <cylinderGeometry args={[0.32, 0.02, 1.2, 16]} />
+          <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#fc8d0d')} emissiveIntensity={0.3 + 0.9 * turnLeftPower} transparent opacity={0.75 * turnLeftPower} roughness={0.2} metalness={0} />
+        </mesh>
+      </group>
+      <group position={[2.2, 0.0, 2.4]}>
+        <mesh rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.28, 0.36, 0.6, 16]} />
+          <meshStandardMaterial color={new THREE.Color('#6b7280')} metalness={0.8} roughness={0.3} />
+        </mesh>
+        <mesh position={[0.4, 0, 0]}>
+          <sphereGeometry args={[0.18, 12, 12]} />
+          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#ebc334')} emissiveIntensity={0.15 + 1.2 * turnRightPower} />
+        </mesh>
+        <mesh position={[0.9, 0, 0]} rotation={[0, 0, Math.PI / 2]} scale={[0.6 + 0.6 * turnRightPower, 1, Math.max(0.1, 1.2 * turnRightPower)]}>
+          <cylinderGeometry args={[0.02, 0.32, 1.2, 16]} />
+          <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#fc8d0d')} emissiveIntensity={0.3 + 0.9 * turnRightPower} transparent opacity={0.75 * turnRightPower} roughness={0.2} metalness={0} />
         </mesh>
       </group>
       {/* Antennas */}
@@ -555,7 +586,7 @@ export function SceneRoot() {
           )}
         </group>
       ))}
-      <Ship />
+      <Ship turnLeft={!!pressed.current['a']} turnRight={!!pressed.current['d']} />
     </group>
   );
 }
