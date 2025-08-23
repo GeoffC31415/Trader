@@ -277,11 +277,11 @@ function Ship() {
         </mesh>
         <mesh position={[0, 0, -0.4]}>
           <sphereGeometry args={[0.18, 12, 12]} />
-          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.15 + 1.2 * power} />
+          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#ebc334')} emissiveIntensity={0.15 + 1.2 * power} />
         </mesh>
         <mesh position={[0, 0, -0.9]} rotation={[Math.PI / 2, 0, 0]} scale={[0.6 + 0.6 * power, 1, Math.max(0.1, 1.2 * power)]}>
           <cylinderGeometry args={[0.02, 0.32, 1.2, 16]} />
-          <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.3 + 0.9 * power} transparent opacity={0.25 + 0.45 * power} roughness={0.2} metalness={0} />
+          <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#fc8d0d')} emissiveIntensity={0.3 + 0.9 * power} transparent opacity={0.75 * power} roughness={0.2} metalness={0} />
         </mesh>
       </group>
       <group position={[0, -0.2, -3.4]}>
@@ -291,11 +291,11 @@ function Ship() {
         </mesh>
         <mesh position={[0, 0, -0.4]}>
           <sphereGeometry args={[0.18, 12, 12]} />
-          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.15 + 1.2 * power} />
+          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#ebc334')} emissiveIntensity={0.15 + 1.2 * power} />
         </mesh>
         <mesh position={[0, 0, -0.9]} rotation={[Math.PI / 2, 0, 0]} scale={[0.6 + 0.6 * power, 1, Math.max(0.1, 1.2 * power)]}>
           <cylinderGeometry args={[0.02, 0.32, 1.2, 16]} />
-          <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.3 + 0.9 * power} transparent opacity={0.25 + 0.45 * power} roughness={0.2} metalness={0} />
+          <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#fc8d0d')} emissiveIntensity={0.3 + 0.9 * power} transparent opacity={0.75 * power} roughness={0.2} metalness={0} />
         </mesh>
       </group>
       <group position={[1.0, -0.2, -3.4]}>
@@ -305,11 +305,11 @@ function Ship() {
         </mesh>
         <mesh position={[0, 0, -0.4]}>
           <sphereGeometry args={[0.18, 12, 12]} />
-          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.15 + 1.2 * power} />
+          <meshStandardMaterial color={new THREE.Color('#60a5fa')} emissive={new THREE.Color('#ebc334')} emissiveIntensity={0.15 + 1.2 * power} />
         </mesh>
         <mesh position={[0, 0, -0.9]} rotation={[Math.PI / 2, 0, 0]} scale={[0.6 + 0.6 * power, 1, Math.max(0.1, 1.2 * power)]}>
           <cylinderGeometry args={[0.02, 0.32, 1.2, 16]} />
-          <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#60a5fa')} emissiveIntensity={0.3 + 0.9 * power} transparent opacity={0.25 + 0.45 * power} roughness={0.2} metalness={0} />
+          <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#fc8d0d')} emissiveIntensity={0.3 + 0.9 * power} transparent opacity={0.75 * power} roughness={0.2} metalness={0} />
         </mesh>
       </group>
       {/* Antennas */}
