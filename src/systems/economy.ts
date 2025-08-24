@@ -15,6 +15,10 @@ export type StationInventoryItem = {
   buy: number;
   sell: number;
   stock?: number;
+  // Whether the station will buy this item from the player (player can sell to station)
+  canBuy?: boolean;
+  // Whether the station will sell this item to the player (player can buy from station)
+  canSell?: boolean;
 };
 export type StationInventory = Record<string, StationInventoryItem>;
 
@@ -208,6 +212,10 @@ export function priceForStation(type: StationType, commodities: Commodity[]): St
   const rules = rulesByType[type];
   const volatility = 0.1;
   const inv: StationInventory = {};
+  const recipes = processRecipes[type] || [];
+  const inputSet = new Set(recipes.map(r => r.inputId));
+  const outputSet = new Set(recipes.map(r => r.outputId));
+  const isProducer = recipes.length > 0;
   for (const c of commodities) {
     const cheap = rules.cheap.includes(c.id);
     const expensive = rules.expensive.includes(c.id);
@@ -220,7 +228,36 @@ export function priceForStation(type: StationType, commodities: Commodity[]): St
     const sell = fluctuate(baseSell, volatility);
     const adjusted = ensureSpread({ buy, sell, minPercent: 0.04, minAbsolute: 2 });
     const stock = (rules.stockBoost && (rules.stockBoost as any)[c.id]) || (cheap ? 200 : 50);
-    inv[c.id] = { buy: adjusted.buy, sell: adjusted.sell, stock };
+    // Directional trading rules (outputs take precedence over inputs for chained recipes)
+    if (isProducer) {
+      if (outputSet.has(c.id)) {
+        // Sell outputs, but do not buy them
+        inv[c.id] = { buy: adjusted.buy, sell: adjusted.sell, stock, canBuy: false, canSell: true };
+        continue;
+      }
+      if (inputSet.has(c.id)) {
+        // Do not trade pure inputs (neither buy nor sell)
+        // Except: food is always bought by stations
+        const isFood = c.category === 'food' || c.id === 'water';
+        const forceBuy = isFood;
+        inv[c.id] = { buy: adjusted.buy, sell: adjusted.sell, stock, canBuy: forceBuy, canSell: false };
+        continue;
+      }
+      // Other unrelated goods: buy only
+      // Ensure everyone buys food. Also ensure non-producers for specific energy goods buy them.
+      const isFood = c.category === 'food' || c.id === 'water';
+      const canBuy = isFood || true;
+      inv[c.id] = { buy: adjusted.buy, sell: adjusted.sell, stock, canBuy, canSell: false };
+      continue;
+    }
+    // 3) Non-producing stations trade normally in both directions
+    let canBuy = true;
+    // All stations buy food
+    const isFood = c.category === 'food' || c.id === 'water';
+    if (isFood) canBuy = true;
+    // Stations that don't produce refined_fuel or batteries should buy them
+    if (c.id === 'refined_fuel' || c.id === 'batteries') canBuy = true;
+    inv[c.id] = { buy: adjusted.buy, sell: adjusted.sell, stock, canBuy, canSell: true };
   }
   return inv;
 }

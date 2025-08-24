@@ -129,6 +129,7 @@ const stations: Station[] = [
   { id: 'sol-city', name: 'Sol City [Consumes: fuel/meds/lux]', type: 'city', position: [52, 0, 6], inventory: priceForStation('city', commodities) },
   { id: 'sol-refinery', name: 'Helios Refinery [Cheap: fuel/hydrogen]', type: 'refinery', position: [48, 0, -10], inventory: priceForStation('refinery', commodities) },
   { id: 'aurum-fab', name: 'Aurum Fabricator [Cheap: electronics/chips/alloys]', type: 'fabricator', position: [40, 0, -14], inventory: priceForStation('fabricator', commodities) },
+  { id: 'greenfields', name: 'Greenfields Farm [Food production: grain/meat/sugar]', type: 'farm', position: [44, 0, -4], inventory: priceForStation('farm', commodities) },
   // Near Ceres
   { id: 'ceres-pp', name: 'Ceres Power Plant [Cheap: batteries/fuel]', type: 'power_plant', position: [-56, 0, 86], inventory: priceForStation('power_plant', commodities) },
   { id: 'freeport', name: 'Freeport Station [Mixed market]', type: 'trading_post', position: [-40, 0, 70], inventory: priceForStation('trading_post', commodities) },
@@ -178,6 +179,9 @@ export const useGameStore = create<GameState>((set, get) => ({
           const ai = a.inventory[id];
           const bi = b.inventory[id];
           if (!ai || !bi) continue;
+          // Respect directional trading rules for route suggestions
+          if (ai.canSell === false) continue; // cannot buy from A
+          if (bi.canBuy === false) continue; // cannot sell to B
           const margin = bi.sell - ai.buy;
           if (margin <= 0) continue;
           const stock = Math.max(0, ai.stock || 0);
@@ -212,7 +216,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         // Buy input at S
         for (const s of stations) {
           const sItem = s.inventory[r.inputId];
-          if (!sItem) continue;
+          if (!sItem || sItem.canSell === false) continue; // must be able to buy input at S
           const stockIn = Math.max(0, sItem.stock || 0);
           if (stockIn <= 0) continue;
           const maxInput = Math.max(0, Math.min(stockIn, cargoCapacity));
@@ -221,7 +225,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           // Sell output at D
           for (const dSt of stations) {
             const dItem = dSt.inventory[r.outputId];
-            if (!dItem) continue;
+            if (!dItem || dItem.canBuy === false) continue; // must be able to sell output at D
             const unitBuyIn = sItem.buy;
             const unitSellOut = dItem.sell;
             const unitMargin = unitSellOut - (unitBuyIn * r.inputPerOutput);
@@ -357,7 +361,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const station = state.stations.find(s => s.id === state.ship.dockedStationId);
     if (!station) return state;
     const item = station.inventory[commodityId];
-    if (!item) return state;
+    if (!item || item.canSell === false) return state;
     const totalCost = item.buy * quantity;
     const used = Object.values(state.ship.cargo).reduce((a, b) => a + b, 0);
     if (state.ship.credits < totalCost) return state;
@@ -394,7 +398,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!station) return state;
     const item = station.inventory[commodityId];
     const have = state.ship.cargo[commodityId] || 0;
-    if (!item || have <= 0) return state;
+    if (!item || item.canBuy === false || have <= 0) return state;
     const qty = Math.min(quantity, have);
     const revenue = item.sell * qty;
     const cargo = { ...state.ship.cargo, [commodityId]: have - qty };

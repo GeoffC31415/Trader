@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useGameStore } from '../state/game_state';
-import { getPriceBiasForStation } from '../systems/economy';
+import { getPriceBiasForStation, processRecipes } from '../systems/economy';
 
 export function MarketPanel() {
   const ship = useGameStore(s => s.ship);
@@ -26,6 +26,13 @@ export function MarketPanel() {
   }
 
   const items = Object.entries(station.inventory);
+  const recipes = processRecipes[station.type] || [];
+  const outputSet = new Set(recipes.map(r => r.outputId));
+  // Hide goods that are neither bought nor sold here
+  const visibleItems = items.filter(([_, p]) => (p.canSell !== false) || (p.canBuy !== false));
+  const producedItems = visibleItems.filter(([id, _]) => outputSet.has(id));
+  const otherItems = visibleItems.filter(([id, _]) => !outputSet.has(id));
+
   return (
     <div className="panel">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -57,16 +64,31 @@ export function MarketPanel() {
           </div>
         </div>
       )}
-      {/* Simple processing controls: try some common transforms if present in cargo */}
+      {/* Fabrication: show all recipes available here, always visible with ratios */}
       <div style={{ marginBottom: 8 }}>
         <div style={{ fontWeight: 700, marginBottom: 4 }}>Fabrication</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {['iron_ore','copper_ore','silicon','hydrogen','steel','electronics','plastics','refined_fuel','data_drives']
-            .filter(id => (ship.cargo[id]||0) > 0)
-            .map(id => (
-              <button key={id} onClick={() => process(id, 1)}>Process 1 {id.replace(/_/g,' ')}</button>
-            ))}
-        </div>
+        {recipes.length === 0 ? (
+          <div style={{ opacity: 0.7 }}>No fabrication available at this station.</div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 6, alignItems: 'center' }}>
+            {recipes.map(r => {
+              const have = ship.cargo[r.inputId] || 0;
+              const canMake = Math.floor(have / r.inputPerOutput);
+              return (
+                <>
+                  <div key={r.inputId+':label'} style={{ textTransform: 'capitalize' }}>
+                    {r.inputId.replace(/_/g,' ')} → {r.outputId.replace(/_/g,' ')}
+                    <span style={{ opacity: 0.7 }}> ( {r.inputPerOutput}:1 )</span>
+                  </div>
+                  <div key={r.inputId+':have'} style={{ opacity: 0.8 }}>Have {have} {r.inputId.replace(/_/g,' ')}</div>
+                  <div key={r.inputId+':btn'}>
+                    <button onClick={() => process(r.inputId, 1)} disabled={canMake <= 0}>Make 1</button>
+                  </div>
+                </>
+              );
+            })}
+          </div>
+        )}
       </div>
       <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
         <div style={{ fontWeight: 700 }}>Trade amount</div>
@@ -80,30 +102,76 @@ export function MarketPanel() {
         <button onClick={() => setQty(q => Math.max(1, q - 1))}>-</button>
         <button onClick={() => setQty(q => q + 1)}>+</button>
       </div>
-      <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
-        <div style={{ fontWeight: 700 }}>Commodity</div>
-        <div style={{ fontWeight: 700 }}>Buy/Sell</div>
-        <div style={{ fontWeight: 700 }}>Held</div>
-        <div style={{ fontWeight: 700 }}>Actions</div>
-        {items.map(([id, p]) => {
-          const bias = getPriceBiasForStation(station.type, id);
-          const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
-          return (
-            <>
-              <div key={id+':n'} style={{textTransform:'capitalize'}}>{id.replace(/_/g,' ')}</div>
-              <div key={id+':p'} style={{ color }}>
-                <span>${p.buy}</span>
-                <span style={{ opacity: 0.7 }}> / ${p.sell}</span>
-              </div>
-              <div key={id+':h'}>{ship.cargo[id] || 0}</div>
-              <div key={id+':a'}>
-                <button onClick={() => buy(id, qty)} style={{ marginRight: 6 }}>Buy {qty}</button>
-                <button onClick={() => sell(id, qty)}>Sell {qty}</button>
-              </div>
-            </>
-          );
-        })}
-      </div>
+      {/* Produced here */}
+      {producedItems.length > 0 && (
+        <div style={{ marginTop: 8 }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>Produced here</div>
+          <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
+            <div style={{ fontWeight: 700 }}>Commodity</div>
+            <div style={{ fontWeight: 700 }}>Buy/Sell</div>
+            <div style={{ fontWeight: 700 }}>Held</div>
+            <div style={{ fontWeight: 700 }}>Actions</div>
+            {producedItems.map(([id, p]) => {
+              const bias = getPriceBiasForStation(station.type, id);
+              const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
+              return (
+                <>
+                  <div key={id+':n'} style={{textTransform:'capitalize'}}>{id.replace(/_/g,' ')}</div>
+                  <div key={id+':p'} style={{ color }}>
+                    <span>${p.buy}</span>
+                    <span style={{ opacity: 0.7 }}> / ${p.sell}</span>
+                  </div>
+                  <div key={id+':h'}>{ship.cargo[id] || 0}</div>
+                  <div key={id+':a'}>
+                    <button onClick={() => buy(id, qty)} style={{ marginRight: 6 }} disabled={p.canSell === false}>Buy {qty}</button>
+                    <button onClick={() => sell(id, qty)} disabled={p.canBuy === false}>Sell {qty}</button>
+                    {(p.canSell === false || p.canBuy === false) && (
+                      <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
+                        {p.canSell === false && p.canBuy === false ? 'Not traded here' : p.canSell === false ? 'Not sold here' : 'Not bought here'}
+                      </span>
+                    )}
+                  </div>
+                </>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      {/* Other traded goods */}
+      {otherItems.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>Other traded goods</div>
+          <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
+            <div style={{ fontWeight: 700 }}>Commodity</div>
+            <div style={{ fontWeight: 700 }}>Buy/Sell</div>
+            <div style={{ fontWeight: 700 }}>Held</div>
+            <div style={{ fontWeight: 700 }}>Actions</div>
+            {otherItems.map(([id, p]) => {
+              const bias = getPriceBiasForStation(station.type, id);
+              const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
+              return (
+                <>
+                  <div key={id+':n'} style={{textTransform:'capitalize'}}>{id.replace(/_/g,' ')}</div>
+                  <div key={id+':p'} style={{ color }}>
+                    <span>${p.buy}</span>
+                    <span style={{ opacity: 0.7 }}> / ${p.sell}</span>
+                  </div>
+                  <div key={id+':h'}>{ship.cargo[id] || 0}</div>
+                  <div key={id+':a'}>
+                    <button onClick={() => buy(id, qty)} style={{ marginRight: 6 }} disabled={p.canSell === false}>Buy {qty}</button>
+                    <button onClick={() => sell(id, qty)} disabled={p.canBuy === false}>Sell {qty}</button>
+                    {(p.canSell === false || p.canBuy === false) && (
+                      <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
+                        {p.canSell === false && p.canBuy === false ? 'Not traded here' : p.canSell === false ? 'Not sold here' : 'Not bought here'}
+                      </span>
+                    )}
+                  </div>
+                </>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
