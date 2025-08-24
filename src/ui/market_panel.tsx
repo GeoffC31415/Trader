@@ -51,6 +51,9 @@ export function MarketPanel() {
             <div>Mining Rig: {ship.canMine ? 'Installed' : 'Not installed'}</div>
             <div>$25,000</div>
             <button onClick={() => upgrade('mining', 0, 25000)} disabled={ship.canMine}>{ship.canMine ? 'Owned' : 'Buy'}</button>
+            <div>Navigation Array: {ship.hasNavigationArray ? 'Installed' : 'Not installed'}</div>
+            <div>$5,000</div>
+            <button onClick={() => upgrade('navigation', 0, 5000)} disabled={!!ship.hasNavigationArray}>{ship.hasNavigationArray ? 'Owned' : 'Buy'}</button>
           </div>
         </div>
       )}

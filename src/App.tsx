@@ -5,9 +5,11 @@ import { SceneRoot } from './scene/scene_root';
 import { MarketPanel } from './ui/market_panel';
 import { JournalPanel } from './ui/journal_panel';
 import { Minimap } from './ui/minimap';
+import { useGameStore } from './state/game_state';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal'>('market');
+  const hasNav = useGameStore(s => !!s.ship.hasNavigationArray);
   return (
     <StrictMode>
       <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -18,7 +20,7 @@ export function App() {
           </div>
           {active === 'market' ? <MarketPanel /> : <JournalPanel />}
         </div>
-        <Minimap />
+        {hasNav && <Minimap />}
         <Canvas camera={{ position: [0, 30, 60], fov: 60 }}>
           <color attach="background" args={[0x03060b]} />
           <ambientLight intensity={0.35} />

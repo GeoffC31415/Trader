@@ -14,6 +14,8 @@ export type Planet = {
   name: string;
   position: [number, number, number];
   radius: number;
+  color?: string;
+  isStar?: boolean;
 };
 
 export type AsteroidBelt = {
@@ -21,6 +23,7 @@ export type AsteroidBelt = {
   name: string;
   position: [number, number, number];
   radius: number;
+  tier: 'common' | 'rare';
 };
 
 export type Ship = {
@@ -33,6 +36,7 @@ export type Ship = {
   canMine: boolean;
   enginePower: number; // 0..1 smoothed visual power
   engineTarget: number; // 0 or 1 based on thrust input
+  hasNavigationArray?: boolean;
   stats: {
     acc: number; // units/s^2
     drag: number; // s^-1
@@ -71,7 +75,7 @@ export type GameState = {
   buy: (commodityId: string, quantity: number) => void;
   sell: (commodityId: string, quantity: number) => void;
   process: (inputId: string, outputs: number) => void;
-  upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining', amount: number, cost: number) => void;
+  upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation', amount: number, cost: number) => void;
 };
 
 export type RouteSuggestion = {
@@ -114,23 +118,26 @@ function clampMagnitude(v: [number, number, number], maxLen: number): [number, n
 
 const commodities = generateCommodities();
 const planets: Planet[] = [
-  { id: 'sol', name: 'Sol Prime', position: [0, 0, 0], radius: 8 },
-  { id: 'aurum', name: 'Aurum', position: [80, 0, -40], radius: 6 },
-  { id: 'ceres', name: 'Ceres', position: [-70, 0, 50], radius: 4 },
+  { id: 'sun', name: 'Sol', position: [0, 0, 0], radius: 12, color: '#ffd27f', isStar: true },
+  // Orbits around the sun
+  { id: 'aurum', name: 'Aurum', position: [40, 0, 0], radius: 6, color: '#b08d57' },
+  { id: 'ceres', name: 'Ceres', position: [-45, 0, 78], radius: 4, color: '#7a8fa6' },
 ];
 
 const stations: Station[] = [
-  { id: 'sol-city', name: 'Sol City [Consumes: fuel/meds/lux]', type: 'city', position: [16, 0, 0], inventory: priceForStation('city', commodities) },
-  { id: 'sol-refinery', name: 'Helios Refinery [Cheap: fuel/hydrogen]', type: 'refinery', position: [24, 0, -10], inventory: priceForStation('refinery', commodities) },
-  { id: 'aurum-fab', name: 'Aurum Fabricator [Cheap: electronics/chips/alloys]', type: 'fabricator', position: [92, 0, -36], inventory: priceForStation('fabricator', commodities) },
-  { id: 'ceres-pp', name: 'Ceres Power Plant [Cheap: batteries/fuel]', type: 'power_plant', position: [-58, 0, 60], inventory: priceForStation('power_plant', commodities) },
-  { id: 'freeport', name: 'Freeport Station [Mixed market]', type: 'trading_post', position: [20, 0, 40], inventory: priceForStation('trading_post', commodities) },
-  { id: 'drydock', name: 'Drydock Shipyard [Upgrades available]', type: 'shipyard', position: [0, 0, 80], inventory: priceForStation('shipyard', commodities) },
+  // Near Aurum
+  { id: 'sol-city', name: 'Sol City [Consumes: fuel/meds/lux]', type: 'city', position: [52, 0, 6], inventory: priceForStation('city', commodities) },
+  { id: 'sol-refinery', name: 'Helios Refinery [Cheap: fuel/hydrogen]', type: 'refinery', position: [48, 0, -10], inventory: priceForStation('refinery', commodities) },
+  { id: 'aurum-fab', name: 'Aurum Fabricator [Cheap: electronics/chips/alloys]', type: 'fabricator', position: [40, 0, -14], inventory: priceForStation('fabricator', commodities) },
+  // Near Ceres
+  { id: 'ceres-pp', name: 'Ceres Power Plant [Cheap: batteries/fuel]', type: 'power_plant', position: [-56, 0, 86], inventory: priceForStation('power_plant', commodities) },
+  { id: 'freeport', name: 'Freeport Station [Mixed market]', type: 'trading_post', position: [-40, 0, 70], inventory: priceForStation('trading_post', commodities) },
+  { id: 'drydock', name: 'Drydock Shipyard [Upgrades available]', type: 'shipyard', position: [-30, 0, 90], inventory: priceForStation('shipyard', commodities) },
 ];
 
 const belts: AsteroidBelt[] = [
-  { id: 'sol-belt', name: 'Sol Belt', position: [8, 0, 28], radius: 20 },
-  { id: 'ceres-belt', name: 'Ceres Belt', position: [-70, 0, 30], radius: 16 },
+  { id: 'inner-belt', name: 'Common Belt', position: [0, 0, 0], radius: 60, tier: 'common' },
+  { id: 'outer-belt', name: 'Rare Belt', position: [0, 0, 0], radius: 120, tier: 'rare' },
 ];
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -138,7 +145,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   stations,
   belts,
   ship: {
-    position: [10, 0, 20],
+    position: [50, 0, 8],
     velocity: [0, 0, 0],
     credits: 5000,
     cargo: {},
@@ -146,6 +153,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     canMine: false,
     enginePower: 0,
     engineTarget: 0,
+    hasNavigationArray: false,
     stats: { acc: 12, drag: 1.0, vmax: 12 },
   },
   tradeLog: [],
@@ -332,8 +340,15 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (used >= state.ship.maxCargo) return state;
     const room = state.ship.maxCargo - used;
     const roll = Math.random();
-    const ore = roll < 0.5 ? 'iron_ore' : roll < 0.8 ? 'copper_ore' : roll < 0.95 ? 'silicon' : 'rare_minerals';
-    const qty = Math.max(1, Math.min(room, Math.round(roll < 0.95 ? (1 + Math.random() * 3) : 1)));
+    // Belt-tier-based distribution
+    let ore: keyof Ship['cargo'] = 'iron_ore';
+    if (near.tier === 'common') {
+      ore = roll < 0.5 ? 'iron_ore' : roll < 0.8 ? 'copper_ore' : roll < 0.95 ? 'silicon' : 'rare_minerals';
+    } else {
+      // rare belt: higher chance for silicon and rare minerals
+      ore = roll < 0.3 ? 'iron_ore' : roll < 0.6 ? 'copper_ore' : roll < 0.85 ? 'silicon' : 'rare_minerals';
+    }
+    const qty = Math.max(1, Math.min(room, Math.round(ore === 'rare_minerals' ? 1 : (1 + Math.random() * 3))));
     const cargo = { ...state.ship.cargo, [ore]: (state.ship.cargo[ore] || 0) + qty } as Record<string, number>;
     return { ship: { ...state.ship, cargo } } as Partial<GameState> as GameState;
   }),
@@ -453,6 +468,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (type === 'mining') {
       if (state.ship.canMine) return state;
       return { ship: { ...state.ship, credits: state.ship.credits - cost, canMine: true } } as Partial<GameState> as GameState;
+    }
+    if (type === 'navigation') {
+      if (state.ship.hasNavigationArray) return state;
+      return { ship: { ...state.ship, credits: state.ship.credits - cost, hasNavigationArray: true } } as Partial<GameState> as GameState;
     }
     const stats = { ...state.ship.stats };
     if (type === 'acc') stats.acc += amount;

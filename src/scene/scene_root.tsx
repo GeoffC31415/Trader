@@ -4,13 +4,20 @@ import * as THREE from 'three';
 import { useGameStore } from '../state/game_state';
 import { Html } from '@react-three/drei';
 
-function Planet({ position, radius, name }: { position: [number, number, number]; radius: number; name: string }) {
+function Planet({ position, radius, name, color = '#2b3b55', isStar = false }: { position: [number, number, number]; radius: number; name: string; color?: string; isStar?: boolean }) {
   return (
     <group position={position as any}>
       <mesh>
-        <sphereGeometry args={[radius, 32, 32]} />
-        <meshStandardMaterial color={new THREE.Color('#2b3b55')} roughness={0.85} metalness={0.05} />
+        <sphereGeometry args={[radius, 48, 48]} />
+        {isStar ? (
+          <meshStandardMaterial color={new THREE.Color(color)} emissive={new THREE.Color(color)} emissiveIntensity={1.2} roughness={0.3} metalness={0.0} />
+        ) : (
+          <meshStandardMaterial color={new THREE.Color(color)} roughness={0.85} metalness={0.05} />
+        )}
       </mesh>
+      {isStar && (
+        <pointLight args={[new THREE.Color(color), 1.5, 500, 2]} />
+      )}
       <Html center distanceFactor={40}><div style={{ fontSize: 28, opacity: 0.8 }}>{name}</div></Html>
     </group>
   );
@@ -221,6 +228,7 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
 function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; turnRight?: boolean }) {
   const ship = useGameStore(s => s.ship);
   const hasRig = ship.canMine;
+  const hasNav = !!ship.hasNavigationArray;
   const groupRef = useRef<THREE.Group>(null);
   const power = ship.enginePower || 0;
   const turnLeftPower = turnLeft ? 1 : 0;
@@ -356,17 +364,19 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
         <cylinderGeometry args={[0.04, 0.04, 0.8, 8]} />
         <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.8} roughness={0.3} />
       </mesh>
-      {/* Dish antenna */}
-      <group position={[1.5, 0.6, 1.2]} rotation={[0, Math.PI / 6, 0]}>
-        <mesh position={[0, 0.4, 0]}>
-          <cylinderGeometry args={[0.04, 0.04, 0.8, 12]} />
-          <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.8} roughness={0.3} />
-        </mesh>
-        <mesh position={[0, 0.9, 0]} rotation={[Math.PI / 2.5, 0, 0]}>
-          <coneGeometry args={[0.35, 0.25, 18]} />
-          <meshStandardMaterial color={new THREE.Color('#a1a1aa')} metalness={0.6} roughness={0.4} />
-        </mesh>
-      </group>
+      {/* Dish antenna (Navigation Array) */}
+      {hasNav && (
+        <group position={[1.5, 0.6, 1.2]} rotation={[0, Math.PI / 6, 0]}>
+          <mesh position={[0, 0.4, 0]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.8, 12]} />
+            <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.8} roughness={0.3} />
+          </mesh>
+          <mesh position={[0, 0.9, 0]} rotation={[Math.PI / 2.5, 0, 0]}>
+            <coneGeometry args={[0.35, 0.25, 18]} />
+            <meshStandardMaterial color={new THREE.Color('#a1a1aa')} metalness={0.6} roughness={0.4} />
+          </mesh>
+        </group>
+      )}
       {/* Side ports */}
       <mesh position={[-2.0, 0, -0.4]} rotation={[0, 0, Math.PI / 2]}>
         <cylinderGeometry args={[0.16, 0.16, 0.18, 20]} />
@@ -547,7 +557,7 @@ export function SceneRoot() {
     <group>
       <PlaneGrid />
       {planets.map(p => (
-        <Planet key={p.id} position={p.position} radius={p.radius} name={p.name} />
+        <Planet key={p.id} position={p.position} radius={p.radius} name={p.name} color={(p as any).color} isStar={(p as any).isStar} />
       ))}
       {belts.map(b => (
         <group key={b.id}>
