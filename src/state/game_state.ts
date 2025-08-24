@@ -38,6 +38,7 @@ export type Ship = {
   engineTarget: number; // 0 or 1 based on thrust input
   hasNavigationArray?: boolean;
   hasUnionMembership?: boolean;
+  kind: 'freighter' | 'clipper' | 'miner';
   stats: {
     acc: number; // units/s^2
     drag: number; // s^-1
@@ -63,6 +64,7 @@ export type GameState = {
   stations: Station[];
   belts: AsteroidBelt[];
   ship: Ship;
+  hasChosenStarter: boolean;
   tradeLog: TradeEntry[];
   profitByCommodity: Record<Commodity['id'], number>;
   avgCostByCommodity: Record<Commodity['id'], number>;
@@ -77,6 +79,7 @@ export type GameState = {
   sell: (commodityId: string, quantity: number) => void;
   process: (inputId: string, outputs: number) => void;
   upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union', amount: number, cost: number) => void;
+  chooseStarter: (kind: 'freighter' | 'clipper' | 'miner') => void;
 };
 
 export type RouteSuggestion = {
@@ -151,7 +154,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   ship: {
     position: [50, 0, 8],
     velocity: [0, 0, 0],
-    credits: 5000,
+    credits: 0,
     cargo: {},
     maxCargo: 100,
     canMine: false,
@@ -159,8 +162,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     engineTarget: 0,
     hasNavigationArray: false,
     hasUnionMembership: false,
+    kind: 'freighter',
     stats: { acc: 12, drag: 1.0, vmax: 12 },
   },
+  hasChosenStarter: false,
   tradeLog: [],
   profitByCommodity: {},
   avgCostByCommodity: {},
@@ -325,6 +330,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     return { ship: { ...state.ship, position, velocity: [vx, vy, vz], enginePower }, stations } as Partial<GameState> as GameState;
   }),
   thrust: (dir, dt) => set((state) => {
+    if (!state.hasChosenStarter) return state;
     if (state.ship.dockedStationId) return state;
     const acc = state.ship.stats.acc; // units per s^2
     const velocity: [number, number, number] = [
@@ -341,16 +347,19 @@ export const useGameStore = create<GameState>((set, get) => ({
     return { ship: { ...state.ship, engineTarget: t } } as Partial<GameState> as GameState;
   }),
   tryDock: () => set((state) => {
+    if (!state.hasChosenStarter) return state;
     if (state.ship.dockedStationId) return state;
     const near = state.stations.find(s => distance(s.position, state.ship.position) < 6);
     if (!near) return state;
     return { ship: { ...state.ship, dockedStationId: near.id, velocity: [0,0,0] } } as Partial<GameState> as GameState;
   }),
   undock: () => set((state) => {
+    if (!state.hasChosenStarter) return state;
     if (!state.ship.dockedStationId) return state;
     return { ship: { ...state.ship, dockedStationId: undefined } } as Partial<GameState> as GameState;
   }),
   mine: () => set((state) => {
+    if (!state.hasChosenStarter) return state;
     if (state.ship.dockedStationId) return state;
     if (!state.ship.canMine) return state;
     const belts = state.belts;
@@ -517,6 +526,60 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (type === 'acc') stats.acc += amount;
     if (type === 'vmax') stats.vmax += amount;
     return { ship: { ...state.ship, credits: state.ship.credits - cost, stats } } as Partial<GameState> as GameState;
+  }),
+  chooseStarter: (kind) => set((state) => {
+    const basePosition: [number, number, number] = state.ship.position;
+    const baseVelocity: [number, number, number] = [0, 0, 0];
+    if (kind === 'freighter') {
+      const ship: Ship = {
+        position: basePosition,
+        velocity: baseVelocity,
+        credits: 10000,
+        cargo: {},
+        maxCargo: 300,
+        canMine: false,
+        enginePower: 0,
+        engineTarget: 0,
+        hasNavigationArray: false,
+        hasUnionMembership: false,
+        kind: 'freighter',
+        stats: { acc: 10, drag: 1.0, vmax: 11 },
+      };
+      return { ship, hasChosenStarter: true } as Partial<GameState> as GameState;
+    }
+    if (kind === 'clipper') {
+      const ship: Ship = {
+        position: basePosition,
+        velocity: baseVelocity,
+        credits: 10000,
+        cargo: {},
+        maxCargo: 60,
+        canMine: false,
+        enginePower: 0,
+        engineTarget: 0,
+        hasNavigationArray: false,
+        hasUnionMembership: false,
+        kind: 'clipper',
+        stats: { acc: 18, drag: 0.9, vmax: 20 },
+      };
+      return { ship, hasChosenStarter: true } as Partial<GameState> as GameState;
+    }
+    // miner
+    const ship: Ship = {
+      position: basePosition,
+      velocity: baseVelocity,
+      credits: 0,
+      cargo: {},
+      maxCargo: 80,
+      canMine: true,
+      enginePower: 0,
+      engineTarget: 0,
+      hasNavigationArray: false,
+      hasUnionMembership: false,
+      kind: 'miner',
+      stats: { acc: 9, drag: 1.1, vmax: 11 },
+    };
+    return { ship, hasChosenStarter: true } as Partial<GameState> as GameState;
   }),
 }));
 
