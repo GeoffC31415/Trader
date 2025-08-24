@@ -86,21 +86,21 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
       {/* Keep overall footprint ~4 x 2 x 4 */}
       {type === 'refinery' && (
         <group>
-          <mesh position={[0, 0, 0]}>
+          <mesh position={[0, 0, 0]} castShadow receiveShadow>
             <boxGeometry args={[4, 1.4, 4]} />
             <meshStandardMaterial color={new THREE.Color(base.refinery)} metalness={0.2} roughness={0.7} />
           </mesh>
           {/* Stacks */}
-          <mesh position={[-1.2, 1.2, -0.8]}>
+          <mesh position={[-1.2, 1.2, -0.8]} castShadow>
             <cylinderGeometry args={[0.3, 0.3, 1.6, 12]} />
             <meshStandardMaterial color={new THREE.Color(accent.refinery)} metalness={0.3} roughness={0.6} />
           </mesh>
-          <mesh position={[1.2, 1.2, 0.8]}>
+          <mesh position={[1.2, 1.2, 0.8]} castShadow>
             <cylinderGeometry args={[0.3, 0.3, 1.6, 12]} />
             <meshStandardMaterial color={new THREE.Color(accent.refinery)} metalness={0.3} roughness={0.6} />
           </mesh>
           {/* Pipes */}
-          <mesh position={[0, 0.4, 0]} rotation={[0, Math.PI / 4, 0]}>
+          <mesh position={[0, 0.4, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
             <torusGeometry args={[1.6, 0.08, 10, 60]} />
             <meshStandardMaterial color={new THREE.Color('#a3a3a3')} metalness={0.6} roughness={0.4} />
           </mesh>
@@ -108,11 +108,11 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
       )}
       {type === 'fabricator' && (
         <group>
-          <mesh>
+          <mesh castShadow receiveShadow>
             <boxGeometry args={[3.8, 1.2, 3.8]} />
             <meshStandardMaterial color={new THREE.Color(base.fabricator)} metalness={0.4} roughness={0.5} />
           </mesh>
-          <mesh position={[0, 0.9, 0]}>
+          <mesh position={[0, 0.9, 0]} castShadow>
             <dodecahedronGeometry args={[1.1, 0]} />
             <meshStandardMaterial color={new THREE.Color(accent.fabricator)} metalness={0.6} roughness={0.3} emissive={new THREE.Color('#4c1d95')} emissiveIntensity={0.15} />
           </mesh>
@@ -120,11 +120,11 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
       )}
       {type === 'power_plant' && (
         <group>
-          <mesh>
+          <mesh castShadow receiveShadow>
             <cylinderGeometry args={[1.6, 1.6, 2, 24]} />
             <meshStandardMaterial color={new THREE.Color(base.power_plant)} metalness={0.3} roughness={0.5} emissive={new THREE.Color(accent.power_plant)} emissiveIntensity={0.12} />
           </mesh>
-          <mesh rotation={[0, 0, Math.PI / 2]}>
+          <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
             <torusGeometry args={[2.2, 0.1, 12, 80]} />
             <meshStandardMaterial color={new THREE.Color('#14532d')} metalness={0.2} roughness={0.7} />
           </mesh>
@@ -132,16 +132,16 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
       )}
       {type === 'city' && (
         <group>
-          <mesh>
+          <mesh castShadow receiveShadow>
             <boxGeometry args={[4, 0.8, 4]} />
             <meshStandardMaterial color={new THREE.Color(base.city)} metalness={0.2} roughness={0.8} />
           </mesh>
           {/* Towers */}
-          <mesh position={[-1, 1.1, -1]}>
+          <mesh position={[-1, 1.1, -1]} castShadow>
             <boxGeometry args={[0.6, 2, 0.6]} />
             <meshStandardMaterial color={new THREE.Color('#dbeafe')} />
           </mesh>
-          <mesh position={[1, 1.3, 1]}>
+          <mesh position={[1, 1.3, 1]} castShadow>
             <boxGeometry args={[0.5, 2.4, 0.5]} />
             <meshStandardMaterial color={new THREE.Color('#bfdbfe')} />
           </mesh>
@@ -149,11 +149,11 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
       )}
       {type === 'trading_post' && (
         <group>
-          <mesh>
+          <mesh castShadow receiveShadow>
             <boxGeometry args={[3.6, 1.0, 3.6]} />
             <meshStandardMaterial color={new THREE.Color(base.trading_post)} metalness={0.3} roughness={0.6} />
           </mesh>
-          <mesh position={[0, 0.8, 0]} rotation={[0, 0, 0]}>
+          <mesh position={[0, 0.8, 0]} rotation={[0, 0, 0]} castShadow>
             <octahedronGeometry args={[0.9, 0]} />
             <meshStandardMaterial color={new THREE.Color(accent.trading_post)} metalness={0.5} roughness={0.3} />
           </mesh>
@@ -161,11 +161,11 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
       )}
       {type === 'pirate' && (
         <group>
-          <mesh>
+          <mesh castShadow receiveShadow>
             <boxGeometry args={[3.6, 1.0, 3.6]} />
             <meshStandardMaterial color={new THREE.Color(base.pirate)} metalness={0.6} roughness={0.4} emissive={new THREE.Color('#4c1d95')} emissiveIntensity={0.2} />
           </mesh>
-          <mesh position={[0, 1.0, 0]} rotation={[0, 0, 0]}>
+          <mesh position={[0, 1.0, 0]} rotation={[0, 0, 0]} castShadow>
             <dodecahedronGeometry args={[0.9, 0]} />
             <meshStandardMaterial color={new THREE.Color(accent.pirate)} metalness={0.7} roughness={0.3} />
           </mesh>
@@ -173,16 +173,16 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
       )}
       {type === 'mine' && (
         <group>
-          <mesh>
+          <mesh castShadow receiveShadow>
             <boxGeometry args={[4, 1.0, 4]} />
             <meshStandardMaterial color={new THREE.Color(base.mine)} metalness={0.15} roughness={0.9} />
           </mesh>
           {/* Cranes */}
-          <mesh position={[-1.4, 1.0, 0]} rotation={[0, 0, Math.PI / 6]}>
+          <mesh position={[-1.4, 1.0, 0]} rotation={[0, 0, Math.PI / 6]} castShadow>
             <cylinderGeometry args={[0.1, 0.1, 2, 8]} />
             <meshStandardMaterial color={new THREE.Color('#78350f')} />
           </mesh>
-          <mesh position={[1.4, 1.0, 0]} rotation={[0, 0, -Math.PI / 6]}>
+          <mesh position={[1.4, 1.0, 0]} rotation={[0, 0, -Math.PI / 6]} castShadow>
             <cylinderGeometry args={[0.1, 0.1, 2, 8]} />
             <meshStandardMaterial color={new THREE.Color('#78350f')} />
           </mesh>
@@ -190,16 +190,16 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
       )}
       {type === 'farm' && (
         <group>
-          <mesh>
+          <mesh castShadow receiveShadow>
             <boxGeometry args={[3.6, 0.8, 3.6]} />
             <meshStandardMaterial color={new THREE.Color(base.farm)} metalness={0.1} roughness={0.9} />
           </mesh>
           {/* Domes */}
-          <mesh position={[-0.9, 0.8, -0.9]}>
+          <mesh position={[-0.9, 0.8, -0.9]} castShadow>
             <sphereGeometry args={[0.7, 16, 16]} />
             <meshStandardMaterial color={new THREE.Color('#bbf7d0')} roughness={0.6} />
           </mesh>
-          <mesh position={[0.9, 0.8, 0.9]}>
+          <mesh position={[0.9, 0.8, 0.9]} castShadow>
             <sphereGeometry args={[0.6, 16, 16]} />
             <meshStandardMaterial color={new THREE.Color('#bbf7d0')} roughness={0.6} />
           </mesh>
@@ -207,11 +207,11 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
       )}
       {type === 'research' && (
         <group>
-          <mesh>
+          <mesh castShadow receiveShadow>
             <cylinderGeometry args={[1.4, 1.4, 1.6, 20]} />
             <meshStandardMaterial color={new THREE.Color(base.research)} metalness={0.4} roughness={0.4} emissive={new THREE.Color(accent.research)} emissiveIntensity={0.1} />
           </mesh>
-          <mesh rotation={[0, 0, Math.PI / 2]}>
+          <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
             <torusGeometry args={[2.0, 0.08, 12, 64]} />
             <meshStandardMaterial color={new THREE.Color('#155e75')} metalness={0.2} roughness={0.7} />
           </mesh>
@@ -219,11 +219,11 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
       )}
       {type === 'orbital_hab' && (
         <group>
-          <mesh>
+          <mesh castShadow receiveShadow>
             <torusGeometry args={[2.0, 0.25, 14, 80]} />
             <meshStandardMaterial color={new THREE.Color(base.orbital_hab)} metalness={0.2} roughness={0.8} />
           </mesh>
-          <mesh>
+          <mesh castShadow>
             <cylinderGeometry args={[0.4, 0.4, 2, 16]} />
             <meshStandardMaterial color={new THREE.Color(accent.orbital_hab)} metalness={0.2} roughness={0.7} />
           </mesh>
@@ -265,37 +265,37 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
   return (
     <group ref={groupRef} position={ship.position as any}>
       {/* Main industrial hull */}
-      <mesh>
+      <mesh castShadow receiveShadow>
         <boxGeometry args={[3.6, 1.2, 5.6]} />
         <meshStandardMaterial color={new THREE.Color('#6b7280')} metalness={0.6} roughness={0.4} />
       </mesh>
       {/* Hull trims */}
-      <mesh position={[0, -0.6, 0]}>
+      <mesh position={[0, -0.6, 0]} castShadow receiveShadow>
         <boxGeometry args={[3.2, 0.2, 5.0]} />
         <meshStandardMaterial color={new THREE.Color('#4b5563')} metalness={0.7} roughness={0.4} />
       </mesh>
-      <mesh position={[0, 0.6, 0]}>
+      <mesh position={[0, 0.6, 0]} castShadow receiveShadow>
         <boxGeometry args={[3.2, 0.2, 5.0]} />
         <meshStandardMaterial color={new THREE.Color('#4b5563')} metalness={0.7} roughness={0.4} />
       </mesh>
       {/* Nose block */}
-      <mesh position={[0, 0, 3.2]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[0, 0, 3.2]} rotation={[Math.PI / 2, 0, 0]} castShadow>
         <cylinderGeometry args={[0.12, 1.2, 1.0, 16]} />
         <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.8} roughness={0.3} />
       </mesh>
       {/* Canopy */}
-      <mesh position={[0, 0.3, 2.2]} scale={[1.2, 0.6, 1.0]}>
+      <mesh position={[0, 0.3, 2.2]} scale={[1.2, 0.6, 1.0]} castShadow>
         <sphereGeometry args={[1.4, 24, 24]} />
         <meshStandardMaterial color={new THREE.Color('#93c5fd')} metalness={0.1} roughness={0.2} emissive={new THREE.Color('#1d4ed8')} emissiveIntensity={0.05} transparent opacity={0.6} />
       </mesh>
       {/* Engine block */}
-      <mesh position={[0, -0.2, -2.8]}>
+      <mesh position={[0, -0.2, -2.8]} castShadow receiveShadow>
         <boxGeometry args={[3.2, 1.0, 1.2]} />
         <meshStandardMaterial color={new THREE.Color('#374151')} metalness={0.7} roughness={0.5} />
       </mesh>
       {/* Thrusters cluster */}
       <group position={[-1.0, -0.2, -3.4]}>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
           <cylinderGeometry args={[0.28, 0.36, 0.6, 16]} />
           <meshStandardMaterial color={new THREE.Color('#6b7280')} metalness={0.8} roughness={0.3} />
         </mesh>
@@ -309,7 +309,7 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
         </mesh>
       </group>
       <group position={[0, -0.2, -3.4]}>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
           <cylinderGeometry args={[0.28, 0.36, 0.6, 16]} />
           <meshStandardMaterial color={new THREE.Color('#6b7280')} metalness={0.8} roughness={0.3} />
         </mesh>
@@ -323,7 +323,7 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
         </mesh>
       </group>
       <group position={[1.0, -0.2, -3.4]}>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
           <cylinderGeometry args={[0.28, 0.36, 0.6, 16]} />
           <meshStandardMaterial color={new THREE.Color('#6b7280')} metalness={0.8} roughness={0.3} />
         </mesh>
@@ -336,9 +336,19 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
           <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#fc8d0d')} emissiveIntensity={0.3 + 0.9 * power} transparent opacity={0.75 * power} roughness={0.2} metalness={0} />
         </mesh>
       </group>
+      {/* Thruster sparkles */}
+      <Sparkles
+        count={Math.max(10, Math.floor(30 + power * 120))}
+        scale={[2.5, 2.5, 3]}
+        size={1.2}
+        speed={0.6 + power}
+        color={new THREE.Color('#ffd08a') as any}
+        opacity={0.7}
+        position={[0, -0.2, -3.8] as any}
+      />
       {/* Side thrusters for turning (front section) */}
       <group position={[-2.2, 0.0, 2.4]}>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
+        <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
           <cylinderGeometry args={[0.28, 0.36, 0.6, 16]} />
           <meshStandardMaterial color={new THREE.Color('#6b7280')} metalness={0.8} roughness={0.3} />
         </mesh>
@@ -351,8 +361,17 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
           <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#fc8d0d')} emissiveIntensity={0.3 + 0.9 * turnLeftPower} transparent opacity={0.75 * turnLeftPower} roughness={0.2} metalness={0} />
         </mesh>
       </group>
+      <Sparkles
+        count={Math.max(0, Math.floor(10 + turnLeftPower * 60))}
+        scale={[1.2, 1.2, 1.2]}
+        size={1.0}
+        speed={0.8 + turnLeftPower}
+        color={new THREE.Color('#ffd08a') as any}
+        opacity={0.6}
+        position={[-2.8, 0.0, 2.4] as any}
+      />
       <group position={[2.2, 0.0, 2.4]}>
-        <mesh rotation={[0, 0, Math.PI / 2]}>
+        <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
           <cylinderGeometry args={[0.28, 0.36, 0.6, 16]} />
           <meshStandardMaterial color={new THREE.Color('#6b7280')} metalness={0.8} roughness={0.3} />
         </mesh>
@@ -365,38 +384,47 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
           <meshStandardMaterial color={new THREE.Color('#93c5fd')} emissive={new THREE.Color('#fc8d0d')} emissiveIntensity={0.3 + 0.9 * turnRightPower} transparent opacity={0.75 * turnRightPower} roughness={0.2} metalness={0} />
         </mesh>
       </group>
+      <Sparkles
+        count={Math.max(0, Math.floor(10 + turnRightPower * 60))}
+        scale={[1.2, 1.2, 1.2]}
+        size={1.0}
+        speed={0.8 + turnRightPower}
+        color={new THREE.Color('#ffd08a') as any}
+        opacity={0.6}
+        position={[2.8, 0.0, 2.4] as any}
+      />
       {/* Antennas */}
-      <mesh position={[-1.4, 0.9, 0.6]}>
+      <mesh position={[-1.4, 0.9, 0.6]} castShadow>
         <cylinderGeometry args={[0.03, 0.03, 1.0, 8]} />
         <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.8} roughness={0.3} />
       </mesh>
-      <mesh position={[-1.4, 1.4, 0.6]}>
+      <mesh position={[-1.4, 1.4, 0.6]} castShadow>
         <coneGeometry args={[0.08, 0.2, 10]} />
         <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.8} roughness={0.3} />
       </mesh>
-      <mesh position={[1.3, 0.8, -0.4]}>
+      <mesh position={[1.3, 0.8, -0.4]} castShadow>
         <cylinderGeometry args={[0.04, 0.04, 0.8, 8]} />
         <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.8} roughness={0.3} />
       </mesh>
       {/* Dish antenna (Navigation Array) */}
       {hasNav && (
         <group position={[1.5, 0.6, 1.2]} rotation={[0, Math.PI / 6, 0]}>
-          <mesh position={[0, 0.4, 0]}>
+          <mesh position={[0, 0.4, 0]} castShadow>
             <cylinderGeometry args={[0.04, 0.04, 0.8, 12]} />
             <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.8} roughness={0.3} />
           </mesh>
-          <mesh position={[0, 0.9, 0]} rotation={[Math.PI / 2.5, 0, 0]}>
+          <mesh position={[0, 0.9, 0]} rotation={[Math.PI / 2.5, 0, 0]} castShadow>
             <coneGeometry args={[0.35, 0.25, 18]} />
             <meshStandardMaterial color={new THREE.Color('#a1a1aa')} metalness={0.6} roughness={0.4} />
           </mesh>
         </group>
       )}
       {/* Side ports */}
-      <mesh position={[-2.0, 0, -0.4]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[-2.0, 0, -0.4]} rotation={[0, 0, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[0.16, 0.16, 0.18, 20]} />
         <meshStandardMaterial color={new THREE.Color('#111827')} metalness={0.5} roughness={0.6} />
       </mesh>
-      <mesh position={[2.0, 0, -0.4]} rotation={[0, 0, Math.PI / 2]}>
+      <mesh position={[2.0, 0, -0.4]} rotation={[0, 0, Math.PI / 2]} castShadow>
         <cylinderGeometry args={[0.16, 0.16, 0.18, 20]} />
         <meshStandardMaterial color={new THREE.Color('#111827')} metalness={0.5} roughness={0.6} />
       </mesh>
@@ -439,7 +467,7 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
         </mesh>
       </group>
       {/* Piping/greebles */}
-      <mesh position={[0, -0.1, 0]}>
+      <mesh position={[0, -0.1, 0]} castShadow>
         <torusGeometry args={[1.6, 0.06, 12, 64]} />
         <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.8} roughness={0.3} />
       </mesh>
@@ -455,15 +483,15 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
       {/* Mining rig attachment (visible when purchased) */}
       {hasRig && (
         <group position={[0, -0.4, 2.6]}>
-          <mesh>
+          <mesh castShadow>
             <cylinderGeometry args={[0.1, 0.1, 1.2, 12]} />
             <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.7} roughness={0.3} />
           </mesh>
-          <mesh position={[0, 0.8, 0]}>
+          <mesh position={[0, 0.8, 0]} castShadow>
             <coneGeometry args={[0.25, 0.6, 16]} />
             <meshStandardMaterial color={new THREE.Color('#d1d5db')} metalness={0.6} roughness={0.4} />
           </mesh>
-          <mesh position={[0, 0.2, -0.3]} rotation={[0, 0, 0]}>
+          <mesh position={[0, 0.2, -0.3]} rotation={[0, 0, 0]} castShadow>
             <boxGeometry args={[0.5, 0.3, 0.4]} />
             <meshStandardMaterial color={new THREE.Color('#374151')} metalness={0.5} roughness={0.6} />
           </mesh>
@@ -475,14 +503,38 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
 
 function PlaneGrid() {
   return (
-    <gridHelper args={[400, 80, '#374151', '#1f2937']} />
+    <>
+      <Grid
+        infiniteGrid
+        cellSize={2}
+        cellThickness={0.6}
+        sectionSize={20}
+        sectionThickness={1.0}
+        fadeDistance={120}
+        fadeStrength={2}
+        followCamera
+        position={[0, -0.01, 0] as any}
+        args={[400, 400] as any}
+      />
+      <ContactShadows
+        position={[0, -0.02, 0] as any}
+        opacity={0.6}
+        width={200}
+        height={200}
+        blur={2}
+        far={40}
+        resolution={1024}
+        color="#000000"
+        frames={1}
+      />
+    </>
   );
 }
 
 function BeltRing({ position, radius, name }: { position: [number, number, number]; radius: number; name: string }) {
   return (
     <group position={position as any}>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]} receiveShadow>
         <torusGeometry args={[radius, 0.5, 16, 120]} />
         <meshStandardMaterial color={new THREE.Color('#9ca3af')} roughness={0.9} metalness={0.1} />
       </mesh>
