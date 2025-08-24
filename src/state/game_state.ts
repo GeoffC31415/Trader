@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Commodity, StationType, generateCommodities, StationInventory, priceForStation, findRecipeForStation, ensureSpread, processRecipes } from '../systems/economy';
+import { Commodity, StationType, generateCommodities, StationInventory, priceForStation, findRecipeForStation, ensureSpread, processRecipes, gatedCommodities } from '../systems/economy';
 
 export type Station = {
   id: string;
@@ -37,6 +37,7 @@ export type Ship = {
   enginePower: number; // 0..1 smoothed visual power
   engineTarget: number; // 0 or 1 based on thrust input
   hasNavigationArray?: boolean;
+  hasUnionMembership?: boolean;
   stats: {
     acc: number; // units/s^2
     drag: number; // s^-1
@@ -75,7 +76,7 @@ export type GameState = {
   buy: (commodityId: string, quantity: number) => void;
   sell: (commodityId: string, quantity: number) => void;
   process: (inputId: string, outputs: number) => void;
-  upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation', amount: number, cost: number) => void;
+  upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union', amount: number, cost: number) => void;
 };
 
 export type RouteSuggestion = {
@@ -134,6 +135,8 @@ const stations: Station[] = [
   { id: 'ceres-pp', name: 'Ceres Power Plant [Cheap: batteries/fuel]', type: 'power_plant', position: [-56, 0, 86], inventory: priceForStation('power_plant', commodities) },
   { id: 'freeport', name: 'Freeport Station [Mixed market]', type: 'trading_post', position: [-40, 0, 70], inventory: priceForStation('trading_post', commodities) },
   { id: 'drydock', name: 'Drydock Shipyard [Upgrades available]', type: 'shipyard', position: [-30, 0, 90], inventory: priceForStation('shipyard', commodities) },
+  // Pirate outpost, off the system plane (y != 0) and far from core
+  { id: 'hidden-cove', name: 'Hidden Cove [Pirate: All fabrication]', type: 'pirate', position: [0, 40, 160], inventory: priceForStation('pirate', commodities) },
 ];
 
 const belts: AsteroidBelt[] = [
@@ -155,6 +158,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     enginePower: 0,
     engineTarget: 0,
     hasNavigationArray: false,
+    hasUnionMembership: false,
     stats: { acc: 12, drag: 1.0, vmax: 12 },
   },
   tradeLog: [],
@@ -164,9 +168,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const state = get();
     const stations = state.stations;
     const cargoCapacity = state.ship.maxCargo;
+    const hasNav = !!state.ship.hasNavigationArray;
+    const hasUnion = !!state.ship.hasUnionMembership;
     const limit = opts?.limit ?? 8;
     const prioritizePerDistance = !!opts?.prioritizePerDistance;
     const suggestions: RouteSuggestion[] = [];
+    const isGated = (id: string) => gatedCommodities.includes(id as any);
     // Direct routes
     for (let i = 0; i < stations.length; i++) {
       const a = stations[i];
@@ -176,6 +183,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         const d = distance(a.position, b.position);
         const keys = Object.keys(a.inventory);
         for (const id of keys) {
+          if (!hasNav && isGated(id)) continue;
           const ai = a.inventory[id];
           const bi = b.inventory[id];
           if (!ai || !bi) continue;
@@ -212,7 +220,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     for (const p of stations) {
       const recipes = processRecipes[p.type] || [];
       if (recipes.length === 0) continue;
+      const canProcessAtP = hasUnion || p.type === 'pirate';
       for (const r of recipes) {
+        if (!canProcessAtP) continue;
+        if (!hasNav && (isGated(r.inputId) || isGated(r.outputId))) continue;
         // Buy input at S
         for (const s of stations) {
           const sItem = s.inventory[r.inputId];
@@ -256,8 +267,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
     const sorter = prioritizePerDistance
-      ? (a: RouteSuggestion, b: RouteSuggestion) => (b.profitPerDistance - a.profitPerDistance) || (b.estProfit - a.estProfit)
-      : (a: RouteSuggestion, b: RouteSuggestion) => (b.estProfit - a.estProfit) || (b.profitPerDistance - a.profitPerDistance);
+      ? (a: RouteSuggestion, b: RouteSuggestion) =>
+          (b.profitPerDistance - a.profitPerDistance)
+          || (b.estProfit - a.estProfit)
+          || (a.tripDistance - b.tripDistance)
+          || a.id.localeCompare(b.id)
+      : (a: RouteSuggestion, b: RouteSuggestion) =>
+          (b.estProfit - a.estProfit)
+          || (b.profitPerDistance - a.profitPerDistance)
+          || (a.tripDistance - b.tripDistance)
+          || a.id.localeCompare(b.id);
     return suggestions.sort(sorter).slice(0, limit);
   },
   tick: (dt) => set((state) => {
@@ -358,6 +377,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
   buy: (commodityId, quantity) => set((state) => {
     if (!state.ship.dockedStationId || quantity <= 0) return state;
+    // Gating for high-profit goods
+    if (!state.ship.hasNavigationArray && (gatedCommodities as readonly string[]).includes(commodityId)) return state;
     const station = state.stations.find(s => s.id === state.ship.dockedStationId);
     if (!station) return state;
     const item = station.inventory[commodityId];
@@ -394,6 +415,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
   sell: (commodityId, quantity) => set((state) => {
     if (!state.ship.dockedStationId || quantity <= 0) return state;
+    // Gating for high-profit goods
+    if (!state.ship.hasNavigationArray && (gatedCommodities as readonly string[]).includes(commodityId)) return state;
     const station = state.stations.find(s => s.id === state.ship.dockedStationId);
     if (!station) return state;
     const item = station.inventory[commodityId];
@@ -452,6 +475,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!station) return state;
     const recipe = findRecipeForStation(station.type, inputId);
     if (!recipe) return state;
+    // Block producing gated outputs without Navigation Array
+    if (!state.ship.hasNavigationArray && (gatedCommodities as readonly string[]).includes(recipe.outputId)) return state;
+    // Require union membership unless at pirate station
+    const atPirate = station.type === 'pirate';
+    if (!atPirate && !state.ship.hasUnionMembership) return state;
     const have = state.ship.cargo[inputId] || 0;
     const maxOutputs = Math.floor(have / recipe.inputPerOutput);
     const outCount = Math.max(0, Math.min(outputs, maxOutputs));
@@ -464,7 +492,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   upgrade: (type, amount, cost) => set((state) => {
     if (!state.ship.dockedStationId) return state;
     const station = state.stations.find(s => s.id === state.ship.dockedStationId);
-    if (!station || station.type !== 'shipyard') return state;
+    if (!station) return state;
+    // Ship upgrades only at shipyard
+    if ((type === 'acc' || type === 'vmax' || type === 'cargo' || type === 'mining' || type === 'navigation') && station.type !== 'shipyard') return state;
     if (state.ship.credits < cost) return state;
     if (type === 'cargo') {
       return { ship: { ...state.ship, credits: state.ship.credits - cost, maxCargo: state.ship.maxCargo + amount } } as Partial<GameState> as GameState;
@@ -476,6 +506,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (type === 'navigation') {
       if (state.ship.hasNavigationArray) return state;
       return { ship: { ...state.ship, credits: state.ship.credits - cost, hasNavigationArray: true } } as Partial<GameState> as GameState;
+    }
+    if (type === 'union') {
+      // Union membership purchasable only at city
+      if (station.type !== 'city') return state;
+      if (state.ship.hasUnionMembership) return state;
+      return { ship: { ...state.ship, credits: state.ship.credits - cost, hasUnionMembership: true } } as Partial<GameState> as GameState;
     }
     const stats = { ...state.ship.stats };
     if (type === 'acc') stats.acc += amount;

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export type StationType = 'refinery' | 'fabricator' | 'power_plant' | 'city' | 'trading_post' | 'mine' | 'farm' | 'research' | 'orbital_hab' | 'shipyard';
+export type StationType = 'refinery' | 'fabricator' | 'power_plant' | 'city' | 'trading_post' | 'mine' | 'farm' | 'research' | 'orbital_hab' | 'shipyard' | 'pirate';
 
 export const CommoditySchema = z.object({
   id: z.string(),
@@ -31,44 +31,74 @@ export type ProcessRecipe = {
 export const processRecipes: Record<StationType, ProcessRecipe[]> = {
   refinery: [
     { inputId: 'iron_ore', outputId: 'steel', inputPerOutput: 2 },
-    { inputId: 'copper_ore', outputId: 'alloys', inputPerOutput: 2 },
-    { inputId: 'silicon', outputId: 'electronics', inputPerOutput: 3 },
+    // Copper refining is more intensive
+    { inputId: 'copper_ore', outputId: 'alloys', inputPerOutput: 3 },
     { inputId: 'hydrogen', outputId: 'refined_fuel', inputPerOutput: 3 },
-    { inputId: 'refined_fuel', outputId: 'plastics', inputPerOutput: 2 },
   ],
   fabricator: [
-    { inputId: 'steel', outputId: 'machinery', inputPerOutput: 2 },
-    { inputId: 'electronics', outputId: 'microchips', inputPerOutput: 2 },
-    { inputId: 'plastics', outputId: 'textiles', inputPerOutput: 3 },
-    { inputId: 'alloys', outputId: 'machinery', inputPerOutput: 2 },
+    // Heavier fabrication requirements for complex goods
+    { inputId: 'steel', outputId: 'machinery', inputPerOutput: 3 },
+    { inputId: 'electronics', outputId: 'microchips', inputPerOutput: 3 },
+    // Synthetic textiles from plastics (1:1)
+    { inputId: 'plastics', outputId: 'textiles', inputPerOutput: 1 },
+    // Electronics are fabricated from processed silicon (moved from refinery)
+    { inputId: 'silicon', outputId: 'electronics', inputPerOutput: 3 },
+    { inputId: 'alloys', outputId: 'machinery', inputPerOutput: 3 },
   ],
   power_plant: [
+    // Fuel to energy storage (2:1 for balance)
     { inputId: 'refined_fuel', outputId: 'batteries', inputPerOutput: 2 },
   ],
   city: [
-    { inputId: 'coffee', outputId: 'luxury_goods', inputPerOutput: 2 },
-    { inputId: 'tobacco', outputId: 'luxury_goods', inputPerOutput: 2 },
-    { inputId: 'spices', outputId: 'luxury_goods', inputPerOutput: 2 },
-    { inputId: 'textiles', outputId: 'luxury_goods', inputPerOutput: 4 },
+    { inputId: 'coffee', outputId: 'luxury_goods', inputPerOutput: 3 },
+    { inputId: 'tobacco', outputId: 'luxury_goods', inputPerOutput: 3 },
+    { inputId: 'spices', outputId: 'luxury_goods', inputPerOutput: 3 },
+    { inputId: 'textiles', outputId: 'luxury_goods', inputPerOutput: 3 },
   ],
   trading_post: [],
   mine: [],
   farm: [
     { inputId: 'grain', outputId: 'meat', inputPerOutput: 3 },
-    { inputId: 'grain', outputId: 'sugar', inputPerOutput: 2 },
     { inputId: 'fertilizer', outputId: 'grain', inputPerOutput: 1 },
   ],
   research: [
     { inputId: 'data_drives', outputId: 'nanomaterials', inputPerOutput: 3 },
     { inputId: 'electronics', outputId: 'data_drives', inputPerOutput: 2 },
-    { inputId: 'medical_supplies', outputId: 'pharmaceuticals', inputPerOutput: 2 },
+    { inputId: 'medical_supplies', outputId: 'pharmaceuticals', inputPerOutput: 3 },
     { inputId: 'microchips', outputId: 'nanomaterials', inputPerOutput: 4 },
   ],
   orbital_hab: [
     { inputId: 'water', outputId: 'oxygen', inputPerOutput: 2 },
   ],
   shipyard: [],
+  pirate: [
+    // Consolidated black-market fabrication: access to all recipes
+    { inputId: 'iron_ore', outputId: 'steel', inputPerOutput: 2 },
+    { inputId: 'copper_ore', outputId: 'alloys', inputPerOutput: 3 },
+    { inputId: 'hydrogen', outputId: 'refined_fuel', inputPerOutput: 3 },
+    { inputId: 'steel', outputId: 'machinery', inputPerOutput: 3 },
+    { inputId: 'alloys', outputId: 'machinery', inputPerOutput: 3 },
+    { inputId: 'silicon', outputId: 'electronics', inputPerOutput: 3 },
+    { inputId: 'electronics', outputId: 'microchips', inputPerOutput: 3 },
+    { inputId: 'plastics', outputId: 'textiles', inputPerOutput: 1 },
+    { inputId: 'refined_fuel', outputId: 'batteries', inputPerOutput: 2 },
+    { inputId: 'coffee', outputId: 'luxury_goods', inputPerOutput: 3 },
+    { inputId: 'tobacco', outputId: 'luxury_goods', inputPerOutput: 3 },
+    { inputId: 'spices', outputId: 'luxury_goods', inputPerOutput: 3 },
+    { inputId: 'textiles', outputId: 'luxury_goods', inputPerOutput: 3 },
+    { inputId: 'grain', outputId: 'meat', inputPerOutput: 3 },
+    { inputId: 'fertilizer', outputId: 'grain', inputPerOutput: 1 },
+    { inputId: 'data_drives', outputId: 'nanomaterials', inputPerOutput: 3 },
+    { inputId: 'electronics', outputId: 'data_drives', inputPerOutput: 2 },
+    { inputId: 'medical_supplies', outputId: 'pharmaceuticals', inputPerOutput: 3 },
+    { inputId: 'microchips', outputId: 'nanomaterials', inputPerOutput: 4 },
+    { inputId: 'water', outputId: 'oxygen', inputPerOutput: 2 },
+  ],
 };
+
+// High-profit goods require Navigation Array to trade
+export const gatedCommodities = ['luxury_goods', 'pharmaceuticals', 'microchips', 'nanomaterials'] as const;
+export type GatedCommodity = typeof gatedCommodities[number];
 
 export function findRecipeForStation(type: StationType, inputId: string): ProcessRecipe | undefined {
   const list = processRecipes[type] || [];
@@ -93,14 +123,14 @@ export function generateCommodities(): Commodity[] {
     { id: 'copper_ore', name: 'Copper Ore', category: 'raw', baseBuy: 45, baseSell: 36 },
     { id: 'silicon', name: 'Silicon', category: 'raw', baseBuy: 50, baseSell: 42 },
     { id: 'steel', name: 'Steel', category: 'industrial', baseBuy: 110, baseSell: 95 },
-    { id: 'alloys', name: 'Advanced Alloys', category: 'industrial', baseBuy: 220, baseSell: 190 },
-    { id: 'electronics', name: 'Electronics', category: 'tech', baseBuy: 250, baseSell: 220 },
-    { id: 'microchips', name: 'Microchips', category: 'tech', baseBuy: 420, baseSell: 370 },
-    { id: 'batteries', name: 'Batteries', category: 'energy', baseBuy: 180, baseSell: 155 },
+    { id: 'alloys', name: 'Advanced Alloys', category: 'industrial', baseBuy: 180, baseSell: 150 },
+    { id: 'electronics', name: 'Electronics', category: 'tech', baseBuy: 210, baseSell: 180 },
+    { id: 'microchips', name: 'Microchips', category: 'tech', baseBuy: 380, baseSell: 320 },
+    { id: 'batteries', name: 'Batteries', category: 'energy', baseBuy: 210, baseSell: 180 },
     { id: 'medical_supplies', name: 'Medical Supplies', category: 'medical', baseBuy: 260, baseSell: 230 },
     { id: 'pharmaceuticals', name: 'Pharmaceuticals', category: 'medical', baseBuy: 360, baseSell: 320 },
-    { id: 'textiles', name: 'Textiles', category: 'consumer', baseBuy: 65, baseSell: 55 },
-    { id: 'plastics', name: 'Plastics', category: 'industrial', baseBuy: 80, baseSell: 68 },
+    { id: 'textiles', name: 'Textiles', category: 'consumer', baseBuy: 150, baseSell: 130 },
+    { id: 'plastics', name: 'Plastics', category: 'industrial', baseBuy: 70, baseSell: 60 },
     { id: 'machinery', name: 'Machinery', category: 'industrial', baseBuy: 520, baseSell: 460 },
     { id: 'fertilizer', name: 'Fertilizer', category: 'industrial', baseBuy: 90, baseSell: 75 },
     { id: 'luxury_goods', name: 'Luxury Goods', category: 'luxury', baseBuy: 800, baseSell: 700 },
@@ -155,7 +185,7 @@ const rulesByType: Record<StationType, StationPriceRules> = {
   fabricator: {
     cheap: ['steel', 'plastics', 'electronics', 'microchips', 'alloys'],
     expensive: ['rare_minerals', 'spices', 'luxury_goods'],
-    stockBoost: { electronics: 100, microchips: 60, alloys: 80 },
+    stockBoost: { electronics: 100, microchips: 60, alloys: 80, plastics: 120 },
   },
   power_plant: {
     cheap: ['batteries', 'refined_fuel'],
@@ -195,6 +225,11 @@ const rulesByType: Record<StationType, StationPriceRules> = {
   shipyard: {
     cheap: [],
     expensive: ['luxury_goods'],
+    stockBoost: {},
+  },
+  pirate: {
+    cheap: [],
+    expensive: ['luxury_goods', 'pharmaceuticals'],
     stockBoost: {},
   },
 };

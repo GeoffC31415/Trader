@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useGameStore } from '../state/game_state';
-import { getPriceBiasForStation, processRecipes } from '../systems/economy';
+import { getPriceBiasForStation, processRecipes, gatedCommodities } from '../systems/economy';
 
 export function MarketPanel() {
   const ship = useGameStore(s => s.ship);
@@ -32,6 +32,10 @@ export function MarketPanel() {
   const visibleItems = items.filter(([_, p]) => (p.canSell !== false) || (p.canBuy !== false));
   const producedItems = visibleItems.filter(([id, _]) => outputSet.has(id));
   const otherItems = visibleItems.filter(([id, _]) => !outputSet.has(id));
+  const hasNav = !!ship.hasNavigationArray;
+  const isGated = (id: string) => (gatedCommodities as readonly string[]).includes(id);
+  const hasUnion = !!ship.hasUnionMembership;
+  const isPirate = station.type === 'pirate';
 
   return (
     <div className="panel">
@@ -64,6 +68,16 @@ export function MarketPanel() {
           </div>
         </div>
       )}
+      {station.type === 'city' && (
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>City Services</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center' }}>
+            <div>Union Membership: {hasUnion ? 'Member' : 'Not a member'}</div>
+            <div>$1,500</div>
+            <button onClick={() => upgrade('union' as any, 0, 1500)} disabled={hasUnion}>{hasUnion ? 'Owned' : 'Buy'}</button>
+          </div>
+        </div>
+      )}
       {/* Fabrication: show all recipes available here, always visible with ratios */}
       <div style={{ marginBottom: 8 }}>
         <div style={{ fontWeight: 700, marginBottom: 4 }}>Fabrication</div>
@@ -74,6 +88,9 @@ export function MarketPanel() {
             {recipes.map(r => {
               const have = ship.cargo[r.inputId] || 0;
               const canMake = Math.floor(have / r.inputPerOutput);
+              const outIsGated = isGated(r.outputId);
+              const unionBlocked = !isPirate && !hasUnion;
+              const navBlocked = !hasNav && outIsGated;
               return (
                 <>
                   <div key={r.inputId+':label'} style={{ textTransform: 'capitalize' }}>
@@ -82,7 +99,13 @@ export function MarketPanel() {
                   </div>
                   <div key={r.inputId+':have'} style={{ opacity: 0.8 }}>Have {have} {r.inputId.replace(/_/g,' ')}</div>
                   <div key={r.inputId+':btn'}>
-                    <button onClick={() => process(r.inputId, 1)} disabled={canMake <= 0}>Make 1</button>
+                    <button onClick={() => process(r.inputId, 1)} disabled={canMake <= 0 || unionBlocked || navBlocked}>Make 1</button>
+                    {(unionBlocked || navBlocked) && (
+                      <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
+                        {!isPirate && !hasUnion ? 'Requires Union Membership' : ''}
+                        {!hasNav && outIsGated ? ( !isPirate && !hasUnion ? ' / ' : '' ) + 'Requires Navigation Array' : ''}
+                      </span>
+                    )}
                   </div>
                 </>
               );
@@ -123,11 +146,23 @@ export function MarketPanel() {
                   </div>
                   <div key={id+':h'}>{ship.cargo[id] || 0}</div>
                   <div key={id+':a'}>
-                    <button onClick={() => buy(id, qty)} style={{ marginRight: 6 }} disabled={p.canSell === false}>Buy {qty}</button>
-                    <button onClick={() => sell(id, qty)} disabled={p.canBuy === false}>Sell {qty}</button>
+                    <button
+                      onClick={() => buy(id, qty)}
+                      style={{ marginRight: 6 }}
+                      disabled={p.canSell === false || (!hasNav && isGated(id))}
+                    >Buy {qty}</button>
+                    <button
+                      onClick={() => sell(id, qty)}
+                      disabled={p.canBuy === false || (!hasNav && isGated(id))}
+                    >Sell {qty}</button>
                     {(p.canSell === false || p.canBuy === false) && (
                       <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
                         {p.canSell === false && p.canBuy === false ? 'Not traded here' : p.canSell === false ? 'Not sold here' : 'Not bought here'}
+                      </span>
+                    )}
+                    {!hasNav && isGated(id) && (
+                      <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
+                        Requires Navigation Array
                       </span>
                     )}
                   </div>
@@ -158,11 +193,23 @@ export function MarketPanel() {
                   </div>
                   <div key={id+':h'}>{ship.cargo[id] || 0}</div>
                   <div key={id+':a'}>
-                    <button onClick={() => buy(id, qty)} style={{ marginRight: 6 }} disabled={p.canSell === false}>Buy {qty}</button>
-                    <button onClick={() => sell(id, qty)} disabled={p.canBuy === false}>Sell {qty}</button>
+                    <button
+                      onClick={() => buy(id, qty)}
+                      style={{ marginRight: 6 }}
+                      disabled={p.canSell === false || (!hasNav && isGated(id))}
+                    >Buy {qty}</button>
+                    <button
+                      onClick={() => sell(id, qty)}
+                      disabled={p.canBuy === false || (!hasNav && isGated(id))}
+                    >Sell {qty}</button>
                     {(p.canSell === false || p.canBuy === false) && (
                       <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
                         {p.canSell === false && p.canBuy === false ? 'Not traded here' : p.canSell === false ? 'Not sold here' : 'Not bought here'}
+                      </span>
+                    )}
+                    {!hasNav && isGated(id) && (
+                      <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
+                        Requires Navigation Array
                       </span>
                     )}
                   </div>

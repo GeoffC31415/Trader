@@ -1,6 +1,7 @@
 import { StrictMode, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Stars } from '@react-three/drei';
+import { Stars, Environment } from '@react-three/drei';
+import * as THREE from 'three';
 import { SceneRoot } from './scene/scene_root';
 import { MarketPanel } from './ui/market_panel';
 import { JournalPanel } from './ui/journal_panel';
@@ -20,13 +21,32 @@ export function App() {
           </div>
           {active === 'market' ? <MarketPanel /> : <JournalPanel />}
         </div>
+        <div className="vignette" />
         {hasNav && <Minimap />}
-        <Canvas camera={{ position: [0, 30, 60], fov: 60 }}>
+        <Canvas
+          camera={{ position: [0, 30, 60], fov: 60 }}
+          dpr={[1, 2]}
+          shadows
+          onCreated={(state) => {
+            state.gl.toneMapping = THREE.ACESFilmicToneMapping;
+            // @ts-expect-error - three typings still allow outputEncoding on some versions
+            state.gl.outputColorSpace = THREE.SRGBColorSpace;
+          }}
+        >
           <color attach="background" args={[0x03060b]} />
-          <ambientLight intensity={0.35} />
-          <hemisphereLight args={["#cfe8ff", "#0b1020", 0.6]} />
-          <directionalLight position={[-30, 40, 20]} intensity={1.0} />
-          <pointLight position={[50, 50, 50]} intensity={1.5} />
+          <fog attach="fog" args={["#0a0e16", 30, 220]} />
+          <ambientLight intensity={0.25} />
+          <hemisphereLight args={["#cfe8ff", "#0b1020", 0.5]} />
+          <directionalLight
+            position={[-30, 40, 20]}
+            intensity={1.2}
+            castShadow
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+            shadow-bias={-0.0005}
+          />
+          <pointLight position={[50, 50, 50]} intensity={0.9} distance={200} />
+          <Environment preset="city" intensity={0.3} />
           <Stars radius={200} depth={50} count={2000} factor={4} saturation={0} fade speed={1} />
           <SceneRoot />
         </Canvas>

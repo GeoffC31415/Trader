@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../state/game_state';
-import { Html } from '@react-three/drei';
+import { Html, Grid, ContactShadows, Sparkles } from '@react-three/drei';
 
 function Planet({ position, radius, name, color = '#2b3b55', isStar = false }: { position: [number, number, number]; radius: number; name: string; color?: string; isStar?: boolean }) {
   return (
     <group position={position as any}>
-      <mesh>
+      <mesh castShadow receiveShadow>
         <sphereGeometry args={[radius, 48, 48]} />
         {isStar ? (
           <meshStandardMaterial color={new THREE.Color(color)} emissive={new THREE.Color(color)} emissiveIntensity={1.2} roughness={0.3} metalness={0.0} />
@@ -26,7 +26,7 @@ function Planet({ position, radius, name, color = '#2b3b55', isStar = false }: {
 function StationBox({ position, name, color = '#7dd3fc' }: { position: [number, number, number]; name: string; color?: string }) {
   return (
     <group position={position as any}>
-      <mesh>
+      <mesh castShadow receiveShadow>
         <boxGeometry args={[4, 2, 4]} />
         <meshStandardMaterial color={new THREE.Color(color)} roughness={0.7} metalness={0.1} />
       </mesh>
@@ -38,11 +38,11 @@ function StationBox({ position, name, color = '#7dd3fc' }: { position: [number, 
 function ShipyardVisual({ position, name }: { position: [number, number, number]; name: string }) {
   return (
     <group position={position as any}>
-      <mesh>
+      <mesh castShadow receiveShadow>
         <torusKnotGeometry args={[3, 0.5, 120, 32]} />
         <meshStandardMaterial color={new THREE.Color('#34d399')} metalness={0.6} roughness={0.2} emissive={new THREE.Color('#10b981')} emissiveIntensity={0.2} />
       </mesh>
-      <mesh position={[0, -2.5, 0]}>
+      <mesh position={[0, -2.5, 0]} castShadow receiveShadow>
         <cylinderGeometry args={[2, 2, 1, 24]} />
         <meshStandardMaterial color={new THREE.Color('#065f46')} metalness={0.3} roughness={0.6} />
       </mesh>
@@ -64,6 +64,7 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
     research: '#67e8f9',
     orbital_hab: '#e5e7eb',
     shipyard: '#34d399',
+    pirate: '#a855f7',
   } as Record<string, string>), []);
 
   const accent = useMemo(() => ({
@@ -77,6 +78,7 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
     research: '#22d3ee',
     orbital_hab: '#94a3b8',
     shipyard: '#10b981',
+    pirate: '#7c3aed',
   } as Record<string, string>), []);
 
   return (
@@ -154,6 +156,18 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
           <mesh position={[0, 0.8, 0]} rotation={[0, 0, 0]}>
             <octahedronGeometry args={[0.9, 0]} />
             <meshStandardMaterial color={new THREE.Color(accent.trading_post)} metalness={0.5} roughness={0.3} />
+          </mesh>
+        </group>
+      )}
+      {type === 'pirate' && (
+        <group>
+          <mesh>
+            <boxGeometry args={[3.6, 1.0, 3.6]} />
+            <meshStandardMaterial color={new THREE.Color(base.pirate)} metalness={0.6} roughness={0.4} emissive={new THREE.Color('#4c1d95')} emissiveIntensity={0.2} />
+          </mesh>
+          <mesh position={[0, 1.0, 0]} rotation={[0, 0, 0]}>
+            <dodecahedronGeometry args={[0.9, 0]} />
+            <meshStandardMaterial color={new THREE.Color(accent.pirate)} metalness={0.7} roughness={0.3} />
           </mesh>
         </group>
       )}
