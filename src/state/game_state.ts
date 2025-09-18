@@ -46,6 +46,15 @@ export type Ship = {
   };
 };
 
+export type NpcTrader = {
+  id: string;
+  commodityId: Commodity['id'];
+  fromId: string;
+  toId: string;
+  position: [number, number, number];
+  speed: number; // units per second, derived from commodity cost
+};
+
 export type TradeEntry = {
   id: string;
   time: number; // epoch ms
@@ -63,6 +72,7 @@ export type GameState = {
   planets: Planet[];
   stations: Station[];
   belts: AsteroidBelt[];
+  npcTraders: NpcTrader[];
   ship: Ship;
   hasChosenStarter: boolean;
   tradeLog: TradeEntry[];
@@ -121,6 +131,78 @@ function clampMagnitude(v: [number, number, number], maxLen: number): [number, n
 }
 
 const commodities = generateCommodities();
+const commodityById: Record<string, Commodity> = Object.fromEntries(commodities.map(c => [c.id, c]));
+const minCost = commodities.reduce((m, c) => Math.min(m, c.baseBuy), Number.POSITIVE_INFINITY);
+const maxCost = commodities.reduce((m, c) => Math.max(m, c.baseBuy), 0);
+
+function speedForCommodity(commodityId: string): number {
+  const c = commodityById[commodityId];
+  if (!c) return 10;
+  const t = (c.baseBuy - minCost) / Math.max(1e-6, (maxCost - minCost)); // 0=cheapest,1=most expensive
+  const inv = 1 - t;
+  const minSpeed = 6; // slowest for most expensive
+  const maxSpeed = 16; // fastest for cheapest
+  return minSpeed + inv * (maxSpeed - minSpeed);
+}
+
+type DirectRoute = {
+  id: string;
+  fromId: string;
+  toId: string;
+  commodityId: string;
+  unitBuy: number;
+  unitSell: number;
+  margin: number;
+  distance: number;
+};
+
+function computeDirectRoutes(stations: Station[]): DirectRoute[] {
+  const routes: DirectRoute[] = [];
+  for (let i = 0; i < stations.length; i++) {
+    const a = stations[i];
+    for (let j = 0; j < stations.length; j++) {
+      if (i === j) continue;
+      const b = stations[j];
+      const d = distance(a.position, b.position);
+      const keys = Object.keys(a.inventory);
+      for (const id of keys) {
+        const ai = a.inventory[id];
+        const bi = b.inventory[id];
+        if (!ai || !bi) continue;
+        if (ai.canSell === false) continue; // cannot buy from A
+        if (bi.canBuy === false) continue; // cannot sell to B
+        const margin = bi.sell - ai.buy;
+        if (margin <= 0) continue;
+        routes.push({ id: `r:${id}:${a.id}->${b.id}`, fromId: a.id, toId: b.id, commodityId: id, unitBuy: ai.buy, unitSell: bi.sell, margin, distance: d });
+      }
+    }
+  }
+  // Sort by desirability: margin/distance then margin
+  routes.sort((a, b) => (b.margin / Math.max(1, b.distance)) - (a.margin / Math.max(1, a.distance)) || (b.margin - a.margin));
+  return routes;
+}
+
+function spawnNpcTraders(stations: Station[], count: number): NpcTrader[] {
+  const routes = computeDirectRoutes(stations);
+  const pick: NpcTrader[] = [];
+  const byId: Record<string, Station> = Object.fromEntries(stations.map(s => [s.id, s]));
+  for (let i = 0; i < routes.length && pick.length < count; i++) {
+    const r = routes[i];
+    const from = byId[r.fromId];
+    const speed = speedForCommodity(r.commodityId);
+    const jitter: [number, number, number] = [ (Math.random()-0.5)*0.8, (Math.random()-0.5)*0.4, (Math.random()-0.5)*0.8 ];
+    const position: [number, number, number] = [ from.position[0] + jitter[0], from.position[1] + jitter[1], from.position[2] + jitter[2] ];
+    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed });
+  }
+  // If not enough routes, duplicate with random choices
+  while (pick.length < count && routes.length > 0) {
+    const r = routes[Math.floor(Math.random() * routes.length)];
+    const from = byId[r.fromId];
+    const speed = speedForCommodity(r.commodityId);
+    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position: [from.position[0], from.position[1], from.position[2]], speed });
+  }
+  return pick;
+}
 const planets: Planet[] = [
   { id: 'sun', name: 'Sol', position: [0, 0, 0], radius: 12, color: '#ffd27f', isStar: true },
   // Orbits around the sun
@@ -151,6 +233,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   planets,
   stations,
   belts,
+  npcTraders: spawnNpcTraders(stations, 24),
   ship: {
     position: [50, 0, 8],
     velocity: [0, 0, 0],
@@ -327,7 +410,59 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
     }
 
-    return { ship: { ...state.ship, position, velocity: [vx, vy, vz], enginePower }, stations } as Partial<GameState> as GameState;
+    // Update NPC traders
+    const stationById: Record<string, Station> = Object.fromEntries(stations.map(s => [s.id, s]));
+    const stationStockDelta: Record<string, Record<string, number>> = {};
+    const npcTraders: NpcTrader[] = state.npcTraders.map(npc => {
+      const dest = stationById[npc.toId];
+      const src = stationById[npc.fromId];
+      if (!dest || !src) return npc;
+      const dx = dest.position[0] - npc.position[0];
+      const dy = dest.position[1] - npc.position[1];
+      const dz = dest.position[2] - npc.position[2];
+      const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      const step = npc.speed * dt;
+      if (dist <= step || dist < 0.5) {
+        // Arrived: apply a small delivery and swap direction
+        const deliver = 3;
+        const srcInv = src.inventory[npc.commodityId];
+        const dstInv = dest.inventory[npc.commodityId];
+        if (srcInv && srcInv.canSell !== false && dstInv && dstInv.canBuy !== false) {
+          stationStockDelta[src.id] = stationStockDelta[src.id] || {};
+          stationStockDelta[src.id][npc.commodityId] = (stationStockDelta[src.id][npc.commodityId] || 0) - deliver;
+          stationStockDelta[dest.id] = stationStockDelta[dest.id] || {};
+          stationStockDelta[dest.id][npc.commodityId] = (stationStockDelta[dest.id][npc.commodityId] || 0) + deliver;
+        }
+        // Swap route and reset position to exact destination (start next leg)
+        const next: NpcTrader = { ...npc, position: [dest.position[0], dest.position[1], dest.position[2]], fromId: npc.toId, toId: npc.fromId };
+        return next;
+      }
+      const ux = dx / dist;
+      const uy = dy / dist;
+      const uz = dz / dist;
+      const nx = npc.position[0] + ux * step;
+      const ny = npc.position[1] + uy * step;
+      const nz = npc.position[2] + uz * step;
+      return { ...npc, position: [nx, ny, nz] };
+    });
+
+    // Apply accumulated station stock changes (clamped at >= 0)
+    if (Object.keys(stationStockDelta).length > 0) {
+      stations = stations.map(s => {
+        const delta = stationStockDelta[s.id];
+        if (!delta) return s;
+        const inv: StationInventory = { ...s.inventory };
+        for (const cid of Object.keys(delta)) {
+          const item = inv[cid];
+          if (!item) continue;
+          const nextStock = Math.max(0, (item.stock || 0) + delta[cid]);
+          inv[cid] = { ...item, stock: nextStock };
+        }
+        return { ...s, inventory: inv };
+      });
+    }
+
+    return { ship: { ...state.ship, position, velocity: [vx, vy, vz], enginePower }, stations, npcTraders } as Partial<GameState> as GameState;
   }),
   thrust: (dir, dt) => set((state) => {
     if (!state.hasChosenStarter) return state;

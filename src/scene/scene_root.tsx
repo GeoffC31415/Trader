@@ -4,6 +4,48 @@ import * as THREE from 'three';
 import { useGameStore } from '../state/game_state';
 import { Html, Grid, ContactShadows, Sparkles } from '@react-three/drei';
 
+function colorFromCommodity(id: string): string {
+  const palette: Record<string, string> = {
+    refined_fuel: '#f59e0b',
+    hydrogen: '#60a5fa',
+    oxygen: '#93c5fd',
+    water: '#3b82f6',
+    sugar: '#f97316',
+    coffee: '#6b4f1d',
+    tobacco: '#92400e',
+    grain: '#84cc16',
+    meat: '#ef4444',
+    spices: '#eab308',
+    rare_minerals: '#a78bfa',
+    iron_ore: '#9ca3af',
+    copper_ore: '#f59e0b',
+    silicon: '#22d3ee',
+    steel: '#6b7280',
+    alloys: '#64748b',
+    electronics: '#06b6d4',
+    microchips: '#14b8a6',
+    batteries: '#10b981',
+    medical_supplies: '#f43f5e',
+    pharmaceuticals: '#e11d48',
+    textiles: '#f472b6',
+    plastics: '#fca5a5',
+    machinery: '#f59e0b',
+    fertilizer: '#65a30d',
+    luxury_goods: '#f472b6',
+    data_drives: '#38bdf8',
+    nanomaterials: '#22c55e',
+  };
+  const known = (palette as any)[id];
+  if (known) return known;
+  let h = 0 >>> 0;
+  for (let i = 0; i < id.length; i++) {
+    h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  }
+  const hue = (h % 360) / 360;
+  const c = new THREE.Color().setHSL(hue, 0.65, 0.55);
+  return `#${c.getHexString()}`;
+}
+
 function Planet({ position, radius, name, color = '#2b3b55', isStar = false }: { position: [number, number, number]; radius: number; name: string; color?: string; isStar?: boolean }) {
   return (
     <group position={position as any}>
@@ -500,6 +542,7 @@ export function SceneRoot() {
   const planets = useGameStore(s => s.planets);
   const stations = useGameStore(s => s.stations);
   const belts = useGameStore(s => s.belts);
+  const npcTraders = useGameStore(s => s.npcTraders);
   const tick = useGameStore(s => s.tick);
   const thrust = useGameStore(s => s.thrust);
   const setEngineTarget = useGameStore(s => s.setEngineTarget);
@@ -613,6 +656,16 @@ export function SceneRoot() {
               </div>
             </Html>
           )}
+        </group>
+      ))}
+      {/* NPC trader spheres */}
+      {npcTraders.map(n => (
+        <group key={n.id} position={n.position as any}>
+          <mesh castShadow>
+            <sphereGeometry args={[0.6, 16, 16]} />
+            {/* Commodity color mapping via HSL from id hash for visual distinction; expensive goods slower already */}
+            <meshStandardMaterial color={new THREE.Color(colorFromCommodity(n.commodityId))} metalness={0.2} roughness={0.6} />
+          </mesh>
         </group>
       ))}
       <Ship turnLeft={!!pressed.current['a']} turnRight={!!pressed.current['d']} />
