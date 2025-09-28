@@ -16,7 +16,6 @@ export function usePoll(triggerMs: number): number {
     };
   }, [triggerMs]);
 
-  // We return Date.now() to allow using it as a dependency when needed
   return Date.now();
 }
 

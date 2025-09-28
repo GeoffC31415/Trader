@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useGameStore } from '../state/game_state';
-import { shipCaps, shipBaseStats } from '../state/game_state';
-import { getPriceBiasForStation, processRecipes, gatedCommodities } from '../systems/economy';
-import type { StationType } from '../systems/economy';
+import { useEffect, useMemo, useState, Fragment } from 'react';
+import { useGameStore } from '../state';
+import { shipCaps, shipBaseStats } from '../state';
+import { getPriceBiasForStation, gatedCommodities } from '../systems/economy/pricing';
+import { processRecipes } from '../systems/economy/recipes';
+import type { StationType } from '../domain/types/economy_types';
 
 function getHallLabel(type: StationType): string {
   if (type === 'city') return 'Civic Exchange';
@@ -216,7 +217,7 @@ export function MarketPanel() {
                   const bias = getPriceBiasForStation(station.type, id);
                   const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
                   return (
-                    <>
+                    <Fragment key={id}>
                       <div key={id+':n'} style={{textTransform:'capitalize'}}>{id.replace(/_/g,' ')}</div>
                       <div key={id+':p'} style={{ color }}>
                         <span>${p.buy}</span>
@@ -244,7 +245,7 @@ export function MarketPanel() {
                           </span>
                         )}
                       </div>
-                    </>
+                    </Fragment>
                   );
                 })}
               </div>
@@ -267,7 +268,7 @@ export function MarketPanel() {
                 const unionBlocked = !isPirate && !hasUnion;
                 const navBlocked = !hasNav && outIsGated;
                 return (
-                  <>
+                  <Fragment key={r.inputId}>
                     <div key={r.inputId+':label'} style={{ textTransform: 'capitalize' }}>
                       {r.inputId.replace(/_/g,' ')} → {r.outputId.replace(/_/g,' ')}
                       <span style={{ opacity: 0.7 }}> ( {r.inputPerOutput}:1 )</span>
@@ -282,7 +283,7 @@ export function MarketPanel() {
                         </span>
                       )}
                     </div>
-                  </>
+                  </Fragment>
                 );
               })}
             </div>
@@ -315,7 +316,7 @@ export function MarketPanel() {
                 const bias = getPriceBiasForStation(station.type, id);
                 const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
                 return (
-                  <>
+                  <Fragment key={id}>
                     <div key={id+':n'} style={{textTransform:'capitalize'}}>{id.replace(/_/g,' ')}</div>
                     <div key={id+':p'} style={{ color }}>
                       <span>${p.buy}</span>
@@ -343,7 +344,7 @@ export function MarketPanel() {
                         </span>
                       )}
                     </div>
-                  </>
+                  </Fragment>
                 );
               })}
             </div>

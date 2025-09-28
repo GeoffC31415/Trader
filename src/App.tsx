@@ -7,7 +7,7 @@ import { MarketPanel } from './ui/market_panel';
 import { JournalPanel } from './ui/journal_panel';
 import { TradersPanel } from './ui/traders_panel';
 import { Minimap } from './ui/minimap';
-import { useGameStore } from './state/game_state';
+import { useGameStore } from './state';
 import { DockIntro } from './ui/dock_intro';
 
 export function App() {

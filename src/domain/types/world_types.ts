@@ -1,4 +1,5 @@
-import type { Commodity, StationType, StationInventory } from '../domain/types/economy_types';
+import type { Commodity, StationInventory } from '../types/economy_types';
+import type { StationType } from '../types/economy_types';
 
 export type StationPersona = {
   id: string;

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { usePoll } from './use_poll';
-import { useGameStore } from '../state/game_state';
+import { usePoll } from '../shared/hooks/use_poll';
+import { useGameStore } from '../state';
 
 export function JournalPanel() {
   const ship = useGameStore(s => s.ship);

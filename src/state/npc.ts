@@ -1,7 +1,7 @@
-import type { Station, NpcTrader } from './types';
-import { distance, add, sub, normalize, scale, quadraticBezier, lerp } from './math';
+import type { Station, NpcTrader } from '../domain/types/world_types';
+import { distance, add, sub, normalize, scale, quadraticBezier, lerp } from '../shared/math/vec3';
 import { commodities } from './world';
-import { SCALE } from './constants';
+import { SCALE } from '../domain/constants/world_constants';
 
 const commodityById = Object.fromEntries(commodities.map(c => [c.id, c]));
 

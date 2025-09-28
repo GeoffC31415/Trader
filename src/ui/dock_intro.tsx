@@ -1,5 +1,5 @@
 import { useMemo, useEffect } from 'react';
-import { useGameStore } from '../state/game_state';
+import { useGameStore } from '../state';
 
 // Import all generated avatars as URLs via Vite's glob import
 const avatarModules = import.meta.glob('../../generated_avatars/*.png', { eager: true, as: 'url' }) as Record<string, string>;

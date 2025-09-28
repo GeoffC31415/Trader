@@ -1,11 +1,13 @@
 import { create } from 'zustand';
-import { ensureSpread, processRecipes, gatedCommodities, findRecipeForStation } from '../systems/economy';
-import { SCALE, sp, shipCaps } from './constants';
-import { distance, clampMagnitude } from './math';
+import { ensureSpread, gatedCommodities } from '../systems/economy/pricing';
+import { processRecipes, findRecipeForStation } from '../systems/economy/recipes';
+import { SCALE, sp } from '../domain/constants/world_constants';
+import { shipCaps } from '../domain/constants/ship_constants';
+import { distance, clampMagnitude } from '../shared/math/vec3';
 import { planets, stations as initialStations, belts } from './world';
 import { spawnNpcTraders, planNpcPath } from './npc';
-import type { GameState, RouteSuggestion, Ship, Station } from './types';
-import type { StationInventory } from '../systems/economy';
+import type { GameState, RouteSuggestion, Ship, Station } from '../domain/types/world_types';
+import type { StationInventory } from '../domain/types/economy_types';
 
 export const useGameStore = create<GameState>((set, get) => ({
   planets,

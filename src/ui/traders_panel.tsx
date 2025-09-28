@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { usePoll } from './use_poll';
-import { useGameStore } from '../state/game_state';
+import { usePoll } from '../shared/hooks/use_poll';
+import { useGameStore } from '../state';
 
 type Vec3 = [number, number, number];
 

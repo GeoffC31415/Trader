@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useGameStore } from '../state/game_state';
-import { Html, Grid, ContactShadows, Sparkles } from '@react-three/drei';
+import { useGameStore } from '../state';
+import { Html, Sparkles } from '@react-three/drei';
+import type { StationType } from '../domain/types/economy_types';
 
 const SCALE = 10;
 
@@ -48,24 +49,7 @@ function colorFromCommodity(id: string): string {
   return `#${c.getHexString()}`;
 }
 
-function Planet({ position, radius, name, color = '#2b3b55', isStar = false }: { position: [number, number, number]; radius: number; name: string; color?: string; isStar?: boolean }) {
-  return (
-    <group position={position as any}>
-      <mesh castShadow receiveShadow>
-        <sphereGeometry args={[radius, 48, 48]} />
-        {isStar ? (
-          <meshStandardMaterial color={new THREE.Color(color)} emissive={new THREE.Color(color)} emissiveIntensity={1.2} roughness={0.3} metalness={0.0} />
-        ) : (
-          <meshStandardMaterial color={new THREE.Color(color)} roughness={0.85} metalness={0.05} />
-        )}
-      </mesh>
-      {isStar && (
-        <pointLight args={[new THREE.Color(color), 1.5, 500, 2]} />
-      )}
-      <Html center distanceFactor={40}><div style={{ fontSize: 28, opacity: 0.8 }}>{name}</div></Html>
-    </group>
-  );
-}
+import { Planet } from './components/primitives/Planet';
 
 function StationBox({ position, name, color = '#7dd3fc' }: { position: [number, number, number]; name: string; color?: string }) {
   return (
@@ -95,7 +79,7 @@ function ShipyardVisual({ position, name, hideLabel = false }: { position: [numb
   );
 }
 
-function StationVisual({ position, name, type, hideLabel = false }: { position: [number, number, number]; name: string; type: import('../systems/economy').StationType; hideLabel?: boolean }) {
+function StationVisual({ position, name, type, hideLabel = false }: { position: [number, number, number]; name: string; type: StationType; hideLabel?: boolean }) {
   // Base color palette by function (subtle, desaturated)
   const base = useMemo(() => ({
     refinery: '#9a7b4f',
@@ -501,47 +485,9 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
   );
 }
 
-function PlaneGrid() {
-  return (
-    <>
-      <Grid
-        infiniteGrid
-        cellSize={2}
-        cellThickness={0.6}
-        sectionSize={20}
-        sectionThickness={1.0}
-        fadeDistance={120}
-        fadeStrength={2}
-        followCamera
-        position={[0, -0.01, 0] as any}
-        args={[400, 400] as any}
-      />
-      <ContactShadows
-        position={[0, -0.02, 0] as any}
-        opacity={0.6}
-        width={200}
-        height={200}
-        blur={2}
-        far={40}
-        resolution={1024}
-        color="#000000"
-        frames={1}
-      />
-    </>
-  );
-}
+import { PlaneGrid } from './components/primitives/PlaneGrid';
 
-function BeltRing({ position, radius, name }: { position: [number, number, number]; radius: number; name: string }) {
-  return (
-    <group position={position as any}>
-      <mesh rotation={[Math.PI / 2, 0, 0]} receiveShadow>
-        <torusGeometry args={[radius, 0.5, 16, 120]} />
-        <meshStandardMaterial color={new THREE.Color('#9ca3af')} roughness={0.9} metalness={0.1} />
-      </mesh>
-      <Html center distanceFactor={12}><div style={{ fontSize: 12 }}>{name}</div></Html>
-    </group>
-  );
-}
+import { BeltRing } from './components/primitives/BeltRing';
 
 export function SceneRoot() {
   const planets = useGameStore(s => s.planets);
