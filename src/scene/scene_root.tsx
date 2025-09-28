@@ -4,6 +4,8 @@ import * as THREE from 'three';
 import { useGameStore } from '../state/game_state';
 import { Html, Grid, ContactShadows, Sparkles } from '@react-three/drei';
 
+const SCALE = 10;
+
 function colorFromCommodity(id: string): string {
   const palette: Record<string, string> = {
     refined_fuel: '#f59e0b',
@@ -552,6 +554,8 @@ export function SceneRoot() {
   const ship = useGameStore(s => s.ship);
   const { camera } = useThree();
   const cameraTarget = useRef<THREE.Vector3>(new THREE.Vector3());
+  const yawRef = useRef<number>(0);
+  const isDragging = useRef<boolean>(false);
 
   const pressed = useRef<Record<string, boolean>>({});
 
@@ -559,11 +563,9 @@ export function SceneRoot() {
     const dt = Math.min(delta, 0.05);
     // Movement input evaluated every frame: WSAD on station plane, RF vertical
     const up = new THREE.Vector3(0, 1, 0);
-    const camForward = new THREE.Vector3();
-    camera.getWorldDirection(camForward);
-    let fwdPlanar = camForward.clone().projectOnPlane(up);
-    if (fwdPlanar.lengthSq() < 1e-6) fwdPlanar.set(0, 0, -1); // fallback if looking straight up/down
-    fwdPlanar.normalize();
+    const yaw = yawRef.current;
+    // Forward direction on XZ plane derived from yaw around world Z
+    const fwdPlanar = new THREE.Vector3(Math.sin(yaw), 0, -Math.cos(yaw));
     const rightPlanar = new THREE.Vector3().crossVectors(fwdPlanar, up).normalize();
 
     const dir = new THREE.Vector3();
@@ -596,6 +598,21 @@ export function SceneRoot() {
   });
 
   useEffect(() => {
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button === 1) { // middle mouse
+        isDragging.current = true;
+        e.preventDefault();
+      }
+    };
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button === 1) {
+        isDragging.current = false;
+      }
+    };
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      yawRef.current += (e.movementX || 0) * 0.005; // sensitivity
+    };
     const onKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
       if (key === 'e') { tryDock(); return; }
@@ -607,9 +624,15 @@ export function SceneRoot() {
       const key = e.key.toLowerCase();
       pressed.current[key] = false;
     };
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
+    window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     return () => {
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
@@ -630,7 +653,7 @@ export function SceneRoot() {
               ship.position[1]-b.position[1],
               ship.position[2]-b.position[2]
             ) - b.radius
-          ) < 6 && !ship.dockedStationId && (
+          ) < 6 * SCALE && !ship.dockedStationId && (
             <Html position={[b.position[0], b.position[1]+3, b.position[2]]} center distanceFactor={60}>
               <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6 }}>
                 <span style={{ fontSize: 12, opacity: 0.5 }}>
@@ -649,7 +672,7 @@ export function SceneRoot() {
             ship.position[0]-s.position[0],
             ship.position[1]-s.position[1],
             ship.position[2]-s.position[2]
-          ) < 8 && !ship.dockedStationId && (
+          ) < 6 * SCALE && !ship.dockedStationId && (
             <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center distanceFactor={60}>
               <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6 }}>
                 <span style={{ fontSize: 12, opacity: 0.5 }}>Press E to Dock</span>

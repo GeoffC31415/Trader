@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { usePoll } from './use_poll';
 import { useGameStore } from '../state/game_state';
 
 export function JournalPanel() {
@@ -7,6 +8,7 @@ export function JournalPanel() {
   const tradeLog = useGameStore(s => s.tradeLog);
   const profitByCommodity = useGameStore(s => s.profitByCommodity);
   const getSuggestedRoutes = useGameStore(s => s.getSuggestedRoutes);
+  const routesPoll = usePoll(2000);
 
   const [tab, setTab] = useState<'ship' | 'trades' | 'routes'>('ship');
   const [page, setPage] = useState<number>(1);
@@ -102,25 +104,45 @@ export function JournalPanel() {
       {tab === 'routes' && (
         <div>
           <div style={{ fontWeight: 700, marginBottom: 6 }}>Suggested Routes</div>
-          <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
-            <div style={{ fontWeight: 700 }}>Route</div>
-            <div style={{ fontWeight: 700 }}>Commodity</div>
+          <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
+            <div style={{ fontWeight: 700 }}>Plan</div>
             <div style={{ fontWeight: 700 }}>Units</div>
             <div style={{ fontWeight: 700 }}>Unit Margin</div>
             <div style={{ fontWeight: 700 }}>Est. Profit</div>
-            {getSuggestedRoutes({ limit: 10, prioritizePerDistance: true }).map(r => (
+            {routesPoll && getSuggestedRoutes({ limit: 10, prioritizePerDistance: true }).map(r => (
               <>
-                <div key={r.id+':r'}>
+                <div key={r.id+':plan'}>
                   {r.kind === 'direct'
-                    ? `${r.fromName} → ${r.toName}`
-                    : `${r.fromName} → ${r.viaName} → ${r.toName}`}
-                </div>
-                <div key={r.id+':c'} style={{ textTransform:'capitalize' }}>
-                  {r.kind === 'direct' ? r.inputId.replace(/_/g,' ') : `${r.inputId.replace(/_/g,' ')} → ${r.outputId.replace(/_/g,' ')}`}
+                    ? `Buy ${r.maxUnits} ${r.inputId.replace(/_/g,' ')} at ${r.fromName} → Sell at ${r.toName}`
+                    : (() => {
+                        const inputUnits = Math.ceil(r.maxUnits * r.inputPerOutput);
+                        return `Buy ${inputUnits} ${r.inputId.replace(/_/g,' ')} at ${r.fromName} → Process at ${r.viaName} → Sell ${r.maxUnits} ${r.outputId.replace(/_/g,' ')} at ${r.toName}`;
+                      })()
+                  }
                 </div>
                 <div key={r.id+':u'}>{r.maxUnits}</div>
                 <div key={r.id+':m'}>${r.unitMargin.toFixed(0)}</div>
                 <div key={r.id+':p'}>${r.estProfit.toFixed(0)}</div>
+                <div key={r.id+':details'} style={{ gridColumn: '1 / -1', opacity: 0.8 }}>
+                  {r.kind === 'direct' ? (
+                    <>
+                      <span style={{ textTransform:'capitalize' }}>{r.inputId.replace(/_/g,' ')}</span>
+                      {` per unit: buy @ $${r.unitBuy.toFixed(0)} → sell @ $${r.unitSell.toFixed(0)}`}
+                    </>
+                  ) : (
+                    (() => {
+                      const inputUnits = Math.ceil(r.maxUnits * r.inputPerOutput);
+                      const inputName = r.inputId.replace(/_/g,' ');
+                      const outputName = r.outputId.replace(/_/g,' ');
+                      return (
+                        <>
+                          <span style={{ textTransform:'capitalize' }}>{inputName}</span>
+                          {` → ${outputName}: buy ${inputUnits} @ $${r.unitBuy.toFixed(0)} at ${r.fromName} → process ${r.inputPerOutput}:1 at ${r.viaName} → sell ${r.maxUnits} @ $${r.unitSell.toFixed(0)} at ${r.toName}`}
+                        </>
+                      );
+                    })()
+                  )}
+                </div>
               </>
             ))}
           </div>

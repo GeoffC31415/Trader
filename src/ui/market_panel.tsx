@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useGameStore } from '../state/game_state';
+import { shipCaps, shipBaseStats } from '../state/game_state';
 import { getPriceBiasForStation, processRecipes, gatedCommodities } from '../systems/economy';
 
 export function MarketPanel() {
@@ -10,6 +11,7 @@ export function MarketPanel() {
   const undock = useGameStore(s => s.undock);
   const process = useGameStore(s => s.process);
   const upgrade = useGameStore(s => s.upgrade);
+  const replaceShip = useGameStore(s => s.replaceShip);
 
   const [qty, setQty] = useState<number>(1);
 
@@ -48,8 +50,54 @@ export function MarketPanel() {
       </div>
       {station.type === 'shipyard' && (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>Shipyard Upgrades</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center' }}>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>Shipyard</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ opacity: 0.8 }}>Current Ship: {ship.kind}</div>
+            <div></div>
+            <div></div>
+            <div style={{ gridColumn: '1 / span 3', opacity: 0.8 }}>
+              <div style={{ margin: '6px 0 2px' }}>
+                <strong>Ranges</strong> (min → max)
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                <div>
+                  <div style={{ opacity: 0.7 }}>Freighter</div>
+                  <div>Acc: {shipBaseStats.freighter.acc} → {shipCaps.freighter.acc}</div>
+                  <div>Vmax: {shipBaseStats.freighter.vmax} → {shipCaps.freighter.vmax}</div>
+                  <div>Cargo: {shipBaseStats.freighter.cargo} → {shipCaps.freighter.cargo}</div>
+                </div>
+                <div>
+                  <div style={{ opacity: 0.7 }}>Clipper</div>
+                  <div>Acc: {shipBaseStats.clipper.acc} → {shipCaps.clipper.acc}</div>
+                  <div>Vmax: {shipBaseStats.clipper.vmax} → {shipCaps.clipper.vmax}</div>
+                  <div>Cargo: {shipBaseStats.clipper.cargo} → {shipCaps.clipper.cargo}</div>
+                </div>
+                <div>
+                  <div style={{ opacity: 0.7 }}>Miner</div>
+                  <div>Acc: {shipBaseStats.miner.acc} → {shipCaps.miner.acc}</div>
+                  <div>Vmax: {shipBaseStats.miner.vmax} → {shipCaps.miner.vmax}</div>
+                  <div>Cargo: {shipBaseStats.miner.cargo} → {shipCaps.miner.cargo}</div>
+                </div>
+                <div>
+                  <div style={{ opacity: 0.7 }}>Heavy Freighter</div>
+                  <div>Acc: {shipBaseStats.heavy_freighter.acc} → {shipCaps.heavy_freighter.acc}</div>
+                  <div>Vmax: {shipBaseStats.heavy_freighter.vmax} → {shipCaps.heavy_freighter.vmax}</div>
+                  <div>Cargo: {shipBaseStats.heavy_freighter.cargo} → {shipCaps.heavy_freighter.cargo}</div>
+                </div>
+                <div>
+                  <div style={{ opacity: 0.7 }}>Racer</div>
+                  <div>Acc: {shipBaseStats.racer.acc} → {shipCaps.racer.acc}</div>
+                  <div>Vmax: {shipBaseStats.racer.vmax} → {shipCaps.racer.vmax}</div>
+                  <div>Cargo: {shipBaseStats.racer.cargo} → {shipCaps.racer.cargo}</div>
+                </div>
+                <div>
+                  <div style={{ opacity: 0.7 }}>Industrial Miner</div>
+                  <div>Acc: {shipBaseStats.industrial_miner.acc} → {shipCaps.industrial_miner.acc}</div>
+                  <div>Vmax: {shipBaseStats.industrial_miner.vmax} → {shipCaps.industrial_miner.vmax}</div>
+                  <div>Cargo: {shipBaseStats.industrial_miner.cargo} → {shipCaps.industrial_miner.cargo}</div>
+                </div>
+              </div>
+            </div>
             <div>Acceleration: {ship.stats.acc.toFixed(1)}</div>
             <div>$1,000</div>
             <button onClick={() => upgrade('acc', 3, 1000)}>Buy +3</button>
@@ -65,6 +113,27 @@ export function MarketPanel() {
             <div>Navigation Array: {ship.hasNavigationArray ? 'Installed' : 'Not installed'}</div>
             <div>$5,000</div>
             <button onClick={() => upgrade('navigation', 0, 5000)} disabled={!!ship.hasNavigationArray}>{ship.hasNavigationArray ? 'Owned' : 'Buy'}</button>
+          </div>
+          <div style={{ fontWeight: 700, marginBottom: 4 }}>Replace Ship</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center' }}>
+            <div>Freighter (cargo 300, acc 10, vmax 11)</div>
+            <div>$20,000</div>
+            <button onClick={() => replaceShip('freighter', 20000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
+            <div>Clipper (cargo 60, acc 18, vmax 20)</div>
+            <div>$20,000</div>
+            <button onClick={() => replaceShip('clipper', 20000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
+            <div>Miner (cargo 80, acc 9, vmax 11, mining rig)</div>
+            <div>$10,000</div>
+            <button onClick={() => replaceShip('miner', 10000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
+            <div>Heavy Freighter (cargo 600, acc 9, vmax 12)</div>
+            <div>$60,000</div>
+            <button onClick={() => replaceShip('heavy_freighter', 60000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
+            <div>Racer (cargo 40, acc 24, vmax 28)</div>
+            <div>$50,000</div>
+            <button onClick={() => replaceShip('racer', 50000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
+            <div>Industrial Miner (cargo 160, acc 10, vmax 12, mining rig)</div>
+            <div>$40,000</div>
+            <button onClick={() => replaceShip('industrial_miner', 40000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
           </div>
         </div>
       )}

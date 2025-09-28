@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { Commodity, StationType, generateCommodities, StationInventory, priceForStation, findRecipeForStation, ensureSpread, processRecipes, gatedCommodities } from '../systems/economy';
 
+const SCALE = 10;
+const sp = (p: [number, number, number]): [number, number, number] => [p[0] * SCALE, p[1] * SCALE, p[2] * SCALE];
+
 export type Station = {
   id: string;
   name: string;
@@ -38,7 +41,7 @@ export type Ship = {
   engineTarget: number; // 0 or 1 based on thrust input
   hasNavigationArray?: boolean;
   hasUnionMembership?: boolean;
-  kind: 'freighter' | 'clipper' | 'miner';
+  kind: 'freighter' | 'clipper' | 'miner' | 'heavy_freighter' | 'racer' | 'industrial_miner';
   stats: {
     acc: number; // units/s^2
     drag: number; // s^-1
@@ -89,6 +92,7 @@ export type GameState = {
   sell: (commodityId: string, quantity: number) => void;
   process: (inputId: string, outputs: number) => void;
   upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union', amount: number, cost: number) => void;
+  replaceShip: (kind: 'freighter' | 'clipper' | 'miner' | 'heavy_freighter' | 'racer' | 'industrial_miner', cost: number) => void;
   chooseStarter: (kind: 'freighter' | 'clipper' | 'miner') => void;
 };
 
@@ -129,6 +133,24 @@ function clampMagnitude(v: [number, number, number], maxLen: number): [number, n
   const s = maxLen / len;
   return [v[0]*s, v[1]*s, v[2]*s];
 }
+
+export const shipCaps: Record<Ship['kind'], { acc: number; vmax: number; cargo: number }> = {
+  freighter: { acc: 18, vmax: 18, cargo: 1200 },
+  heavy_freighter: { acc: 22, vmax: 22, cargo: 2000 },
+  clipper: { acc: 30, vmax: 36, cargo: 180 },
+  racer: { acc: 40, vmax: 46, cargo: 120 },
+  miner: { acc: 16, vmax: 18, cargo: 500 },
+  industrial_miner: { acc: 18, vmax: 20, cargo: 1000 },
+};
+
+export const shipBaseStats: Record<Ship['kind'], { acc: number; vmax: number; cargo: number }> = {
+  freighter: { acc: 10, vmax: 11, cargo: 300 },
+  heavy_freighter: { acc: 9, vmax: 12, cargo: 600 },
+  clipper: { acc: 18, vmax: 20, cargo: 60 },
+  racer: { acc: 24, vmax: 28, cargo: 40 },
+  miner: { acc: 9, vmax: 11, cargo: 80 },
+  industrial_miner: { acc: 10, vmax: 12, cargo: 160 },
+};
 
 const commodities = generateCommodities();
 const commodityById: Record<string, Commodity> = Object.fromEntries(commodities.map(c => [c.id, c]));
@@ -190,7 +212,7 @@ function spawnNpcTraders(stations: Station[], count: number): NpcTrader[] {
     const r = routes[i];
     const from = byId[r.fromId];
     const speed = speedForCommodity(r.commodityId);
-    const jitter: [number, number, number] = [ (Math.random()-0.5)*0.8, (Math.random()-0.5)*0.4, (Math.random()-0.5)*0.8 ];
+    const jitter: [number, number, number] = [ (Math.random()-0.5)*0.8*SCALE, (Math.random()-0.5)*0.4*SCALE, (Math.random()-0.5)*0.8*SCALE ];
     const position: [number, number, number] = [ from.position[0] + jitter[0], from.position[1] + jitter[1], from.position[2] + jitter[2] ];
     pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed });
   }
@@ -204,29 +226,29 @@ function spawnNpcTraders(stations: Station[], count: number): NpcTrader[] {
   return pick;
 }
 const planets: Planet[] = [
-  { id: 'sun', name: 'Sol', position: [0, 0, 0], radius: 12, color: '#ffd27f', isStar: true },
+  { id: 'sun', name: 'Sol', position: sp([0, 0, 0]), radius: 12 * SCALE, color: '#ffd27f', isStar: true },
   // Orbits around the sun
-  { id: 'aurum', name: 'Aurum', position: [40, 0, 0], radius: 6, color: '#b08d57' },
-  { id: 'ceres', name: 'Ceres', position: [-45, 0, 78], radius: 4, color: '#7a8fa6' },
+  { id: 'aurum', name: 'Aurum', position: sp([40, 0, 0]), radius: 6 * SCALE, color: '#b08d57' },
+  { id: 'ceres', name: 'Ceres', position: sp([-45, 0, 78]), radius: 4 * SCALE, color: '#7a8fa6' },
 ];
 
 const stations: Station[] = [
   // Near Aurum
-  { id: 'sol-city', name: 'Sol City [Consumes: fuel/meds/lux]', type: 'city', position: [52, 0, 6], inventory: priceForStation('city', commodities) },
-  { id: 'sol-refinery', name: 'Helios Refinery [Cheap: fuel/hydrogen]', type: 'refinery', position: [48, 0, -10], inventory: priceForStation('refinery', commodities) },
-  { id: 'aurum-fab', name: 'Aurum Fabricator [Cheap: electronics/chips/alloys]', type: 'fabricator', position: [40, 0, -14], inventory: priceForStation('fabricator', commodities) },
-  { id: 'greenfields', name: 'Greenfields Farm [Food production: grain/meat/sugar]', type: 'farm', position: [44, 0, -4], inventory: priceForStation('farm', commodities) },
+  { id: 'sol-city', name: 'Sol City [Consumes: fuel/meds/lux]', type: 'city', position: sp([52, 0, 6]), inventory: priceForStation('city', commodities) },
+  { id: 'sol-refinery', name: 'Helios Refinery [Cheap: fuel/hydrogen]', type: 'refinery', position: sp([48, 0, -10]), inventory: priceForStation('refinery', commodities) },
+  { id: 'aurum-fab', name: 'Aurum Fabricator [Cheap: electronics/chips/alloys]', type: 'fabricator', position: sp([40, 0, -14]), inventory: priceForStation('fabricator', commodities) },
+  { id: 'greenfields', name: 'Greenfields Farm [Food production: grain/meat/sugar]', type: 'farm', position: sp([44, 0, -4]), inventory: priceForStation('farm', commodities) },
   // Near Ceres
-  { id: 'ceres-pp', name: 'Ceres Power Plant [Cheap: batteries/fuel]', type: 'power_plant', position: [-56, 0, 86], inventory: priceForStation('power_plant', commodities) },
-  { id: 'freeport', name: 'Freeport Station [Mixed market]', type: 'trading_post', position: [-40, 0, 70], inventory: priceForStation('trading_post', commodities) },
-  { id: 'drydock', name: 'Drydock Shipyard [Upgrades available]', type: 'shipyard', position: [-30, 0, 90], inventory: priceForStation('shipyard', commodities) },
+  { id: 'ceres-pp', name: 'Ceres Power Plant [Cheap: batteries/fuel]', type: 'power_plant', position: sp([-56, 0, 86]), inventory: priceForStation('power_plant', commodities) },
+  { id: 'freeport', name: 'Freeport Station [Mixed market]', type: 'trading_post', position: sp([-40, 0, 70]), inventory: priceForStation('trading_post', commodities) },
+  { id: 'drydock', name: 'Drydock Shipyard [Upgrades available]', type: 'shipyard', position: sp([-30, 0, 90]), inventory: priceForStation('shipyard', commodities) },
   // Pirate outpost, off the system plane (y != 0) and far from core
-  { id: 'hidden-cove', name: 'Hidden Cove [Pirate: All fabrication]', type: 'pirate', position: [0, 40, 160], inventory: priceForStation('pirate', commodities) },
+  { id: 'hidden-cove', name: 'Hidden Cove [Pirate: All fabrication]', type: 'pirate', position: sp([0, 40, 160]), inventory: priceForStation('pirate', commodities) },
 ];
 
 const belts: AsteroidBelt[] = [
-  { id: 'inner-belt', name: 'Common Belt', position: [0, 0, 0], radius: 60, tier: 'common' },
-  { id: 'outer-belt', name: 'Rare Belt', position: [0, 0, 0], radius: 120, tier: 'rare' },
+  { id: 'inner-belt', name: 'Common Belt', position: sp([0, 0, 0]), radius: 60 * SCALE, tier: 'common' },
+  { id: 'outer-belt', name: 'Rare Belt', position: sp([0, 0, 0]), radius: 120 * SCALE, tier: 'rare' },
 ];
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -235,7 +257,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   belts,
   npcTraders: spawnNpcTraders(stations, 24),
   ship: {
-    position: [50, 0, 8],
+    position: sp([50, 0, 8]),
     velocity: [0, 0, 0],
     credits: 0,
     cargo: {},
@@ -403,7 +425,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           const factorSell = 1 + (Math.random() * 2 - 1) * 0.1;
           const nextBuy = Math.max(1, Math.round(item.buy * factorBuy));
           const nextSell = Math.max(1, Math.round(item.sell * factorSell));
-          const adjusted = ensureSpread({ buy: nextBuy, sell: nextSell, minPercent: 0.04, minAbsolute: 2 });
+          const adjusted = ensureSpread({ buy: nextBuy, sell: nextSell, minPercent: 0.08, minAbsolute: 3 });
           inv[k] = { ...item, buy: adjusted.buy, sell: adjusted.sell };
         }
         return { ...st, inventory: inv };
@@ -484,7 +506,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   tryDock: () => set((state) => {
     if (!state.hasChosenStarter) return state;
     if (state.ship.dockedStationId) return state;
-    const near = state.stations.find(s => distance(s.position, state.ship.position) < 6);
+    const near = state.stations.find(s => distance(s.position, state.ship.position) < 6 * SCALE);
     if (!near) return state;
     return { ship: { ...state.ship, dockedStationId: near.id, velocity: [0,0,0] } } as Partial<GameState> as GameState;
   }),
@@ -500,7 +522,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const belts = state.belts;
     const near = belts.find(b => {
       const d = distance(state.ship.position, b.position);
-      return Math.abs(d - b.radius) < 6; // near ring
+      return Math.abs(d - b.radius) < 6 * SCALE; // near ring
     });
     if (!near) return state;
     const used = Object.values(state.ship.cargo).reduce((a, b) => a + b, 0);
@@ -640,7 +662,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Ship upgrades only at shipyard
     if ((type === 'acc' || type === 'vmax' || type === 'cargo' || type === 'mining' || type === 'navigation') && station.type !== 'shipyard') return state;
     if (state.ship.credits < cost) return state;
+    const caps = shipCaps[state.ship.kind];
     if (type === 'cargo') {
+      if (state.ship.maxCargo >= caps.cargo) return state;
+      if (state.ship.maxCargo + amount > caps.cargo) return state;
       return { ship: { ...state.ship, credits: state.ship.credits - cost, maxCargo: state.ship.maxCargo + amount } } as Partial<GameState> as GameState;
     }
     if (type === 'mining') {
@@ -658,9 +683,122 @@ export const useGameStore = create<GameState>((set, get) => ({
       return { ship: { ...state.ship, credits: state.ship.credits - cost, hasUnionMembership: true } } as Partial<GameState> as GameState;
     }
     const stats = { ...state.ship.stats };
-    if (type === 'acc') stats.acc += amount;
-    if (type === 'vmax') stats.vmax += amount;
+    if (type === 'acc') {
+      if (stats.acc >= caps.acc) return state;
+      if (stats.acc + amount > caps.acc) return state;
+      stats.acc += amount;
+    }
+    if (type === 'vmax') {
+      if (stats.vmax >= caps.vmax) return state;
+      if (stats.vmax + amount > caps.vmax) return state;
+      stats.vmax += amount;
+    }
     return { ship: { ...state.ship, credits: state.ship.credits - cost, stats } } as Partial<GameState> as GameState;
+  }),
+  replaceShip: (kind, cost) => set((state) => {
+    if (!state.ship.dockedStationId) return state;
+    const station = state.stations.find(s => s.id === state.ship.dockedStationId);
+    if (!station || station.type !== 'shipyard') return state;
+    if (state.ship.credits < cost) return state;
+    const usedCargo = Object.values(state.ship.cargo).reduce((a, b) => a + b, 0);
+    if (usedCargo > 0) return state;
+    const basePosition: [number, number, number] = state.ship.position;
+    const baseVelocity: [number, number, number] = [0, 0, 0];
+    let next: Ship | undefined;
+    if (kind === 'freighter') {
+      next = {
+        position: basePosition,
+        velocity: baseVelocity,
+        credits: state.ship.credits - cost,
+        cargo: {},
+        maxCargo: 300,
+        canMine: state.ship.canMine, // keep mining rig if owned
+        enginePower: 0,
+        engineTarget: 0,
+        hasNavigationArray: state.ship.hasNavigationArray,
+        hasUnionMembership: state.ship.hasUnionMembership,
+        kind: 'freighter',
+        stats: { acc: 10, drag: 1.0, vmax: 11 },
+      };
+    } else if (kind === 'clipper') {
+      next = {
+        position: basePosition,
+        velocity: baseVelocity,
+        credits: state.ship.credits - cost,
+        cargo: {},
+        maxCargo: 60,
+        canMine: state.ship.canMine,
+        enginePower: 0,
+        engineTarget: 0,
+        hasNavigationArray: state.ship.hasNavigationArray,
+        hasUnionMembership: state.ship.hasUnionMembership,
+        kind: 'clipper',
+        stats: { acc: 18, drag: 0.9, vmax: 20 },
+      };
+    } else if (kind === 'miner') {
+      next = {
+        position: basePosition,
+        velocity: baseVelocity,
+        credits: state.ship.credits - cost,
+        cargo: {},
+        maxCargo: 80,
+        canMine: true,
+        enginePower: 0,
+        engineTarget: 0,
+        hasNavigationArray: state.ship.hasNavigationArray,
+        hasUnionMembership: state.ship.hasUnionMembership,
+        kind: 'miner',
+        stats: { acc: 9, drag: 1.1, vmax: 11 },
+      };
+    } else if (kind === 'heavy_freighter') {
+      next = {
+        position: basePosition,
+        velocity: baseVelocity,
+        credits: state.ship.credits - cost,
+        cargo: {},
+        maxCargo: 600,
+        canMine: state.ship.canMine,
+        enginePower: 0,
+        engineTarget: 0,
+        hasNavigationArray: state.ship.hasNavigationArray,
+        hasUnionMembership: state.ship.hasUnionMembership,
+        kind: 'heavy_freighter',
+        stats: { acc: 9, drag: 1.0, vmax: 12 },
+      };
+    } else if (kind === 'racer') {
+      next = {
+        position: basePosition,
+        velocity: baseVelocity,
+        credits: state.ship.credits - cost,
+        cargo: {},
+        maxCargo: 40,
+        canMine: state.ship.canMine,
+        enginePower: 0,
+        engineTarget: 0,
+        hasNavigationArray: state.ship.hasNavigationArray,
+        hasUnionMembership: state.ship.hasUnionMembership,
+        kind: 'racer',
+        stats: { acc: 24, drag: 0.85, vmax: 28 },
+      };
+    } else if (kind === 'industrial_miner') {
+      next = {
+        position: basePosition,
+        velocity: baseVelocity,
+        credits: state.ship.credits - cost,
+        cargo: {},
+        maxCargo: 160,
+        canMine: true,
+        enginePower: 0,
+        engineTarget: 0,
+        hasNavigationArray: state.ship.hasNavigationArray,
+        hasUnionMembership: state.ship.hasUnionMembership,
+        kind: 'industrial_miner',
+        stats: { acc: 10, drag: 1.05, vmax: 12 },
+      };
+    }
+    // Preserve docking state
+    next = { ...next!, dockedStationId: state.ship.dockedStationId } as Ship;
+    return { ship: next } as Partial<GameState> as GameState;
   }),
   chooseStarter: (kind) => set((state) => {
     const basePosition: [number, number, number] = state.ship.position;

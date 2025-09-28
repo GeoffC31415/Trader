@@ -5,11 +5,12 @@ import * as THREE from 'three';
 import { SceneRoot } from './scene/scene_root';
 import { MarketPanel } from './ui/market_panel';
 import { JournalPanel } from './ui/journal_panel';
+import { TradersPanel } from './ui/traders_panel';
 import { Minimap } from './ui/minimap';
 import { useGameStore } from './state/game_state';
 
 export function App() {
-  const [active, setActive] = useState<'market' | 'journal'>('market');
+  const [active, setActive] = useState<'market' | 'journal' | 'traders'>('market');
   const hasNav = useGameStore(s => !!s.ship.hasNavigationArray);
   const hasChosenStarter = useGameStore(s => s.hasChosenStarter);
   const chooseStarter = useGameStore(s => s.chooseStarter);
@@ -20,8 +21,9 @@ export function App() {
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <button onClick={() => setActive('market')} style={{ fontWeight: active==='market'?700:400 }}>Market</button>
             <button onClick={() => setActive('journal')} style={{ fontWeight: active==='journal'?700:400 }}>Journal</button>
+            <button onClick={() => setActive('traders')} style={{ fontWeight: active==='traders'?700:400 }}>Traders</button>
           </div>
-          {active === 'market' ? <MarketPanel /> : <JournalPanel />}
+          {active === 'market' ? <MarketPanel /> : active === 'journal' ? <JournalPanel /> : <TradersPanel />}
         </div>
         <div className="vignette" />
         {hasNav && <Minimap />}
@@ -85,7 +87,7 @@ export function App() {
           }}
         >
           <color attach="background" args={[0x03060b]} />
-          <fog attach="fog" args={["#0a0e16", 30, 220]} />
+          <fog attach="fog" args={["#0a0e16", 300, 2200]} />
           <ambientLight intensity={0.25} />
           <hemisphereLight args={["#cfe8ff", "#0b1020", 0.5]} />
           <directionalLight
@@ -96,9 +98,9 @@ export function App() {
             shadow-mapSize-height={2048}
             shadow-bias={-0.0005}
           />
-          <pointLight position={[50, 50, 50]} intensity={0.9} distance={200} />
+          <pointLight position={[500, 500, 500]} intensity={0.9} distance={2000} />
           <Environment preset="city" />
-          <Stars radius={200} depth={50} count={2000} factor={4} saturation={0} fade speed={1} />
+          <Stars radius={2000} depth={500} count={4000} factor={4} saturation={0} fade speed={1} />
           <SceneRoot />
         </Canvas>
       </div>

@@ -245,7 +245,8 @@ export function getPriceBiasForStation(type: StationType, commodityId: string): 
 
 export function priceForStation(type: StationType, commodities: Commodity[]): StationInventory {
   const rules = rulesByType[type];
-  const volatility = 0.1;
+  // Slightly higher volatility to allow more dynamic pricing across the map
+  const volatility = 0.16;
   const inv: StationInventory = {};
   const recipes = processRecipes[type] || [];
   const inputSet = new Set(recipes.map(r => r.inputId));
@@ -254,14 +255,16 @@ export function priceForStation(type: StationType, commodities: Commodity[]): St
   for (const c of commodities) {
     const cheap = rules.cheap.includes(c.id);
     const expensive = rules.expensive.includes(c.id);
-    // Asymmetric multipliers to create clearer trade opportunities
-    const buyMultiplier = cheap ? 0.75 : expensive ? 1.25 : 1.0;
-    const sellMultiplier = cheap ? 0.85 : expensive ? 1.35 : 1.0;
+    // Stronger asymmetry to widen market spread (target ~2 orders magnitude across world)
+    // Cheap at source: push down buy and sell; Expensive at source: lift both.
+    const buyMultiplier = cheap ? 0.45 : expensive ? 1.75 : 1.0;
+    const sellMultiplier = cheap ? 0.55 : expensive ? 1.9 : 1.0;
     const baseBuy = Math.round(c.baseBuy * buyMultiplier);
     const baseSell = Math.round(c.baseSell * sellMultiplier);
     const buy = fluctuate(baseBuy, volatility);
     const sell = fluctuate(baseSell, volatility);
-    const adjusted = ensureSpread({ buy, sell, minPercent: 0.04, minAbsolute: 2 });
+    // Larger minimum percent spread to avoid tight markets
+    const adjusted = ensureSpread({ buy, sell, minPercent: 0.08, minAbsolute: 3 });
     const stock = (rules.stockBoost && (rules.stockBoost as any)[c.id]) || (cheap ? 200 : 50);
     // Directional trading rules (outputs take precedence over inputs for chained recipes)
     if (isProducer) {
