@@ -34,10 +34,15 @@ export function MarketPanel() {
   const persona = station?.persona;
   const personaLine = useMemo(() => {
     if (!persona) return undefined;
-    const pool = [...(persona.lines || []), ...(persona.tips || [])];
+    const rep = station?.reputation || 0;
+    const tier = rep >= 70 ? 'high' : rep >= 30 ? 'mid' : 'low';
+    const lines = tier === 'high' ? (persona.lines_high || []) : tier === 'mid' ? (persona.lines_mid || []) : (persona.lines_low || []);
+    const tips = tier === 'high' ? (persona.tips_high || []) : tier === 'mid' ? (persona.tips_mid || []) : (persona.tips_low || []);
+    const fallback = [...(persona.lines || []), ...(persona.tips || [])];
+    const pool = [...lines, ...tips, ...fallback];
     if (pool.length === 0) return undefined;
     return pool[Math.floor(Math.random() * pool.length)];
-  }, [station?.id]);
+  }, [station?.id, station?.reputation]);
 
   const items = station ? Object.entries(station.inventory) : [];
   const recipes = station ? (processRecipes[station.type] || []) : [];
@@ -82,6 +87,11 @@ export function MarketPanel() {
       </div>
       <div style={{ marginBottom: 8 }}>
         <strong>Credits:</strong> {ship.credits.toLocaleString()} | <strong>Cargo:</strong> {Object.values(ship.cargo).reduce((a,b)=>a+b,0)} / {ship.maxCargo}
+        {station && (
+          <span style={{ marginLeft: 8, opacity: 0.85 }}>
+            <strong>Reputation @ {station.name}:</strong> {(station.reputation || 0).toFixed(0)}
+          </span>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
@@ -216,12 +226,18 @@ export function MarketPanel() {
                 {otherItems.map(([id, p]) => {
                   const bias = getPriceBiasForStation(station.type, id);
                   const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
+                  // Show rep-adjusted per-unit prices: buy gets discount; sell gets premium
+                  const rep = station.reputation || 0;
+                  const buyDiscount = Math.max(0, Math.min(0.10, 0.10 * (rep / 100)));
+                  const sellPremium = Math.max(0, Math.min(0.07, 0.07 * (rep / 100)));
+                  const adjBuy = Math.max(1, Math.round(p.buy * (1 - buyDiscount)));
+                  const adjSell = Math.max(1, Math.round(p.sell * (1 + sellPremium)));
                   return (
                     <Fragment key={id}>
                       <div key={id+':n'} style={{textTransform:'capitalize'}}>{id.replace(/_/g,' ')}</div>
                       <div key={id+':p'} style={{ color }}>
-                        <span>${p.buy}</span>
-                        <span style={{ opacity: 0.7 }}> / ${p.sell}</span>
+                        <span>${adjBuy}</span>
+                        <span style={{ opacity: 0.7 }}> / ${adjSell}</span>
                       </div>
                       <div key={id+':h'}>{ship.cargo[id] || 0}</div>
                       <div key={id+':a'}>
@@ -315,12 +331,18 @@ export function MarketPanel() {
               {producedItems.map(([id, p]) => {
                 const bias = getPriceBiasForStation(station.type, id);
                 const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
+                // Rep-adjusted per-unit prices for produced items
+                const rep = station.reputation || 0;
+                const buyDiscount = Math.max(0, Math.min(0.10, 0.10 * (rep / 100)));
+                const sellPremium = Math.max(0, Math.min(0.07, 0.07 * (rep / 100)));
+                const adjBuy = Math.max(1, Math.round(p.buy * (1 - buyDiscount)));
+                const adjSell = Math.max(1, Math.round(p.sell * (1 + sellPremium)));
                 return (
                   <Fragment key={id}>
                     <div key={id+':n'} style={{textTransform:'capitalize'}}>{id.replace(/_/g,' ')}</div>
                     <div key={id+':p'} style={{ color }}>
-                      <span>${p.buy}</span>
-                      <span style={{ opacity: 0.7 }}> / ${p.sell}</span>
+                      <span>${adjBuy}</span>
+                      <span style={{ opacity: 0.7 }}> / ${adjSell}</span>
                     </div>
                     <div key={id+':h'}>{ship.cargo[id] || 0}</div>
                     <div key={id+':a'}>

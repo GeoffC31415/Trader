@@ -501,6 +501,7 @@ export function SceneRoot() {
   const undock = useGameStore(s => s.undock);
   const mine = useGameStore(s => s.mine);
   const ship = useGameStore(s => s.ship);
+  const trackedStationId = useGameStore(s => s.trackedStationId);
   const { camera } = useThree();
   const cameraTarget = useRef<THREE.Vector3>(new THREE.Vector3());
   const yawRef = useRef<number>(0);
@@ -626,6 +627,14 @@ export function SceneRoot() {
             <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center distanceFactor={60}>
               <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6 }}>
                 <span style={{ fontSize: 12, opacity: 0.5 }}>Press E to Dock</span>
+              </div>
+            </Html>
+          )}
+          {/* Waypoint marker (visible while undocked for clarity) */}
+          {trackedStationId === s.id && !ship.dockedStationId && (
+            <Html position={[s.position[0], s.position[1]+5, s.position[2]]} center distanceFactor={50}>
+              <div style={{ background:'rgba(34,197,94,0.15)', border: '1px solid #22c55e', padding: '4px 8px', borderRadius: 6, color: '#bbf7d0' }}>
+                Waypoint
               </div>
             </Html>
           )}

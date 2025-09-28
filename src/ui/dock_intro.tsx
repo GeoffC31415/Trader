@@ -16,10 +16,15 @@ export function DockIntro() {
   const persona = station?.persona;
   const line = useMemo(() => {
     if (!persona) return undefined;
-    const pool = [...(persona.lines || []), ...(persona.tips || [])];
+    const rep = station?.reputation || 0;
+    const tier = rep >= 70 ? 'high' : rep >= 30 ? 'mid' : 'low';
+    const lines = tier === 'high' ? (persona.lines_high || []) : tier === 'mid' ? (persona.lines_mid || []) : (persona.lines_low || []);
+    const tips = tier === 'high' ? (persona.tips_high || []) : tier === 'mid' ? (persona.tips_mid || []) : (persona.tips_low || []);
+    const fallback = [...(persona.lines || []), ...(persona.tips || [])];
+    const pool = [...lines, ...tips, ...fallback];
     if (pool.length === 0) return undefined;
     return pool[Math.floor(Math.random() * pool.length)];
-  }, [stationId]);
+  }, [stationId, station?.reputation]);
   const avatarUrl = useMemo(() => {
     if (!station || !persona) return undefined;
     const target = `${toSafeFilename(station.id)} - ${toSafeFilename(persona.name)}.png`;

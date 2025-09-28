@@ -9,6 +9,13 @@ export type StationPersona = {
   avatarPrompt: string; // prompt text for image generator
   lines: string[]; // general lines
   tips: string[]; // station- and system-related trading tips
+  // Optional rep-tiered dialogue pools; fallback to base if empty
+  lines_low?: string[];
+  lines_mid?: string[];
+  lines_high?: string[];
+  tips_low?: string[];
+  tips_mid?: string[];
+  tips_high?: string[];
 };
 
 export type Station = {
@@ -18,6 +25,8 @@ export type Station = {
   position: [number, number, number];
   inventory: StationInventory;
   persona?: StationPersona;
+  // Station-specific reputation with the player (0-100). Higher means better prices/opportunities later.
+  reputation?: number;
 };
 
 export type Planet = {
@@ -108,6 +117,37 @@ export type RouteSuggestion = {
   profitPerDistance: number;
 };
 
+export type Objective = {
+  id: string;
+  label: string;
+  // Optional target station to assist with wayfinding
+  targetStationId?: string;
+  // Whether this objective is tutorial-guided or player-chosen
+  kind: 'tutorial' | 'contract' | 'milestone';
+  status: 'active' | 'completed' | 'failed' | 'offered';
+};
+
+export type Contract = {
+  id: string;
+  fromId?: string;
+  toId: string;
+  commodityId: Commodity['id'];
+  units: number;
+  deliveredUnits?: number;
+  // Economic reference values captured when generated
+  unitBuy?: number;
+  unitSell?: number;
+  rewardBonus?: number; // flat bonus on completion
+  status: 'offered' | 'accepted' | 'completed' | 'failed';
+  expiresAt?: number; // epoch ms
+  // Mission metadata
+  offeredById?: string; // station offering the mission
+  requiredRep?: number; // min rep at offeredById to accept
+  title?: string;
+  tag?: 'emergency' | 'bulk' | 'fabrication' | 'rush' | 'standard';
+  sellMultiplier?: number; // extra sell multiplier at destination for emergency missions
+};
+
 export type GameState = {
   planets: Planet[];
   stations: Station[];
@@ -122,6 +162,11 @@ export type GameState = {
   tradeLog: TradeEntry[];
   profitByCommodity: Record<Commodity['id'], number>;
   avgCostByCommodity: Record<Commodity['id'], number>;
+  // Objectives & contracts
+  objectives?: Objective[];
+  activeObjectiveId?: string;
+  contracts?: Contract[];
+  trackedStationId?: string;
   getSuggestedRoutes: (opts?: { limit?: number; prioritizePerDistance?: boolean }) => RouteSuggestion[];
   tick: (dt: number) => void;
   thrust: (dir: [number, number, number], dt: number) => void;
@@ -138,6 +183,12 @@ export type GameState = {
   chooseStarter: (kind: 'freighter' | 'clipper' | 'miner' | 'test', opts?: { tutorial?: boolean }) => void;
   setTutorialActive: (active: boolean) => void;
   setTutorialStep: (step: GameState['tutorialStep']) => void;
+  // Objectives & contracts actions
+  setTrackedStation: (stationId?: string) => void;
+  generateContracts: (opts?: { limit?: number }) => void;
+  acceptContract: (id: string) => void;
+  abandonContract: (id: string) => void;
+  turnInContract: (id: string) => void;
 };
 
 

@@ -19,6 +19,13 @@ export function App() {
   const setTutorialActive = useGameStore(s => s.setTutorialActive);
   const tutorialStep = useGameStore(s => s.tutorialStep);
   const hasIntel = useGameStore(s => !!s.ship.hasMarketIntel);
+  const objectives = useGameStore(s => s.objectives || []);
+  const activeObjectiveId = useGameStore(s => s.activeObjectiveId);
+  const trackedStationId = useGameStore(s => s.trackedStationId);
+  const stations = useGameStore(s => s.stations);
+  const setTrackedStation = useGameStore(s => s.setTrackedStation);
+  const ship = useGameStore(s => s.ship);
+  const activeObj = (objectives.find(o => o.id === activeObjectiveId) || objectives.find(o => o.status === 'active'));
   return (
     <StrictMode>
       <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -142,6 +149,54 @@ export function App() {
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                 <button onClick={() => setTutorialActive(false)} style={{ opacity: 0.9 }}>Skip tutorial</button>
               </div>
+            </div>
+          </div>
+        )}
+        {/* Next Objective HUD */}
+        {hasChosenStarter && (trackedStationId || activeObj) && (
+          <div style={{ position: 'absolute', left: 16, top: 16, zIndex: 25, maxWidth: 560 }}>
+            <div style={{ background: 'rgba(11,18,32,0.9)', color: '#e5e7eb', padding: 10, borderRadius: 10, border: '1px solid #1f2937' }}>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>Next Objective</div>
+              <div style={{ fontSize: 13 }}>
+                {activeObj?.label || (trackedStationId ? `Waypoint set: ${(stations.find(s=>s.id===trackedStationId)?.name)||trackedStationId}` : 'Free trading')}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                <button
+                  onClick={() => {
+                    const target = activeObj?.targetStationId;
+                    if (target) {
+                      setTrackedStation(target);
+                      return;
+                    }
+                    // Fallback: set nearest station if no active objective
+                    let best: { id: string; d: number } | undefined;
+                    for (const st of stations) {
+                      const dx = st.position[0] - ship.position[0];
+                      const dy = st.position[1] - ship.position[1];
+                      const dz = st.position[2] - ship.position[2];
+                      const d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                      if (!best || d < best.d) best = { id: st.id, d };
+                    }
+                    if (best) setTrackedStation(best.id);
+                  }}
+                >Set waypoint</button>
+                {trackedStationId && (
+                  <button onClick={() => setTrackedStation(undefined)}>Clear waypoint</button>
+                )}
+              </div>
+              {trackedStationId && (() => {
+                const st = stations.find(s => s.id === trackedStationId);
+                if (!st) return null as any;
+                const dx = st.position[0] - ship.position[0];
+                const dy = st.position[1] - ship.position[1];
+                const dz = st.position[2] - ship.position[2];
+                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                return (
+                  <div style={{ marginTop: 6, fontSize: 12, opacity: 0.9 }}>
+                    Waypoint: {st.name} — Distance: {dist.toFixed(1)}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}

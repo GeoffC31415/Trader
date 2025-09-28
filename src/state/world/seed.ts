@@ -157,7 +157,7 @@ const baseStations: Station[] = [
 export const stations: Station[] = baseStations.map((base) => {
   const meta = baseStations.map(s => ({ id: s.id, type: s.type, position: s.position }));
   const inv = priceForStation(base.type, commodities, base.position, meta, base.id);
-  return { ...base, inventory: inv } as Station;
+  return { ...base, inventory: inv, reputation: 0 } as Station;
 });
 
 export const belts: AsteroidBelt[] = [

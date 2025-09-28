@@ -1,12 +1,12 @@
 import { create } from 'zustand';
-import { ensureSpread, gatedCommodities } from '../systems/economy/pricing';
+import { ensureSpread, gatedCommodities, getPriceBiasForStation } from '../systems/economy/pricing';
 import { processRecipes, findRecipeForStation } from '../systems/economy/recipes';
 import { SCALE, sp } from '../domain/constants/world_constants';
 import { shipCaps } from '../domain/constants/ship_constants';
 import { distance, clampMagnitude } from '../shared/math/vec3';
 import { planets, stations as initialStations, belts } from './world';
 import { spawnNpcTraders, planNpcPath } from './npc';
-import type { GameState, RouteSuggestion, Ship, Station } from '../domain/types/world_types';
+import type { GameState, RouteSuggestion, Ship, Station, Objective, Contract } from '../domain/types/world_types';
 import type { StationInventory } from '../domain/types/economy_types';
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -36,6 +36,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   profitByCommodity: {},
   avgCostByCommodity: {},
   dockIntroVisibleId: undefined,
+  objectives: [],
+  activeObjectiveId: undefined,
+  contracts: [],
+  trackedStationId: undefined,
+  // Generate per-station mission offers (5 each) with rep gates
+  // Missions are just contracts with metadata and optional emergency sell multipliers
   getSuggestedRoutes: (opts) => {
     const state = get();
     const stations = state.stations;
@@ -146,6 +152,10 @@ export const useGameStore = create<GameState>((set, get) => ({
           || a.id.localeCompare(b.id);
     return suggestions.sort(sorter).slice(0, limit);
   },
+  // Helper: reputation-based price adjustments
+  // Discount applied when buying from a station (max ~10% at 100 rep)
+  // Premium applied when selling to a station (max ~7% at 100 rep)
+  // Note: We apply only to player transaction prices, not to station inventory values.
   tick: (dt) => set((state) => {
     const drag = state.ship.stats.drag;
     const dampFactor = Math.exp(-drag * dt);
@@ -323,18 +333,23 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!station) return state;
     const item = station.inventory[commodityId];
     if (!item || item.canSell === false) return state;
-    const totalCost = item.buy * quantity;
+    const rep = station.reputation || 0;
+    const buyDiscount = Math.max(0, Math.min(0.10, 0.10 * (rep / 100)));
+    const unitBuyPrice = Math.max(1, Math.round(item.buy * (1 - buyDiscount)));
+    const totalCost = unitBuyPrice * quantity;
     const used = Object.values(state.ship.cargo).reduce((a, b) => a + b, 0);
     if (state.ship.credits < totalCost) return state;
     if (used + quantity > state.ship.maxCargo) return state;
     const prevQty = state.ship.cargo[commodityId] || 0;
     const cargo = { ...state.ship.cargo, [commodityId]: prevQty + quantity };
     const reduced = { ...station.inventory, [commodityId]: { ...item, stock: Math.max(0, (item.stock || 0) - quantity) } };
-    const stations = state.stations.map(s => s.id === station.id ? { ...s, inventory: reduced } : s);
+    // Small reputation increase for fair trade at source
+    const repDelta = Math.min(2, 0.02 * quantity);
+    const stations = state.stations.map(s => s.id === station.id ? { ...s, inventory: reduced, reputation: Math.max(0, Math.min(100, (s.reputation || 0) + repDelta)) } : s);
     const avgMap = { ...state.avgCostByCommodity } as Record<string, number>;
     const oldAvg = avgMap[commodityId] || 0;
     const newQty = prevQty + quantity;
-    const newAvg = newQty > 0 ? ((oldAvg * prevQty) + (item.buy * quantity)) / newQty : 0;
+    const newAvg = newQty > 0 ? ((oldAvg * prevQty) + (unitBuyPrice * quantity)) / newQty : 0;
     avgMap[commodityId] = newAvg;
     const trade = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
@@ -345,7 +360,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       commodityId,
       type: 'buy' as const,
       quantity,
-      unitPrice: item.buy,
+      unitPrice: unitBuyPrice,
       totalPrice: totalCost,
     };
     const tradeLog = [...state.tradeLog, trade];
@@ -364,7 +379,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     const have = state.ship.cargo[commodityId] || 0;
     if (!item || item.canBuy === false || have <= 0) return state;
     const qty = Math.min(quantity, have);
-    const revenue = item.sell * qty;
+    const rep = station.reputation || 0;
+    const sellPremium = Math.max(0, Math.min(0.07, 0.07 * (rep / 100)));
+    const unitSellPrice = Math.max(1, Math.round(item.sell * (1 + sellPremium)));
+    const revenue = unitSellPrice * qty;
     const cargo = { ...state.ship.cargo, [commodityId]: have - qty };
     let nextInv = { ...station.inventory } as StationInventory;
     nextInv[commodityId] = { ...item, stock: (item.stock || 0) + qty };
@@ -380,10 +398,15 @@ export const useGameStore = create<GameState>((set, get) => ({
         nextInv[commodityId] = { ...nextInv[commodityId], stock: ((nextInv[commodityId].stock || 0) - qty) + remainder };
       }
     }
-    const stations = state.stations.map(s => s.id === station.id ? { ...s, inventory: nextInv } : s);
+    // Reputation gain scales with station need and quantity
+    const bias = getPriceBiasForStation(station.type as any, commodityId);
+    const biasW = bias === 'expensive' ? 1.6 : (bias === 'cheap' ? 0.6 : 1.0);
+    const priceW = Math.max(0.6, Math.min(2.0, (item.sell || 1) / Math.max(1, item.buy || 1)));
+    const repDelta = Math.min(5, 0.06 * qty * biasW * priceW);
+    const stations = state.stations.map(s => s.id === station.id ? { ...s, inventory: nextInv, reputation: Math.max(0, Math.min(100, (s.reputation || 0) + repDelta)) } : s);
     const avgMap = { ...state.avgCostByCommodity } as Record<string, number>;
     const avgCost = avgMap[commodityId] || 0;
-    const realized = (item.sell - avgCost) * qty;
+    const realized = (unitSellPrice - avgCost) * qty;
     const profit = { ...state.profitByCommodity } as Record<string, number>;
     profit[commodityId] = (profit[commodityId] || 0) + realized;
     if ((cargo[commodityId] || 0) === 0) {
@@ -398,7 +421,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       commodityId,
       type: 'sell' as const,
       quantity: qty,
-      unitPrice: item.sell,
+      unitPrice: unitSellPrice,
       totalPrice: revenue,
     };
     const tradeLog = [...state.tradeLog, trade];
@@ -550,6 +573,113 @@ export const useGameStore = create<GameState>((set, get) => ({
   setTutorialStep: (step) => set((state) => {
     if (state.tutorialStep === step) return state;
     return { tutorialStep: step } as Partial<GameState> as GameState;
+  }),
+  setTrackedStation: (stationId) => set((state) => {
+    return { trackedStationId: stationId } as Partial<GameState> as GameState;
+  }),
+  generateContracts: (opts) => set((state) => {
+    const limit = opts?.limit ?? 5;
+    const stations = state.stations;
+    const nextContracts = [...(state.contracts || [])].filter(c => c.status !== 'offered');
+    for (const st of stations) {
+      // Derive candidate routes originating near this station
+      const suggestions = state.getSuggestedRoutes({ limit: 20, prioritizePerDistance: true })
+        .filter(r => r.fromId === st.id || r.viaId === st.id);
+      // Choose up to 5 missions per station with increasing rep gates
+      const picks = suggestions.slice(0, 10);
+      const perStation: Contract[] = [];
+      for (let i = 0; i < Math.min(5, picks.length); i++) {
+        const r = picks[i];
+        const units = Math.max(5, Math.min(50, r.maxUnits));
+        const tag: Contract['tag'] = i === 0 ? 'standard' : (i === 1 ? 'bulk' : (i === 2 ? 'rush' : (i === 3 ? 'fabrication' : 'emergency')));
+        const requiredRep = i === 0 ? 0 : (10 + i * 15); // 0,25,40,55,70
+        const sellMultiplier = tag === 'emergency' ? 1.25 : (tag === 'rush' ? 1.12 : 1.0);
+        const fromId = r.fromId;
+        const toId = r.toId;
+        const offeredById = st.id;
+        const title = tag === 'emergency'
+          ? `Emergency: ${r.inputId.replace(/_/g,' ')} to ${r.toName}`
+          : tag === 'rush'
+          ? `Rush Delivery: ${r.inputId.replace(/_/g,' ')} to ${r.toName}`
+          : tag === 'bulk'
+          ? `Bulk Order: ${units} ${r.inputId.replace(/_/g,' ')}`
+          : tag === 'fabrication'
+          ? `Process & Deliver: ${r.inputId.replace(/_/g,' ')} via ${r.viaName}`
+          : `Standard Run: ${r.inputId.replace(/_/g,' ')} to ${r.toName}`;
+        perStation.push({
+          id: `m:${st.id}:${i}:${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
+          fromId,
+          toId,
+          commodityId: r.inputId,
+          units,
+          unitBuy: r.unitBuy,
+          unitSell: r.unitSell,
+          rewardBonus: Math.max(100, Math.round((tag === 'bulk' ? 0.15 : 0.1) * r.unitMargin * units)),
+          status: 'offered',
+          expiresAt: Date.now() + (tag === 'rush' ? 10 : 20) * 60 * 1000,
+          offeredById,
+          requiredRep,
+          title,
+          tag,
+          sellMultiplier: sellMultiplier,
+        });
+      }
+      nextContracts.push(...perStation);
+      if (nextContracts.length >= limit * stations.length) break;
+    }
+    return { contracts: nextContracts } as Partial<GameState> as GameState;
+  }),
+  acceptContract: (id) => set((state) => {
+    const contracts = (state.contracts || []).map(c => c.id === id ? { ...c, status: 'accepted' } : c);
+    const chosen = contracts.find(c => c.id === id);
+    const objectives: Objective[] = [...(state.objectives || [])];
+    if (chosen) {
+      const obj: Objective = { id: `obj:${id}`, label: `Deliver ${chosen.units} ${chosen.commodityId.replace(/_/g,' ')} to ${state.stations.find(s=>s.id===chosen.toId)?.name || chosen.toId}`, targetStationId: chosen.toId, kind: 'contract', status: 'active' };
+      objectives.push(obj);
+    }
+    return { contracts, objectives, activeObjectiveId: chosen ? `obj:${id}` : state.activeObjectiveId, trackedStationId: chosen?.toId || state.trackedStationId } as Partial<GameState> as GameState;
+  }),
+  abandonContract: (id) => set((state) => {
+    const contracts = (state.contracts || []).map(c => c.id === id ? { ...c, status: 'failed' } : c);
+    // Minor rep penalty at destination if known
+    const chosen = (state.contracts || []).find(c => c.id === id);
+    let stations = state.stations;
+    if (chosen?.toId) {
+      stations = stations.map(s => s.id === chosen.toId ? { ...s, reputation: Math.max(0, ((s.reputation || 0) - 2)) } : s);
+    }
+    const objectives = (state.objectives || []).map(o => o.id === `obj:${id}` ? { ...o, status: 'failed' } : o);
+    const activeObjectiveId = state.activeObjectiveId === `obj:${id}` ? undefined : state.activeObjectiveId;
+    return { contracts, stations, objectives, activeObjectiveId } as Partial<GameState> as GameState;
+  }),
+  turnInContract: (id) => set((state) => {
+    const c = (state.contracts || []).find(x => x.id === id);
+    if (!c) return state;
+    if (state.ship.dockedStationId !== c.toId) return state;
+    const have = state.ship.cargo[c.commodityId] || 0;
+    if (have < c.units) return state;
+    // Deliver
+    const cargo = { ...state.ship.cargo, [c.commodityId]: have - c.units };
+    const station = state.stations.find(s => s.id === c.toId)!;
+    const invItem = station.inventory[c.commodityId];
+    let unitPay = (invItem?.sell || c.unitSell || 0);
+    // Emergency/rush multiplier (temporary pricing for mission item)
+    if (c.sellMultiplier && c.sellMultiplier > 1) {
+      unitPay = Math.max(1, Math.round(unitPay * c.sellMultiplier));
+    }
+    const reward = (unitPay * c.units) + (c.rewardBonus || 0);
+    // Update destination stock
+    const nextInv: StationInventory = { ...station.inventory } as any;
+    const cur = nextInv[c.commodityId];
+    if (cur) nextInv[c.commodityId] = { ...cur, stock: (cur.stock || 0) + c.units };
+    // Reputation bump for fulfillment
+    const bias = getPriceBiasForStation(station.type as any, c.commodityId);
+    const biasW = bias === 'expensive' ? 1.8 : (bias === 'cheap' ? 0.6 : 1.0);
+    const repDelta = Math.min(8, 0.08 * c.units * biasW);
+    const stations = state.stations.map(s => s.id === station.id ? { ...s, inventory: nextInv, reputation: Math.max(0, Math.min(100, (s.reputation || 0) + repDelta)) } : s);
+    const contracts = (state.contracts || []).map(x => x.id === id ? { ...x, status: 'completed' } : x);
+    const objectives = (state.objectives || []).map(o => o.id === `obj:${id}` ? { ...o, status: 'completed' } : o);
+    const activeObjectiveId = state.activeObjectiveId === `obj:${id}` ? undefined : state.activeObjectiveId;
+    return { stations, contracts, objectives, activeObjectiveId, ship: { ...state.ship, cargo, credits: state.ship.credits + reward } as Ship } as Partial<GameState> as GameState;
   }),
 }));
 

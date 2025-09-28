@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, Fragment } from 'react';
 import { usePoll } from '../shared/hooks/use_poll';
 import { useGameStore } from '../state';
 
@@ -61,12 +61,12 @@ export function TradersPanel() {
         <div style={{ fontWeight: 700 }}>Unit Margin</div>
         <div style={{ fontWeight: 700 }}>Est. Profit/sec</div>
         {rows.map(r => (
-          <>
-            <div key={r.id+':route'}>{r.route}</div>
-            <div key={r.id+':cid'} style={{ textTransform:'capitalize' }}>{r.commodityId.replace(/_/g,' ')}</div>
-            <div key={r.id+':m'} style={{ color: r.unitMargin >= 0 ? '#10b981' : '#ef4444' }}>${r.unitMargin.toFixed(0)}</div>
-            <div key={r.id+':pps'} style={{ color: r.profitPerSec >= 0 ? '#10b981' : '#ef4444' }}>${r.profitPerSec.toFixed(1)}</div>
-          </>
+          <Fragment key={r.id}>
+            <div>{r.route}</div>
+            <div style={{ textTransform:'capitalize' }}>{r.commodityId.replace(/_/g,' ')}</div>
+            <div style={{ color: r.unitMargin >= 0 ? '#10b981' : '#ef4444' }}>${r.unitMargin.toFixed(0)}</div>
+            <div style={{ color: r.profitPerSec >= 0 ? '#10b981' : '#ef4444' }}>${r.profitPerSec.toFixed(1)}</div>
+          </Fragment>
         ))}
       </div>
     </div>
