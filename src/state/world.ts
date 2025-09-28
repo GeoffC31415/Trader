@@ -14,9 +14,9 @@ export const planets: Planet[] = [
   { id: 'ceres', name: 'Ceres', position: sp([-45, 0, 78]), radius: 2 * SCALE, color: '#7a8fa6' },
 ];
 
-export const stations: Station[] = [
+const baseStations: Station[] = [
   // Near Aurum
-  { id: 'sol-city', name: 'Sol City [Consumes: fuel/meds/lux]', type: 'city', position: sp([52, 0, 6]), inventory: priceForStation('city', commodities), persona: {
+  { id: 'sol-city', name: 'Sol City [Consumes: fuel/meds/lux]', type: 'city', position: sp([52, 0, 6]), inventory: {} as StationInventory, persona: {
     id: 'sol-city-rep',
     name: 'Mira Vale',
     title: 'Civic Trade Liaison',
@@ -33,7 +33,7 @@ export const stations: Station[] = [
       'Luxury goods sell best in the city core. Mind the spread.',
     ],
   } },
-  { id: 'sol-refinery', name: 'Helios Refinery [Cheap: fuel/hydrogen]', type: 'refinery', position: sp([48, 0, -10]), inventory: priceForStation('refinery', commodities), persona: {
+  { id: 'sol-refinery', name: 'Helios Refinery [Cheap: fuel/hydrogen]', type: 'refinery', position: sp([48, 0, -10]), inventory: {} as StationInventory, persona: {
     id: 'helios-rep',
     name: 'Rex Calder',
     title: 'Refinery Quartermaster',
@@ -50,7 +50,7 @@ export const stations: Station[] = [
       'If you have ore, we can crack it. Check your recipes before selling.',
     ],
   } },
-  { id: 'aurum-fab', name: 'Aurum Fabricator [Cheap: electronics/chips/alloys]', type: 'fabricator', position: sp([40, 0, -14]), inventory: priceForStation('fabricator', commodities), persona: {
+  { id: 'aurum-fab', name: 'Aurum Fabricator [Cheap: electronics/chips/alloys]', type: 'fabricator', position: sp([40, 0, -14]), inventory: {} as StationInventory, persona: {
     id: 'aurum-fab-rep',
     name: 'Dr. Elin Kade',
     title: 'Fabrication Overseer',
@@ -67,7 +67,7 @@ export const stations: Station[] = [
       'Electronics sell alright at Freeport when stocks dip.',
     ],
   } },
-  { id: 'greenfields', name: 'Greenfields Farm [Food production: grain/meat/sugar]', type: 'farm', position: sp([44, 0, -4]), inventory: priceForStation('farm', commodities), persona: {
+  { id: 'greenfields', name: 'Greenfields Farm [Food production: grain/meat/sugar]', type: 'farm', position: sp([44, 0, -4]), inventory: {} as StationInventory, persona: {
     id: 'greenfields-rep',
     name: 'Sana Whit',
     title: 'Agrarian Coop Steward',
@@ -85,7 +85,7 @@ export const stations: Station[] = [
     ],
   } },
   // Near Ceres
-  { id: 'ceres-pp', name: 'Ceres Power Plant [Cheap: batteries/fuel]', type: 'power_plant', position: sp([-56, 0, 86]), inventory: priceForStation('power_plant', commodities), persona: {
+  { id: 'ceres-pp', name: 'Ceres Power Plant [Cheap: batteries/fuel]', type: 'power_plant', position: sp([-56, 0, 86]), inventory: {} as StationInventory, persona: {
     id: 'ceres-pp-rep',
     name: 'Ivo Renn',
     title: 'Grid Balancer',
@@ -102,7 +102,7 @@ export const stations: Station[] = [
       'Luxury goods are wasted here—take them coreward.',
     ],
   } },
-  { id: 'freeport', name: 'Freeport Station [Mixed market]', type: 'trading_post', position: sp([-40, 0, 70]), inventory: priceForStation('trading_post', commodities), persona: {
+  { id: 'freeport', name: 'Freeport Station [Mixed market]', type: 'trading_post', position: sp([-40, 0, 70]), inventory: {} as StationInventory, persona: {
     id: 'freeport-rep',
     name: 'Kalla Rook',
     title: 'Free Merchant Convener',
@@ -119,7 +119,7 @@ export const stations: Station[] = [
       'Alloys and chips clear quick on upgrade cycles.',
     ],
   } },
-  { id: 'drydock', name: 'Drydock Shipyard [Upgrades available]', type: 'shipyard', position: sp([-30, 0, 90]), inventory: priceForStation('shipyard', commodities), persona: {
+  { id: 'drydock', name: 'Drydock Shipyard [Upgrades available]', type: 'shipyard', position: sp([-30, 0, 90]), inventory: {} as StationInventory, persona: {
     id: 'drydock-rep',
     name: 'Chief Harlan',
     title: 'Dockmaster',
@@ -137,10 +137,10 @@ export const stations: Station[] = [
     ],
   } },
   // Pirate outpost, off the system plane (y != 0) and far from core
-  { id: 'hidden-cove', name: 'Hidden Cove [Pirate: All fabrication]', type: 'pirate', position: sp([0, 40, 160]), inventory: priceForStation('pirate', commodities), persona: {
+  { id: 'hidden-cove', name: 'Hidden Cove [Pirate: All fabrication]', type: 'pirate', position: sp([0, 40, 160]), inventory: {} as StationInventory, persona: {
     id: 'hidden-cove-rep',
     name: 'Vex Marrow',
-    title: 'Quarter Queen',
+    title: 'Chief Quartermaster',
     vibe: 'dangerous, witty, disarming',
     avatarPrompt: 'pirate quartermaster, asymmetrical armor, scars and smirk, dim red cabin lights, contraband crates, high-contrast noir sci-fi',
     lines: [
@@ -155,6 +155,13 @@ export const stations: Station[] = [
     ],
   } },
 ];
+
+// Compute inventories with distance-aware pricing
+export const stations: Station[] = baseStations.map((base) => {
+  const meta = baseStations.map(s => ({ id: s.id, type: s.type, position: s.position }));
+  const inv = priceForStation(base.type, commodities, base.position, meta, base.id);
+  return { ...base, inventory: inv } as Station;
+});
 
 export const belts: AsteroidBelt[] = [
   { id: 'inner-belt', name: 'Common Belt', position: sp([0, 0, 0]), radius: 60 * SCALE, tier: 'common' },

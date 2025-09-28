@@ -46,7 +46,7 @@ export function App() {
                 <input type="checkbox" checked={tutorialActive} onChange={(e) => setTutorialActive(e.target.checked)} />
                 Start with tutorial (recommended for new players)
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
                 <div style={{ background: '#0b1220', padding: 12, borderRadius: 10, border: '1px solid #1f2937' }}>
                   <div style={{ fontWeight: 700, color: '#f5d042', marginBottom: 6 }}>Freighter (Gold)</div>
                   <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 8 }}>
@@ -82,6 +82,18 @@ export function App() {
                     <li>Mining rig installed</li>
                   </ul>
                   <button onClick={() => chooseStarter('miner', { tutorial: tutorialActive })} style={{ width: '100%', padding: '8px 10px', background: '#a16207', color: '#111827', borderRadius: 8, fontWeight: 700 }}>Select Miner</button>
+                </div>
+                <div style={{ background: '#0b1220', padding: 12, borderRadius: 10, border: '1px solid #1f2937' }}>
+                  <div style={{ fontWeight: 700, color: '#22c55e', marginBottom: 6 }}>Test Ship (Dev)</div>
+                  <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 8 }}>
+                    Fast racer with all upgrades enabled. High credits for testing.
+                  </div>
+                  <ul style={{ fontSize: 12, opacity: 0.9, margin: 0, paddingLeft: 16, marginBottom: 8 }}>
+                    <li>Kind: Racer, max acceleration and top speed</li>
+                    <li>Mining rig, Navigation, Intel, Union enabled</li>
+                    <li>Max cargo capacity</li>
+                  </ul>
+                  <button onClick={() => chooseStarter('test' as any, { tutorial: tutorialActive })} style={{ width: '100%', padding: '8px 10px', background: '#22c55e', color: '#111827', borderRadius: 8, fontWeight: 700 }}>Select Test Ship</button>
                 </div>
               </div>
             </div>

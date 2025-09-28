@@ -1,5 +1,5 @@
 import type { Station, NpcTrader } from './types';
-import { distance } from './math';
+import { distance, add, sub, normalize, scale, quadraticBezier, lerp } from './math';
 import { commodities } from './world';
 import { SCALE } from './constants';
 
@@ -64,15 +64,61 @@ export function spawnNpcTraders(stations: Station[], count: number): NpcTrader[]
     const speed = speedForCommodity(r.commodityId);
     const jitter: [number, number, number] = [ (Math.random()-0.5)*0.8*SCALE, (Math.random()-0.5)*0.4*SCALE, (Math.random()-0.5)*0.8*SCALE ];
     const position: [number, number, number] = [ from.position[0] + jitter[0], from.position[1] + jitter[1], from.position[2] + jitter[2] ];
-    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed });
+    const to = byId[r.toId];
+    const path = planNpcPath(from, to, position);
+    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed, path, pathCursor: 1 });
   }
   while (pick.length < count && routes.length > 0) {
     const r = routes[Math.floor(Math.random() * routes.length)];
     const from = byId[r.fromId];
     const speed = speedForCommodity(r.commodityId);
-    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position: [from.position[0], from.position[1], from.position[2]], speed });
+    const position: [number, number, number] = [from.position[0], from.position[1], from.position[2]];
+    const to = byId[r.toId];
+    const path = planNpcPath(from, to, position);
+    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed, path, pathCursor: 1 });
   }
   return pick;
+}
+
+// Path planning: produce a gentle U-turn-ish departure curve, straight cruise, and arrival curve
+export function planNpcPath(from: Station, to: Station, startPosition: [number, number, number]): [number, number, number][] {
+  const p0 = startPosition;
+  const p2 = to.position;
+  const fromPos = from.position;
+  const toPos = to.position;
+  const dir = normalize(sub(toPos, fromPos));
+  const away = scale(dir, SCALE * 4);
+  const side: [number, number, number] = [ -dir[2], 0, dir[0] ]; // simple perpendicular on XZ plane
+  const sideScaled = scale(side, SCALE * (2 + Math.random()*2));
+  const departTarget = add(add(fromPos, away), sideScaled);
+
+  // Build bezier samples for departure and arrival
+  const samples = 12;
+  const depart: [number, number, number][] = [];
+  for (let i = 0; i <= samples; i++) {
+    const t = i / samples;
+    depart.push(quadraticBezier(p0, departTarget, lerp(departTarget, toPos, 0.15), t));
+  }
+
+  const cruiseStart = depart[depart.length - 1];
+  const cruiseEnd = lerp(fromPos, toPos, 0.85);
+  const cruise: [number, number, number][] = [cruiseStart, cruiseEnd];
+
+  const arrival: [number, number, number][] = [];
+  for (let i = 0; i <= samples; i++) {
+    const t = i / samples;
+    arrival.push(quadraticBezier(cruiseEnd, add(toPos, scale(dir, -SCALE * 3)), toPos, t));
+  }
+
+  const path = [...depart, ...cruise, ...arrival];
+  // Ensure uniqueness to avoid zero-length steps
+  const filtered: [number, number, number][] = [];
+  for (const p of path) {
+    if (filtered.length === 0) { filtered.push(p); continue; }
+    const last = filtered[filtered.length - 1];
+    if (distance(last, p) > 0.01) filtered.push(p);
+  }
+  return filtered;
 }
 
 

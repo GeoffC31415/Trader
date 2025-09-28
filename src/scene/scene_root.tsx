@@ -478,6 +478,9 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
       {ship.kind === 'clipper' && (
         <ClipperModel power={power} turnLeftPower={turnLeftPower} turnRightPower={turnRightPower} hasRig={hasRig} />
       )}
+      {ship.kind === 'racer' && (
+        <ClipperModel power={power} turnLeftPower={turnLeftPower} turnRightPower={turnRightPower} hasRig={hasRig} />
+      )}
       {ship.kind === 'miner' && (
         <MinerModel power={power} turnLeftPower={turnLeftPower} turnRightPower={turnRightPower} hasRig={true} />
       )}

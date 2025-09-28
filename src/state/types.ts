@@ -64,6 +64,10 @@ export type NpcTrader = {
   toId: string;
   position: [number, number, number];
   speed: number;
+  // Precomputed piecewise path points from current position to destination, for curved movement
+  path?: [number, number, number][];
+  // Index of the next waypoint in `path` to move toward
+  pathCursor?: number;
 };
 
 export type TradeEntry = {
@@ -130,7 +134,7 @@ export type GameState = {
   process: (inputId: string, outputs: number) => void;
   upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel', amount: number, cost: number) => void;
   replaceShip: (kind: 'freighter' | 'clipper' | 'miner' | 'heavy_freighter' | 'racer' | 'industrial_miner', cost: number) => void;
-  chooseStarter: (kind: 'freighter' | 'clipper' | 'miner', opts?: { tutorial?: boolean }) => void;
+  chooseStarter: (kind: 'freighter' | 'clipper' | 'miner' | 'test', opts?: { tutorial?: boolean }) => void;
   setTutorialActive: (active: boolean) => void;
   setTutorialStep: (step: GameState['tutorialStep']) => void;
 };

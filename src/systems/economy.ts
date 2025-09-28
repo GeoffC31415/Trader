@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { economy_constants } from './economy_constants';
 
 export type StationType = 'refinery' | 'fabricator' | 'power_plant' | 'city' | 'trading_post' | 'mine' | 'farm' | 'research' | 'orbital_hab' | 'shipyard' | 'pirate';
 
@@ -96,6 +97,11 @@ export const processRecipes: Record<StationType, ProcessRecipe[]> = {
   ],
 };
 
+// Precompute set of all recipe outputs across the world to bias demand/prices
+const allRecipeOutputs = new Set<string>(
+  Object.values(processRecipes).flatMap(list => list.map(r => r.outputId))
+);
+
 // High-profit goods require Navigation Array to trade
 export const gatedCommodities = ['luxury_goods', 'pharmaceuticals', 'microchips', 'nanomaterials'] as const;
 export type GatedCommodity = typeof gatedCommodities[number];
@@ -178,17 +184,20 @@ type StationPriceRules = {
 
 const rulesByType: Record<StationType, StationPriceRules> = {
   refinery: {
-    cheap: ['hydrogen', 'refined_fuel'],
+    // Keep inputs cheap; do not make outputs cheap to encourage refining
+    cheap: ['hydrogen'],
     expensive: ['electronics', 'microchips', 'luxury_goods'],
     stockBoost: { refined_fuel: 200, hydrogen: 400 },
   },
   fabricator: {
-    cheap: ['steel', 'plastics', 'electronics', 'microchips', 'alloys'],
+    // Keep key inputs cheap; avoid making outputs cheap to improve fabrication margins
+    cheap: ['steel', 'plastics', 'alloys'],
     expensive: ['rare_minerals', 'spices', 'luxury_goods'],
     stockBoost: { electronics: 100, microchips: 60, alloys: 80, plastics: 120 },
   },
   power_plant: {
-    cheap: ['batteries', 'refined_fuel'],
+    // Fuel input is cheap; batteries (output) should not be cheap here
+    cheap: ['refined_fuel'],
     expensive: ['luxury_goods', 'spices'],
     stockBoost: { batteries: 180, refined_fuel: 120 },
   },
@@ -243,7 +252,108 @@ export function getPriceBiasForStation(type: StationType, commodityId: string): 
   return 'normal';
 }
 
-export function priceForStation(type: StationType, commodities: Commodity[]): StationInventory {
+// Lightweight vector distance to avoid importing from state
+function dist(a: [number, number, number], b: [number, number, number]): number {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  const dz = a[2] - b[2];
+  return Math.sqrt(dx*dx + dy*dy + dz*dz);
+}
+
+type StationMeta = { id: string; type: StationType; position: [number, number, number] };
+
+type FeaturedKey = string; // `${stationId}:${commodityId}`
+type FeaturedEntry = { multiplier: number; expiresAt: number };
+let featuredMap: Map<FeaturedKey, FeaturedEntry> | undefined;
+
+function ensureFeaturedInitialized(stations: StationMeta[] | undefined): void {
+  if (featuredMap && featuredMap.size > 0) {
+    // Drop expired
+    const now = Date.now();
+    for (const [k, v] of featuredMap) if (v.expiresAt <= now) featuredMap.delete(k);
+    if (featuredMap.size > 0) return;
+  }
+  if (!stations || stations.length === 0) return;
+  featuredMap = new Map();
+  const candidates = stations.filter(s => s.type !== 'refinery' && s.type !== 'farm');
+  const count = economy_constants.featured.count;
+  const cats = new Set(economy_constants.featured.candidate_categories as unknown as string[]);
+  const pool: { station: StationMeta; commodityId: string }[] = [];
+  // Choose commodities by allowed categories
+  for (const st of candidates) {
+    for (const c of generateCommodities()) {
+      if (!cats.has(c.category)) continue;
+      pool.push({ station: st, commodityId: c.id });
+    }
+  }
+  for (let i = 0; i < Math.min(count, pool.length); i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    const picked = pool.splice(idx, 1)[0];
+    const mult = economy_constants.featured.min_multiplier + Math.random() * (economy_constants.featured.max_multiplier - economy_constants.featured.min_multiplier);
+    const ttlMs = (20 + Math.floor(Math.random() * 10)) * 60 * 1000; // 20-30 minutes
+    featuredMap.set(`${picked.station.id}:${picked.commodityId}`, { multiplier: mult, expiresAt: Date.now() + ttlMs });
+  }
+}
+
+function getFeaturedMultiplier(stationId: string | undefined, commodityId: string): number {
+  if (!stationId || !featuredMap) return 1;
+  const key = `${stationId}:${commodityId}`;
+  const entry = featuredMap.get(key);
+  if (!entry) return 1;
+  if (entry.expiresAt <= Date.now()) {
+    featuredMap.delete(key);
+    return 1;
+  }
+  return entry.multiplier;
+}
+
+function nearestProducerDistance(commodityId: string, here: [number, number, number] | undefined, stations: StationMeta[] | undefined): number {
+  if (!here || !stations || stations.length === 0) return 0;
+  // A producer is a station whose recipes output this commodity
+  const producerTypes = new Set<StationType>();
+  for (const [stype, list] of Object.entries(processRecipes) as [StationType, ProcessRecipe[]][]) {
+    if (list.some(r => r.outputId === commodityId)) producerTypes.add(stype);
+  }
+  if (producerTypes.size === 0) return 0;
+  let best = Number.POSITIVE_INFINITY;
+  for (const s of stations) {
+    if (!producerTypes.has(s.type)) continue;
+    const d = dist(here, s.position);
+    if (d < best) best = d;
+  }
+  return Number.isFinite(best) ? best : 0;
+}
+
+function distancePremiumFor(category: Commodity['category'], distance: number): number {
+  const norm = economy_constants.distance_norm;
+  const k = (economy_constants.k_dist_by_category as any)[category] || 0.2;
+  const premium = k * Math.max(0, Math.min(1, distance / Math.max(1, norm)));
+  return Math.min(economy_constants.max_distance_premium, premium);
+}
+
+function applyAffinity(type: StationType, category: Commodity['category'], baseBuy: number, baseSell: number): { buy: number; sell: number } {
+  const matrix = (economy_constants.affinity as any)[type] || {};
+  const entry = matrix[category];
+  if (!entry) return { buy: baseBuy, sell: baseSell };
+  return { buy: Math.round(baseBuy * entry.buy), sell: Math.round(baseSell * entry.sell) };
+}
+
+function applyStockCurve(category: Commodity['category'], buy: number, sell: number, stock: number, target: number): { buy: number; sell: number } {
+  if (target <= 0) return { buy, sell };
+  const ratio = Math.max(0, Math.min(2, stock / target));
+  const k = economy_constants.k_stock;
+  const m = Math.max(economy_constants.min_stock_multiplier, Math.min(economy_constants.max_stock_multiplier, 1 + k * (1 - ratio)));
+  const buyM = Math.max(economy_constants.min_buy_stock_multiplier, Math.min(economy_constants.max_buy_stock_multiplier, m));
+  return { buy: Math.round(buy * buyM), sell: Math.round(sell * m) };
+}
+
+function getCraftFloorFor(category: Commodity['category']): number {
+  const map = economy_constants.craft_floor_margin as any;
+  return map[category] || 20;
+}
+
+export function priceForStation(type: StationType, commodities: Commodity[], here?: [number, number, number], stationsMeta?: StationMeta[], stationId?: string): StationInventory {
+  ensureFeaturedInitialized(stationsMeta);
   const rules = rulesByType[type];
   // Slightly higher volatility to allow more dynamic pricing across the map
   const volatility = 0.16;
@@ -259,18 +369,36 @@ export function priceForStation(type: StationType, commodities: Commodity[]): St
     // Cheap at source: push down buy and sell; Expensive at source: lift both.
     const buyMultiplier = cheap ? 0.45 : expensive ? 1.75 : 1.0;
     const sellMultiplier = cheap ? 0.55 : expensive ? 1.9 : 1.0;
-    const baseBuy = Math.round(c.baseBuy * buyMultiplier);
-    const baseSell = Math.round(c.baseSell * sellMultiplier);
+    let baseBuy = Math.round(c.baseBuy * buyMultiplier);
+    let baseSell = Math.round(c.baseSell * sellMultiplier);
+    // Affinity matrix nudges
+    const withAffinity = applyAffinity(type, c.category, baseBuy, baseSell);
+    baseBuy = withAffinity.buy;
+    baseSell = withAffinity.sell;
     const buy = fluctuate(baseBuy, volatility);
-    const sell = fluctuate(baseSell, volatility);
+    let sell = fluctuate(baseSell, volatility);
     // Larger minimum percent spread to avoid tight markets
     const adjusted = ensureSpread({ buy, sell, minPercent: 0.08, minAbsolute: 3 });
+    // Distance-based premium for globally fabricated outputs and long routes
+    const d = nearestProducerDistance(c.id, here, stationsMeta);
+    const distPremium = distancePremiumFor(c.category, d);
+    // Featured arbitrage multiplier (applies on top of distance premium)
+    const featuredM = getFeaturedMultiplier(stationId, c.id);
+    let sellExtra = Math.round(adjusted.sell * (1 + distPremium));
+    sellExtra = Math.round(sellExtra * featuredM);
+    // Apply an additional demand premium for fabricated outputs at non-producing stations
+    const isGlobalOutput = allRecipeOutputs.has(c.id);
+    const sellWithPremium = Math.round(
+      (isGlobalOutput && !outputSet.has(c.id)) ? Math.max(sellExtra, adjusted.sell) : Math.max(adjusted.sell, sellExtra * 0.95)
+    );
     const stock = (rules.stockBoost && (rules.stockBoost as any)[c.id]) || (cheap ? 200 : 50);
+    // Stock-driven scarcity curve
+    const withStock = applyStockCurve(c.category, adjusted.buy, sellWithPremium, stock, stock);
     // Directional trading rules (outputs take precedence over inputs for chained recipes)
     if (isProducer) {
       if (outputSet.has(c.id)) {
         // Sell outputs, but do not buy them
-        inv[c.id] = { buy: adjusted.buy, sell: adjusted.sell, stock, canBuy: false, canSell: true };
+        inv[c.id] = { buy: withStock.buy, sell: withStock.sell, stock, canBuy: false, canSell: true };
         continue;
       }
       if (inputSet.has(c.id)) {
@@ -278,14 +406,14 @@ export function priceForStation(type: StationType, commodities: Commodity[]): St
         // Except: food is always bought by stations
         const isFood = c.category === 'food' || c.id === 'water';
         const forceBuy = isFood;
-        inv[c.id] = { buy: adjusted.buy, sell: adjusted.sell, stock, canBuy: forceBuy, canSell: false };
+        inv[c.id] = { buy: withStock.buy, sell: withStock.sell, stock, canBuy: forceBuy, canSell: false };
         continue;
       }
       // Other unrelated goods: buy only
       // Ensure everyone buys food. Also ensure non-producers for specific energy goods buy them.
       const isFood = c.category === 'food' || c.id === 'water';
       const canBuy = isFood || true;
-      inv[c.id] = { buy: adjusted.buy, sell: adjusted.sell, stock, canBuy, canSell: false };
+      inv[c.id] = { buy: withStock.buy, sell: withStock.sell, stock, canBuy, canSell: false };
       continue;
     }
     // 3) Non-producing stations trade normally in both directions
@@ -295,7 +423,32 @@ export function priceForStation(type: StationType, commodities: Commodity[]): St
     if (isFood) canBuy = true;
     // Stations that don't produce refined_fuel or batteries should buy them
     if (c.id === 'refined_fuel' || c.id === 'batteries') canBuy = true;
-    inv[c.id] = { buy: adjusted.buy, sell: adjusted.sell, stock, canBuy, canSell: true };
+    let finalSell = withStock.sell;
+    // Crafting profitability guardrail for outputs at non-producers
+    if (isGlobalOutput && !outputSet.has(c.id)) {
+      // Find a recipe to estimate input costs
+      let chosen: ProcessRecipe | undefined;
+      for (const list of Object.values(processRecipes)) {
+        const found = list.find(r => r.outputId === c.id);
+        if (found) { chosen = found; break; }
+      }
+      if (chosen) {
+        // Estimate local input buy using cheap/expensive & affinity for this station
+        const inputCheap = rules.cheap.includes(chosen.inputId);
+        const inputExp = rules.expensive.includes(chosen.inputId);
+        let inBase = generateCommodities().find(x => x.id === chosen!.inputId)!;
+        let estBuy = Math.round(inBase.baseBuy * (inputCheap ? 0.45 : inputExp ? 1.75 : 1.0));
+        const aff = applyAffinity(type, inBase.category, estBuy, estBuy);
+        estBuy = aff.buy;
+        const floor = getCraftFloorFor(c.category);
+        const minSell = (estBuy * chosen.inputPerOutput) + floor;
+        if (finalSell < minSell) finalSell = minSell;
+      }
+    }
+    // Smoothing floor with distance premium baseline relative to baseSell
+    const baseFloor = Math.round(c.baseSell * (1 + 0.1 + distPremium));
+    if (finalSell < baseFloor) finalSell = baseFloor;
+    inv[c.id] = { buy: withStock.buy, sell: finalSell, stock, canBuy, canSell: true };
   }
   return inv;
 }

@@ -3,7 +3,7 @@ import { ensureSpread, processRecipes, gatedCommodities, findRecipeForStation } 
 import { SCALE, sp, shipCaps } from './constants';
 import { distance, clampMagnitude } from './math';
 import { planets, stations as initialStations, belts } from './world';
-import { spawnNpcTraders } from './npc';
+import { spawnNpcTraders, planNpcPath } from './npc';
 import type { GameState, RouteSuggestion, Ship, Station } from './types';
 import type { StationInventory } from '../systems/economy';
 
@@ -190,12 +190,35 @@ export const useGameStore = create<GameState>((set, get) => ({
       const dest = stationById[npc.toId];
       const src = stationById[npc.fromId];
       if (!dest || !src) return npc;
-      const dx = dest.position[0] - npc.position[0];
-      const dy = dest.position[1] - npc.position[1];
-      const dz = dest.position[2] - npc.position[2];
-      const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
       const step = npc.speed * dt;
-      if (dist <= step || dist < 0.5) {
+      let path = npc.path;
+      let cursor = npc.pathCursor ?? 0;
+      if (!path || path.length < 2) {
+        // Lazy plan in case older saves or missing
+        const from = stationById[npc.fromId];
+        path = planNpcPath(from, dest, npc.position);
+        cursor = 1;
+      }
+      let position: [number, number, number] = npc.position;
+      while (cursor < (path?.length || 0)) {
+        const target = path![cursor];
+        const dx = target[0] - position[0];
+        const dy = target[1] - position[1];
+        const dz = target[2] - position[2];
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        if (dist <= step) {
+          position = [target[0], target[1], target[2]];
+          cursor += 1;
+          continue;
+        }
+        const ux = dx / Math.max(1e-6, dist);
+        const uy = dy / Math.max(1e-6, dist);
+        const uz = dz / Math.max(1e-6, dist);
+        position = [ position[0] + ux * step, position[1] + uy * step, position[2] + uz * step ];
+        break;
+      }
+      // Arrived at end of path -> deliver and reverse route
+      if (cursor >= (path?.length || 0)) {
         const deliver = 3;
         const srcInv = src.inventory[npc.commodityId];
         const dstInv = dest.inventory[npc.commodityId];
@@ -205,16 +228,11 @@ export const useGameStore = create<GameState>((set, get) => ({
           stationStockDelta[dest.id] = stationStockDelta[dest.id] || {};
           stationStockDelta[dest.id][npc.commodityId] = (stationStockDelta[dest.id][npc.commodityId] || 0) + deliver;
         }
-        const next: any = { ...npc, position: [dest.position[0], dest.position[1], dest.position[2]], fromId: npc.toId, toId: npc.fromId };
-        return next;
+        // Reverse route; plan curved path back
+        const backPath = planNpcPath(dest, src, dest.position);
+        return { ...npc, position: [dest.position[0], dest.position[1], dest.position[2]], fromId: npc.toId, toId: npc.fromId, path: backPath, pathCursor: 1 };
       }
-      const ux = dx / dist;
-      const uy = dy / dist;
-      const uz = dz / dist;
-      const nx = npc.position[0] + ux * step;
-      const ny = npc.position[1] + uy * step;
-      const nz = npc.position[2] + uz * step;
-      return { ...npc, position: [nx, ny, nz] };
+      return { ...npc, position, path, pathCursor: cursor };
     });
 
     if (Object.keys(stationStockDelta).length > 0) {
@@ -496,6 +514,27 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (kind === 'clipper') {
       const ship: Ship = { position: basePosition, velocity: baseVelocity, credits: 10000, cargo: {}, maxCargo: 60, canMine: false, enginePower: 0, engineTarget: 0, hasNavigationArray: false, hasUnionMembership: false, hasMarketIntel: false, kind: 'clipper', stats: { acc: 18, drag: 0.9, vmax: 20 } };
       return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock' } as Partial<GameState> as GameState;
+    }
+    if ((kind as any) === 'test') {
+      // Spawn a racer with all upgrades and max caps for testing
+      const credits = 999999;
+      const kindR: Ship['kind'] = 'racer';
+      const ship: Ship = {
+        position: basePosition,
+        velocity: baseVelocity,
+        credits,
+        cargo: {},
+        maxCargo: shipCaps[kindR].cargo,
+        canMine: true,
+        enginePower: 0,
+        engineTarget: 0,
+        hasNavigationArray: true,
+        hasUnionMembership: true,
+        hasMarketIntel: true,
+        kind: kindR,
+        stats: { acc: shipCaps[kindR].acc, drag: 0.85, vmax: shipCaps[kindR].vmax },
+      };
+      return { ship, hasChosenStarter: true, tutorialActive: false, tutorialStep: 'dock' } as Partial<GameState> as GameState;
     }
     const ship: Ship = { position: basePosition, velocity: baseVelocity, credits: 0, cargo: {}, maxCargo: 80, canMine: true, enginePower: 0, engineTarget: 0, hasNavigationArray: false, hasUnionMembership: false, hasMarketIntel: false, kind: 'miner', stats: { acc: 9, drag: 1.1, vmax: 11 } };
     return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock' } as Partial<GameState> as GameState;
