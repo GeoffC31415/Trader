@@ -1,111 +1,189 @@
-# Trader
+## Trader
 
-A systems-driven trading game with a dynamic economy. Buy low, sell high, route goods between regions, and reinvest profits into upgrades that unlock new strategies and long-term progression.
+Systems-driven space trading game with a dynamic economy. Buy low, sell high, fabricate goods, upgrade your ship, and optimize routes across a small star system.
 
-## Quick start
+### Contents
+- Purpose and gameplay overview
+- Functional and non-functional requirements
+- Architecture and folder structure
+- Data models and systems
+- Build, run, and developer workflow
+- Extending the game
+
+## Purpose and gameplay overview
+
+- Explore a star system containing planets, belts, and stations of different types (refinery, fabricator, city, power plant, farm, shipyard, pirate outpost, etc.).
+- Trade commodities across stations. Prices vary by station type, distance, local stock, and featured arbitrage.
+- Process input goods into higher-value outputs at stations with recipes (e.g., refinery, fabricator). Pirate stations allow processing without Union membership.
+- Upgrade your ship (cargo, acceleration, top speed) and unlock capabilities (Mining Rig, Navigation Array, Mercantile Data Nexus, Union Membership).
+- NPC traders travel profitable routes and subtly shift station stocks over time.
+
+Core loop:
+1) Identify price gaps and route opportunities.
+2) Buy goods at source → move → sell at demand destination.
+3) Fabricate at intermediate stations when profitable (if permitted).
+4) Reinvest in upgrades and capabilities to unlock new routes and margins.
+
+## Requirements
+
+### Functional
+- Player can select a starter ship and optionally enable tutorial guidance.
+- Player can fly in 3D, dock/undock, and interact with station UIs.
+- Market UI shows station inventory with buy/sell prices, stock, and action buttons per commodity.
+- Fabrication UI lists recipes for the current station and allows converting inputs to outputs.
+- Journal shows trades and derived profit per commodity.
+- Routes panel shows suggested profitable routes (requires Navigation Array/Market Intel as gated).
+- Upgrades are available at shipyards; city provides Union membership.
+- Mining is possible at belts when near the ring and the ship has a Mining Rig.
+- NPC traders move between stations and adjust station stock on arrival.
+
+### Non-functional
+- Responsive and smooth rendering at 60 FPS target on modern hardware.
+- Deterministic, side-effect-light state updates (Zustand) to simplify reasoning and testing.
+- Modular code structure with clear domain boundaries for ease of extension.
+- Type-safe across the codebase with strict TypeScript.
+
+## Tech stack
+- Vite + React 18 + TypeScript 5
+- react-three-fiber + drei (Three.js)
+- Zustand for game state
+- zod for schema typing of commodities
+
+## Build and run
 
 ```bash
-# prerequisites: Node.js 18+ and npm 9+
+# Requirements: Node.js 18+ and npm 9+
 npm install
 npm run dev
 ```
 
-- Dev server runs at `http://localhost:5173` by default
+- Dev server: `http://localhost:5173`
 - Production build: `npm run build` (outputs to `dist/`)
-- Preview production: `npm run preview`
-- Type check: `npm run typecheck`
+- Preview built app: `npm run preview`
+- Type checking: `npm run typecheck`
 
-## Core gameplay loop
-
-1. Scan markets to find price gaps and short-term trends
-2. Buy goods where supply is high and prices are depressed
-3. Transport and sell where demand is strong
-4. Reinvest profits into upgrades (capacity, analytics, access)
-5. Adapt as events shift supply, demand, and routes
-
-## Dynamic economy
-
-The world evolves over time and reacts to your trades.
-
-- Supply and demand: each commodity has production/consumption, stockpiles, and elasticity; prices mean-revert toward equilibrium with bounded volatility
-- Regional modifiers: locations apply scarcity/abundance multipliers; spatial price differences enable arbitrage
-- Liquidity and slippage: larger orders move price relative to local depth; fees/spread reduce net proceeds
-- Events and shocks: temporary boosts/droughts, embargoes, disasters; effects decay over time
-- Feedback loops: repeated buying lifts price; heavy selling can crash thin markets; stockpiles decay slowly
-
-Implementation entry points:
-- `src/systems/economy.ts` — economy tick, price updates, shocks, slippage
-- `src/state/game_state.ts` — player cash, cargo, holdings, upgrades, and global state (zustand)
-- `src/scene/scene_root.tsx` — render root and integration with the simulation loop
-
-## Trading mechanics
-
-- Commodities: distinct goods with different volatility, carry cost, and elasticity
-- Orders: instant buy/sell at market; order size interacts with slippage and spread
-- Capacity and carry: cargo limits cap position size; storage has soft caps and optional decay
-- Risk: diversify; size positions to liquidity; keep cash for adverse moves
-- Price discovery: watch spreads and short moving averages to time entries/exits
-
-## Upgrades and progression
-
-Spend profits to unlock compounding advantages and new playstyles.
-
-- Cargo and logistics: increase capacity, reduce transport friction, mitigate slippage impact
-- Analytics: deeper history, forecast hints, event early warnings, improved market UI
-- Market access: fee reductions, licenses for restricted goods, access to premium hubs
-- Operations: faster ticks, smarter route planning tools, passive contracts
-- Reputation: sustained profits raise standing and improve trading terms; unlocks advanced upgrades
-
-Progression goals can include target net worth, route dominance, or meta-challenges.
-
-## UI guide
-
-- Market panel — `src/ui/market_panel.tsx`: live prices, spreads, stockpiles, quick buy/sell
-- Journal — `src/ui/journal_panel.tsx`: events, news, transaction log, upgrades acquired
-- Minimap — `src/ui/minimap.tsx`: locations overview and route planning
-
-## Strategy tips
-
-- Start wide, not deep: trade 2–3 goods to reduce variance
-- Trade with the tide: align with multi-tick trends; fade only at extremes
-- Respect liquidity: size to depth; avoid punitive slippage in thin markets
-- Compound edges: capacity + analytics + lower fees stack multiplicatively
-
-## Project structure
+## Architecture and folder structure
 
 ```
-Trader/
-  src/
-    scene/            # 3D scene and world
-    state/            # global game state (zustand)
-    systems/          # simulation (economy, ticks)
-    ui/               # panels and HUD
+src/
+  App.tsx                      # Top-level UI shell (Canvas + panels)
+  main.tsx                     # React entry
+  index.css                    # Global styles
+
+  domain/
+    constants/
+      ship_constants.ts        # Ship base and cap stats
+      world_constants.ts       # SCALE and world-space helpers (sp)
+    types/
+      economy_types.ts         # StationType, Commodity, StationInventory, ProcessRecipe
+      world_types.ts           # Station, Planet, AsteroidBelt, Ship, GameState, etc.
+
+  shared/
+    hooks/
+      use_poll.ts              # Simple polling hook for UI refresh
+    math/
+      vec3.ts                  # Vector math, distance, bezier, lerp, etc.
+
+  systems/
+    economy/
+      commodities.ts           # generateCommodities()
+      recipes.ts               # processRecipes and findRecipeForStation()
+      pricing.ts               # priceForStation(), ensureSpread(), price bias, gating
+      featured.ts              # seeded featured arbitrage multipliers (time-limited)
+      constants.ts             # re-export of economy_constants
+    economy_constants.ts       # Tunable economy parameters (affinities, premiums, floors)
+
+  state/
+    index.ts                   # Barrel: useGameStore + selected exports
+    store.ts                   # Zustand store (tick, movement, dock/undock, trade, process, upgrade)
+    world/
+      seed.ts                  # Static world seed (planets, stations with personas, belts, inventories)
+    world.ts                   # Re-exports of commodities/planets/stations/belts
+    npc.ts                     # NPC spawn and path planning utilities
+    types.ts                   # Legacy surface (now imports from domain/types)
+    constants.ts               # Legacy surface (re-exports from domain/constants)
+
+  scene/
+    scene_root.tsx             # R3F scene integration + input + camera follow
+    components/
+      primitives/
+        Planet.tsx             # Planet/star mesh and label
+        BeltRing.tsx           # Belt ring mesh and label
+        PlaneGrid.tsx          # Ground grid + contact shadows
+      stations/
+        StationVisual.tsx      # Visuals by station type, labels
+      ships/
+        FreighterModel.tsx     # Ship mesh (freighter)
+        ClipperModel.tsx       # Ship mesh (clipper/racer)
+        MinerModel.tsx         # Ship mesh (miner)
+      Ship.tsx                 # Ship container and orientation
+
+  ui/
+    market_panel.tsx           # Market UI, upgrades, ship replacement
+    journal_panel.tsx          # Trades log, cargo, profits, routes (gated)
+    traders_panel.tsx          # NPC traders and profitability metrics
+    dock_intro.tsx             # Persona overlay when docking
+    minimap.tsx                # 2D system map (canvas)
+
+  personas/
+    avatar_prompts.ts          # Prompts metadata for persona images
 ```
 
-Key files:
-- `src/systems/economy.ts`
-- `src/state/game_state.ts`
-- `src/scene/scene_root.tsx`
+Design notes:
+- Domain types/constants are the single source of truth shared across systems and state.
+- Economy modules are split for clarity and easier tuning/testing.
+- State store orchestrates gameplay actions and NPC effects, keeping logic functional and side-effect minimal.
+- Scene is composed of small, reusable 3D components; `scene_root` handles input and camera.
+- UI panels are declarative and read/write via Zustand selectors/actions.
 
-## Configuration and tuning
+## Data models and systems (overview)
 
-- Economy parameters (fees, elasticity, stockpile decay) are defined in `src/systems/economy.ts`
-- Tick rate is configured where the scene integrates the economy update
+### Economy
+- Commodities: defined by id, name, category, baseBuy/baseSell.
+- Recipes (by StationType): map inputId → outputId at a ratio.
+- Pricing (`pricing.ts`):
+  - Starts from base prices; modifies by station affinity, cheap/expensive lists, randomness, and ensures a minimum spread.
+  - Distance premium increases sell at non-producers proportional to distance to nearest producer.
+  - Featured arbitrage multiplies price temporarily at selected stations/commodities.
+  - Stock curve adjusts prices based on local stock vs target.
+  - Gated goods require Navigation Array; fabrication requires Union (except pirate).
 
-## Roadmap ideas
+### World seed
+- Located at `state/world/seed.ts`.
+- Defines planets, stations (+ personas), belts; computes inventories via `priceForStation`.
 
-- AI competitors that generate organic order flow and pressure
-- Contracts and deliveries with time windows and penalties
-- Credit and leverage with interest and liquidation risk
-- Branching tech tree with synergies and trade-offs
-- Save/load profiles and seeded world generation
+### State/store
+- `store.ts` exposes actions: `tick`, `thrust`, `tryDock`, `undock`, `mine`, `buy`, `sell`, `process`, `upgrade`, `replaceShip`, `chooseStarter`, tutorial setters.
+- `tick(dt)` applies drag, moves ship, jitters station prices slightly, advances NPCs along paths, and adjusts station stock on NPC delivery.
+- `getSuggestedRoutes` computes profitable direct and process routes with gating considered.
 
-## Contributing
+### Scene and input
+- WASD to move on the XZ plane; R/F for vertical; E to dock; Q to undock; M to mine (when near belt ring).
+- Camera follows ship with smooth lerp and yaw drag with middle mouse.
 
-- Use Node 18+
-- Run `npm run typecheck` before committing
-- Keep simulation logic pure and deterministic where possible; isolate side effects at boundaries
+### UI panels
+- Market: trade, fabrication, production, upgrades, and ship replacement (at shipyards).
+- Journal: cargo, trades log, profit by commodity.
+- Traders: NPC routes with profitability metrics (requires Market Intel).
+- Dock intro: persona overlay with avatar and flavor text on docking.
+
+## Coding conventions
+- TypeScript strict mode; prefer typed modules from `domain/types`.
+- Keep pure logic in `systems` and `state` where possible; avoid local component state for core game logic.
+- Favor functional updates and early returns; keep React components presentational.
+- Use absolute or short relative imports (tsconfig `baseUrl: ./src`).
+
+## Extending the game
+- Add commodities: update `systems/economy/commodities.ts`.
+- Add or tune recipes: update `systems/economy/recipes.ts`.
+- Tune market behavior: adjust `systems/economy_constants.ts` and pricing functions.
+- Add a station: edit `state/world/seed.ts` (define persona and rely on pricing to generate inventory).
+- New ship model: add a mesh under `scene/components/ships/` and extend ship selection/replace logic in `state/store.ts` and `ui/market_panel.tsx`.
+
+## Troubleshooting
+- React key warnings in lists: ensure mapped children are wrapped in keyed Fragments.
+- Drei/R3F version issues: `npm install` to align with lockfile; clear vite cache if needed.
+- Type errors after refactors: run `npm run typecheck` and follow errors to imports from `domain/*` and `systems/economy/*`.
 
 ## License
-
 MIT
