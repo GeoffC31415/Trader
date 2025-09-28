@@ -12,6 +12,7 @@ export function MarketPanel() {
   const process = useGameStore(s => s.process);
   const upgrade = useGameStore(s => s.upgrade);
   const replaceShip = useGameStore(s => s.replaceShip);
+  const hasIntel = !!ship.hasMarketIntel;
 
   const [qty, setQty] = useState<number>(1);
 
@@ -113,6 +114,9 @@ export function MarketPanel() {
             <div>Navigation Array: {ship.hasNavigationArray ? 'Installed' : 'Not installed'}</div>
             <div>$5,000</div>
             <button onClick={() => upgrade('navigation', 0, 5000)} disabled={!!ship.hasNavigationArray}>{ship.hasNavigationArray ? 'Owned' : 'Buy'}</button>
+            <div>Mercantile Data Nexus: {hasIntel ? 'Installed' : 'Not installed'}</div>
+            <div>$2,500</div>
+            <button onClick={() => upgrade('intel' as any, 0, 2500)} disabled={hasIntel}>{hasIntel ? 'Owned' : 'Buy'}</button>
           </div>
           <div style={{ fontWeight: 700, marginBottom: 4 }}>Replace Ship</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center' }}>

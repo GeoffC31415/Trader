@@ -9,6 +9,7 @@ export function JournalPanel() {
   const profitByCommodity = useGameStore(s => s.profitByCommodity);
   const getSuggestedRoutes = useGameStore(s => s.getSuggestedRoutes);
   const routesPoll = usePoll(2000);
+  const hasIntel = useGameStore(s => !!s.ship.hasMarketIntel);
 
   const [tab, setTab] = useState<'ship' | 'trades' | 'routes'>('ship');
   const [page, setPage] = useState<number>(1);
@@ -31,7 +32,7 @@ export function JournalPanel() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
         <button onClick={() => setTab('ship')} style={{ fontWeight: tab==='ship'?700:400 }}>Ship</button>
         <button onClick={() => setTab('trades')} style={{ fontWeight: tab==='trades'?700:400 }}>Trading Log</button>
-        <button onClick={() => setTab('routes')} style={{ fontWeight: tab==='routes'?700:400 }}>Routes</button>
+        <button onClick={() => setTab('routes')} disabled={!hasIntel} title={!hasIntel ? 'Requires Mercantile Data Nexus upgrade' : undefined} style={{ fontWeight: tab==='routes'?700:400, opacity: hasIntel ? 1 : 0.6 }}>Routes</button>
       </div>
       {tab === 'ship' && (
         <div>
@@ -101,7 +102,7 @@ export function JournalPanel() {
           </div>
         </div>
       )}
-      {tab === 'routes' && (
+      {tab === 'routes' && hasIntel && (
         <div>
           <div style={{ fontWeight: 700, marginBottom: 6 }}>Suggested Routes</div>
           <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
@@ -146,6 +147,11 @@ export function JournalPanel() {
               </>
             ))}
           </div>
+        </div>
+      )}
+      {tab === 'routes' && !hasIntel && (
+        <div>
+          <div style={{ opacity: 0.8 }}>Requires ship upgrade: Mercantile Data Nexus (buy at Shipyard) to view routes.</div>
         </div>
       )}
     </div>

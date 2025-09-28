@@ -14,6 +14,14 @@ function distance(a: Vec3, b: Vec3): number {
 export function TradersPanel() {
   const npcTraders = useGameStore(s => s.npcTraders);
   const stations = useGameStore(s => s.stations);
+  const hasIntel = useGameStore(s => !!s.ship.hasMarketIntel);
+  if (!hasIntel) {
+    return (
+      <div className="panel">
+        <div style={{ opacity: 0.8 }}>Requires ship upgrade: Mercantile Data Nexus (buy at Shipyard).</div>
+      </div>
+    );
+  }
   const poll = usePoll(2000);
 
   const stationById = useMemo(() => Object.fromEntries(stations.map(s => [s.id, s])), [stations]);
