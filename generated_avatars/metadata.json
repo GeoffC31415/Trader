@@ -1,0 +1,55 @@
+{
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "generatedAt": "2025-09-28T16:15:28.103Z",
+  "results": [
+    {
+      "stationId": "sol-city",
+      "name": "Mira Vale",
+      "prompt": "Subject: Mira Vale, station representative for sol-city.\nfuturistic trade liaison, mid-30s, sleek municipal attire, tasteful gold accents, calm confident expression, sci-fi spaceport backdrop, volumetric light, cinematic, 35mm, high detail\nCinematic sci-fi portrait series, consistent art direction. Half-body (shoulders-up), subject centered and facing camera. Realistic skin, sharp focus, 35mm lens look, shallow depth of field. High detail, studio lighting with cool rim light and warm key light. Neutral dark spaceport backdrop, subtle bokeh, minimal props. Color grading: teal & amber highlights; avoid extreme saturation. Unified set style keyword: AURELIAN-TRADE-SET-01. Output as PNG with transparent background if supported.",
+      "file": "D:\\Documents\\Code\\Trader\\generated_avatars\\sol-city - Mira Vale.png"
+    },
+    {
+      "stationId": "sol-refinery",
+      "name": "Rex Calder",
+      "prompt": "Subject: Rex Calder, station representative for sol-refinery.\nindustrial refinery foreman, late-40s, grease-marked utility jacket, hard hat with visor, harsh industrial lighting, pipes and tanks background, gritty realism\nCinematic sci-fi portrait series, consistent art direction. Half-body (shoulders-up), subject centered and facing camera. Realistic skin, sharp focus, 35mm lens look, shallow depth of field. High detail, studio lighting with cool rim light and warm key light. Neutral dark spaceport backdrop, subtle bokeh, minimal props. Color grading: teal & amber highlights; avoid extreme saturation. Unified set style keyword: AURELIAN-TRADE-SET-01. Output as PNG with transparent background if supported.",
+      "file": "D:\\Documents\\Code\\Trader\\generated_avatars\\sol-refinery - Rex Calder.png"
+    },
+    {
+      "stationId": "aurum-fab",
+      "name": "Dr. Elin Kade",
+      "prompt": "Subject: Dr. Elin Kade, station representative for aurum-fab.\nfuturistic fabrication engineer, sharp features, lab coat over smart techwear, holographic schematics, cool color palette, studio lighting\nCinematic sci-fi portrait series, consistent art direction. Half-body (shoulders-up), subject centered and facing camera. Realistic skin, sharp focus, 35mm lens look, shallow depth of field. High detail, studio lighting with cool rim light and warm key light. Neutral dark spaceport backdrop, subtle bokeh, minimal props. Color grading: teal & amber highlights; avoid extreme saturation. Unified set style keyword: AURELIAN-TRADE-SET-01. Output as PNG with transparent background if supported.",
+      "file": "D:\\Documents\\Code\\Trader\\generated_avatars\\aurum-fab - Dr. Elin Kade.png"
+    },
+    {
+      "stationId": "greenfields",
+      "name": "Sana Whit",
+      "prompt": "Subject: Sana Whit, station representative for greenfields.\nspacefaring agrarian steward, practical workwear with earth tones, hydroponic greenery, gentle smile, soft sunlight, pastoral sci-fi aesthetic\nCinematic sci-fi portrait series, consistent art direction. Half-body (shoulders-up), subject centered and facing camera. Realistic skin, sharp focus, 35mm lens look, shallow depth of field. High detail, studio lighting with cool rim light and warm key light. Neutral dark spaceport backdrop, subtle bokeh, minimal props. Color grading: teal & amber highlights; avoid extreme saturation. Unified set style keyword: AURELIAN-TRADE-SET-01. Output as PNG with transparent background if supported.",
+      "file": "D:\\Documents\\Code\\Trader\\generated_avatars\\greenfields - Sana Whit.png"
+    },
+    {
+      "stationId": "ceres-pp",
+      "name": "Ivo Renn",
+      "prompt": "Subject: Ivo Renn, station representative for ceres-pp.\npower plant operator, minimalist utility suit, data tablet, cool cyan UI glow, turbine backdrop, clean sci-fi style\nCinematic sci-fi portrait series, consistent art direction. Half-body (shoulders-up), subject centered and facing camera. Realistic skin, sharp focus, 35mm lens look, shallow depth of field. High detail, studio lighting with cool rim light and warm key light. Neutral dark spaceport backdrop, subtle bokeh, minimal props. Color grading: teal & amber highlights; avoid extreme saturation. Unified set style keyword: AURELIAN-TRADE-SET-01. Output as PNG with transparent background if supported.",
+      "file": "D:\\Documents\\Code\\Trader\\generated_avatars\\ceres-pp - Ivo Renn.png"
+    },
+    {
+      "stationId": "freeport",
+      "name": "Kalla Rook",
+      "prompt": "Subject: Kalla Rook, station representative for freeport.\ncharismatic spacer in patched jacket, eclectic pins, neon stall signs, lively bazaar vibe, bold color lighting\nCinematic sci-fi portrait series, consistent art direction. Half-body (shoulders-up), subject centered and facing camera. Realistic skin, sharp focus, 35mm lens look, shallow depth of field. High detail, studio lighting with cool rim light and warm key light. Neutral dark spaceport backdrop, subtle bokeh, minimal props. Color grading: teal & amber highlights; avoid extreme saturation. Unified set style keyword: AURELIAN-TRADE-SET-01. Output as PNG with transparent background if supported.",
+      "file": "D:\\Documents\\Code\\Trader\\generated_avatars\\freeport - Kalla Rook.png"
+    },
+    {
+      "stationId": "drydock",
+      "name": "Chief Harlan",
+      "prompt": "Subject: Chief Harlan, station representative for drydock.\nveteran dockmaster, heavy-duty coveralls, magnetic boots, sparks and scaffolds, warm rim light, cinematic portrait\nCinematic sci-fi portrait series, consistent art direction. Half-body (shoulders-up), subject centered and facing camera. Realistic skin, sharp focus, 35mm lens look, shallow depth of field. High detail, studio lighting with cool rim light and warm key light. Neutral dark spaceport backdrop, subtle bokeh, minimal props. Color grading: teal & amber highlights; avoid extreme saturation. Unified set style keyword: AURELIAN-TRADE-SET-01. Output as PNG with transparent background if supported.",
+      "file": "D:\\Documents\\Code\\Trader\\generated_avatars\\drydock - Chief Harlan.png"
+    },
+    {
+      "stationId": "hidden-cove",
+      "name": "Vex Marrow",
+      "prompt": "Subject: Vex Marrow, station representative for hidden-cove.\npirate quartermaster, asymmetrical armor, scars and smirk, dim red cabin lights, contraband crates, high-contrast noir sci-fi\nCinematic sci-fi portrait series, consistent art direction. Half-body (shoulders-up), subject centered and facing camera. Realistic skin, sharp focus, 35mm lens look, shallow depth of field. High detail, studio lighting with cool rim light and warm key light. Neutral dark spaceport backdrop, subtle bokeh, minimal props. Color grading: teal & amber highlights; avoid extreme saturation. Unified set style keyword: AURELIAN-TRADE-SET-01. Output as PNG with transparent background if supported.",
+      "file": "D:\\Documents\\Code\\Trader\\generated_avatars\\hidden-cove - Vex Marrow.png"
+    }
+  ]
+}

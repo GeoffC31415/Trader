@@ -17,6 +17,13 @@ export function MarketPanel() {
   const [qty, setQty] = useState<number>(1);
 
   const station = useMemo(() => stations.find(s => s.id === ship.dockedStationId), [stations, ship.dockedStationId]);
+  const persona = station?.persona;
+  const personaLine = useMemo(() => {
+    if (!persona) return undefined;
+    const pool = [...(persona.lines || []), ...(persona.tips || [])];
+    if (pool.length === 0) return undefined;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }, [station?.id]);
 
   if (!station) {
     return (
@@ -49,6 +56,13 @@ export function MarketPanel() {
       <div style={{ marginBottom: 8 }}>
         <strong>Credits:</strong> {ship.credits.toLocaleString()} | <strong>Cargo:</strong> {Object.values(ship.cargo).reduce((a,b)=>a+b,0)} / {ship.maxCargo}
       </div>
+      {persona && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(12,15,22,0.9)', border: '1px solid #1f2937', marginBottom: 8 }}>
+          <div style={{ fontWeight: 700 }}>{persona.name}</div>
+          <div style={{ opacity: 0.8, fontSize: 12 }}>{persona.title}</div>
+          <div style={{ opacity: 0.8, marginLeft: 'auto', fontStyle: 'italic', fontSize: 12 }}>{personaLine}</div>
+        </div>
+      )}
       {station.type === 'shipyard' && (
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontWeight: 700, marginBottom: 4 }}>Shipyard</div>

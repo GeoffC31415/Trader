@@ -8,6 +8,7 @@ import { JournalPanel } from './ui/journal_panel';
 import { TradersPanel } from './ui/traders_panel';
 import { Minimap } from './ui/minimap';
 import { useGameStore } from './state/game_state';
+import { DockIntro } from './ui/dock_intro';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal' | 'traders'>('market');
@@ -31,6 +32,7 @@ export function App() {
         </div>
         <div className="vignette" />
         {hasNav && <Minimap />}
+        <DockIntro />
         {!hasChosenStarter && (
           <div
             style={{

@@ -79,7 +79,7 @@ function StationBox({ position, name, color = '#7dd3fc' }: { position: [number, 
   );
 }
 
-function ShipyardVisual({ position, name }: { position: [number, number, number]; name: string }) {
+function ShipyardVisual({ position, name, hideLabel = false }: { position: [number, number, number]; name: string; hideLabel?: boolean }) {
   return (
     <group position={position as any}>
       <mesh castShadow receiveShadow>
@@ -90,12 +90,12 @@ function ShipyardVisual({ position, name }: { position: [number, number, number]
         <cylinderGeometry args={[2, 2, 1, 24]} />
         <meshStandardMaterial color={new THREE.Color('#065f46')} metalness={0.3} roughness={0.6} />
       </mesh>
-      <Html center distanceFactor={50}><div style={{ fontSize: 14, opacity: 0.5 }}>{name}</div></Html>
+      {!hideLabel && <Html center distanceFactor={50}><div style={{ fontSize: 14, opacity: 0.5 }}>{name}</div></Html>}
     </group>
   );
 }
 
-function StationVisual({ position, name, type }: { position: [number, number, number]; name: string; type: import('../systems/economy').StationType }) {
+function StationVisual({ position, name, type, hideLabel = false }: { position: [number, number, number]; name: string; type: import('../systems/economy').StationType; hideLabel?: boolean }) {
   // Base color palette by function (subtle, desaturated)
   const base = useMemo(() => ({
     refinery: '#9a7b4f',
@@ -274,9 +274,9 @@ function StationVisual({ position, name, type }: { position: [number, number, nu
         </group>
       )}
       {type === 'shipyard' && (
-        <ShipyardVisual position={[0,0,0] as any} name={name} />
+        <ShipyardVisual position={[0,0,0] as any} name={name} hideLabel={hideLabel} />
       )}
-      {type !== 'shipyard' && (
+      {type !== 'shipyard' && !hideLabel && (
         <Html center distanceFactor={50}><div style={{ fontSize: 14, opacity: 0.5 }}>{name}</div></Html>
       )}
     </group>
@@ -638,6 +638,7 @@ export function SceneRoot() {
     };
   }, [tryDock, undock, mine]);
 
+  const dockIntroVisibleId = useGameStore(s => s.dockIntroVisibleId);
   return (
     <group>
       <PlaneGrid />
@@ -666,7 +667,7 @@ export function SceneRoot() {
       ))}
       {stations.map(s => (
         <group key={s.id}>
-          <StationVisual position={s.position} name={s.name} type={s.type} />
+          <StationVisual position={s.position} name={s.name} type={s.type} hideLabel={!!dockIntroVisibleId} />
           {/* Dock prompt when near */}
           {Math.hypot(
             ship.position[0]-s.position[0],

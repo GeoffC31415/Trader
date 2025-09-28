@@ -4,7 +4,8 @@ import { SCALE, sp, shipCaps } from './constants';
 import { distance, clampMagnitude } from './math';
 import { planets, stations as initialStations, belts } from './world';
 import { spawnNpcTraders } from './npc';
-import type { GameState, RouteSuggestion, Ship, Station, StationInventory } from './types';
+import type { GameState, RouteSuggestion, Ship, Station } from './types';
+import type { StationInventory } from '../systems/economy';
 
 export const useGameStore = create<GameState>((set, get) => ({
   planets,
@@ -32,6 +33,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   tradeLog: [],
   profitByCommodity: {},
   avgCostByCommodity: {},
+  dockIntroVisibleId: undefined,
   getSuggestedRoutes: (opts) => {
     const state = get();
     const stations = state.stations;
@@ -254,16 +256,21 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (state.ship.dockedStationId) return state;
     const near = state.stations.find(s => distance(s.position, state.ship.position) < 6 * SCALE);
     if (!near) return state;
-    const next: Partial<GameState> = { ship: { ...state.ship, dockedStationId: near.id, velocity: [0,0,0] } as Ship };
+    const next: Partial<GameState> = { ship: { ...state.ship, dockedStationId: near.id, velocity: [0,0,0] } as Ship, dockIntroVisibleId: near.id };
     if (state.tutorialActive && state.tutorialStep === 'dock') {
       (next as any).tutorialStep = 'buy';
     }
     return next as Partial<GameState> as GameState;
   }),
+  dismissDockIntro: () => set((state) => {
+    if (!state.ship.dockedStationId) return state;
+    if (!state.dockIntroVisibleId) return state;
+    return { dockIntroVisibleId: undefined } as Partial<GameState> as GameState;
+  }),
   undock: () => set((state) => {
     if (!state.hasChosenStarter) return state;
     if (!state.ship.dockedStationId) return state;
-    return { ship: { ...state.ship, dockedStationId: undefined } } as Partial<GameState> as GameState;
+    return { ship: { ...state.ship, dockedStationId: undefined }, dockIntroVisibleId: undefined } as Partial<GameState> as GameState;
   }),
   mine: () => set((state) => {
     if (!state.hasChosenStarter) return state;

@@ -1,11 +1,22 @@
 import { Commodity, StationType, StationInventory } from '../systems/economy';
 
+export type StationPersona = {
+  id: string;
+  name: string;
+  title: string;
+  vibe: string; // a short descriptor for tone/mood
+  avatarPrompt: string; // prompt text for image generator
+  lines: string[]; // general lines
+  tips: string[]; // station- and system-related trading tips
+};
+
 export type Station = {
   id: string;
   name: string;
   type: StationType;
   position: [number, number, number];
   inventory: StationInventory;
+  persona?: StationPersona;
 };
 
 export type Planet = {
@@ -101,6 +112,8 @@ export type GameState = {
   hasChosenStarter: boolean;
   tutorialActive: boolean;
   tutorialStep: 'dock' | 'buy' | 'sell' | 'join_union' | 'fabricate_process' | 'fabricate_sell' | 'done';
+  // Dock intro flow
+  dockIntroVisibleId?: string; // station id showing intro overlay when docking
   tradeLog: TradeEntry[];
   profitByCommodity: Record<Commodity['id'], number>;
   avgCostByCommodity: Record<Commodity['id'], number>;
@@ -110,6 +123,7 @@ export type GameState = {
   setEngineTarget: (target: number) => void;
   tryDock: () => void;
   undock: () => void;
+  dismissDockIntro: () => void;
   mine: () => void;
   buy: (commodityId: string, quantity: number) => void;
   sell: (commodityId: string, quantity: number) => void;
