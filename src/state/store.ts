@@ -1,0 +1,508 @@
+import { create } from 'zustand';
+import { ensureSpread, processRecipes, gatedCommodities, findRecipeForStation } from '../systems/economy';
+import { SCALE, sp, shipCaps } from './constants';
+import { distance, clampMagnitude } from './math';
+import { planets, stations as initialStations, belts } from './world';
+import { spawnNpcTraders } from './npc';
+import type { GameState, RouteSuggestion, Ship, Station, StationInventory } from './types';
+
+export const useGameStore = create<GameState>((set, get) => ({
+  planets,
+  stations: initialStations,
+  belts,
+  npcTraders: spawnNpcTraders(initialStations, 24),
+  ship: {
+    position: sp([50, 0, 8]),
+    velocity: [0, 0, 0],
+    credits: 0,
+    cargo: {},
+    maxCargo: 100,
+    canMine: false,
+    enginePower: 0,
+    engineTarget: 0,
+    hasNavigationArray: false,
+    hasUnionMembership: false,
+    hasMarketIntel: false,
+    kind: 'freighter',
+    stats: { acc: 12, drag: 1.0, vmax: 12 },
+  },
+  hasChosenStarter: false,
+  tutorialActive: false,
+  tutorialStep: 'dock',
+  tradeLog: [],
+  profitByCommodity: {},
+  avgCostByCommodity: {},
+  getSuggestedRoutes: (opts) => {
+    const state = get();
+    const stations = state.stations;
+    const cargoCapacity = state.ship.maxCargo;
+    const hasNav = !!state.ship.hasNavigationArray;
+    const hasUnion = !!state.ship.hasUnionMembership;
+    const limit = opts?.limit ?? 8;
+    const prioritizePerDistance = !!opts?.prioritizePerDistance;
+    const suggestions: RouteSuggestion[] = [];
+    const isGated = (id: string) => (gatedCommodities as readonly string[]).includes(id as any);
+    for (let i = 0; i < stations.length; i++) {
+      const a = stations[i];
+      for (let j = 0; j < stations.length; j++) {
+        if (i === j) continue;
+        const b = stations[j];
+        const d = distance(a.position, b.position);
+        const keys = Object.keys(a.inventory);
+        for (const id of keys) {
+          if (!hasNav && isGated(id)) continue;
+          const ai = a.inventory[id];
+          const bi = b.inventory[id];
+          if (!ai || !bi) continue;
+          if (ai.canSell === false) continue;
+          if (bi.canBuy === false) continue;
+          const margin = bi.sell - ai.buy;
+          if (margin <= 0) continue;
+          const stock = Math.max(0, ai.stock || 0);
+          if (stock <= 0) continue;
+          const maxUnits = Math.max(0, Math.min(stock, cargoCapacity));
+          if (maxUnits <= 0) continue;
+          const estProfit = margin * maxUnits;
+          const profitPerDistance = d > 0 ? estProfit / d : estProfit;
+          suggestions.push({
+            id: `direct:${id}:${a.id}->${b.id}`,
+            kind: 'direct',
+            fromId: a.id, fromName: a.name, fromType: a.type,
+            toId: b.id, toName: b.name, toType: b.type,
+            inputId: id as any, outputId: id as any,
+            inputPerOutput: 1,
+            unitBuy: ai.buy,
+            unitSell: bi.sell,
+            unitMargin: margin,
+            maxUnits,
+            tripDistance: d,
+            estProfit,
+            profitPerDistance,
+          });
+        }
+      }
+    }
+    for (const p of stations) {
+      const recipes = processRecipes[p.type] || [];
+      if (recipes.length === 0) continue;
+      const canProcessAtP = hasUnion || p.type === 'pirate';
+      for (const r of recipes) {
+        if (!canProcessAtP) continue;
+        if (!hasNav && (isGated(r.inputId) || isGated(r.outputId))) continue;
+        for (const s of stations) {
+          const sItem = s.inventory[r.inputId];
+          if (!sItem || sItem.canSell === false) continue;
+          const stockIn = Math.max(0, sItem.stock || 0);
+          if (stockIn <= 0) continue;
+          const maxInput = Math.max(0, Math.min(stockIn, cargoCapacity));
+          const maxOutputs = Math.floor(maxInput / r.inputPerOutput);
+          if (maxOutputs <= 0) continue;
+          for (const dSt of stations) {
+            const dItem = dSt.inventory[r.outputId];
+            if (!dItem || dItem.canBuy === false) continue;
+            const unitBuyIn = sItem.buy;
+            const unitSellOut = dItem.sell;
+            const unitMargin = unitSellOut - (unitBuyIn * r.inputPerOutput);
+            if (unitMargin <= 0) continue;
+            const d1 = distance(s.position, p.position);
+            const d2 = distance(p.position, dSt.position);
+            const tripDist = d1 + d2;
+            const estProfit = unitMargin * maxOutputs;
+            const profitPerDistance = tripDist > 0 ? estProfit / tripDist : estProfit;
+            suggestions.push({
+              id: `proc:${r.inputId}->${r.outputId}:${s.id}->${p.id}->${dSt.id}`,
+              kind: 'process',
+              fromId: s.id, fromName: s.name, fromType: s.type,
+              viaId: p.id, viaName: p.name, viaType: p.type,
+              toId: dSt.id, toName: dSt.name, toType: dSt.type,
+              inputId: r.inputId as any, outputId: r.outputId as any,
+              inputPerOutput: r.inputPerOutput,
+              unitBuy: unitBuyIn,
+              unitSell: unitSellOut,
+              unitMargin,
+              maxUnits: maxOutputs,
+              tripDistance: tripDist,
+              estProfit,
+              profitPerDistance,
+            });
+          }
+        }
+      }
+    }
+    const sorter = prioritizePerDistance
+      ? (a: RouteSuggestion, b: RouteSuggestion) =>
+          (b.profitPerDistance - a.profitPerDistance)
+          || (b.estProfit - a.estProfit)
+          || (a.tripDistance - b.tripDistance)
+          || a.id.localeCompare(b.id)
+      : (a: RouteSuggestion, b: RouteSuggestion) =>
+          (b.estProfit - a.estProfit)
+          || (b.profitPerDistance - a.profitPerDistance)
+          || (a.tripDistance - b.tripDistance)
+          || a.id.localeCompare(b.id);
+    return suggestions.sort(sorter).slice(0, limit);
+  },
+  tick: (dt) => set((state) => {
+    const drag = state.ship.stats.drag;
+    const dampFactor = Math.exp(-drag * dt);
+    const dampedVel: [number, number, number] = [
+      state.ship.velocity[0] * dampFactor,
+      state.ship.velocity[1] * dampFactor,
+      state.ship.velocity[2] * dampFactor,
+    ];
+    const [vx, vy, vz] = clampMagnitude(dampedVel as any, state.ship.stats.vmax);
+    const position: [number, number, number] = [
+      state.ship.position[0] + vx * dt,
+      state.ship.position[1] + vy * dt,
+      state.ship.position[2] + vz * dt,
+    ];
+
+    const k = 10;
+    const a = 1 - Math.exp(-k * dt);
+    const enginePower = state.ship.enginePower + (state.ship.engineTarget - state.ship.enginePower) * a;
+
+    const jitterChance = Math.min(1, dt * 2);
+    let stations = state.stations;
+    if (Math.random() < jitterChance) {
+      stations = state.stations.map(st => {
+        const inv = { ...st.inventory } as StationInventory;
+        const keys = Object.keys(inv);
+        for (let i = 0; i < 3; i++) {
+          const k = keys[Math.floor(Math.random() * keys.length)];
+          const item = inv[k];
+          if (!item) continue;
+          const factorBuy = 1 + (Math.random() * 2 - 1) * 0.1;
+          const factorSell = 1 + (Math.random() * 2 - 1) * 0.1;
+          const nextBuy = Math.max(1, Math.round(item.buy * factorBuy));
+          const nextSell = Math.max(1, Math.round(item.sell * factorSell));
+          const adjusted = ensureSpread({ buy: nextBuy, sell: nextSell, minPercent: 0.08, minAbsolute: 3 });
+          inv[k] = { ...item, buy: adjusted.buy, sell: adjusted.sell };
+        }
+        return { ...st, inventory: inv };
+      });
+    }
+
+    const stationById: Record<string, Station> = Object.fromEntries(stations.map(s => [s.id, s]));
+    const stationStockDelta: Record<string, Record<string, number>> = {};
+    const npcTraders = state.npcTraders.map(npc => {
+      const dest = stationById[npc.toId];
+      const src = stationById[npc.fromId];
+      if (!dest || !src) return npc;
+      const dx = dest.position[0] - npc.position[0];
+      const dy = dest.position[1] - npc.position[1];
+      const dz = dest.position[2] - npc.position[2];
+      const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      const step = npc.speed * dt;
+      if (dist <= step || dist < 0.5) {
+        const deliver = 3;
+        const srcInv = src.inventory[npc.commodityId];
+        const dstInv = dest.inventory[npc.commodityId];
+        if (srcInv && srcInv.canSell !== false && dstInv && dstInv.canBuy !== false) {
+          stationStockDelta[src.id] = stationStockDelta[src.id] || {};
+          stationStockDelta[src.id][npc.commodityId] = (stationStockDelta[src.id][npc.commodityId] || 0) - deliver;
+          stationStockDelta[dest.id] = stationStockDelta[dest.id] || {};
+          stationStockDelta[dest.id][npc.commodityId] = (stationStockDelta[dest.id][npc.commodityId] || 0) + deliver;
+        }
+        const next: any = { ...npc, position: [dest.position[0], dest.position[1], dest.position[2]], fromId: npc.toId, toId: npc.fromId };
+        return next;
+      }
+      const ux = dx / dist;
+      const uy = dy / dist;
+      const uz = dz / dist;
+      const nx = npc.position[0] + ux * step;
+      const ny = npc.position[1] + uy * step;
+      const nz = npc.position[2] + uz * step;
+      return { ...npc, position: [nx, ny, nz] };
+    });
+
+    if (Object.keys(stationStockDelta).length > 0) {
+      stations = stations.map(s => {
+        const delta = stationStockDelta[s.id];
+        if (!delta) return s;
+        const inv: StationInventory = { ...s.inventory };
+        for (const cid of Object.keys(delta)) {
+          const item = inv[cid];
+          if (!item) continue;
+          const nextStock = Math.max(0, (item.stock || 0) + delta[cid]);
+          inv[cid] = { ...item, stock: nextStock };
+        }
+        return { ...s, inventory: inv };
+      });
+    }
+
+    return { ship: { ...state.ship, position, velocity: [vx, vy, vz], enginePower }, stations, npcTraders } as Partial<GameState> as GameState;
+  }),
+  thrust: (dir, dt) => set((state) => {
+    if (!state.hasChosenStarter) return state;
+    if (state.ship.dockedStationId) return state;
+    const acc = state.ship.stats.acc;
+    const velocity: [number, number, number] = [
+      state.ship.velocity[0] + dir[0] * acc * dt,
+      state.ship.velocity[1] + dir[1] * acc * dt,
+      state.ship.velocity[2] + dir[2] * acc * dt,
+    ];
+    return { ship: { ...state.ship, velocity, engineTarget: 1 } } as Partial<GameState> as GameState;
+  }),
+  setEngineTarget: (target) => set((state) => {
+    if (state.ship.dockedStationId) target = 0;
+    const t = Math.max(0, Math.min(1, target));
+    if (state.ship.engineTarget === t) return state;
+    return { ship: { ...state.ship, engineTarget: t } } as Partial<GameState> as GameState;
+  }),
+  tryDock: () => set((state) => {
+    if (!state.hasChosenStarter) return state;
+    if (state.ship.dockedStationId) return state;
+    const near = state.stations.find(s => distance(s.position, state.ship.position) < 6 * SCALE);
+    if (!near) return state;
+    const next: Partial<GameState> = { ship: { ...state.ship, dockedStationId: near.id, velocity: [0,0,0] } as Ship };
+    if (state.tutorialActive && state.tutorialStep === 'dock') {
+      (next as any).tutorialStep = 'buy';
+    }
+    return next as Partial<GameState> as GameState;
+  }),
+  undock: () => set((state) => {
+    if (!state.hasChosenStarter) return state;
+    if (!state.ship.dockedStationId) return state;
+    return { ship: { ...state.ship, dockedStationId: undefined } } as Partial<GameState> as GameState;
+  }),
+  mine: () => set((state) => {
+    if (!state.hasChosenStarter) return state;
+    if (state.ship.dockedStationId) return state;
+    if (!state.ship.canMine) return state;
+    const belts = state.belts;
+    const near = belts.find(b => {
+      const d = distance(state.ship.position, b.position);
+      return Math.abs(d - b.radius) < 6 * SCALE;
+    });
+    if (!near) return state;
+    const used = Object.values(state.ship.cargo).reduce((a, b) => a + b, 0);
+    if (used >= state.ship.maxCargo) return state;
+    const room = state.ship.maxCargo - used;
+    const roll = Math.random();
+    let ore: keyof Ship['cargo'] = 'iron_ore';
+    if (near.tier === 'common') {
+      ore = roll < 0.5 ? 'iron_ore' : roll < 0.8 ? 'copper_ore' : roll < 0.95 ? 'silicon' : 'rare_minerals';
+    } else {
+      ore = roll < 0.3 ? 'iron_ore' : roll < 0.6 ? 'copper_ore' : roll < 0.85 ? 'silicon' : 'rare_minerals';
+    }
+    const qty = Math.max(1, Math.min(room, Math.round(ore === 'rare_minerals' ? 1 : (1 + Math.random() * 3))));
+    const cargo = { ...state.ship.cargo, [ore]: (state.ship.cargo[ore] || 0) + qty } as Record<string, number>;
+    return { ship: { ...state.ship, cargo } } as Partial<GameState> as GameState;
+  }),
+  buy: (commodityId, quantity) => set((state) => {
+    if (!state.ship.dockedStationId || quantity <= 0) return state;
+    if (!state.ship.hasNavigationArray && (gatedCommodities as readonly string[]).includes(commodityId)) return state;
+    const station = state.stations.find(s => s.id === state.ship.dockedStationId);
+    if (!station) return state;
+    const item = station.inventory[commodityId];
+    if (!item || item.canSell === false) return state;
+    const totalCost = item.buy * quantity;
+    const used = Object.values(state.ship.cargo).reduce((a, b) => a + b, 0);
+    if (state.ship.credits < totalCost) return state;
+    if (used + quantity > state.ship.maxCargo) return state;
+    const prevQty = state.ship.cargo[commodityId] || 0;
+    const cargo = { ...state.ship.cargo, [commodityId]: prevQty + quantity };
+    const reduced = { ...station.inventory, [commodityId]: { ...item, stock: Math.max(0, (item.stock || 0) - quantity) } };
+    const stations = state.stations.map(s => s.id === station.id ? { ...s, inventory: reduced } : s);
+    const avgMap = { ...state.avgCostByCommodity } as Record<string, number>;
+    const oldAvg = avgMap[commodityId] || 0;
+    const newQty = prevQty + quantity;
+    const newAvg = newQty > 0 ? ((oldAvg * prevQty) + (item.buy * quantity)) / newQty : 0;
+    avgMap[commodityId] = newAvg;
+    const trade = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+      time: Date.now(),
+      stationId: station.id,
+      stationName: station.name,
+      stationType: station.type,
+      commodityId,
+      type: 'buy' as const,
+      quantity,
+      unitPrice: item.buy,
+      totalPrice: totalCost,
+    };
+    const tradeLog = [...state.tradeLog, trade];
+    const next: Partial<GameState> = { ship: { ...state.ship, credits: state.ship.credits - totalCost, cargo } as Ship, stations, avgCostByCommodity: avgMap, tradeLog };
+    if (state.tutorialActive && state.tutorialStep === 'buy') {
+      (next as any).tutorialStep = 'sell';
+    }
+    return next as Partial<GameState> as GameState;
+  }),
+  sell: (commodityId, quantity) => set((state) => {
+    if (!state.ship.dockedStationId || quantity <= 0) return state;
+    if (!state.ship.hasNavigationArray && (gatedCommodities as readonly string[]).includes(commodityId)) return state;
+    const station = state.stations.find(s => s.id === state.ship.dockedStationId);
+    if (!station) return state;
+    const item = station.inventory[commodityId];
+    const have = state.ship.cargo[commodityId] || 0;
+    if (!item || item.canBuy === false || have <= 0) return state;
+    const qty = Math.min(quantity, have);
+    const revenue = item.sell * qty;
+    const cargo = { ...state.ship.cargo, [commodityId]: have - qty };
+    let nextInv = { ...station.inventory } as StationInventory;
+    nextInv[commodityId] = { ...item, stock: (item.stock || 0) + qty };
+    if (station.type === 'refinery') {
+      const recipe = findRecipeForStation('refinery', commodityId);
+      if (recipe) {
+        const produced = Math.floor(qty / recipe.inputPerOutput);
+        const remainder = qty % recipe.inputPerOutput;
+        const outItem = nextInv[recipe.outputId];
+        if (outItem) {
+          nextInv[recipe.outputId] = { ...outItem, stock: (outItem.stock || 0) + produced };
+        }
+        nextInv[commodityId] = { ...nextInv[commodityId], stock: ((nextInv[commodityId].stock || 0) - qty) + remainder };
+      }
+    }
+    const stations = state.stations.map(s => s.id === station.id ? { ...s, inventory: nextInv } : s);
+    const avgMap = { ...state.avgCostByCommodity } as Record<string, number>;
+    const avgCost = avgMap[commodityId] || 0;
+    const realized = (item.sell - avgCost) * qty;
+    const profit = { ...state.profitByCommodity } as Record<string, number>;
+    profit[commodityId] = (profit[commodityId] || 0) + realized;
+    if ((cargo[commodityId] || 0) === 0) {
+      avgMap[commodityId] = 0;
+    }
+    const trade = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+      time: Date.now(),
+      stationId: station.id,
+      stationName: station.name,
+      stationType: station.type,
+      commodityId,
+      type: 'sell' as const,
+      quantity: qty,
+      unitPrice: item.sell,
+      totalPrice: revenue,
+    };
+    const tradeLog = [...state.tradeLog, trade];
+    const next: Partial<GameState> = { ship: { ...state.ship, credits: state.ship.credits + revenue, cargo } as Ship, stations, profitByCommodity: profit, avgCostByCommodity: avgMap, tradeLog };
+    if (state.tutorialActive) {
+      if (state.tutorialStep === 'sell') {
+        (next as any).tutorialStep = 'join_union';
+      } else if (state.tutorialStep === 'fabricate_sell') {
+        (next as any).tutorialStep = 'done';
+        (next as any).tutorialActive = false;
+      }
+    }
+    return next as Partial<GameState> as GameState;
+  }),
+  process: (inputId, outputs) => set((state) => {
+    if (!state.ship.dockedStationId || outputs <= 0) return state;
+    const station = state.stations.find(s => s.id === state.ship.dockedStationId);
+    if (!station) return state;
+    const recipe = findRecipeForStation(station.type, inputId);
+    if (!recipe) return state;
+    if (!state.ship.hasNavigationArray && (gatedCommodities as readonly string[]).includes(recipe.outputId)) return state;
+    const atPirate = station.type === 'pirate';
+    if (!atPirate && !state.ship.hasUnionMembership) return state;
+    const have = state.ship.cargo[inputId] || 0;
+    const maxOutputs = Math.floor(have / recipe.inputPerOutput);
+    const outCount = Math.max(0, Math.min(outputs, maxOutputs));
+    if (outCount <= 0) return state;
+    const newCargo = { ...state.ship.cargo };
+    newCargo[inputId] = have - outCount * recipe.inputPerOutput;
+    newCargo[recipe.outputId] = (newCargo[recipe.outputId] || 0) + outCount;
+    const next: Partial<GameState> = { ship: { ...state.ship, cargo: newCargo } as Ship };
+    if (state.tutorialActive && state.tutorialStep === 'fabricate_process') {
+      (next as any).tutorialStep = 'fabricate_sell';
+    }
+    return next as Partial<GameState> as GameState;
+  }),
+  upgrade: (type, amount, cost) => set((state) => {
+    if (!state.ship.dockedStationId) return state;
+    const station = state.stations.find(s => s.id === state.ship.dockedStationId);
+    if (!station) return state;
+    if ((type === 'acc' || type === 'vmax' || type === 'cargo' || type === 'mining' || type === 'navigation' || type === 'intel') && station.type !== 'shipyard') return state;
+    if (state.ship.credits < cost) return state;
+    if (type === 'cargo') {
+      if (state.ship.maxCargo >= shipCaps[state.ship.kind].cargo) return state;
+      if (state.ship.maxCargo + amount > shipCaps[state.ship.kind].cargo) return state;
+      return { ship: { ...state.ship, credits: state.ship.credits - cost, maxCargo: state.ship.maxCargo + amount } } as Partial<GameState> as GameState;
+    }
+    if (type === 'mining') {
+      if (state.ship.canMine) return state;
+      return { ship: { ...state.ship, credits: state.ship.credits - cost, canMine: true } } as Partial<GameState> as GameState;
+    }
+    if (type === 'navigation') {
+      if (state.ship.hasNavigationArray) return state;
+      return { ship: { ...state.ship, credits: state.ship.credits - cost, hasNavigationArray: true } } as Partial<GameState> as GameState;
+    }
+    if (type === 'intel') {
+      if (state.ship.hasMarketIntel) return state;
+      return { ship: { ...state.ship, credits: state.ship.credits - cost, hasMarketIntel: true } } as Partial<GameState> as GameState;
+    }
+    if (type === 'union') {
+      if (station.type !== 'city') return state;
+      if (state.ship.hasUnionMembership) return state;
+      const next: Partial<GameState> = { ship: { ...state.ship, credits: state.ship.credits - cost, hasUnionMembership: true } as Ship };
+      if (state.tutorialActive && state.tutorialStep === 'join_union') {
+        (next as any).tutorialStep = 'fabricate_process';
+      }
+      return next as Partial<GameState> as GameState;
+    }
+    const stats = { ...state.ship.stats };
+    if (type === 'acc') {
+      if (stats.acc >= shipCaps[state.ship.kind].acc) return state;
+      if (stats.acc + amount > shipCaps[state.ship.kind].acc) return state;
+      stats.acc += amount;
+    }
+    if (type === 'vmax') {
+      if (stats.vmax >= shipCaps[state.ship.kind].vmax) return state;
+      if (stats.vmax + amount > shipCaps[state.ship.kind].vmax) return state;
+      stats.vmax += amount;
+    }
+    return { ship: { ...state.ship, credits: state.ship.credits - cost, stats } } as Partial<GameState> as GameState;
+  }),
+  replaceShip: (kind, cost) => set((state) => {
+    if (!state.ship.dockedStationId) return state;
+    const station = state.stations.find(s => s.id === state.ship.dockedStationId);
+    if (!station || station.type !== 'shipyard') return state;
+    if (state.ship.credits < cost) return state;
+    const usedCargo = Object.values(state.ship.cargo).reduce((a, b) => a + b, 0);
+    if (usedCargo > 0) return state;
+    const basePosition: [number, number, number] = state.ship.position;
+    const baseVelocity: [number, number, number] = [0, 0, 0];
+    let next: Ship | undefined;
+    if (kind === 'freighter') {
+      next = { position: basePosition, velocity: baseVelocity, credits: state.ship.credits - cost, cargo: {}, maxCargo: 300, canMine: state.ship.canMine, enginePower: 0, engineTarget: 0, hasNavigationArray: state.ship.hasNavigationArray, hasUnionMembership: state.ship.hasUnionMembership, hasMarketIntel: state.ship.hasMarketIntel, kind: 'freighter', stats: { acc: 10, drag: 1.0, vmax: 11 } };
+    } else if (kind === 'clipper') {
+      next = { position: basePosition, velocity: baseVelocity, credits: state.ship.credits - cost, cargo: {}, maxCargo: 60, canMine: state.ship.canMine, enginePower: 0, engineTarget: 0, hasNavigationArray: state.ship.hasNavigationArray, hasUnionMembership: state.ship.hasUnionMembership, hasMarketIntel: state.ship.hasMarketIntel, kind: 'clipper', stats: { acc: 18, drag: 0.9, vmax: 20 } };
+    } else if (kind === 'miner') {
+      next = { position: basePosition, velocity: baseVelocity, credits: state.ship.credits - cost, cargo: {}, maxCargo: 80, canMine: true, enginePower: 0, engineTarget: 0, hasNavigationArray: state.ship.hasNavigationArray, hasUnionMembership: state.ship.hasUnionMembership, hasMarketIntel: state.ship.hasMarketIntel, kind: 'miner', stats: { acc: 9, drag: 1.1, vmax: 11 } };
+    } else if (kind === 'heavy_freighter') {
+      next = { position: basePosition, velocity: baseVelocity, credits: state.ship.credits - cost, cargo: {}, maxCargo: 600, canMine: state.ship.canMine, enginePower: 0, engineTarget: 0, hasNavigationArray: state.ship.hasNavigationArray, hasUnionMembership: state.ship.hasUnionMembership, hasMarketIntel: state.ship.hasMarketIntel, kind: 'heavy_freighter', stats: { acc: 9, drag: 1.0, vmax: 12 } };
+    } else if (kind === 'racer') {
+      next = { position: basePosition, velocity: baseVelocity, credits: state.ship.credits - cost, cargo: {}, maxCargo: 40, canMine: state.ship.canMine, enginePower: 0, engineTarget: 0, hasNavigationArray: state.ship.hasNavigationArray, hasUnionMembership: state.ship.hasUnionMembership, hasMarketIntel: state.ship.hasMarketIntel, kind: 'racer', stats: { acc: 24, drag: 0.85, vmax: 28 } };
+    } else if (kind === 'industrial_miner') {
+      next = { position: basePosition, velocity: baseVelocity, credits: state.ship.credits - cost, cargo: {}, maxCargo: 160, canMine: true, enginePower: 0, engineTarget: 0, hasNavigationArray: state.ship.hasNavigationArray, hasUnionMembership: state.ship.hasUnionMembership, hasMarketIntel: state.ship.hasMarketIntel, kind: 'industrial_miner', stats: { acc: 10, drag: 1.05, vmax: 12 } };
+    }
+    next = { ...next!, dockedStationId: state.ship.dockedStationId } as Ship;
+    return { ship: next } as Partial<GameState> as GameState;
+  }),
+  chooseStarter: (kind, opts) => set((state) => {
+    const basePosition: [number, number, number] = state.ship.position;
+    const baseVelocity: [number, number, number] = [0, 0, 0];
+    if (kind === 'freighter') {
+      const ship: Ship = { position: basePosition, velocity: baseVelocity, credits: 10000, cargo: {}, maxCargo: 300, canMine: false, enginePower: 0, engineTarget: 0, hasNavigationArray: false, hasUnionMembership: false, hasMarketIntel: false, kind: 'freighter', stats: { acc: 10, drag: 1.0, vmax: 11 } };
+      return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock' } as Partial<GameState> as GameState;
+    }
+    if (kind === 'clipper') {
+      const ship: Ship = { position: basePosition, velocity: baseVelocity, credits: 10000, cargo: {}, maxCargo: 60, canMine: false, enginePower: 0, engineTarget: 0, hasNavigationArray: false, hasUnionMembership: false, hasMarketIntel: false, kind: 'clipper', stats: { acc: 18, drag: 0.9, vmax: 20 } };
+      return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock' } as Partial<GameState> as GameState;
+    }
+    const ship: Ship = { position: basePosition, velocity: baseVelocity, credits: 0, cargo: {}, maxCargo: 80, canMine: true, enginePower: 0, engineTarget: 0, hasNavigationArray: false, hasUnionMembership: false, hasMarketIntel: false, kind: 'miner', stats: { acc: 9, drag: 1.1, vmax: 11 } };
+    return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock' } as Partial<GameState> as GameState;
+  }),
+  setTutorialActive: (active) => set((state) => {
+    if (state.tutorialActive === active) return state;
+    const next: Partial<GameState> = { tutorialActive: active };
+    if (active && state.tutorialStep === 'done') (next as any).tutorialStep = 'dock';
+    return next as Partial<GameState> as GameState;
+  }),
+  setTutorialStep: (step) => set((state) => {
+    if (state.tutorialStep === step) return state;
+    return { tutorialStep: step } as Partial<GameState> as GameState;
+  }),
+}));
+
+
