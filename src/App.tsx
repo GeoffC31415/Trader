@@ -27,12 +27,17 @@ export function App() {
   const setTrackedStation = useGameStore(s => s.setTrackedStation);
   const ship = useGameStore(s => s.ship);
   const contracts = useGameStore(s => s.contracts || []);
+  const npcTraders = useGameStore(s => s.npcTraders);
   const activeObj = (objectives.find(o => o.id === activeObjectiveId) || objectives.find(o => o.status === 'active'));
   
   // Get active contract for progress display
   const activeContract = activeObj?.kind === 'contract' 
     ? contracts.find(c => c.id === activeObj.id.replace('obj:', ''))
     : undefined;
+  
+  const activeEscorts = npcTraders.filter(n => n.isEscort && activeContract && n.escortingContract === activeContract.id);
+  const escortCargo = activeEscorts.reduce((sum, e) => sum + (e.escortCargoUsed || 0), 0);
+  const totalEscortCapacity = activeEscorts.reduce((sum, e) => sum + (e.escortCargoCapacity || 0), 0);
   return (
     <StrictMode>
       <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -168,19 +173,24 @@ export function App() {
               <div style={{ fontSize: 13 }}>
                 {activeObj?.label || (trackedStationId ? `Waypoint set: ${(stations.find(s=>s.id===trackedStationId)?.name)||trackedStationId}` : 'Free trading')}
               </div>
-              {activeContract && (
-                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.9 }}>
-                  Progress: {activeContract.deliveredUnits || 0} / {activeContract.units} {activeContract.commodityId.replace(/_/g, ' ')}
-                  <div style={{ marginTop: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
-                    <div style={{ 
-                      width: `${Math.min(100, ((activeContract.deliveredUnits || 0) / activeContract.units) * 100)}%`, 
-                      height: '100%', 
-                      background: 'linear-gradient(90deg, #10b981, #22c55e)',
-                      transition: 'width 0.3s ease'
-                    }} />
+            {activeContract && (
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.9 }}>
+                Progress: {activeContract.deliveredUnits || 0} / {activeContract.units} {activeContract.commodityId.replace(/_/g, ' ')}
+                {activeEscorts.length > 0 && (
+                  <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>
+                    🚀 {activeEscorts.length} Escort{activeEscorts.length > 1 ? 's' : ''}: {escortCargo} / {totalEscortCapacity} cargo
                   </div>
+                )}
+                <div style={{ marginTop: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${Math.min(100, ((activeContract.deliveredUnits || 0) / activeContract.units) * 100)}%`,
+                    height: '100%',
+                    background: 'linear-gradient(90deg, #10b981, #22c55e)',
+                    transition: 'width 0.3s ease'
+                  }} />
                 </div>
-              )}
+              </div>
+            )}
               <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                 <button
                   onClick={() => {

@@ -6,6 +6,7 @@ import { processRecipes } from '../systems/economy/recipes';
 import type { StationType } from '../domain/types/economy_types';
 import { CONTRACT_REFRESH_INTERVAL } from '../domain/constants/contract_constants';
 import { ReputationBadge } from './components/reputation_badge';
+import { getReputationTier, getTierDisplay, getTierPerks, getPriceDiscount } from '../state/helpers/reputation_helpers';
 
 function getHallLabel(type: StationType): string {
   if (type === 'city') return 'Civic Exchange';

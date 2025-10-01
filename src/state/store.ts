@@ -18,7 +18,8 @@ import { distance, clampMagnitude } from '../shared/math/vec3';
 import { planets, stations as initialStations, belts } from './world';
 import { spawnNpcTraders, planNpcPath } from './npc';
 import { processContractCompletion, processPartialDelivery } from './helpers/contract_helpers';
-import type { GameState, RouteSuggestion, Ship, Station, Objective, Contract } from '../domain/types/world_types';
+import { getPriceDiscount, getContractMultiplierBonus, getEscortCount, getEscortCargoCapacity } from './helpers/reputation_helpers';
+import type { GameState, RouteSuggestion, Ship, Station, Objective, Contract, NpcTrader } from '../domain/types/world_types';
 import type { StationInventory } from '../domain/types/economy_types';
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -356,15 +357,44 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (state.ship.credits < totalCost) return state;
     if (used + quantity > state.ship.maxCargo) return state;
     const prevQty = state.ship.cargo[commodityId] || 0;
-    const cargo = { ...state.ship.cargo, [commodityId]: prevQty + quantity };
+    // Check for active escort and available capacity
+    const activeContract = (state.contracts || []).find(c => c.status === 'accepted' && c.commodityId === commodityId);
+    const escorts = state.npcTraders.filter(n => n.isEscort && activeContract && n.escortingContract === activeContract.id);
+    
+    let playerBuying = quantity;
+    let escortBuying = 0;
+    let npcTraders = [...state.npcTraders];
+    
+    // Distribute to escort if available
+    if (activeContract && escorts.length > 0) {
+      const totalEscortCapacity = escorts.reduce((sum, e) => sum + ((e.escortCargoCapacity || 0) - (e.escortCargoUsed || 0)), 0);
+      escortBuying = Math.min(quantity, totalEscortCapacity);
+      playerBuying = quantity - escortBuying;
+      
+      // Distribute escort cargo across escorts
+      let remaining = escortBuying;
+      for (const escort of escorts) {
+        if (remaining <= 0) break;
+        const escortAvail = (escort.escortCargoCapacity || 0) - (escort.escortCargoUsed || 0);
+        const toLoad = Math.min(remaining, escortAvail);
+        npcTraders = npcTraders.map(n => 
+          n.id === escort.id 
+            ? { ...n, escortCargoUsed: (n.escortCargoUsed || 0) + toLoad }
+            : n
+        );
+        remaining -= toLoad;
+      }
+    }
+    
+    const cargo = { ...state.ship.cargo, [commodityId]: prevQty + playerBuying };
     const reduced = { ...station.inventory, [commodityId]: { ...item, stock: Math.max(0, (item.stock || 0) - quantity) } };
     // Small reputation increase for fair trade at source
     const repDelta = Math.min(2, 0.02 * quantity);
     const stations = state.stations.map(s => s.id === station.id ? { ...s, inventory: reduced, reputation: Math.max(0, Math.min(100, (s.reputation || 0) + repDelta)) } : s);
     const avgMap = { ...state.avgCostByCommodity } as Record<string, number>;
     const oldAvg = avgMap[commodityId] || 0;
-    const newQty = prevQty + quantity;
-    const newAvg = newQty > 0 ? ((oldAvg * prevQty) + (unitBuyPrice * quantity)) / newQty : 0;
+    const newQty = prevQty + playerBuying;
+    const newAvg = newQty > 0 ? ((oldAvg * prevQty) + (unitBuyPrice * playerBuying)) / newQty : 0;
     avgMap[commodityId] = newAvg;
     const trade = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
@@ -379,7 +409,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       totalPrice: totalCost,
     };
     const tradeLog = [...state.tradeLog, trade];
-    const next: Partial<GameState> = { ship: { ...state.ship, credits: state.ship.credits - totalCost, cargo } as Ship, stations, avgCostByCommodity: avgMap, tradeLog };
+    const next: Partial<GameState> = { ship: { ...state.ship, credits: state.ship.credits - totalCost, cargo } as Ship, stations, avgCostByCommodity: avgMap, tradeLog, npcTraders };
     if (state.tutorialActive && state.tutorialStep === 'buy') {
       (next as any).tutorialStep = 'sell';
     }
@@ -391,14 +421,33 @@ export const useGameStore = create<GameState>((set, get) => ({
     const station = state.stations.find(s => s.id === state.ship.dockedStationId);
     if (!station) return state;
     const item = station.inventory[commodityId];
+    
+    // Check escort cargo
+    const activeContract = (state.contracts || []).find(c => 
+      c.status === 'accepted' && 
+      c.toId === station.id && 
+      c.commodityId === commodityId
+    );
+    const escorts = state.npcTraders.filter(n => n.isEscort && activeContract && n.escortingContract === activeContract.id);
+    const escortCargo = escorts.reduce((sum, e) => sum + (e.escortCargoUsed || 0), 0);
+    
     const have = state.ship.cargo[commodityId] || 0;
-    if (!item || item.canBuy === false || have <= 0) return state;
-    const qty = Math.min(quantity, have);
+    const totalAvailable = have + escortCargo;
+    if (!item || item.canBuy === false || totalAvailable <= 0) return state;
+    if (totalAvailable < quantity) return state;
+    
+    // Sell from escort first, then player
+    let fromEscort = Math.min(quantity, escortCargo);
+    let fromPlayer = quantity - fromEscort;
+    
+    if (have < fromPlayer) return state; // Not enough in player cargo
+    
+    const qty = quantity;
     const rep = station.reputation || 0;
     const sellPremium = Math.max(0, Math.min(0.07, 0.07 * (rep / 100)));
     const unitSellPrice = Math.max(1, Math.round(item.sell * (1 + sellPremium)));
     const revenue = unitSellPrice * qty;
-    const cargo = { ...state.ship.cargo, [commodityId]: have - qty };
+    const cargo = { ...state.ship.cargo, [commodityId]: have - fromPlayer };
     let nextInv = { ...station.inventory } as StationInventory;
     nextInv[commodityId] = { ...item, stock: (item.stock || 0) + qty };
     if (station.type === 'refinery') {
@@ -450,12 +499,23 @@ export const useGameStore = create<GameState>((set, get) => ({
     let celebrationBuyCost = 0;
     let celebrationSellRev = 0;
     let celebrationBonusAmount = 0;
+    let npcTraders = [...state.npcTraders];
     
-    const activeContract = contracts.find(c => 
-      c.status === 'accepted' && 
-      c.toId === station.id && 
-      c.commodityId === commodityId
-    );
+    // Clear escort cargo
+    if (fromEscort > 0 && activeContract) {
+      let remainingToClear = fromEscort;
+      for (const escort of escorts) {
+        if (remainingToClear <= 0) break;
+        const escortHas = escort.escortCargoUsed || 0;
+        const toClear = Math.min(remainingToClear, escortHas);
+        npcTraders = npcTraders.map(n => 
+          n.id === escort.id 
+            ? { ...n, escortCargoUsed: (n.escortCargoUsed || 0) - toClear }
+            : n
+        );
+        remainingToClear -= toClear;
+      }
+    }
     
     if (activeContract) {
       const previousDelivered = activeContract.deliveredUnits || 0;
@@ -493,6 +553,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         celebrationBonusAmount = completion.celebrationBonusAmount;
         totalCredits += completion.bonusCredits;
         showCelebration = true;
+        
+        // Despawn escorts for this contract
+        npcTraders = npcTraders.filter(n => !(n.isEscort && n.escortingContract === activeContract.id));
       } else {
         // Partial delivery - update progress
         contracts = processPartialDelivery({
@@ -512,6 +575,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       contracts,
       objectives,
       activeObjectiveId,
+      npcTraders,
       celebrationVisible: showCelebration ? Date.now() : state.celebrationVisible,
       celebrationBuyCost: showCelebration ? celebrationBuyCost : state.celebrationBuyCost,
       celebrationSellRevenue: showCelebration ? celebrationSellRev : state.celebrationSellRevenue,
@@ -684,7 +748,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         const units = Math.max(CONTRACT_MIN_UNITS, Math.min(CONTRACT_MAX_UNITS, r.maxUnits));
         const tag: Contract['tag'] = i === 0 ? 'standard' : (i === 1 ? 'bulk' : (i === 2 ? 'rush' : (i === 3 ? 'fabrication' : 'emergency')));
         const requiredRep = MISSION_REP_REQUIREMENTS[i];
-        const sellMultiplier = CONTRACT_SELL_MULTIPLIERS[tag];
+        // Apply reputation bonus to contract multipliers
+        const stationRep = st.reputation || 0;
+        const baseMultiplier = CONTRACT_SELL_MULTIPLIERS[tag];
+        const repBonus = getContractMultiplierBonus(stationRep);
+        const sellMultiplier = baseMultiplier + repBonus;
         const fromId = r.fromId;
         const toId = r.toId;
         const offeredById = st.id;
@@ -735,6 +803,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const contracts = (state.contracts || []).map(c => c.id === id ? { ...c, status: 'accepted' } : c);
     const chosen = contracts.find(c => c.id === id);
     const objectives: Objective[] = [...(state.objectives || [])];
+    let npcTraders = [...state.npcTraders];
+    
     if (chosen) {
       const stationName = state.stations.find(s => s.id === chosen.toId)?.name || chosen.toId;
       const obj: Objective = { 
@@ -745,10 +815,44 @@ export const useGameStore = create<GameState>((set, get) => ({
         status: 'active' 
       };
       objectives.push(obj);
+      
+      // Spawn escort ships based on reputation at offering station
+      const offeringStation = state.stations.find(s => s.id === chosen.offeredById);
+      if (offeringStation) {
+        const stationRep = offeringStation.reputation || 0;
+        const escortCount = getEscortCount(stationRep);
+        const playerCargo = shipCaps[state.ship.kind]?.cargo ?? 100;
+        const escortCargoPerShip = Math.floor(playerCargo * 0.5);
+        
+        for (let i = 0; i < escortCount; i++) {
+          const escortId = `escort:${id}:${i}`;
+          const escort: NpcTrader = {
+            id: escortId,
+            shipKind: 'clipper',
+            commodityId: chosen.commodityId,
+            fromId: chosen.offeredById,
+            toId: chosen.toId,
+            speed: 80,
+            position: [
+              state.ship.position[0] + (i + 1) * 30,
+              state.ship.position[1],
+              state.ship.position[2] + (i + 1) * 30,
+            ],
+            velocity: [0, 0, 0],
+            isEscort: true,
+            escortingContract: id,
+            escortCargoCapacity: escortCargoPerShip,
+            escortCargoUsed: 0,
+          };
+          npcTraders.push(escort);
+        }
+      }
     }
+    
     return { 
       contracts, 
       objectives, 
+      npcTraders,
       activeObjectiveId: chosen ? `obj:${id}` : state.activeObjectiveId, 
       trackedStationId: chosen?.toId || state.trackedStationId 
     } as Partial<GameState> as GameState;
@@ -763,7 +867,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     const objectives = (state.objectives || []).map(o => o.id === `obj:${id}` ? { ...o, status: 'failed' } : o);
     const activeObjectiveId = state.activeObjectiveId === `obj:${id}` ? undefined : state.activeObjectiveId;
-    return { contracts, stations, objectives, activeObjectiveId } as Partial<GameState> as GameState;
+    
+    // Despawn escorts for this contract
+    const npcTraders = state.npcTraders.filter(n => !(n.isEscort && n.escortingContract === id));
+    
+    return { contracts, stations, objectives, activeObjectiveId, npcTraders } as Partial<GameState> as GameState;
   }),
 }));
 

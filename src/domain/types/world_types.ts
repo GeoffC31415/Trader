@@ -73,11 +73,18 @@ export type NpcTrader = {
   fromId: string;
   toId: string;
   position: [number, number, number];
+  velocity?: [number, number, number];
   speed: number;
   // Precomputed piecewise path points from current position to destination, for curved movement
   path?: [number, number, number][];
   // Index of the next waypoint in `path` to move toward
   pathCursor?: number;
+  // Escort ship properties
+  isEscort?: boolean;
+  escortingContract?: string;
+  escortCargoCapacity?: number;
+  escortCargoUsed?: number;
+  shipKind?: 'freighter' | 'clipper' | 'miner';
 };
 
 export type TradeEntry = {
