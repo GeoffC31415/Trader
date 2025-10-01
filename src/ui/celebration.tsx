@@ -31,6 +31,10 @@ export function Celebration() {
       });
     }
     setParticles(newParticles);
+  }, [celebrationTimestamp]);
+
+  useEffect(() => {
+    if (!visible) return;
 
     // Keyboard listener for spacebar to dismiss
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -45,7 +49,7 @@ export function Celebration() {
     return () => {
       window.removeEventListener('keydown', handleKeyPress);
     };
-  }, [celebrationTimestamp]);
+  }, [visible]);
 
   const handleContinue = () => {
     setVisible(false);
@@ -182,7 +186,7 @@ export function Celebration() {
             pointerEvents: 'auto',
           }}
         >
-          Continue [SPACE]
+          Continue
         </button>
       </div>
 
