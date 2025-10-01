@@ -9,6 +9,7 @@ import { TradersPanel } from './ui/traders_panel';
 import { Minimap } from './ui/minimap';
 import { useGameStore } from './state';
 import { DockIntro } from './ui/dock_intro';
+import { Celebration } from './ui/celebration';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal' | 'traders'>('market');
@@ -25,7 +26,13 @@ export function App() {
   const stations = useGameStore(s => s.stations);
   const setTrackedStation = useGameStore(s => s.setTrackedStation);
   const ship = useGameStore(s => s.ship);
+  const contracts = useGameStore(s => s.contracts || []);
   const activeObj = (objectives.find(o => o.id === activeObjectiveId) || objectives.find(o => o.status === 'active'));
+  
+  // Get active contract for progress display
+  const activeContract = activeObj?.kind === 'contract' 
+    ? contracts.find(c => c.id === activeObj.id.replace('obj:', ''))
+    : undefined;
   return (
     <StrictMode>
       <div style={{ width: '100%', height: '100%', position: 'relative' }}>
@@ -40,6 +47,7 @@ export function App() {
         <div className="vignette" />
         {hasNav && <Minimap />}
         <DockIntro />
+        <Celebration />
         {!hasChosenStarter && (
           <div
             style={{
@@ -154,12 +162,25 @@ export function App() {
         )}
         {/* Next Objective HUD */}
         {hasChosenStarter && (trackedStationId || activeObj) && (
-          <div style={{ position: 'absolute', left: 16, top: 16, zIndex: 25, maxWidth: 560 }}>
+          <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 25, maxWidth: 560 }}>
             <div style={{ background: 'rgba(11,18,32,0.9)', color: '#e5e7eb', padding: 10, borderRadius: 10, border: '1px solid #1f2937' }}>
               <div style={{ fontWeight: 700, marginBottom: 4 }}>Next Objective</div>
               <div style={{ fontSize: 13 }}>
                 {activeObj?.label || (trackedStationId ? `Waypoint set: ${(stations.find(s=>s.id===trackedStationId)?.name)||trackedStationId}` : 'Free trading')}
               </div>
+              {activeContract && (
+                <div style={{ marginTop: 6, fontSize: 12, opacity: 0.9 }}>
+                  Progress: {activeContract.deliveredUnits || 0} / {activeContract.units} {activeContract.commodityId.replace(/_/g, ' ')}
+                  <div style={{ marginTop: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
+                    <div style={{ 
+                      width: `${Math.min(100, ((activeContract.deliveredUnits || 0) / activeContract.units) * 100)}%`, 
+                      height: '100%', 
+                      background: 'linear-gradient(90deg, #10b981, #22c55e)',
+                      transition: 'width 0.3s ease'
+                    }} />
+                  </div>
+                </div>
+              )}
               <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                 <button
                   onClick={() => {

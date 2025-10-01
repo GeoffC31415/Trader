@@ -3,9 +3,21 @@ import { ensureSpread, gatedCommodities, getPriceBiasForStation } from '../syste
 import { processRecipes, findRecipeForStation } from '../systems/economy/recipes';
 import { SCALE, sp } from '../domain/constants/world_constants';
 import { shipCaps } from '../domain/constants/ship_constants';
+import { 
+  CONTRACT_PROFIT_MARGINS, 
+  CONTRACT_SELL_MULTIPLIERS, 
+  CONTRACT_EXPIRATION_TIMES,
+  CONTRACTS_PER_STATION,
+  CONTRACT_SUGGESTION_LIMIT,
+  CONTRACT_MIN_UNITS,
+  CONTRACT_MAX_UNITS,
+  CONTRACT_MIN_BONUS,
+  MISSION_REP_REQUIREMENTS,
+} from '../domain/constants/contract_constants';
 import { distance, clampMagnitude } from '../shared/math/vec3';
 import { planets, stations as initialStations, belts } from './world';
 import { spawnNpcTraders, planNpcPath } from './npc';
+import { processContractCompletion, processPartialDelivery } from './helpers/contract_helpers';
 import type { GameState, RouteSuggestion, Ship, Station, Objective, Contract } from '../domain/types/world_types';
 import type { StationInventory } from '../domain/types/economy_types';
 
@@ -40,6 +52,9 @@ export const useGameStore = create<GameState>((set, get) => ({
   activeObjectiveId: undefined,
   contracts: [],
   trackedStationId: undefined,
+  celebrationVisible: undefined,
+  celebrationSellRevenue: undefined,
+  celebrationBonusReward: undefined,
   // Generate per-station mission offers (5 each) with rep gates
   // Missions are just contracts with metadata and optional emergency sell multipliers
   getSuggestedRoutes: (opts) => {
@@ -425,7 +440,83 @@ export const useGameStore = create<GameState>((set, get) => ({
       totalPrice: revenue,
     };
     const tradeLog = [...state.tradeLog, trade];
-    const next: Partial<GameState> = { ship: { ...state.ship, credits: state.ship.credits + revenue, cargo } as Ship, stations, profitByCommodity: profit, avgCostByCommodity: avgMap, tradeLog };
+    
+    // Check for contract progress/completion
+    let contracts = state.contracts || [];
+    let objectives = state.objectives || [];
+    let activeObjectiveId = state.activeObjectiveId;
+    let totalCredits = state.ship.credits + revenue;
+    let showCelebration = false;
+    let celebrationBuyCost = 0;
+    let celebrationSellRev = 0;
+    let celebrationBonusAmount = 0;
+    
+    const activeContract = contracts.find(c => 
+      c.status === 'accepted' && 
+      c.toId === station.id && 
+      c.commodityId === commodityId
+    );
+    
+    if (activeContract) {
+      const previousDelivered = activeContract.deliveredUnits || 0;
+      const remainingNeeded = activeContract.units - previousDelivered;
+      const nowDelivering = Math.min(qty, remainingNeeded);
+      const newTotalDelivered = previousDelivered + nowDelivering;
+      
+      // Apply contract pricing to delivered units
+      let unitPay = unitSellPrice;
+      if (activeContract.sellMultiplier && activeContract.sellMultiplier > 1) {
+        unitPay = Math.max(1, Math.round(unitSellPrice * activeContract.sellMultiplier));
+      }
+      // Add extra revenue for contract units
+      const extraRevenue = (unitPay - unitSellPrice) * nowDelivering;
+      totalCredits += extraRevenue;
+      
+      // Check if contract is now complete
+      if (newTotalDelivered >= activeContract.units) {
+        // Contract completed! Process completion
+        const completion = processContractCompletion({
+          activeContract,
+          nowDelivering,
+          unitSellPrice,
+          tradeLog,
+          contracts,
+          objectives,
+          activeObjectiveId,
+        });
+        
+        contracts = completion.contracts;
+        objectives = completion.objectives;
+        activeObjectiveId = completion.activeObjectiveId;
+        celebrationBuyCost = completion.celebrationBuyCost;
+        celebrationSellRev = completion.celebrationSellRevenue;
+        celebrationBonusAmount = completion.celebrationBonusAmount;
+        totalCredits += completion.bonusCredits;
+        showCelebration = true;
+      } else {
+        // Partial delivery - update progress
+        contracts = processPartialDelivery({
+          activeContract,
+          newTotalDelivered,
+          contracts,
+        });
+      }
+    }
+    
+    const next: Partial<GameState> = { 
+      ship: { ...state.ship, credits: totalCredits, cargo } as Ship, 
+      stations, 
+      profitByCommodity: profit, 
+      avgCostByCommodity: avgMap, 
+      tradeLog,
+      contracts,
+      objectives,
+      activeObjectiveId,
+      celebrationVisible: showCelebration ? Date.now() : state.celebrationVisible,
+      celebrationBuyCost: showCelebration ? celebrationBuyCost : state.celebrationBuyCost,
+      celebrationSellRevenue: showCelebration ? celebrationSellRev : state.celebrationSellRevenue,
+      celebrationBonusReward: showCelebration ? celebrationBonusAmount : state.celebrationBonusReward
+    };
     if (state.tutorialActive) {
       if (state.tutorialStep === 'sell') {
         (next as any).tutorialStep = 'join_union';
@@ -578,22 +669,22 @@ export const useGameStore = create<GameState>((set, get) => ({
     return { trackedStationId: stationId } as Partial<GameState> as GameState;
   }),
   generateContracts: (opts) => set((state) => {
-    const limit = opts?.limit ?? 5;
+    const limit = opts?.limit ?? CONTRACTS_PER_STATION;
     const stations = state.stations;
     const nextContracts = [...(state.contracts || [])].filter(c => c.status !== 'offered');
     for (const st of stations) {
-      // Derive candidate routes originating near this station
-      const suggestions = state.getSuggestedRoutes({ limit: 20, prioritizePerDistance: true })
-        .filter(r => r.fromId === st.id || r.viaId === st.id);
+      // Derive candidate routes where goods are needed AT this station (destination)
+      const suggestions = state.getSuggestedRoutes({ limit: CONTRACT_SUGGESTION_LIMIT, prioritizePerDistance: true })
+        .filter(r => r.toId === st.id);
       // Choose up to 5 missions per station with increasing rep gates
       const picks = suggestions.slice(0, 10);
       const perStation: Contract[] = [];
-      for (let i = 0; i < Math.min(5, picks.length); i++) {
+      for (let i = 0; i < Math.min(CONTRACTS_PER_STATION, picks.length); i++) {
         const r = picks[i];
-        const units = Math.max(5, Math.min(50, r.maxUnits));
+        const units = Math.max(CONTRACT_MIN_UNITS, Math.min(CONTRACT_MAX_UNITS, r.maxUnits));
         const tag: Contract['tag'] = i === 0 ? 'standard' : (i === 1 ? 'bulk' : (i === 2 ? 'rush' : (i === 3 ? 'fabrication' : 'emergency')));
-        const requiredRep = i === 0 ? 0 : (10 + i * 15); // 0,25,40,55,70
-        const sellMultiplier = tag === 'emergency' ? 1.25 : (tag === 'rush' ? 1.12 : 1.0);
+        const requiredRep = MISSION_REP_REQUIREMENTS[i];
+        const sellMultiplier = CONTRACT_SELL_MULTIPLIERS[tag];
         const fromId = r.fromId;
         const toId = r.toId;
         const offeredById = st.id;
@@ -606,6 +697,17 @@ export const useGameStore = create<GameState>((set, get) => ({
           : tag === 'fabrication'
           ? `Process & Deliver: ${r.inputId.replace(/_/g,' ')} via ${r.viaName}`
           : `Standard Run: ${r.inputId.replace(/_/g,' ')} to ${r.toName}`;
+        // Ensure profitability: bonus should cover buying costs + profit margin
+        // Total payout = (unitSell * units) + rewardBonus
+        // Player cost = (unitBuy * units)
+        // We want: Total payout > Player cost with good margin
+        const buyCost = r.unitBuy * units;
+        const sellRevenue = r.unitSell * units * sellMultiplier;
+        const baseProfit = sellRevenue - buyCost;
+        // Add bonus to ensure minimum profit margin on total investment
+        const minProfitMargin = CONTRACT_PROFIT_MARGINS[tag];
+        const desiredProfit = buyCost * minProfitMargin;
+        const rewardBonus = Math.max(CONTRACT_MIN_BONUS, Math.round(Math.max(0, desiredProfit - baseProfit) + (buyCost * 0.15)));
         perStation.push({
           id: `m:${st.id}:${i}:${Date.now()}-${Math.random().toString(36).slice(2,5)}`,
           fromId,
@@ -614,9 +716,9 @@ export const useGameStore = create<GameState>((set, get) => ({
           units,
           unitBuy: r.unitBuy,
           unitSell: r.unitSell,
-          rewardBonus: Math.max(100, Math.round((tag === 'bulk' ? 0.15 : 0.1) * r.unitMargin * units)),
+          rewardBonus,
           status: 'offered',
-          expiresAt: Date.now() + (tag === 'rush' ? 10 : 20) * 60 * 1000,
+          expiresAt: Date.now() + (tag === 'rush' ? CONTRACT_EXPIRATION_TIMES.rush : CONTRACT_EXPIRATION_TIMES.default),
           offeredById,
           requiredRep,
           title,
@@ -634,10 +736,22 @@ export const useGameStore = create<GameState>((set, get) => ({
     const chosen = contracts.find(c => c.id === id);
     const objectives: Objective[] = [...(state.objectives || [])];
     if (chosen) {
-      const obj: Objective = { id: `obj:${id}`, label: `Deliver ${chosen.units} ${chosen.commodityId.replace(/_/g,' ')} to ${state.stations.find(s=>s.id===chosen.toId)?.name || chosen.toId}`, targetStationId: chosen.toId, kind: 'contract', status: 'active' };
+      const stationName = state.stations.find(s => s.id === chosen.toId)?.name || chosen.toId;
+      const obj: Objective = { 
+        id: `obj:${id}`, 
+        label: `Deliver ${chosen.units} ${chosen.commodityId.replace(/_/g,' ')} to ${stationName}`, 
+        targetStationId: chosen.toId, 
+        kind: 'contract', 
+        status: 'active' 
+      };
       objectives.push(obj);
     }
-    return { contracts, objectives, activeObjectiveId: chosen ? `obj:${id}` : state.activeObjectiveId, trackedStationId: chosen?.toId || state.trackedStationId } as Partial<GameState> as GameState;
+    return { 
+      contracts, 
+      objectives, 
+      activeObjectiveId: chosen ? `obj:${id}` : state.activeObjectiveId, 
+      trackedStationId: chosen?.toId || state.trackedStationId 
+    } as Partial<GameState> as GameState;
   }),
   abandonContract: (id) => set((state) => {
     const contracts = (state.contracts || []).map(c => c.id === id ? { ...c, status: 'failed' } : c);
@@ -650,36 +764,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     const objectives = (state.objectives || []).map(o => o.id === `obj:${id}` ? { ...o, status: 'failed' } : o);
     const activeObjectiveId = state.activeObjectiveId === `obj:${id}` ? undefined : state.activeObjectiveId;
     return { contracts, stations, objectives, activeObjectiveId } as Partial<GameState> as GameState;
-  }),
-  turnInContract: (id) => set((state) => {
-    const c = (state.contracts || []).find(x => x.id === id);
-    if (!c) return state;
-    if (state.ship.dockedStationId !== c.toId) return state;
-    const have = state.ship.cargo[c.commodityId] || 0;
-    if (have < c.units) return state;
-    // Deliver
-    const cargo = { ...state.ship.cargo, [c.commodityId]: have - c.units };
-    const station = state.stations.find(s => s.id === c.toId)!;
-    const invItem = station.inventory[c.commodityId];
-    let unitPay = (invItem?.sell || c.unitSell || 0);
-    // Emergency/rush multiplier (temporary pricing for mission item)
-    if (c.sellMultiplier && c.sellMultiplier > 1) {
-      unitPay = Math.max(1, Math.round(unitPay * c.sellMultiplier));
-    }
-    const reward = (unitPay * c.units) + (c.rewardBonus || 0);
-    // Update destination stock
-    const nextInv: StationInventory = { ...station.inventory } as any;
-    const cur = nextInv[c.commodityId];
-    if (cur) nextInv[c.commodityId] = { ...cur, stock: (cur.stock || 0) + c.units };
-    // Reputation bump for fulfillment
-    const bias = getPriceBiasForStation(station.type as any, c.commodityId);
-    const biasW = bias === 'expensive' ? 1.8 : (bias === 'cheap' ? 0.6 : 1.0);
-    const repDelta = Math.min(8, 0.08 * c.units * biasW);
-    const stations = state.stations.map(s => s.id === station.id ? { ...s, inventory: nextInv, reputation: Math.max(0, Math.min(100, (s.reputation || 0) + repDelta)) } : s);
-    const contracts = (state.contracts || []).map(x => x.id === id ? { ...x, status: 'completed' } : x);
-    const objectives = (state.objectives || []).map(o => o.id === `obj:${id}` ? { ...o, status: 'completed' } : o);
-    const activeObjectiveId = state.activeObjectiveId === `obj:${id}` ? undefined : state.activeObjectiveId;
-    return { stations, contracts, objectives, activeObjectiveId, ship: { ...state.ship, cargo, credits: state.ship.credits + reward } as Ship } as Partial<GameState> as GameState;
   }),
 }));
 

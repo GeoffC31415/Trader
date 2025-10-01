@@ -632,7 +632,7 @@ export function SceneRoot() {
           )}
           {/* Waypoint marker (visible while undocked for clarity) */}
           {trackedStationId === s.id && !ship.dockedStationId && (
-            <Html position={[s.position[0], s.position[1]+5, s.position[2]]} center distanceFactor={50}>
+            <Html position={[s.position[0], s.position[1]+5, s.position[2]]} center>
               <div style={{ background:'rgba(34,197,94,0.15)', border: '1px solid #22c55e', padding: '4px 8px', borderRadius: 6, color: '#bbf7d0' }}>
                 Waypoint
               </div>

@@ -4,6 +4,8 @@ import { shipCaps, shipBaseStats } from '../state';
 import { getPriceBiasForStation, gatedCommodities } from '../systems/economy/pricing';
 import { processRecipes } from '../systems/economy/recipes';
 import type { StationType } from '../domain/types/economy_types';
+import { CONTRACT_REFRESH_INTERVAL } from '../domain/constants/contract_constants';
+import { ReputationBadge } from './components/reputation_badge';
 
 function getHallLabel(type: StationType): string {
   if (type === 'city') return 'Civic Exchange';
@@ -27,6 +29,23 @@ export function MarketPanel() {
   const upgrade = useGameStore(s => s.upgrade);
   const replaceShip = useGameStore(s => s.replaceShip);
   const hasIntel = !!ship.hasMarketIntel;
+  const contracts = useGameStore(s => s.contracts || []);
+  const acceptContract = useGameStore(s => s.acceptContract);
+  const abandonContract = useGameStore(s => s.abandonContract);
+  const setTrackedStation = useGameStore(s => s.setTrackedStation);
+  
+  // Auto-refresh contracts on mount and at regular intervals
+  useEffect(() => {
+    const store = useGameStore.getState();
+    store.generateContracts({ limit: 5 });
+    
+    const interval = setInterval(() => {
+      const currentStore = useGameStore.getState();
+      currentStore.generateContracts({ limit: 5 });
+    }, CONTRACT_REFRESH_INTERVAL);
+    
+    return () => clearInterval(interval);
+  }, []); // Empty deps - only run on mount/unmount
 
   const [qty, setQty] = useState<number>(1);
 
@@ -59,8 +78,12 @@ export function MarketPanel() {
 
   const hasFabrication = recipes.length > 0;
   const hasProduction = producedItems.length > 0;
+  const stationContracts = useMemo(() => 
+    contracts.filter(c => c.toId === station?.id && c.status === 'offered'),
+    [contracts, station?.id]
+  );
 
-  const [section, setSection] = useState<'hall' | 'fabrication' | 'production'>('hall');
+  const [section, setSection] = useState<'hall' | 'fabrication' | 'production' | 'missions'>('hall');
   useEffect(() => {
     setSection('hall');
   }, [station?.id]);
@@ -102,6 +125,9 @@ export function MarketPanel() {
         {hasProduction && (
           <button onClick={() => setSection('production')} disabled={section === 'production'}>Production</button>
         )}
+        <button onClick={() => setSection('missions')} disabled={section === 'missions'}>
+          Missions {stationContracts.length > 0 && `(${stationContracts.length})`}
+        </button>
       </div>
 
       {section === 'hall' && (
@@ -372,6 +398,105 @@ export function MarketPanel() {
             </div>
           </div>
         </>
+      )}
+
+      {section === 'missions' && (
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+            <div style={{ fontWeight: 700 }}>Available Missions</div>
+            <ReputationBadge reputation={station?.reputation || 0} label="Station Reputation" size="small" />
+          </div>
+          <div style={{ marginBottom: 8, opacity: 0.85, fontSize: 13 }}>
+            Accept delivery contracts for goods needed at this station. Rewards are guaranteed profitable.
+          </div>
+          {stationContracts.length === 0 ? (
+            <div style={{ opacity: 0.7, padding: '12px 0' }}>No missions available at this station. Check back in a few minutes.</div>
+          ) : (
+            <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
+              <div style={{ fontWeight: 700 }}>Mission</div>
+              <div style={{ fontWeight: 700 }}>Commodity</div>
+              <div style={{ fontWeight: 700 }}>Units</div>
+              <div style={{ fontWeight: 700 }}>Reward</div>
+              <div style={{ fontWeight: 700 }}>Actions</div>
+              {stationContracts.map(c => {
+                const fromStation = stations.find(s => s.id === c.fromId);
+                const reqRepOk = !c.requiredRep || ((station?.reputation || 0) >= c.requiredRep);
+                return (
+                  <Fragment key={c.id}>
+                    <div style={{ textTransform: 'capitalize' }}>
+                      {c.title || `Deliver ${c.commodityId.replace(/_/g, ' ')}`}
+                      {c.requiredRep && c.requiredRep > 0 && (
+                        <span style={{ opacity: 0.7, fontSize: 11, marginLeft: 6 }}>
+                          (Rep {c.requiredRep}+)
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ textTransform: 'capitalize' }}>
+                      {c.commodityId.replace(/_/g, ' ')}
+                      {fromStation && (
+                        <span style={{ opacity: 0.7, fontSize: 11, marginLeft: 4 }}>
+                          from {fromStation.name}
+                        </span>
+                      )}
+                    </div>
+                    <div>{c.units}</div>
+                    <div>${(c.rewardBonus || 0).toLocaleString()}</div>
+                    <div>
+                      <button
+                        onClick={() => acceptContract(c.id)}
+                        disabled={!reqRepOk}
+                        title={!reqRepOk ? `Requires ${c.requiredRep} reputation at this station` : undefined}
+                      >
+                        Accept
+                      </button>
+                    </div>
+                  </Fragment>
+                );
+              })}
+            </div>
+          )}
+          <div style={{ marginTop: 12, fontWeight: 700, marginBottom: 6 }}>Active Missions</div>
+          {contracts.filter(c => c.status === 'accepted').length === 0 ? (
+            <div style={{ opacity: 0.7 }}>No active missions.</div>
+          ) : (
+            <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
+              <div style={{ fontWeight: 700 }}>Mission</div>
+              <div style={{ fontWeight: 700 }}>Progress</div>
+              <div style={{ fontWeight: 700 }}>Destination</div>
+              <div style={{ fontWeight: 700 }}>Actions</div>
+              {contracts.filter(c => c.status === 'accepted').map(c => {
+                const destStation = stations.find(s => s.id === c.toId);
+                const delivered = c.deliveredUnits || 0;
+                const remaining = c.units - delivered;
+                const progress = (delivered / c.units) * 100;
+                return (
+                  <Fragment key={c.id}>
+                    <div style={{ textTransform: 'capitalize' }}>
+                      {c.title || `Deliver ${c.commodityId.replace(/_/g, ' ')}`}
+                      <div style={{ marginTop: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 4, height: 4, overflow: 'hidden', width: '100%' }}>
+                        <div style={{ 
+                          width: `${Math.min(100, progress)}%`, 
+                          height: '100%', 
+                          background: progress >= 100 ? '#22c55e' : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+                          transition: 'width 0.3s ease'
+                        }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div>{delivered} / {c.units} delivered</div>
+                      <div style={{ fontSize: 11, opacity: 0.7 }}>{remaining} remaining</div>
+                    </div>
+                    <div>{destStation?.name || c.toId}</div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => setTrackedStation(c.toId)}>Waypoint</button>
+                      <button onClick={() => abandonContract(c.id)}>Abandon</button>
+                    </div>
+                  </Fragment>
+                );
+              })}
+            </div>
+          )}
+        </div>
       )}
 
       {section === 'hall' && (

@@ -167,6 +167,10 @@ export type GameState = {
   activeObjectiveId?: string;
   contracts?: Contract[];
   trackedStationId?: string;
+  celebrationVisible?: number; // timestamp when celebration was triggered
+  celebrationBuyCost?: number; // total cost of purchased goods
+  celebrationSellRevenue?: number; // revenue from selling goods
+  celebrationBonusReward?: number; // bonus reward for completion
   getSuggestedRoutes: (opts?: { limit?: number; prioritizePerDistance?: boolean }) => RouteSuggestion[];
   tick: (dt: number) => void;
   thrust: (dir: [number, number, number], dt: number) => void;
@@ -188,7 +192,6 @@ export type GameState = {
   generateContracts: (opts?: { limit?: number }) => void;
   acceptContract: (id: string) => void;
   abandonContract: (id: string) => void;
-  turnInContract: (id: string) => void;
 };
 
 

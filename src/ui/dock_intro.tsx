@@ -1,5 +1,6 @@
 import { useMemo, useEffect } from 'react';
 import { useGameStore } from '../state';
+import { ReputationBadge } from './components/reputation_badge';
 
 // Import all generated avatars as URLs via Vite's glob import
 const avatarModules = import.meta.glob('../../generated_avatars/*.png', { eager: true, as: 'url' }) as Record<string, string>;
@@ -58,7 +59,10 @@ export function DockIntro() {
       }}
     >
       <div style={{ background: 'rgba(12,15,22,1.0)', padding: 20, borderRadius: 12, width: '50vw', height: '50vh', color: '#e5e7eb', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', marginBottom: 12, opacity: 0.9 }}>Docked: {station.name}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ opacity: 0.9 }}>Docked: {station.name}</div>
+          <ReputationBadge reputation={station.reputation || 0} size="medium" />
+        </div>
         {persona && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 16, alignItems: 'center', height: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
