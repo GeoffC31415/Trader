@@ -151,11 +151,12 @@ export function App() {
             <div style={{ background: 'rgba(11,18,32,0.92)', color: '#e5e7eb', padding: 12, borderRadius: 10, border: '1px solid #1f2937', boxShadow: '0 6px 20px rgba(0,0,0,0.4)' }}>
               <div style={{ fontWeight: 700, marginBottom: 6 }}>Tutorial Mission</div>
               <div style={{ fontSize: 14, lineHeight: 1.4 }}>
-                {tutorialStep === 'dock_refinery' && 'Fly to Helios Refinery (the large structure to the south) and press E to dock.'}
-                {tutorialStep === 'buy_fuel' && 'In the Market panel, buy some Refined Fuel. Use the amount control to select quantity, then click Buy.'}
-                {tutorialStep === 'fly_to_city' && 'Undock (press E), then fly to Sol City (northeast) and dock there (press E when close).'}
-                {tutorialStep === 'sell_fuel' && 'In the Market panel, sell your Refined Fuel. Cities pay premium prices for fuel!'}
-                {tutorialStep === 'done' && "Tutorial complete! You've made your first trade run. Keep exploring, upgrading, and finding profitable routes."}
+                {tutorialStep === 'dock_city' && 'Fly to Sol City (the large structure to the northeast) and press E to dock.'}
+                {tutorialStep === 'accept_mission' && 'Scroll down in the Market panel to "Hall Contracts" section. Find a mission to deliver Refined Fuel and click Accept.'}
+                {tutorialStep === 'goto_refinery' && 'Undock (press Q) and fly to Helios Refinery (south) where fuel is cheap. Dock there (press E when close).'}
+                {tutorialStep === 'buy_fuel' && 'In the Market panel, buy the Refined Fuel needed for your mission. The mission objective shows your progress.'}
+                {tutorialStep === 'deliver_fuel' && 'Undock and return to Sol City. Dock there, then sell your Refined Fuel in the Market to complete the mission!'}
+                {tutorialStep === 'done' && "Tutorial complete! You've completed your first contract. Keep trading, taking missions, and upgrading your ship."}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                 <button onClick={() => setTutorialActive(false)} style={{ opacity: 0.9 }}>Skip tutorial</button>

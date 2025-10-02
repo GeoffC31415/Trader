@@ -44,7 +44,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
   hasChosenStarter: false,
   tutorialActive: false,
-  tutorialStep: 'dock_refinery',
+  tutorialStep: 'dock_city',
   tradeLog: [],
   profitByCommodity: {},
   avgCostByCommodity: {},
@@ -215,6 +215,68 @@ export const useGameStore = create<GameState>((set, get) => ({
     const stationById: Record<string, Station> = Object.fromEntries(stations.map(s => [s.id, s]));
     const stationStockDelta: Record<string, Record<string, number>> = {};
     const npcTraders = state.npcTraders.map(npc => {
+      // Escorts follow the player ship instead of trading
+      if (npc.isEscort) {
+        const playerPos = state.ship.position;
+        const playerVel = state.ship.velocity;
+        
+        // Formation offset based on escort index: 0 = left flank, 1 = right flank
+        const escortIndex = parseInt(npc.id.split(':')[2] || '0');
+        const isLeftFlank = escortIndex === 0;
+        
+        // Calculate player's forward direction from velocity (or default forward if stationary)
+        let forwardX = playerVel[0];
+        let forwardZ = playerVel[2];
+        const speedSq = forwardX * forwardX + forwardZ * forwardZ;
+        
+        if (speedSq < 0.01) {
+          // If player is stationary, use default forward direction (negative Z in world space)
+          forwardX = 0;
+          forwardZ = -1;
+        } else {
+          // Normalize forward direction
+          const speed = Math.sqrt(speedSq);
+          forwardX /= speed;
+          forwardZ /= speed;
+        }
+        
+        // Calculate right vector (perpendicular to forward)
+        const rightX = -forwardZ;
+        const rightZ = forwardX;
+        
+        // Formation position: offset to side and slightly behind
+        const sideOffset = isLeftFlank ? -18 : 18; // Left or right flank
+        const backOffset = -12; // Slightly behind player
+        
+        const targetX = playerPos[0] + (rightX * sideOffset) + (forwardX * backOffset);
+        const targetY = playerPos[1];
+        const targetZ = playerPos[2] + (rightZ * sideOffset) + (forwardZ * backOffset);
+        
+        // Move towards formation position
+        const dx = targetX - npc.position[0];
+        const dy = targetY - npc.position[1];
+        const dz = targetZ - npc.position[2];
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        
+        if (dist > 3) { // Move if not in formation
+          // Move at a speed proportional to distance, with a cap based on player velocity
+          const playerSpeed = Math.sqrt(playerVel[0]*playerVel[0] + playerVel[1]*playerVel[1] + playerVel[2]*playerVel[2]);
+          const maxSpeed = Math.max(playerSpeed * 1.2, npc.speed); // Slightly faster than player to catch up
+          const speed = Math.min(maxSpeed * dt, dist);
+          const ux = dx / Math.max(1e-6, dist);
+          const uy = dy / Math.max(1e-6, dist);
+          const uz = dz / Math.max(1e-6, dist);
+          const position: [number, number, number] = [
+            npc.position[0] + ux * speed,
+            npc.position[1] + uy * speed,
+            npc.position[2] + uz * speed
+          ];
+          return { ...npc, position, velocity: playerVel }; // Store player velocity for orientation
+        }
+        return { ...npc, velocity: playerVel }; // Update velocity even when in position
+      }
+      
+      // Regular NPC traders continue their trading routes
       const dest = stationById[npc.toId];
       const src = stationById[npc.fromId];
       if (!dest || !src) return npc;
@@ -304,10 +366,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!near) return state;
     const next: Partial<GameState> = { ship: { ...state.ship, dockedStationId: near.id, velocity: [0,0,0] } as Ship, dockIntroVisibleId: near.id };
     if (state.tutorialActive) {
-      if (state.tutorialStep === 'dock_refinery' && near.id === 'sol-refinery') {
+      if (state.tutorialStep === 'dock_city' && near.type === 'city') {
+        (next as any).tutorialStep = 'accept_mission';
+      } else if (state.tutorialStep === 'goto_refinery' && near.id === 'sol-refinery') {
         (next as any).tutorialStep = 'buy_fuel';
-      } else if (state.tutorialStep === 'fly_to_city' && near.type === 'city') {
-        (next as any).tutorialStep = 'sell_fuel';
       }
     }
     return next as Partial<GameState> as GameState;
@@ -415,7 +477,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const tradeLog = [...state.tradeLog, trade];
     const next: Partial<GameState> = { ship: { ...state.ship, credits: state.ship.credits - totalCost, cargo } as Ship, stations, avgCostByCommodity: avgMap, tradeLog, npcTraders };
     if (state.tutorialActive && state.tutorialStep === 'buy_fuel' && commodityId === 'refined_fuel') {
-      (next as any).tutorialStep = 'fly_to_city';
+      (next as any).tutorialStep = 'deliver_fuel';
     }
     return next as Partial<GameState> as GameState;
   }),
@@ -558,8 +620,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         totalCredits += completion.bonusCredits;
         showCelebration = true;
         
-        // Despawn escorts for this contract
-        npcTraders = npcTraders.filter(n => !(n.isEscort && n.escortingContract === activeContract.id));
+        // Don't despawn escorts yet - they stay until cargo is empty
       } else {
         // Partial delivery - update progress
         contracts = processPartialDelivery({
@@ -569,6 +630,12 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
       }
     }
+    
+    // Despawn escorts that have no cargo left
+    npcTraders = npcTraders.filter(n => {
+      if (!n.isEscort) return true;
+      return (n.escortCargoUsed || 0) > 0;
+    });
     
     const next: Partial<GameState> = { 
       ship: { ...state.ship, credits: totalCredits, cargo } as Ship, 
@@ -585,7 +652,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       celebrationSellRevenue: showCelebration ? celebrationSellRev : state.celebrationSellRevenue,
       celebrationBonusReward: showCelebration ? celebrationBonusAmount : state.celebrationBonusReward
     };
-    if (state.tutorialActive && state.tutorialStep === 'sell_fuel' && commodityId === 'refined_fuel') {
+    // Tutorial completes when contract is completed (showCelebration = contract was just completed)
+    if (state.tutorialActive && state.tutorialStep === 'deliver_fuel' && commodityId === 'refined_fuel' && showCelebration) {
       (next as any).tutorialStep = 'done';
       (next as any).tutorialActive = false;
     }
@@ -681,11 +749,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     const baseVelocity: [number, number, number] = [0, 0, 0];
     if (kind === 'freighter') {
       const ship: Ship = { position: basePosition, velocity: baseVelocity, credits: 10000, cargo: {}, maxCargo: 300, canMine: false, enginePower: 0, engineTarget: 0, hasNavigationArray: false, hasUnionMembership: false, hasMarketIntel: false, kind: 'freighter', stats: { acc: 10, drag: 1.0, vmax: 11 } };
-      return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock_refinery' } as Partial<GameState> as GameState;
+      return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock_city' } as Partial<GameState> as GameState;
     }
     if (kind === 'clipper') {
       const ship: Ship = { position: basePosition, velocity: baseVelocity, credits: 10000, cargo: {}, maxCargo: 60, canMine: false, enginePower: 0, engineTarget: 0, hasNavigationArray: false, hasUnionMembership: false, hasMarketIntel: false, kind: 'clipper', stats: { acc: 18, drag: 0.9, vmax: 20 } };
-      return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock_refinery' } as Partial<GameState> as GameState;
+      return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock_city' } as Partial<GameState> as GameState;
     }
     if ((kind as any) === 'test') {
       // Spawn a racer with all upgrades and max caps for testing
@@ -716,15 +784,15 @@ export const useGameStore = create<GameState>((set, get) => ({
         return s;
       });
       
-      return { ship, stations, hasChosenStarter: true, tutorialActive: false, tutorialStep: 'dock_refinery' } as Partial<GameState> as GameState;
+      return { ship, stations, hasChosenStarter: true, tutorialActive: false, tutorialStep: 'dock_city' } as Partial<GameState> as GameState;
     }
     const ship: Ship = { position: basePosition, velocity: baseVelocity, credits: 0, cargo: {}, maxCargo: 80, canMine: true, enginePower: 0, engineTarget: 0, hasNavigationArray: false, hasUnionMembership: false, hasMarketIntel: false, kind: 'miner', stats: { acc: 9, drag: 1.1, vmax: 11 } };
-    return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock_refinery' } as Partial<GameState> as GameState;
+    return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock_city' } as Partial<GameState> as GameState;
   }),
   setTutorialActive: (active) => set((state) => {
     if (state.tutorialActive === active) return state;
     const next: Partial<GameState> = { tutorialActive: active };
-    if (active && state.tutorialStep === 'done') (next as any).tutorialStep = 'dock_refinery';
+    if (active && state.tutorialStep === 'done') (next as any).tutorialStep = 'dock_city';
     return next as Partial<GameState> as GameState;
   }),
   setTutorialStep: (step) => set((state) => {
@@ -802,7 +870,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     return { contracts: nextContracts } as Partial<GameState> as GameState;
   }),
   acceptContract: (id) => set((state) => {
-    const contracts = (state.contracts || []).map(c => c.id === id ? { ...c, status: 'accepted' } : c);
+    const contracts = (state.contracts || []).map(c => c.id === id ? { ...c, status: 'accepted' as const } : c);
     const chosen = contracts.find(c => c.id === id);
     const objectives: Objective[] = [...(state.objectives || [])];
     let npcTraders = [...state.npcTraders];
@@ -835,7 +903,7 @@ export const useGameStore = create<GameState>((set, get) => ({
               commodityId: chosen.commodityId,
               fromId: chosen.offeredById,
               toId: chosen.toId,
-              speed: 80,
+              speed: 25, // Slower speed to match player velocity
             position: [
               state.ship.position[0] + (i + 1) * 30,
               state.ship.position[1],
@@ -853,13 +921,20 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
     }
     
-    return { 
+    const next: Partial<GameState> = { 
       contracts, 
       objectives, 
       npcTraders,
       activeObjectiveId: chosen ? `obj:${id}` : state.activeObjectiveId, 
       trackedStationId: chosen?.toId || state.trackedStationId 
-    } as Partial<GameState> as GameState;
+    };
+    
+    // Tutorial progression: accepting refined_fuel contract advances to next step
+    if (state.tutorialActive && state.tutorialStep === 'accept_mission' && chosen?.commodityId === 'refined_fuel') {
+      (next as any).tutorialStep = 'goto_refinery';
+    }
+    
+    return next as Partial<GameState> as GameState;
   }),
   abandonContract: (id) => set((state) => {
     const contracts = (state.contracts || []).map(c => c.id === id ? { ...c, status: 'failed' } : c);
@@ -872,8 +947,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     const objectives = (state.objectives || []).map(o => o.id === `obj:${id}` ? { ...o, status: 'failed' } : o);
     const activeObjectiveId = state.activeObjectiveId === `obj:${id}` ? undefined : state.activeObjectiveId;
     
-    // Despawn escorts for this contract
-    const npcTraders = state.npcTraders.filter(n => !(n.isEscort && n.escortingContract === id));
+    // Mark escorts as no longer tied to this contract, but keep them if they have cargo
+    const npcTraders = state.npcTraders.map(n => {
+      if (n.isEscort && n.escortingContract === id) {
+        // Remove contract association but keep ship if it has cargo
+        if ((n.escortCargoUsed || 0) > 0) {
+          return { ...n, escortingContract: undefined };
+        }
+        return null; // Will be filtered out
+      }
+      return n;
+    }).filter((n): n is typeof n & object => n !== null);
     
     return { contracts, stations, objectives, activeObjectiveId, npcTraders } as Partial<GameState> as GameState;
   }),

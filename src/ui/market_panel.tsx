@@ -17,8 +17,25 @@ function getHallLabel(type: StationType): string {
   if (type === 'trading_post') return 'Bazaar';
   if (type === 'shipyard') return 'Shipyard Office';
   if (type === 'pirate') return 'Quarterdeck Market';
+  if (type === 'mine') return 'Mining Exchange';
+  if (type === 'research') return 'Research Market';
+  if (type === 'orbital_hab') return 'Habitat Exchange';
   return 'Trading Hall';
 }
+
+const stationTypeColors: Record<StationType, { primary: string; secondary: string; glow: string }> = {
+  city: { primary: '#3b82f6', secondary: '#60a5fa', glow: '#3b82f680' },
+  refinery: { primary: '#f59e0b', secondary: '#fbbf24', glow: '#f59e0b80' },
+  fabricator: { primary: '#8b5cf6', secondary: '#a78bfa', glow: '#8b5cf680' },
+  farm: { primary: '#10b981', secondary: '#34d399', glow: '#10b98180' },
+  power_plant: { primary: '#eab308', secondary: '#fde047', glow: '#eab30880' },
+  trading_post: { primary: '#06b6d4', secondary: '#22d3ee', glow: '#06b6d480' },
+  shipyard: { primary: '#ec4899', secondary: '#f472b6', glow: '#ec489980' },
+  pirate: { primary: '#ef4444', secondary: '#f87171', glow: '#ef444480' },
+  mine: { primary: '#78716c', secondary: '#a8a29e', glow: '#78716c80' },
+  research: { primary: '#06b6d4', secondary: '#67e8f9', glow: '#06b6d480' },
+  orbital_hab: { primary: '#a855f7', secondary: '#c084fc', glow: '#a855f780' },
+};
 
 export function MarketPanel() {
   const ship = useGameStore(s => s.ship);
@@ -52,17 +69,6 @@ export function MarketPanel() {
 
   const station = useMemo(() => stations.find(s => s.id === ship.dockedStationId), [stations, ship.dockedStationId]);
   const persona = station?.persona;
-  const personaLine = useMemo(() => {
-    if (!persona) return undefined;
-    const rep = station?.reputation || 0;
-    const tier = rep >= 70 ? 'high' : rep >= 30 ? 'mid' : 'low';
-    const lines = tier === 'high' ? (persona.lines_high || []) : tier === 'mid' ? (persona.lines_mid || []) : (persona.lines_low || []);
-    const tips = tier === 'high' ? (persona.tips_high || []) : tier === 'mid' ? (persona.tips_mid || []) : (persona.tips_low || []);
-    const fallback = [...(persona.lines || []), ...(persona.tips || [])];
-    const pool = [...lines, ...tips, ...fallback];
-    if (pool.length === 0) return undefined;
-    return pool[Math.floor(Math.random() * pool.length)];
-  }, [station?.id, station?.reputation]);
 
   const items = station ? Object.entries(station.inventory) : [];
   const recipes = station ? (processRecipes[station.type] || []) : [];
@@ -93,167 +99,599 @@ export function MarketPanel() {
     if (section === 'production' && !hasProduction) setSection('hall');
   }, [section, hasFabrication, hasProduction]);
 
+  const colors = station ? stationTypeColors[station.type] : stationTypeColors.city;
+
   if (!station) {
     return (
-      <div className="panel">
-        <div><strong>Credits:</strong> {ship.credits.toLocaleString()}</div>
-        <div><strong>Cargo:</strong> {Object.values(ship.cargo).reduce((a,b)=>a+b,0)} / {ship.maxCargo}</div>
-        <div>Fly near a station and press E to dock. Q to undock.</div>
+      <div className="panel" style={{
+        background: 'linear-gradient(135deg, rgba(10,15,25,0.95) 0%, rgba(15,20,30,0.98) 100%)',
+        border: '2px solid #3b82f6',
+        borderRadius: 12,
+        padding: 20,
+        boxShadow: '0 8px 32px #3b82f680',
+      }}>
+        <div style={{ fontFamily: 'monospace', fontSize: 14, marginBottom: 12 }}>
+          <div style={{ color: '#10b981', marginBottom: 8 }}>
+            ▸ CREDITS: <span style={{ fontWeight: 700 }}>${ship.credits.toLocaleString()}</span>
+          </div>
+          <div style={{ color: '#06b6d4', marginBottom: 8 }}>
+            ▸ CARGO: <span style={{ fontWeight: 700 }}>{Object.values(ship.cargo).reduce((a,b)=>a+b,0)} / {ship.maxCargo}</span>
+          </div>
+        </div>
+        <div style={{ 
+          padding: 16, 
+          background: 'rgba(59,130,246,0.1)', 
+          border: '1px solid rgba(59,130,246,0.3)',
+          borderRadius: 8,
+          fontSize: 13,
+          textAlign: 'center',
+        }}>
+          ⚠ Fly near a station and press <strong>E</strong> to dock
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="panel">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <div><strong>Docked:</strong> {station.name}</div>
-        <button onClick={undock}>Undock (Q)</button>
-      </div>
-      <div style={{ marginBottom: 8 }}>
-        <strong>Credits:</strong> {ship.credits.toLocaleString()} | <strong>Cargo:</strong> {Object.values(ship.cargo).reduce((a,b)=>a+b,0)} / {ship.maxCargo}
-        {station && (
-          <span style={{ marginLeft: 8, opacity: 0.85 }}>
-            <strong>Reputation @ {station.name}:</strong> {(station.reputation || 0).toFixed(0)}
-          </span>
-        )}
-      </div>
+    <>
+      <style>{`
+        .sci-fi-panel {
+          background: linear-gradient(135deg, rgba(10,15,25,0.95) 0%, rgba(15,20,30,0.98) 100%);
+          border: 2px solid ${colors.primary};
+          border-radius: 8px;
+          padding: 16px;
+          position: relative;
+          overflow: hidden;
+          box-shadow: 0 8px 32px ${colors.glow}, inset 0 1px 0 rgba(255,255,255,0.1);
+          margin-bottom: 12px;
+        }
+        .sci-fi-panel::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, ${colors.primary}, transparent);
+          animation: scanline-market 3s linear infinite;
+        }
+        .sci-fi-panel::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0,0,0,0.1) 2px,
+            rgba(0,0,0,0.1) 4px
+          );
+          pointer-events: none;
+          opacity: 0.3;
+        }
+        @keyframes scanline-market {
+          from { transform: translateY(-100%); }
+          to { transform: translateY(100%); }
+        }
+        .sci-fi-button {
+          padding: 8px 16px;
+          background: linear-gradient(135deg, ${colors.primary}30, ${colors.primary}20);
+          border: 1px solid ${colors.primary};
+          border-radius: 6px;
+          color: #e5e7eb;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          transition: all 0.2s ease;
+          font-family: monospace;
+        }
+        .sci-fi-button:hover:not(:disabled) {
+          background: linear-gradient(135deg, ${colors.primary}50, ${colors.primary}30);
+          box-shadow: 0 0 20px ${colors.glow};
+          transform: translateY(-1px);
+        }
+        .sci-fi-button:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+          background: linear-gradient(135deg, rgba(100,100,100,0.2), rgba(100,100,100,0.1));
+          border-color: rgba(100,100,100,0.3);
+        }
+        .sci-fi-button.active {
+          background: linear-gradient(135deg, ${colors.primary}, ${colors.secondary});
+          color: #000;
+          font-weight: 700;
+          box-shadow: 0 0 20px ${colors.glow};
+        }
+        .data-row {
+          display: grid;
+          grid-template-columns: 1fr auto auto;
+          gap: 16px;
+          padding: 12px;
+          background: ${colors.primary}10;
+          border: 1px solid ${colors.primary}30;
+          border-left: 3px solid ${colors.primary};
+          border-radius: 6px;
+          margin-bottom: 8px;
+          align-items: center;
+          transition: all 0.2s ease;
+        }
+        .data-row:hover {
+          background: ${colors.primary}15;
+          border-left-color: ${colors.secondary};
+        }
+        .section-header {
+          font-size: 11px;
+          font-family: monospace;
+          letter-spacing: 0.1em;
+          color: ${colors.secondary};
+          margin-bottom: 12px;
+          text-transform: uppercase;
+          border-bottom: 1px solid ${colors.primary}40;
+          padding-bottom: 8px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .section-header::before {
+          content: '◢';
+          color: ${colors.primary};
+        }
+        .commodity-grid {
+          display: grid;
+          grid-template-columns: 2fr 1fr 0.7fr 2fr;
+          gap: 12px 16px;
+          font-family: monospace;
+          font-size: 13px;
+        }
+        .commodity-grid-header {
+          font-weight: 700;
+          color: ${colors.secondary};
+          font-size: 11px;
+          text-transform: uppercase;
+          padding-bottom: 8px;
+          border-bottom: 1px solid ${colors.primary}30;
+        }
+        .quantity-control {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 16px;
+          background: ${colors.primary}10;
+          border: 1px solid ${colors.primary}30;
+          border-radius: 6px;
+          margin-bottom: 12px;
+        }
+        .quantity-control input {
+          width: 80px;
+          padding: 6px 10px;
+          background: rgba(0,0,0,0.3);
+          border: 1px solid ${colors.primary};
+          border-radius: 4px;
+          color: #e5e7eb;
+          font-family: monospace;
+          font-weight: 700;
+          text-align: center;
+        }
+      `}</style>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-        <button onClick={() => setSection('hall')} disabled={section === 'hall'}>{hallLabel}</button>
-        {hasFabrication && (
-          <button onClick={() => setSection('fabrication')} disabled={section === 'fabrication'}>Fabrication</button>
-        )}
-        {hasProduction && (
-          <button onClick={() => setSection('production')} disabled={section === 'production'}>Production</button>
-        )}
-        <button onClick={() => setSection('missions')} disabled={section === 'missions'}>
-          Missions {stationContracts.length > 0 && `(${stationContracts.length})`}
-        </button>
-      </div>
-
-      {section === 'hall' && (
-        <>
-          {persona && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(12,15,22,0.9)', border: '1px solid #1f2937', marginBottom: 8 }}>
-              <div style={{ fontWeight: 700 }}>{persona.name}</div>
-              <div style={{ opacity: 0.8, fontSize: 12 }}>{persona.title}</div>
-              <div style={{ opacity: 0.8, marginLeft: 'auto', fontStyle: 'italic', fontSize: 12 }}>{personaLine}</div>
+      <div className="panel">
+        {/* Header Bar */}
+        <div className="sci-fi-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px' }}>
+          <div>
+            <div style={{ fontSize: 11, fontFamily: 'monospace', color: colors.secondary, letterSpacing: '0.1em', marginBottom: 4 }}>
+              DOCKED AT
             </div>
+            <div style={{ fontSize: 20, fontWeight: 700, textShadow: `0 0 10px ${colors.glow}` }}>
+              {station.name.toUpperCase()}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            <div style={{
+              padding: '8px 16px',
+              background: `${colors.primary}15`,
+              border: `1px solid ${colors.primary}`,
+              borderRadius: 6,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 9, opacity: 0.7, fontFamily: 'monospace', marginBottom: 2 }}>CREDITS</div>
+              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace', color: colors.secondary }}>
+                ${ship.credits.toLocaleString()}
+              </div>
+            </div>
+            <div style={{
+              padding: '8px 16px',
+              background: `${colors.primary}15`,
+              border: `1px solid ${colors.primary}`,
+              borderRadius: 6,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 9, opacity: 0.7, fontFamily: 'monospace', marginBottom: 2 }}>CARGO</div>
+              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace', color: colors.secondary }}>
+                {Object.values(ship.cargo).reduce((a,b)=>a+b,0)}/{ship.maxCargo}
+              </div>
+            </div>
+            <div style={{
+              padding: '8px 16px',
+              background: `${colors.primary}15`,
+              border: `1px solid ${colors.primary}`,
+              borderRadius: 6,
+              textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 9, opacity: 0.7, fontFamily: 'monospace', marginBottom: 2 }}>REPUTATION</div>
+              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace', color: colors.secondary }}>
+                {(station.reputation || 0).toFixed(0)}
+              </div>
+            </div>
+            <button
+              onClick={undock}
+              className="sci-fi-button"
+              style={{
+                background: `linear-gradient(135deg, ${colors.primary}, ${colors.secondary})`,
+                color: '#000',
+                padding: '10px 24px',
+                fontSize: 13,
+              }}
+            >
+              ⏏ UNDOCK (Q)
+            </button>
+          </div>
+        </div>
+
+        {/* Section Tabs */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+          <button onClick={() => setSection('hall')} className={`sci-fi-button ${section === 'hall' ? 'active' : ''}`}>
+            {hallLabel}
+          </button>
+          {hasFabrication && (
+            <button onClick={() => setSection('fabrication')} className={`sci-fi-button ${section === 'fabrication' ? 'active' : ''}`}>
+              ⚙ Fabrication
+            </button>
           )}
-          {station.type === 'shipyard' && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>Shipyard</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center', marginBottom: 10 }}>
-                <div style={{ opacity: 0.8 }}>Current Ship: {ship.kind}</div>
-                <div></div>
-                <div></div>
-                <div style={{ gridColumn: '1 / span 3', opacity: 0.8 }}>
-                  <div style={{ margin: '6px 0 2px' }}>
-                    <strong>Ranges</strong> (min → max)
+          {hasProduction && (
+            <button onClick={() => setSection('production')} className={`sci-fi-button ${section === 'production' ? 'active' : ''}`}>
+              📦 Production
+            </button>
+          )}
+          <button onClick={() => setSection('missions')} className={`sci-fi-button ${section === 'missions' ? 'active' : ''}`}>
+            📋 Missions {stationContracts.length > 0 && `(${stationContracts.length})`}
+          </button>
+        </div>
+
+        {/* HALL SECTION */}
+        {section === 'hall' && (
+          <>
+            {/* Shipyard Section */}
+            {station.type === 'shipyard' && (
+              <div className="sci-fi-panel">
+                <div className="section-header">Ship Upgrades & Services</div>
+                
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 12, fontFamily: 'monospace', marginBottom: 12, opacity: 0.9 }}>
+                    CURRENT VESSEL: <span style={{ color: colors.secondary, fontWeight: 700 }}>{ship.kind.toUpperCase()}</span>
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                  
+                  {/* Upgrades */}
+                  <div className="data-row">
                     <div>
-                      <div style={{ opacity: 0.7 }}>Freighter</div>
-                      <div>Acc: {shipBaseStats.freighter.acc} → {shipCaps.freighter.acc}</div>
-                      <div>Vmax: {shipBaseStats.freighter.vmax} → {shipCaps.freighter.vmax}</div>
-                      <div>Cargo: {shipBaseStats.freighter.cargo} → {shipCaps.freighter.cargo}</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Acceleration Boost</div>
+                      <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {ship.stats.acc.toFixed(1)}</div>
                     </div>
+                    <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,000</div>
+                    <button onClick={() => upgrade('acc', 3, 1000)} className="sci-fi-button">+3 ACC</button>
+                  </div>
+
+                  <div className="data-row">
                     <div>
-                      <div style={{ opacity: 0.7 }}>Clipper</div>
-                      <div>Acc: {shipBaseStats.clipper.acc} → {shipCaps.clipper.acc}</div>
-                      <div>Vmax: {shipBaseStats.clipper.vmax} → {shipCaps.clipper.vmax}</div>
-                      <div>Cargo: {shipBaseStats.clipper.cargo} → {shipCaps.clipper.cargo}</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Velocity Enhancer</div>
+                      <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {ship.stats.vmax.toFixed(1)}</div>
                     </div>
+                    <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,000</div>
+                    <button onClick={() => upgrade('vmax', 3, 1000)} className="sci-fi-button">+3 VMAX</button>
+                  </div>
+
+                  <div className="data-row">
                     <div>
-                      <div style={{ opacity: 0.7 }}>Miner</div>
-                      <div>Acc: {shipBaseStats.miner.acc} → {shipCaps.miner.acc}</div>
-                      <div>Vmax: {shipBaseStats.miner.vmax} → {shipCaps.miner.vmax}</div>
-                      <div>Cargo: {shipBaseStats.miner.cargo} → {shipCaps.miner.cargo}</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Cargo Bay Expansion</div>
+                      <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {ship.maxCargo} units</div>
                     </div>
+                    <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,200</div>
+                    <button onClick={() => upgrade('cargo', 50, 1200)} className="sci-fi-button">+50 CARGO</button>
+                  </div>
+
+                  <div className="data-row">
                     <div>
-                      <div style={{ opacity: 0.7 }}>Heavy Freighter</div>
-                      <div>Acc: {shipBaseStats.heavy_freighter.acc} → {shipCaps.heavy_freighter.acc}</div>
-                      <div>Vmax: {shipBaseStats.heavy_freighter.vmax} → {shipCaps.heavy_freighter.vmax}</div>
-                      <div>Cargo: {shipBaseStats.heavy_freighter.cargo} → {shipCaps.heavy_freighter.cargo}</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Mining Rig Installation</div>
+                      <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
+                        Status: {ship.canMine ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
+                      </div>
                     </div>
+                    <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$25,000</div>
+                    <button onClick={() => upgrade('mining', 0, 25000)} disabled={ship.canMine} className="sci-fi-button">
+                      {ship.canMine ? 'OWNED' : 'INSTALL'}
+                    </button>
+                  </div>
+
+                  <div className="data-row">
                     <div>
-                      <div style={{ opacity: 0.7 }}>Racer</div>
-                      <div>Acc: {shipBaseStats.racer.acc} → {shipCaps.racer.acc}</div>
-                      <div>Vmax: {shipBaseStats.racer.vmax} → {shipCaps.racer.vmax}</div>
-                      <div>Cargo: {shipBaseStats.racer.cargo} → {shipCaps.racer.cargo}</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Navigation Array</div>
+                      <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
+                        Status: {ship.hasNavigationArray ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
+                      </div>
                     </div>
+                    <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$5,000</div>
+                    <button onClick={() => upgrade('navigation', 0, 5000)} disabled={!!ship.hasNavigationArray} className="sci-fi-button">
+                      {ship.hasNavigationArray ? 'OWNED' : 'INSTALL'}
+                    </button>
+                  </div>
+
+                  <div className="data-row">
                     <div>
-                      <div style={{ opacity: 0.7 }}>Industrial Miner</div>
-                      <div>Acc: {shipBaseStats.industrial_miner.acc} → {shipCaps.industrial_miner.acc}</div>
-                      <div>Vmax: {shipBaseStats.industrial_miner.vmax} → {shipCaps.industrial_miner.vmax}</div>
-                      <div>Cargo: {shipBaseStats.industrial_miner.cargo} → {shipCaps.industrial_miner.cargo}</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Mercantile Data Nexus</div>
+                      <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
+                        Status: {hasIntel ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
+                      </div>
                     </div>
+                    <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$2,500</div>
+                    <button onClick={() => upgrade('intel' as any, 0, 2500)} disabled={hasIntel} className="sci-fi-button">
+                      {hasIntel ? 'OWNED' : 'INSTALL'}
+                    </button>
                   </div>
                 </div>
-                <div>Acceleration: {ship.stats.acc.toFixed(1)}</div>
-                <div>$1,000</div>
-                <button onClick={() => upgrade('acc', 3, 1000)}>Buy +3</button>
-                <div>Max Speed: {ship.stats.vmax.toFixed(1)}</div>
-                <div>$1,000</div>
-                <button onClick={() => upgrade('vmax', 3, 1000)}>Buy +3</button>
-                <div>Cargo Capacity: {ship.maxCargo}</div>
-                <div>$1,200</div>
-                <button onClick={() => upgrade('cargo', 50, 1200)}>Buy +50</button>
-                <div>Mining Rig: {ship.canMine ? 'Installed' : 'Not installed'}</div>
-                <div>$25,000</div>
-                <button onClick={() => upgrade('mining', 0, 25000)} disabled={ship.canMine}>{ship.canMine ? 'Owned' : 'Buy'}</button>
-                <div>Navigation Array: {ship.hasNavigationArray ? 'Installed' : 'Not installed'}</div>
-                <div>$5,000</div>
-                <button onClick={() => upgrade('navigation', 0, 5000)} disabled={!!ship.hasNavigationArray}>{ship.hasNavigationArray ? 'Owned' : 'Buy'}</button>
-                <div>Mercantile Data Nexus: {hasIntel ? 'Installed' : 'Not installed'}</div>
-                <div>$2,500</div>
-                <button onClick={() => upgrade('intel' as any, 0, 2500)} disabled={hasIntel}>{hasIntel ? 'Owned' : 'Buy'}</button>
+
+                {/* Ship Replacement */}
+                <div className="section-header" style={{ marginTop: 20 }}>Ship Replacement Services</div>
+                <div style={{
+                  padding: 12,
+                  background: `${colors.primary}10`,
+                  border: `1px solid ${colors.primary}30`,
+                  borderRadius: 6,
+                  marginBottom: 12,
+                  fontSize: 12,
+                  opacity: 0.9,
+                }}>
+                  ⚠ WARNING: Cargo hold must be empty to replace ship
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  {[
+                    { kind: 'freighter', cargo: 300, acc: 10, vmax: 11, price: 20000 },
+                    { kind: 'clipper', cargo: 60, acc: 18, vmax: 20, price: 20000 },
+                    { kind: 'miner', cargo: 80, acc: 9, vmax: 11, price: 10000, mining: true },
+                    { kind: 'heavy_freighter', cargo: 600, acc: 9, vmax: 12, price: 60000 },
+                    { kind: 'racer', cargo: 40, acc: 24, vmax: 28, price: 50000 },
+                    { kind: 'industrial_miner', cargo: 160, acc: 10, vmax: 12, price: 40000, mining: true },
+                  ].map(s => (
+                    <div key={s.kind} style={{
+                      padding: 14,
+                      background: `${colors.primary}10`,
+                      border: `1px solid ${colors.primary}40`,
+                      borderRadius: 8,
+                    }}>
+                      <div style={{ fontWeight: 700, marginBottom: 8, textTransform: 'uppercase', color: colors.secondary }}>
+                        {s.kind.replace(/_/g, ' ')}
+                      </div>
+                      <div style={{ fontSize: 11, fontFamily: 'monospace', marginBottom: 8, lineHeight: 1.6 }}>
+                        <div>CARGO: {s.cargo}</div>
+                        <div>ACC: {s.acc} | VMAX: {s.vmax}</div>
+                        {s.mining && <div style={{ color: '#10b981' }}>✓ MINING RIG</div>}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>
+                          ${s.price.toLocaleString()}
+                        </div>
+                        <button
+                          onClick={() => replaceShip(s.kind as any, s.price)}
+                          disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}
+                          className="sci-fi-button"
+                          style={{ fontSize: 11, padding: '6px 12px' }}
+                        >
+                          PURCHASE
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>Replace Ship</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center' }}>
-                <div>Freighter (cargo 300, acc 10, vmax 11)</div>
-                <div>$20,000</div>
-                <button onClick={() => replaceShip('freighter', 20000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
-                <div>Clipper (cargo 60, acc 18, vmax 20)</div>
-                <div>$20,000</div>
-                <button onClick={() => replaceShip('clipper', 20000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
-                <div>Miner (cargo 80, acc 9, vmax 11, mining rig)</div>
-                <div>$10,000</div>
-                <button onClick={() => replaceShip('miner', 10000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
-                <div>Heavy Freighter (cargo 600, acc 9, vmax 12)</div>
-                <div>$60,000</div>
-                <button onClick={() => replaceShip('heavy_freighter', 60000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
-                <div>Racer (cargo 40, acc 24, vmax 28)</div>
-                <div>$50,000</div>
-                <button onClick={() => replaceShip('racer', 50000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
-                <div>Industrial Miner (cargo 160, acc 10, vmax 12, mining rig)</div>
-                <div>$40,000</div>
-                <button onClick={() => replaceShip('industrial_miner', 40000)} disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}>Buy</button>
+            )}
+
+            {/* City Services */}
+            {station.type === 'city' && (
+              <div className="sci-fi-panel">
+                <div className="section-header">City Services</div>
+                <div className="data-row">
+                  <div>
+                    <div style={{ fontWeight: 600, marginBottom: 2 }}>Union Membership</div>
+                    <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
+                      Status: {hasUnion ? '✓ MEMBER' : '✗ NOT A MEMBER'}
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,500</div>
+                  <button onClick={() => upgrade('union' as any, 0, 1500)} disabled={hasUnion} className="sci-fi-button">
+                    {hasUnion ? 'MEMBER' : 'JOIN'}
+                  </button>
+                </div>
               </div>
+            )}
+
+            {/* Trade Amount Control */}
+            <div className="quantity-control">
+              <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', color: colors.secondary }}>
+                TRADE QUANTITY:
+              </div>
+              <button onClick={() => setQty(q => Math.max(1, q - 1))} className="sci-fi-button" style={{ padding: '4px 12px' }}>
+                −
+              </button>
+              <input
+                type="number"
+                min={1}
+                value={qty}
+                onChange={(e) => setQty(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+              />
+              <button onClick={() => setQty(q => q + 1)} className="sci-fi-button" style={{ padding: '4px 12px' }}>
+                +
+              </button>
+              <button onClick={() => setQty(10)} className="sci-fi-button" style={{ padding: '4px 12px' }}>
+                10
+              </button>
+              <button onClick={() => setQty(50)} className="sci-fi-button" style={{ padding: '4px 12px' }}>
+                50
+              </button>
             </div>
-          )}
-          {station.type === 'city' && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>City Services</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 8, alignItems: 'center' }}>
-                <div>Union Membership: {hasUnion ? 'Member' : 'Not a member'}</div>
-                <div>$1,500</div>
-                <button onClick={() => upgrade('union' as any, 0, 1500)} disabled={hasUnion}>{hasUnion ? 'Owned' : 'Buy'}</button>
+
+            {/* Commodities */}
+            {otherItems.length > 0 && (
+              <div className="sci-fi-panel">
+                <div className="section-header">Commodity Exchange</div>
+                <div className="commodity-grid">
+                  <div className="commodity-grid-header">COMMODITY</div>
+                  <div className="commodity-grid-header">PRICE (BUY / SELL)</div>
+                  <div className="commodity-grid-header">HELD</div>
+                  <div className="commodity-grid-header">ACTIONS</div>
+                  
+                  {otherItems.map(([id, p]) => {
+                    const bias = getPriceBiasForStation(station.type, id);
+                    const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
+                    const rep = station.reputation || 0;
+                    const buyDiscount = Math.max(0, Math.min(0.10, 0.10 * (rep / 100)));
+                    const sellPremium = Math.max(0, Math.min(0.07, 0.07 * (rep / 100)));
+                    const adjBuy = Math.max(1, Math.round(p.buy * (1 - buyDiscount)));
+                    const adjSell = Math.max(1, Math.round(p.sell * (1 + sellPremium)));
+                    return (
+                      <Fragment key={id}>
+                        <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
+                          {id.replace(/_/g, ' ')}
+                        </div>
+                        <div style={{ color }}>
+                          <span style={{ color: '#10b981' }}>${adjBuy}</span>
+                          <span style={{ opacity: 0.5 }}> / </span>
+                          <span style={{ color: '#ef4444' }}>${adjSell}</span>
+                        </div>
+                        <div style={{ fontWeight: 700, color: colors.secondary }}>{ship.cargo[id] || 0}</div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            onClick={() => buy(id, qty)}
+                            disabled={p.canSell === false || (!hasNav && isGated(id))}
+                            className="sci-fi-button"
+                            style={{ padding: '4px 10px', fontSize: 10 }}
+                          >
+                            BUY {qty}
+                          </button>
+                          <button
+                            onClick={() => sell(id, qty)}
+                            disabled={p.canBuy === false || (!hasNav && isGated(id))}
+                            className="sci-fi-button"
+                            style={{ padding: '4px 10px', fontSize: 10 }}
+                          >
+                            SELL {qty}
+                          </button>
+                        </div>
+                        {((p.canSell === false || p.canBuy === false) || (!hasNav && isGated(id))) && (
+                          <div style={{ gridColumn: '1 / -1', fontSize: 10, opacity: 0.6, marginTop: -4, fontFamily: 'monospace' }}>
+                            {p.canSell === false && p.canBuy === false && '⚠ NOT TRADED HERE'}
+                            {p.canSell === false && p.canBuy !== false && '⚠ NOT SOLD HERE'}
+                            {p.canBuy === false && p.canSell !== false && '⚠ NOT BOUGHT HERE'}
+                            {!hasNav && isGated(id) && ' | REQUIRES NAVIGATION ARRAY'}
+                          </div>
+                        )}
+                      </Fragment>
+                    );
+                  })}
+                </div>
               </div>
+            )}
+          </>
+        )}
+
+        {/* FABRICATION SECTION */}
+        {section === 'fabrication' && (
+          <div className="sci-fi-panel">
+            <div className="section-header">Fabrication Bay</div>
+            {recipes.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 24, opacity: 0.7, fontFamily: 'monospace' }}>
+                ⚠ NO FABRICATION SERVICES AVAILABLE
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {recipes.map(r => {
+                  const have = ship.cargo[r.inputId] || 0;
+                  const canMake = Math.floor(have / r.inputPerOutput);
+                  const outIsGated = isGated(r.outputId);
+                  const unionBlocked = !isPirate && !hasUnion;
+                  const navBlocked = !hasNav && outIsGated;
+                  return (
+                    <div key={r.inputId} className="data-row" style={{ gridTemplateColumns: '2fr 1fr auto' }}>
+                      <div>
+                        <div style={{ fontWeight: 600, textTransform: 'capitalize', marginBottom: 4 }}>
+                          {r.inputId.replace(/_/g,' ')} → {r.outputId.replace(/_/g,' ')}
+                        </div>
+                        <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
+                          RATIO: {r.inputPerOutput}:1 | AVAILABLE: {have} units
+                        </div>
+                        {(unionBlocked || navBlocked) && (
+                          <div style={{ fontSize: 10, opacity: 0.6, marginTop: 4, color: '#ef4444' }}>
+                            {!isPirate && !hasUnion && '⚠ REQUIRES UNION MEMBERSHIP'}
+                            {!hasNav && outIsGated && (unionBlocked ? ' | ' : '') + '⚠ REQUIRES NAVIGATION ARRAY'}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ fontFamily: 'monospace', color: colors.secondary, fontWeight: 700 }}>
+                        CAN MAKE: {canMake}
+                      </div>
+                      <button
+                        onClick={() => process(r.inputId, 1)}
+                        disabled={canMake <= 0 || unionBlocked || navBlocked}
+                        className="sci-fi-button"
+                      >
+                        FABRICATE 1
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* PRODUCTION SECTION */}
+        {section === 'production' && producedItems.length > 0 && (
+          <>
+            <div className="quantity-control">
+              <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', color: colors.secondary }}>
+                TRADE QUANTITY:
+              </div>
+              <button onClick={() => setQty(q => Math.max(1, q - 1))} className="sci-fi-button" style={{ padding: '4px 12px' }}>
+                −
+              </button>
+              <input
+                type="number"
+                min={1}
+                value={qty}
+                onChange={(e) => setQty(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+              />
+              <button onClick={() => setQty(q => q + 1)} className="sci-fi-button" style={{ padding: '4px 12px' }}>
+                +
+              </button>
+              <button onClick={() => setQty(10)} className="sci-fi-button" style={{ padding: '4px 12px' }}>
+                10
+              </button>
+              <button onClick={() => setQty(50)} className="sci-fi-button" style={{ padding: '4px 12px' }}>
+                50
+              </button>
             </div>
-          )}
-          {otherItems.length > 0 && (
-            <div style={{ marginTop: 12 }}>
-              <div style={{ fontWeight: 700, marginBottom: 4 }}>Other traded goods</div>
-              <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
-                <div style={{ fontWeight: 700 }}>Commodity</div>
-                <div style={{ fontWeight: 700 }}>Buy/Sell</div>
-                <div style={{ fontWeight: 700 }}>Held</div>
-                <div style={{ fontWeight: 700 }}>Actions</div>
-                {otherItems.map(([id, p]) => {
+
+            <div className="sci-fi-panel">
+              <div className="section-header">Local Production</div>
+              <div className="commodity-grid">
+                <div className="commodity-grid-header">COMMODITY</div>
+                <div className="commodity-grid-header">PRICE (BUY / SELL)</div>
+                <div className="commodity-grid-header">HELD</div>
+                <div className="commodity-grid-header">ACTIONS</div>
+                
+                {producedItems.map(([id, p]) => {
                   const bias = getPriceBiasForStation(station.type, id);
                   const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
-                  // Show rep-adjusted per-unit prices: buy gets discount; sell gets premium
                   const rep = station.reputation || 0;
                   const buyDiscount = Math.max(0, Math.min(0.10, 0.10 * (rep / 100)));
                   const sellPremium = Math.max(0, Math.min(0.07, 0.07 * (rep / 100)));
@@ -261,261 +699,204 @@ export function MarketPanel() {
                   const adjSell = Math.max(1, Math.round(p.sell * (1 + sellPremium)));
                   return (
                     <Fragment key={id}>
-                      <div key={id+':n'} style={{textTransform:'capitalize'}}>{id.replace(/_/g,' ')}</div>
-                      <div key={id+':p'} style={{ color }}>
-                        <span>${adjBuy}</span>
-                        <span style={{ opacity: 0.7 }}> / ${adjSell}</span>
+                      <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
+                        {id.replace(/_/g, ' ')}
                       </div>
-                      <div key={id+':h'}>{ship.cargo[id] || 0}</div>
-                      <div key={id+':a'}>
+                      <div style={{ color }}>
+                        <span style={{ color: '#10b981' }}>${adjBuy}</span>
+                        <span style={{ opacity: 0.5 }}> / </span>
+                        <span style={{ color: '#ef4444' }}>${adjSell}</span>
+                      </div>
+                      <div style={{ fontWeight: 700, color: colors.secondary }}>{ship.cargo[id] || 0}</div>
+                      <div style={{ display: 'flex', gap: 6 }}>
                         <button
                           onClick={() => buy(id, qty)}
-                          style={{ marginRight: 6 }}
                           disabled={p.canSell === false || (!hasNav && isGated(id))}
-                        >Buy {qty}</button>
+                          className="sci-fi-button"
+                          style={{ padding: '4px 10px', fontSize: 10 }}
+                        >
+                          BUY {qty}
+                        </button>
                         <button
                           onClick={() => sell(id, qty)}
                           disabled={p.canBuy === false || (!hasNav && isGated(id))}
-                        >Sell {qty}</button>
-                        {(p.canSell === false || p.canBuy === false) && (
-                          <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
-                            {p.canSell === false && p.canBuy === false ? 'Not traded here' : p.canSell === false ? 'Not sold here' : 'Not bought here'}
-                          </span>
-                        )}
-                        {!hasNav && isGated(id) && (
-                          <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
-                            Requires Navigation Array
-                          </span>
-                        )}
+                          className="sci-fi-button"
+                          style={{ padding: '4px 10px', fontSize: 10 }}
+                        >
+                          SELL {qty}
+                        </button>
                       </div>
+                      {((p.canSell === false || p.canBuy === false) || (!hasNav && isGated(id))) && (
+                        <div style={{ gridColumn: '1 / -1', fontSize: 10, opacity: 0.6, marginTop: -4, fontFamily: 'monospace' }}>
+                          {p.canSell === false && p.canBuy === false && '⚠ NOT TRADED HERE'}
+                          {p.canSell === false && p.canBuy !== false && '⚠ NOT SOLD HERE'}
+                          {p.canBuy === false && p.canSell !== false && '⚠ NOT BOUGHT HERE'}
+                          {!hasNav && isGated(id) && ' | REQUIRES NAVIGATION ARRAY'}
+                        </div>
+                      )}
                     </Fragment>
                   );
                 })}
               </div>
             </div>
-          )}
-        </>
-      )}
+          </>
+        )}
 
-      {section === 'fabrication' && (
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>Fabrication</div>
-          {recipes.length === 0 ? (
-            <div style={{ opacity: 0.7 }}>No fabrication available at this station.</div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: 6, alignItems: 'center' }}>
-              {recipes.map(r => {
-                const have = ship.cargo[r.inputId] || 0;
-                const canMake = Math.floor(have / r.inputPerOutput);
-                const outIsGated = isGated(r.outputId);
-                const unionBlocked = !isPirate && !hasUnion;
-                const navBlocked = !hasNav && outIsGated;
-                return (
-                  <Fragment key={r.inputId}>
-                    <div key={r.inputId+':label'} style={{ textTransform: 'capitalize' }}>
-                      {r.inputId.replace(/_/g,' ')} → {r.outputId.replace(/_/g,' ')}
-                      <span style={{ opacity: 0.7 }}> ( {r.inputPerOutput}:1 )</span>
-                    </div>
-                    <div key={r.inputId+':have'} style={{ opacity: 0.8 }}>Have {have} {r.inputId.replace(/_/g,' ')}</div>
-                    <div key={r.inputId+':btn'}>
-                      <button onClick={() => process(r.inputId, 1)} disabled={canMake <= 0 || unionBlocked || navBlocked}>Make 1</button>
-                      {(unionBlocked || navBlocked) && (
-                        <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
-                          {!isPirate && !hasUnion ? 'Requires Union Membership' : ''}
-                          {!hasNav && outIsGated ? ( !isPirate && !hasUnion ? ' / ' : '' ) + 'Requires Navigation Array' : ''}
-                        </span>
-                      )}
-                    </div>
-                  </Fragment>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
+        {/* MISSIONS SECTION */}
+        {section === 'missions' && (
+          <>
+            <div className="sci-fi-panel">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <div className="section-header" style={{ marginBottom: 0, borderBottom: 'none', paddingBottom: 0 }}>
+                  Available Contracts
+                </div>
+                <ReputationBadge reputation={station?.reputation || 0} label="Station Reputation" size="small" />
+              </div>
+              <div style={{
+                padding: 12,
+                background: `${colors.primary}10`,
+                border: `1px solid ${colors.primary}30`,
+                borderRadius: 6,
+                marginBottom: 16,
+                fontSize: 12,
+                opacity: 0.9,
+              }}>
+                ℹ Accept delivery contracts for goods needed at this station. Rewards are guaranteed profitable.
+              </div>
 
-      {section === 'production' && producedItems.length > 0 && (
-        <>
-          <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ fontWeight: 700 }}>Trade amount</div>
-            <input
-              type="number"
-              min={1}
-              value={qty}
-              onChange={(e) => setQty(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
-              style={{ width: 72, padding: '2px 4px' }}
-            />
-            <button onClick={() => setQty(q => Math.max(1, q - 1))}>-</button>
-            <button onClick={() => setQty(q => q + 1)}>+</button>
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <div style={{ fontWeight: 700, marginBottom: 4 }}>Produced here</div>
-            <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
-              <div style={{ fontWeight: 700 }}>Commodity</div>
-              <div style={{ fontWeight: 700 }}>Buy/Sell</div>
-              <div style={{ fontWeight: 700 }}>Held</div>
-              <div style={{ fontWeight: 700 }}>Actions</div>
-              {producedItems.map(([id, p]) => {
-                const bias = getPriceBiasForStation(station.type, id);
-                const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
-                // Rep-adjusted per-unit prices for produced items
-                const rep = station.reputation || 0;
-                const buyDiscount = Math.max(0, Math.min(0.10, 0.10 * (rep / 100)));
-                const sellPremium = Math.max(0, Math.min(0.07, 0.07 * (rep / 100)));
-                const adjBuy = Math.max(1, Math.round(p.buy * (1 - buyDiscount)));
-                const adjSell = Math.max(1, Math.round(p.sell * (1 + sellPremium)));
-                return (
-                  <Fragment key={id}>
-                    <div key={id+':n'} style={{textTransform:'capitalize'}}>{id.replace(/_/g,' ')}</div>
-                    <div key={id+':p'} style={{ color }}>
-                      <span>${adjBuy}</span>
-                      <span style={{ opacity: 0.7 }}> / ${adjSell}</span>
-                    </div>
-                    <div key={id+':h'}>{ship.cargo[id] || 0}</div>
-                    <div key={id+':a'}>
-                      <button
-                        onClick={() => buy(id, qty)}
-                        style={{ marginRight: 6 }}
-                        disabled={p.canSell === false || (!hasNav && isGated(id))}
-                      >Buy {qty}</button>
-                      <button
-                        onClick={() => sell(id, qty)}
-                        disabled={p.canBuy === false || (!hasNav && isGated(id))}
-                      >Sell {qty}</button>
-                      {(p.canSell === false || p.canBuy === false) && (
-                        <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
-                          {p.canSell === false && p.canBuy === false ? 'Not traded here' : p.canSell === false ? 'Not sold here' : 'Not bought here'}
-                        </span>
-                      )}
-                      {!hasNav && isGated(id) && (
-                        <span style={{ marginLeft: 6, opacity: 0.6, fontSize: 12 }}>
-                          Requires Navigation Array
-                        </span>
-                      )}
-                    </div>
-                  </Fragment>
-                );
-              })}
-            </div>
-          </div>
-        </>
-      )}
-
-      {section === 'missions' && (
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <div style={{ fontWeight: 700 }}>Available Missions</div>
-            <ReputationBadge reputation={station?.reputation || 0} label="Station Reputation" size="small" />
-          </div>
-          <div style={{ marginBottom: 8, opacity: 0.85, fontSize: 13 }}>
-            Accept delivery contracts for goods needed at this station. Rewards are guaranteed profitable.
-          </div>
-          {stationContracts.length === 0 ? (
-            <div style={{ opacity: 0.7, padding: '12px 0' }}>No missions available at this station. Check back in a few minutes.</div>
-          ) : (
-            <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto auto' }}>
-              <div style={{ fontWeight: 700 }}>Mission</div>
-              <div style={{ fontWeight: 700 }}>Commodity</div>
-              <div style={{ fontWeight: 700 }}>Units</div>
-              <div style={{ fontWeight: 700 }}>Reward</div>
-              <div style={{ fontWeight: 700 }}>Actions</div>
-              {stationContracts.map(c => {
-                const fromStation = stations.find(s => s.id === c.fromId);
-                const reqRepOk = !c.requiredRep || ((station?.reputation || 0) >= c.requiredRep);
-                return (
-                  <Fragment key={c.id}>
-                    <div style={{ textTransform: 'capitalize' }}>
-                      {c.title || `Deliver ${c.commodityId.replace(/_/g, ' ')}`}
-                      {c.requiredRep && c.requiredRep > 0 && (
-                        <span style={{ opacity: 0.7, fontSize: 11, marginLeft: 6 }}>
-                          (Rep {c.requiredRep}+)
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ textTransform: 'capitalize' }}>
-                      {c.commodityId.replace(/_/g, ' ')}
-                      {fromStation && (
-                        <span style={{ opacity: 0.7, fontSize: 11, marginLeft: 4 }}>
-                          from {fromStation.name}
-                        </span>
-                      )}
-                    </div>
-                    <div>{c.units}</div>
-                    <div>${(c.rewardBonus || 0).toLocaleString()}</div>
-                    <div>
-                      <button
-                        onClick={() => acceptContract(c.id)}
-                        disabled={!reqRepOk}
-                        title={!reqRepOk ? `Requires ${c.requiredRep} reputation at this station` : undefined}
-                      >
-                        Accept
-                      </button>
-                    </div>
-                  </Fragment>
-                );
-              })}
-            </div>
-          )}
-          <div style={{ marginTop: 12, fontWeight: 700, marginBottom: 6 }}>Active Missions</div>
-          {contracts.filter(c => c.status === 'accepted').length === 0 ? (
-            <div style={{ opacity: 0.7 }}>No active missions.</div>
-          ) : (
-            <div className="grid" style={{ gridTemplateColumns: '1fr auto auto auto' }}>
-              <div style={{ fontWeight: 700 }}>Mission</div>
-              <div style={{ fontWeight: 700 }}>Progress</div>
-              <div style={{ fontWeight: 700 }}>Destination</div>
-              <div style={{ fontWeight: 700 }}>Actions</div>
-              {contracts.filter(c => c.status === 'accepted').map(c => {
-                const destStation = stations.find(s => s.id === c.toId);
-                const delivered = c.deliveredUnits || 0;
-                const remaining = c.units - delivered;
-                const progress = (delivered / c.units) * 100;
-                return (
-                  <Fragment key={c.id}>
-                    <div style={{ textTransform: 'capitalize' }}>
-                      {c.title || `Deliver ${c.commodityId.replace(/_/g, ' ')}`}
-                      <div style={{ marginTop: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 4, height: 4, overflow: 'hidden', width: '100%' }}>
-                        <div style={{ 
-                          width: `${Math.min(100, progress)}%`, 
-                          height: '100%', 
-                          background: progress >= 100 ? '#22c55e' : 'linear-gradient(90deg, #3b82f6, #60a5fa)',
-                          transition: 'width 0.3s ease'
-                        }} />
+              {stationContracts.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 24, opacity: 0.7, fontFamily: 'monospace' }}>
+                  ⚠ NO CONTRACTS AVAILABLE — CHECK BACK LATER
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {stationContracts.map(c => {
+                    const fromStation = stations.find(s => s.id === c.fromId);
+                    const reqRepOk = !c.requiredRep || ((station?.reputation || 0) >= c.requiredRep);
+                    return (
+                      <div key={c.id} style={{
+                        padding: 16,
+                        background: `${colors.primary}10`,
+                        border: `2px solid ${colors.primary}40`,
+                        borderLeft: `4px solid ${colors.primary}`,
+                        borderRadius: 8,
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
+                          <div>
+                            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, textTransform: 'capitalize' }}>
+                              {c.title || `Deliver ${c.commodityId.replace(/_/g, ' ')}`}
+                            </div>
+                            <div style={{ fontSize: 12, opacity: 0.8, fontFamily: 'monospace', marginBottom: 4 }}>
+                              COMMODITY: <span style={{ color: colors.secondary }}>{c.commodityId.replace(/_/g, ' ')}</span>
+                            </div>
+                            <div style={{ fontSize: 12, opacity: 0.8, fontFamily: 'monospace', marginBottom: 4 }}>
+                              QUANTITY: <span style={{ color: colors.secondary }}>{c.units} units</span>
+                            </div>
+                            {fromStation && (
+                              <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
+                                SOURCE: {fromStation.name}
+                              </div>
+                            )}
+                            {c.requiredRep && c.requiredRep > 0 && (
+                              <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace', color: reqRepOk ? '#10b981' : '#ef4444', marginTop: 4 }}>
+                                {reqRepOk ? '✓' : '✗'} REQUIRES {c.requiredRep} REPUTATION
+                              </div>
+                            )}
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 4, fontFamily: 'monospace' }}>REWARD</div>
+                            <div style={{ fontSize: 22, fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>
+                              ${(c.rewardBonus || 0).toLocaleString()}
+                            </div>
+                            <button
+                              onClick={() => acceptContract(c.id)}
+                              disabled={!reqRepOk}
+                              className="sci-fi-button"
+                              style={{ marginTop: 8, padding: '8px 20px' }}
+                            >
+                              ACCEPT
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <div>{delivered} / {c.units} delivered</div>
-                      <div style={{ fontSize: 11, opacity: 0.7 }}>{remaining} remaining</div>
-                    </div>
-                    <div>{destStation?.name || c.toId}</div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => setTrackedStation(c.toId)}>Waypoint</button>
-                      <button onClick={() => abandonContract(c.id)}>Abandon</button>
-                    </div>
-                  </Fragment>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
 
-      {section === 'hall' && (
-        <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ fontWeight: 700 }}>Trade amount</div>
-          <input
-            type="number"
-            min={1}
-            value={qty}
-            onChange={(e) => setQty(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
-            style={{ width: 72, padding: '2px 4px' }}
-          />
-          <button onClick={() => setQty(q => Math.max(1, q - 1))}>-</button>
-          <button onClick={() => setQty(q => q + 1)}>+</button>
-        </div>
-      )}
-    </div>
+            {/* Active Contracts */}
+            <div className="sci-fi-panel">
+              <div className="section-header">Active Contracts</div>
+              {contracts.filter(c => c.status === 'accepted').length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 24, opacity: 0.7, fontFamily: 'monospace' }}>
+                  NO ACTIVE CONTRACTS
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {contracts.filter(c => c.status === 'accepted').map(c => {
+                    const destStation = stations.find(s => s.id === c.toId);
+                    const delivered = c.deliveredUnits || 0;
+                    const remaining = c.units - delivered;
+                    const progress = (delivered / c.units) * 100;
+                    return (
+                      <div key={c.id} style={{
+                        padding: 16,
+                        background: `${colors.primary}10`,
+                        border: `2px solid ${colors.primary}40`,
+                        borderLeft: `4px solid ${progress >= 100 ? '#10b981' : colors.primary}`,
+                        borderRadius: 8,
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 8, textTransform: 'capitalize' }}>
+                              {c.title || `Deliver ${c.commodityId.replace(/_/g, ' ')}`}
+                            </div>
+                            <div style={{ fontSize: 12, fontFamily: 'monospace', marginBottom: 8 }}>
+                              PROGRESS: <span style={{ color: progress >= 100 ? '#10b981' : colors.secondary, fontWeight: 700 }}>
+                                {delivered} / {c.units}
+                              </span> units
+                            </div>
+                            <div style={{
+                              background: 'rgba(0,0,0,0.3)',
+                              borderRadius: 4,
+                              height: 8,
+                              overflow: 'hidden',
+                              marginBottom: 8,
+                            }}>
+                              <div style={{
+                                width: `${Math.min(100, progress)}%`,
+                                height: '100%',
+                                background: progress >= 100 ? '#22c55e' : `linear-gradient(90deg, ${colors.primary}, ${colors.secondary})`,
+                                transition: 'width 0.3s ease',
+                                boxShadow: `0 0 10px ${progress >= 100 ? '#22c55e' : colors.glow}`,
+                              }} />
+                            </div>
+                            <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
+                              DESTINATION: {destStation?.name || c.toId}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
+                            <button onClick={() => setTrackedStation(c.toId)} className="sci-fi-button">
+                              SET WAYPOINT
+                            </button>
+                            <button onClick={() => abandonContract(c.id)} className="sci-fi-button" style={{
+                              background: 'linear-gradient(135deg, rgba(239,68,68,0.3), rgba(239,68,68,0.2))',
+                              borderColor: '#ef4444',
+                            }}>
+                              ABANDON
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 }
-
-

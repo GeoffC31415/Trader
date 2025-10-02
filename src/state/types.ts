@@ -115,7 +115,7 @@ export type GameState = {
   ship: Ship;
   hasChosenStarter: boolean;
   tutorialActive: boolean;
-  tutorialStep: 'dock_refinery' | 'buy_fuel' | 'fly_to_city' | 'sell_fuel' | 'done';
+  tutorialStep: 'dock_city' | 'accept_mission' | 'goto_refinery' | 'buy_fuel' | 'deliver_fuel' | 'done';
   // Dock intro flow
   dockIntroVisibleId?: string; // station id showing intro overlay when docking
   tradeLog: TradeEntry[];

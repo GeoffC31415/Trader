@@ -485,6 +485,88 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
   );
 }
 
+function EscortShip({ escort, playerPosition, playerVelocity }: { escort: any; playerPosition: [number, number, number]; playerVelocity: [number, number, number] }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const power = 0.6; // Escorts always at moderate power
+
+  useFrame((_: unknown, dt: number) => {
+    const g = groupRef.current;
+    if (!g) return;
+    
+    // Calculate distance to formation position
+    const escortIndex = parseInt(escort.id.split(':')[2] || '0');
+    const isLeftFlank = escortIndex === 0;
+    
+    // Calculate player forward and right vectors
+    let forwardX = playerVelocity[0];
+    let forwardZ = playerVelocity[2];
+    const speedSq = forwardX * forwardX + forwardZ * forwardZ;
+    
+    if (speedSq < 0.01) {
+      forwardX = 0;
+      forwardZ = -1;
+    } else {
+      const speed = Math.sqrt(speedSq);
+      forwardX /= speed;
+      forwardZ /= speed;
+    }
+    
+    const rightX = -forwardZ;
+    const rightZ = forwardX;
+    
+    const sideOffset = isLeftFlank ? -18 : 18;
+    const backOffset = -12;
+    
+    const targetX = playerPosition[0] + (rightX * sideOffset) + (forwardX * backOffset);
+    const targetY = playerPosition[1];
+    const targetZ = playerPosition[2] + (rightZ * sideOffset) + (forwardZ * backOffset);
+    
+    const dx = targetX - escort.position[0];
+    const dy = targetY - escort.position[1];
+    const dz = targetZ - escort.position[2];
+    const distToTarget = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    
+    let targetQuat: THREE.Quaternion;
+    
+    if (distToTarget > 3) {
+      // Moving to formation: face movement direction
+      if (dx*dx + dz*dz > 1e-6) {
+        const dir = new THREE.Vector3(dx, dy, dz).normalize();
+        const from = new THREE.Vector3(0, 0, 1);
+        targetQuat = new THREE.Quaternion().setFromUnitVectors(from, dir);
+      } else {
+        return;
+      }
+    } else {
+      // In formation: match player's facing direction
+      if (forwardX*forwardX + forwardZ*forwardZ > 1e-6) {
+        const dir = new THREE.Vector3(forwardX, 0, forwardZ).normalize();
+        const from = new THREE.Vector3(0, 0, 1);
+        targetQuat = new THREE.Quaternion().setFromUnitVectors(from, dir);
+      } else {
+        return;
+      }
+    }
+    
+    // Smooth rotation
+    const slerpSpeed = distToTarget > 3 ? 8 : 12; // Faster rotation when in formation
+    const s = 1 - Math.exp(-slerpSpeed * dt);
+    g.quaternion.slerp(targetQuat, s);
+  });
+
+  return (
+    <group ref={groupRef} position={escort.position as any}>
+      {/* Escorts use clipper model with green tint to distinguish them */}
+      <ClipperModel power={power} turnLeftPower={0} turnRightPower={0} hasRig={false} />
+      {/* Green identification marker */}
+      <mesh position={[0, 1.5, 0]}>
+        <sphereGeometry args={[0.2, 8, 8]} />
+        <meshStandardMaterial color={new THREE.Color('#22c55e')} emissive={new THREE.Color('#10b981')} emissiveIntensity={0.5} />
+      </mesh>
+    </group>
+  );
+}
+
 import { PlaneGrid } from './components/primitives/PlaneGrid';
 
 import { BeltRing } from './components/primitives/BeltRing';
@@ -640,8 +722,8 @@ export function SceneRoot() {
           )}
         </group>
       ))}
-      {/* NPC trader spheres */}
-      {npcTraders.map(n => (
+      {/* NPC trader spheres (non-escorts) */}
+      {npcTraders.filter(n => !n.isEscort).map(n => (
         <group key={n.id} position={n.position as any}>
           <mesh castShadow>
             <sphereGeometry args={[0.6, 16, 16]} />
@@ -649,6 +731,10 @@ export function SceneRoot() {
             <meshStandardMaterial color={new THREE.Color(colorFromCommodity(n.commodityId))} metalness={0.2} roughness={0.6} />
           </mesh>
         </group>
+      ))}
+      {/* Escort ships */}
+      {npcTraders.filter(n => n.isEscort).map(n => (
+        <EscortShip key={n.id} escort={n} playerPosition={ship.position} playerVelocity={ship.velocity} />
       ))}
       <Ship turnLeft={!!pressed.current['a']} turnRight={!!pressed.current['d']} />
     </group>
