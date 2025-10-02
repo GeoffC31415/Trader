@@ -15,8 +15,12 @@ Systems-driven space trading game with a dynamic economy. Buy low, sell high, fa
 - Explore a star system containing planets, belts, and stations of different types (refinery, fabricator, city, power plant, farm, shipyard, pirate outpost, etc.).
 - Trade commodities across stations. Prices vary by station type, distance, local stock, and featured arbitrage.
 - Process input goods into higher-value outputs at stations with recipes (e.g., refinery, fabricator). Pirate stations allow processing without Union membership.
+- Accept and complete contracts (delivery missions) with reputation-based multipliers and bonus rewards.
+- Build reputation at stations for price discounts (up to 10%), contract bonuses, and escort ship assistance.
 - Upgrade your ship (cargo, acceleration, top speed) and unlock capabilities (Mining Rig, Navigation Array, Mercantile Data Nexus, Union Membership).
+- Replace your ship at shipyards with specialized models (Freighters, Clippers, Miners, and advanced variants).
 - NPC traders travel profitable routes and subtly shift station stocks over time.
+- Optional tutorial guides new players through core mechanics.
 
 Core loop:
 1) Identify price gaps and route opportunities.
@@ -27,15 +31,18 @@ Core loop:
 ## Requirements
 
 ### Functional
-- Player can select a starter ship and optionally enable tutorial guidance.
-- Player can fly in 3D, dock/undock, and interact with station UIs.
-- Market UI shows station inventory with buy/sell prices, stock, and action buttons per commodity.
+- Player can select a starter ship (Freighter, Clipper, Miner, or Test Ship) and optionally enable tutorial guidance.
+- Player can fly in 3D with engine power control, dock/undock, and interact with station UIs.
+- Market UI shows station inventory with buy/sell prices, stock, reputation discounts, and action buttons per commodity.
 - Fabrication UI lists recipes for the current station and allows converting inputs to outputs.
-- Journal shows trades and derived profit per commodity.
-- Routes panel shows suggested profitable routes (requires Navigation Array/Market Intel as gated).
-- Upgrades are available at shipyards; city provides Union membership.
+- Contracts system allows accepting delivery missions with reputation requirements, multipliers, and bonus rewards.
+- Station personas greet the player on docking with unique flavor text and tips.
+- Journal shows trades, derived profit per commodity, and suggested profitable routes (Navigation Array/Market Intel gated).
+- Traders panel displays NPC metrics and route profitability (Market Intel gated).
+- Upgrades are available at shipyards; city provides Union membership; ship replacement at shipyards.
 - Mining is possible at belts when near the ring and the ship has a Mining Rig.
-- NPC traders move between stations and adjust station stock on arrival.
+- NPC traders move between stations and adjust station stock on arrival; escort ships assist player cargo when reputation is high.
+- Tutorial system guides through: dock at city → accept mission → travel to refinery → buy fuel → deliver fuel.
 
 ### Non-functional
 - Responsive and smooth rendering at 60 FPS target on modern hardware.
@@ -95,11 +102,16 @@ src/
 
   state/
     index.ts                   # Barrel: useGameStore + selected exports
-    store.ts                   # Zustand store (tick, movement, dock/undock, trade, process, upgrade)
+    store.ts                   # Zustand store (tick, movement, dock/undock, trade, process, upgrade, contracts)
     world/
       seed.ts                  # Static world seed (planets, stations with personas, belts, inventories)
+    helpers/
+      contract_helpers.ts      # Contract completion and tracking logic
+      reputation_helpers.ts    # Reputation-based bonus calculations
     world.ts                   # Re-exports of commodities/planets/stations/belts
     npc.ts                     # NPC spawn and path planning utilities
+    game_state.ts              # Initial game state construction
+    math.ts                    # Math utilities for state calculations
     types.ts                   # Legacy surface (now imports from domain/types)
     constants.ts               # Legacy surface (re-exports from domain/constants)
 
@@ -119,11 +131,14 @@ src/
       Ship.tsx                 # Ship container and orientation
 
   ui/
-    market_panel.tsx           # Market UI, upgrades, ship replacement
+    market_panel.tsx           # Market UI, upgrades, ship replacement, contracts
     journal_panel.tsx          # Trades log, cargo, profits, routes (gated)
     traders_panel.tsx          # NPC traders and profitability metrics
     dock_intro.tsx             # Persona overlay when docking
     minimap.tsx                # 2D system map (canvas)
+    celebration.tsx            # Contract completion celebration overlay
+    components/
+      reputation_badge.tsx     # Station reputation display component
 
   personas/
     avatar_prompts.ts          # Prompts metadata for persona images
@@ -152,20 +167,46 @@ Design notes:
 - Located at `state/world/seed.ts`.
 - Defines planets, stations (+ personas), belts; computes inventories via `priceForStation`.
 
+### Contracts & Reputation
+- **Contracts**: Delivery missions generated per station with tags (standard, bulk, rush, fabrication, emergency).
+- **Reputation tracking**: Each station tracks player reputation (0-100+), increased by completing contracts.
+- **Reputation bonuses**:
+  - Price discounts: 0-10% off purchases based on reputation tier
+  - Contract multipliers: Increased sell prices and bonus rewards for deliveries
+  - Escort ships: High reputation spawns NPC escort ships that carry extra cargo for the player
+- **Contract flow**: Accept at offering station → purchase goods → deliver to destination → earn bonus + reputation
+- **Tutorial integration**: First contract guides player through basic trading loop
+
 ### State/store
-- `store.ts` exposes actions: `tick`, `thrust`, `tryDock`, `undock`, `mine`, `buy`, `sell`, `process`, `upgrade`, `replaceShip`, `chooseStarter`, tutorial setters.
-- `tick(dt)` applies drag, moves ship, jitters station prices slightly, advances NPCs along paths, and adjusts station stock on NPC delivery.
+- `store.ts` exposes actions: `tick`, `thrust`, `setEngineTarget`, `tryDock`, `undock`, `dismissDockIntro`, `mine`, `buy`, `sell`, `process`, `upgrade`, `replaceShip`, `chooseStarter`, `setTutorialActive`, `setTutorialStep`, `generateContracts`, `acceptContract`, `setTrackedStation`.
+- `tick(dt)` applies drag, moves ship and NPCs, jitters station prices slightly, advances NPCs along paths, adjusts station stock on NPC delivery, spawns new NPCs, and progresses contract escorts.
 - `getSuggestedRoutes` computes profitable direct and process routes with gating considered.
+- Contract actions in `state/helpers/contract_helpers.ts` handle completion logic, profit tracking, and celebration triggers.
 
 ### Scene and input
 - WASD to move on the XZ plane; R/F for vertical; E to dock; Q to undock; M to mine (when near belt ring).
 - Camera follows ship with smooth lerp and yaw drag with middle mouse.
 
 ### UI panels
-- Market: trade, fabrication, production, upgrades, and ship replacement (at shipyards).
-- Journal: cargo, trades log, profit by commodity.
+- Market: trade, fabrication, production, upgrades, ship replacement (at shipyards), and contract management.
+- Journal: cargo display, trades log, profit by commodity, and route suggestions (Navigation Array/Market Intel gated).
 - Traders: NPC routes with profitability metrics (requires Market Intel).
-- Dock intro: persona overlay with avatar and flavor text on docking.
+- Dock intro: persona overlay with avatar, flavor text, and contextual tips on docking.
+- Celebration: Full-screen overlay with fireworks and profit breakdown when completing contracts (dismissible with spacebar or click).
+
+## Input controls
+
+### Keyboard
+- **WASD** - Move ship on XZ plane (strafe left/right, forward/back)
+- **R/F** - Vertical movement (up/down)
+- **E** - Dock at nearby station (when in range)
+- **Q** - Undock from current station
+- **M** - Mine asteroids (when near belt ring and has Mining Rig)
+- **Spacebar** - Dismiss celebration overlay
+
+### Mouse
+- **Middle mouse drag** - Rotate camera yaw around ship
+- **Click** - UI interactions (trade, accept contracts, upgrades, etc.)
 
 ## Coding conventions
 - TypeScript strict mode; prefer typed modules from `domain/types`.
@@ -174,11 +215,43 @@ Design notes:
 - Use absolute or short relative imports (tsconfig `baseUrl: ./src`).
 
 ## Extending the game
-- Add commodities: update `systems/economy/commodities.ts`.
-- Add or tune recipes: update `systems/economy/recipes.ts`.
-- Tune market behavior: adjust `systems/economy_constants.ts` and pricing functions.
-- Add a station: edit `state/world/seed.ts` (define persona and rely on pricing to generate inventory).
-- New ship model: add a mesh under `scene/components/ships/` and extend ship selection/replace logic in `state/store.ts` and `ui/market_panel.tsx`.
+
+### Add a Commodity
+1. Edit `systems/economy/commodities.ts` → add to `generateCommodities()`
+2. Define: `id`, `name`, `category`, `baseBuy`, `baseSell`
+3. Optionally add to `gatedCommodities` in `pricing.ts` if requires Navigation Array
+
+### Add/Tune Recipe
+1. Edit `systems/economy/recipes.ts` → add to `processRecipes[stationType]`
+2. Define: `inputId`, `outputId`, `inputPerOutput` (conversion ratio)
+
+### Tune Economy Behavior
+- Edit `systems/economy_constants.ts` for station affinities, premiums, price floors
+- Adjust `JITTER_FACTOR`, `DISTANCE_PREMIUM`, `STOCK_CURVE_*` in `pricing.ts`
+
+### Add a Station
+1. Edit `state/world/seed.ts`
+2. Define position, type, persona (name, title, vibe, lines, tips)
+3. Optionally set initial reputation value
+4. Inventory auto-generated via `priceForStation()`
+
+### Add Ship Model
+1. Create mesh component in `scene/components/ships/`
+2. Add ship kind to `Ship['kind']` union type in `world_types.ts`
+3. Define base stats and caps in `domain/constants/ship_constants.ts` (both `baseStats` and `shipCaps`)
+4. Update `chooseStarter` and `replaceShip` actions in `store.ts`
+5. Update ship selection UI in `ui/market_panel.tsx`
+
+### Add UI Panel
+1. Create component in `ui/`
+2. Read state via `useGameStore(s => s.property)` with Zustand selectors
+3. Call actions via `useGameStore(s => s.actionName)(params)`
+4. Add tab button and conditional rendering to `App.tsx`
+
+### Modify Contract Generation
+1. Edit `generateContracts` action in `store.ts` for different generation rules
+2. Adjust constants in `domain/constants/contract_constants.ts` (timings, rep requirements, pricing)
+3. Update contract completion logic in `state/helpers/contract_helpers.ts`
 
 ## Troubleshooting
 - React key warnings in lists: ensure mapped children are wrapped in keyed Fragments.

@@ -43,11 +43,16 @@ Core gameplay loop:
   - `constants.ts` - Economy tuning parameters (affinities, premiums, floors)
 
 ### `/src/state/` - Global State Management
-- `store.ts` - **Zustand store**: All game actions (tick, thrust, dock, trade, mine, upgrade, contracts)
+- `store.ts` - **Zustand store**: All game actions (tick, thrust, setEngineTarget, dock, trade, mine, upgrade, contracts, tutorial)
 - `world/seed.ts` - Static world generation (planets, stations with personas, belts)
 - `npc.ts` - NPC trader spawning and pathfinding utilities
-- `helpers/` - Action helpers (contract completion, reputation bonuses)
+- `helpers/` - Action helpers
+  - `contract_helpers.ts` - Contract completion, partial delivery, profit tracking
+  - `reputation_helpers.ts` - Price discounts, contract multipliers based on reputation
+- `game_state.ts` - Initial game state construction
+- `math.ts` - Math utilities for state calculations
 - `index.ts` - Barrel exports `useGameStore` and selected actions
+- `types.ts`, `constants.ts`, `world.ts` - Legacy re-export surfaces for compatibility
 
 ### `/src/scene/` - 3D Visualization (R3F Components)
 - `scene_root.tsx` - Main R3F integration: input handling, camera follow, tick loop
@@ -58,12 +63,13 @@ Core gameplay loop:
   - `Ship.tsx` - Ship container with orientation
 
 ### `/src/ui/` - 2D User Interface (React Components)
-- `market_panel.tsx` - Market UI, upgrades, ship replacement
+- `market_panel.tsx` - Market UI, upgrades, ship replacement, contracts
 - `journal_panel.tsx` - Cargo, trades log, profit analysis, routes (gated)
 - `traders_panel.tsx` - NPC trader metrics (requires Market Intel)
 - `dock_intro.tsx` - Persona overlay when docking
 - `minimap.tsx` - 2D system map (canvas)
-- `celebration.tsx` - Contract completion celebration
+- `celebration.tsx` - Contract completion celebration overlay with fireworks
+- `components/reputation_badge.tsx` - Station reputation display component
 
 ### `/src/shared/` - Utilities
 - `hooks/` - `use_poll.ts` for UI refresh
@@ -102,9 +108,20 @@ Core gameplay loop:
 ### Contracts & Missions
 - Generated per station with `generateContracts()`
 - Tags: standard, bulk, rush, fabrication, emergency
-- Rep-gated access, rep bonuses for multipliers
-- Escort ships spawn based on reputation (cargo assist)
-- Completion triggers celebration UI and bonus rewards
+- Rep-gated access: Higher reputation unlocks better contracts
+- Reputation bonuses:
+  - Price discounts on purchases (0-10% based on reputation tier)
+  - Contract sell multipliers for better margins
+  - Escort ships spawn at high reputation to carry extra cargo
+- Contract flow: Accept → Buy goods → Travel → Sell/Deliver → Earn bonus + reputation
+- Completion triggers celebration UI with profit breakdown and bonus rewards
+- Tutorial integration: First contract teaches basic trading loop
+
+### Tutorial System
+- Optional guided experience for new players
+- Steps: dock_city → accept_mission → goto_refinery → buy_fuel → deliver_fuel → done
+- Progression tracked in `GameState.tutorialStep` and `GameState.tutorialActive`
+- Store actions automatically advance tutorial on key events (docking, buying, selling, contracts)
 
 ## Coding Conventions
 
@@ -163,16 +180,22 @@ Core gameplay loop:
 
 ### Add Ship Model
 1. Create mesh component in `scene/components/ships/`
-2. Add ship kind to `Ship['kind']` type in `world_types.ts`
-3. Define stats/caps in `domain/constants/ship_constants.ts`
-4. Update `chooseStarter` and `replaceShip` in `store.ts`
+2. Add ship kind to `Ship['kind']` union type in `world_types.ts`
+3. Define base stats and caps in `domain/constants/ship_constants.ts` (both `baseStats` and `shipCaps`)
+4. Update `chooseStarter` and `replaceShip` actions in `store.ts`
 5. Update ship selection UI in `ui/market_panel.tsx`
+6. Available ship types: freighter, clipper, miner, heavy_freighter, racer, industrial_miner, test (dev only)
 
 ### Add UI Panel
 1. Create component in `ui/`
-2. Read state via `useGameStore(s => s.property)`
-3. Call actions via `useGameStore(s => s.actionName)`
-4. Add tab button to `App.tsx`
+2. Read state via `useGameStore(s => s.property)` with Zustand selectors
+3. Call actions via `useGameStore(s => s.actionName)(params)`
+4. Add tab button and conditional rendering to `App.tsx`
+
+### Modify Contract Generation
+1. Edit `generateContracts` action in `store.ts` for different generation rules
+2. Adjust constants in `domain/constants/contract_constants.ts` (timings, rep requirements, pricing)
+3. Update contract completion logic in `state/helpers/contract_helpers.ts`
 
 ## Common Patterns to Follow
 
@@ -206,6 +229,38 @@ const discount = getPriceDiscount(station.reputation || 0); // 0-10% off
 const bonus = getContractMultiplierBonus(station.reputation || 0); // contract multiplier bonus
 ```
 
+### Tutorial System
+```typescript
+// Tutorial progression steps (in order):
+// 'dock_city' → 'accept_mission' → 'goto_refinery' → 'buy_fuel' → 'deliver_fuel' → 'done'
+const tutorialActive = useGameStore(s => s.tutorialActive);
+const tutorialStep = useGameStore(s => s.tutorialStep);
+```
+
+### Engine Control
+```typescript
+// Ship has engine power (0-1) and target
+ship.enginePower; // Current power level (0-1)
+ship.engineTarget; // Target power level (0-1)
+setEngineTarget(1.0); // Set engine to full power
+```
+
+## Input Controls
+
+### Keyboard
+- **WASD** - Move ship on XZ plane (strafe left/right, forward/back)
+- **R/F** - Vertical movement (up/down)
+- **E** - Dock at nearby station (when in range)
+- **Q** - Undock from current station
+- **M** - Mine asteroids (when near belt ring and has Mining Rig)
+- **Spacebar** - Dismiss celebration overlay
+- **Number keys** - Engine power presets (in development)
+
+### Mouse
+- **Middle mouse drag** - Rotate camera yaw around ship
+- **Scroll wheel** - Zoom camera (in development)
+- **Click** - UI interactions
+
 ## Testing & Development
 
 ### Commands
@@ -217,6 +272,7 @@ const bonus = getContractMultiplierBonus(station.reputation || 0); // contract m
 ### Test Ship
 - Select "Test Ship (Dev)" at startup for full upgrades and high credits
 - Useful for testing late-game features quickly
+- Includes all upgrades: max cargo, Mining Rig, Navigation Array, Market Intel, Union Membership
 
 ### Debugging
 - Check browser console for React/R3F warnings
