@@ -1,0 +1,246 @@
+# Trader - Space Trading Game
+
+## Project Overview
+Systems-driven 3D space trading game with dynamic economy. Buy low, sell high, fabricate goods, upgrade ships, and optimize routes across a procedurally generated star system.
+
+Core gameplay loop:
+1. Identify price gaps and profitable routes
+2. Buy goods at source → move → sell at demand destination
+3. Fabricate at intermediate stations when profitable
+4. Reinvest in upgrades and capabilities
+
+## Tech Stack
+- **Frontend**: Vite + React 18 + TypeScript 5 (strict mode)
+- **3D Rendering**: react-three-fiber (R3F) + drei (Three.js)
+- **State Management**: Zustand (single store pattern)
+- **Validation**: Zod for schema typing of commodities
+- **Build**: Node.js 18+, npm 9+
+
+## Architecture Philosophy
+- **Domain-driven design**: Domain types/constants are single source of truth
+- **Functional patterns**: Pure functions, side-effect-light state updates
+- **Modular boundaries**: Clear separation between domain, systems, state, scene, and UI
+- **Type-safe**: Strict TypeScript across entire codebase
+- **Deterministic state**: Simplified reasoning and testing
+
+## Folder Structure & Responsibilities
+
+### `/src/domain/` - Core Data Models (Single Source of Truth)
+- `constants/` - Ship stats, world scale, contract parameters
+  - `ship_constants.ts` - Base stats and caps for each ship type
+  - `world_constants.ts` - SCALE constant, spatial helper `sp()`
+  - `contract_constants.ts` - Contract pricing, timings, rep requirements
+- `types/` - Type definitions only (no logic)
+  - `economy_types.ts` - StationType, Commodity, StationInventory, ProcessRecipe
+  - `world_types.ts` - Station, Planet, Ship, GameState, NpcTrader, Contract, etc.
+
+### `/src/systems/` - Game Logic & Rules (Pure Functions)
+- `economy/` - All economy calculations
+  - `commodities.ts` - `generateCommodities()` returns master commodity list
+  - `recipes.ts` - `processRecipes` map, `findRecipeForStation()`
+  - `pricing.ts` - `priceForStation()`, affinity system, distance premium, stock curves
+  - `featured.ts` - Seeded featured arbitrage multipliers (time-limited)
+  - `constants.ts` - Economy tuning parameters (affinities, premiums, floors)
+
+### `/src/state/` - Global State Management
+- `store.ts` - **Zustand store**: All game actions (tick, thrust, dock, trade, mine, upgrade, contracts)
+- `world/seed.ts` - Static world generation (planets, stations with personas, belts)
+- `npc.ts` - NPC trader spawning and pathfinding utilities
+- `helpers/` - Action helpers (contract completion, reputation bonuses)
+- `index.ts` - Barrel exports `useGameStore` and selected actions
+
+### `/src/scene/` - 3D Visualization (R3F Components)
+- `scene_root.tsx` - Main R3F integration: input handling, camera follow, tick loop
+- `components/` - Reusable 3D primitives and models
+  - `primitives/` - Planet, BeltRing, PlaneGrid
+  - `stations/` - StationVisual (visuals by type)
+  - `ships/` - FreighterModel, ClipperModel, MinerModel
+  - `Ship.tsx` - Ship container with orientation
+
+### `/src/ui/` - 2D User Interface (React Components)
+- `market_panel.tsx` - Market UI, upgrades, ship replacement
+- `journal_panel.tsx` - Cargo, trades log, profit analysis, routes (gated)
+- `traders_panel.tsx` - NPC trader metrics (requires Market Intel)
+- `dock_intro.tsx` - Persona overlay when docking
+- `minimap.tsx` - 2D system map (canvas)
+- `celebration.tsx` - Contract completion celebration
+
+### `/src/shared/` - Utilities
+- `hooks/` - `use_poll.ts` for UI refresh
+- `math/` - `vec3.ts` for vector math (distance, lerp, bezier)
+
+## Key Design Patterns
+
+### State Management (Zustand)
+- **Single store**: `useGameStore` exposes entire GameState
+- **Action-based mutations**: All state changes via store actions
+- **Selector pattern**: `useGameStore(s => s.ship.credits)` for fine-grained subscriptions
+- **Functional updates**: Return new objects, never mutate existing state
+- **Side-effect minimal**: Keep effects in actions, components are presentational
+
+### Domain Model Flow
+1. **Constants define rules** → `domain/constants/`
+2. **Systems apply rules** → `systems/economy/`
+3. **State orchestrates** → `state/store.ts` actions
+4. **Scene renders** → `scene/` components read state
+5. **UI interacts** → `ui/` components call store actions
+
+### Economy System
+- **Base prices** defined in `commodities.ts`
+- **Station affinity** modifies prices by station type (cheap/expensive/normal)
+- **Distance premium** increases sell price proportional to distance from producer
+- **Stock curves** adjust prices based on current vs target stock
+- **Featured arbitrage** temporary multipliers for dynamic opportunities
+- **Gating** requires Navigation Array for advanced commodities; Union for fabrication (except pirate)
+
+### NPC Traders
+- Spawn with `spawnNpcTraders(stations, count)`
+- Travel profitable routes, adjust station stock on arrival
+- Use curved paths via `planNpcPath()` for natural movement
+- Deliver small quantities (3 units) per trip to gradually shift market
+
+### Contracts & Missions
+- Generated per station with `generateContracts()`
+- Tags: standard, bulk, rush, fabrication, emergency
+- Rep-gated access, rep bonuses for multipliers
+- Escort ships spawn based on reputation (cargo assist)
+- Completion triggers celebration UI and bonus rewards
+
+## Coding Conventions
+
+### TypeScript
+- **Strict mode enabled**: No implicit any, strict null checks
+- **Import from domain**: Always use `domain/types/` for shared types
+- **Type all functions**: Include return types and parameter types
+- **Tuple types**: Use `[number, number, number]` for positions/vectors
+- **Enums as string unions**: `type StationType = 'refinery' | 'city' | ...`
+
+### File Naming
+- **Snake_case** for directories and files: `ship_constants.ts`
+- **PascalCase** for components: `MarketPanel.tsx`
+- **camelCase** for functions and variables: `priceForStation()`
+
+### Code Style
+- **Functional first**: Prefer pure functions over classes
+- **Early returns**: Handle errors/edge cases first, happy path last
+- **Avoid else**: Use guard clauses and early returns
+- **Destructure props**: `const { credits, cargo } = ship;`
+- **Named exports**: Avoid default exports for better refactoring
+- **Short imports**: Use tsconfig `baseUrl: ./src` for absolute imports
+
+### React/R3F Patterns
+- **Presentational components**: Read state via Zustand selectors
+- **Action dispatch**: Call store actions directly, no local state for game logic
+- **R3F refs**: Use `useRef<THREE.Mesh>(null)` for Three.js objects
+- **Frame loop**: Use `useFrame((state, dt) => { ... })` for per-frame updates
+- **Keys in lists**: Always provide unique keys for mapped children
+
+### State Updates
+- **Immutable updates**: Spread operators for nested updates
+- **Partial returns**: Return `Partial<GameState>` from store actions
+- **Type assertions**: Cast `as Partial<GameState> as GameState` when safe
+- **Batch updates**: Multiple state changes in single action when related
+
+## Extending the Game
+
+### Add a Commodity
+1. Edit `systems/economy/commodities.ts` → add to `generateCommodities()`
+2. Define: `id`, `name`, `category`, `baseBuy`, `baseSell`
+3. Optionally add to `gatedCommodities` in `pricing.ts` if needs Navigation Array
+
+### Add/Tune Recipe
+1. Edit `systems/economy/recipes.ts` → add to `processRecipes[stationType]`
+2. Define: `inputId`, `outputId`, `inputPerOutput` (ratio)
+
+### Tune Economy Behavior
+- Edit `systems/economy_constants.ts` for affinities, premiums, floors
+- Adjust `JITTER_FACTOR`, `DISTANCE_PREMIUM`, `STOCK_CURVE_*` in `pricing.ts`
+
+### Add a Station
+1. Edit `state/world/seed.ts`
+2. Define position, type, persona (name, title, vibe, lines, tips)
+3. Inventory auto-generated via `priceForStation()`
+
+### Add Ship Model
+1. Create mesh component in `scene/components/ships/`
+2. Add ship kind to `Ship['kind']` type in `world_types.ts`
+3. Define stats/caps in `domain/constants/ship_constants.ts`
+4. Update `chooseStarter` and `replaceShip` in `store.ts`
+5. Update ship selection UI in `ui/market_panel.tsx`
+
+### Add UI Panel
+1. Create component in `ui/`
+2. Read state via `useGameStore(s => s.property)`
+3. Call actions via `useGameStore(s => s.actionName)`
+4. Add tab button to `App.tsx`
+
+## Common Patterns to Follow
+
+### Distance Calculation
+```typescript
+import { distance } from '../shared/math/vec3';
+const d = distance(stationA.position, stationB.position);
+```
+
+### World Space Conversion
+```typescript
+import { sp } from '../domain/constants/world_constants';
+const worldPos = sp([10, 2, 5]); // Scales by SCALE constant
+```
+
+### Route Suggestions
+```typescript
+const routes = getSuggestedRoutes({ limit: 8, prioritizePerDistance: true });
+```
+
+### Gating Checks
+```typescript
+import { gatedCommodities } from '../systems/economy/pricing';
+if (!hasNav && gatedCommodities.includes(commodityId)) return; // blocked
+```
+
+### Reputation-Based Bonuses
+```typescript
+import { getPriceDiscount, getContractMultiplierBonus } from './helpers/reputation_helpers';
+const discount = getPriceDiscount(station.reputation || 0); // 0-10% off
+const bonus = getContractMultiplierBonus(station.reputation || 0); // contract multiplier bonus
+```
+
+## Testing & Development
+
+### Commands
+- `npm run dev` - Start dev server (localhost:5173)
+- `npm run build` - Production build
+- `npm run typecheck` - Type checking only
+- `npm run preview` - Preview built app
+
+### Test Ship
+- Select "Test Ship (Dev)" at startup for full upgrades and high credits
+- Useful for testing late-game features quickly
+
+### Debugging
+- Check browser console for React/R3F warnings
+- Use `npm run typecheck` to catch type errors before runtime
+- Zustand DevTools: add middleware for state inspection (not included by default)
+
+## Performance Considerations
+- Target 60 FPS on modern hardware
+- Minimize per-frame state reads in R3F components
+- Use Zustand selectors to subscribe only to needed state slices
+- Avoid large array iterations in `useFrame` loops
+- Shadow maps capped at 2048x2048 for balance
+
+## Avoiding Common Pitfalls
+- **Don't mutate state directly**: Always return new objects from store actions
+- **Don't use local state for game logic**: Use Zustand store for all game data
+- **Don't import from barrel files in domain**: Import specific types to avoid circular deps
+- **Don't skip type annotations**: Even if TypeScript can infer, explicit is better
+- **Don't mix sync/async in store actions**: Keep actions synchronous for determinism
+- **Don't forget to handle edge cases**: Empty cargo, insufficient credits, gating, etc.
+
+## Additional Resources
+- Three.js docs: https://threejs.org/docs/
+- R3F docs: https://docs.pmnd.rs/react-three-fiber/
+- Zustand docs: https://docs.pmnd.rs/zustand/
+- Project README: Comprehensive architecture and extension guide
+
