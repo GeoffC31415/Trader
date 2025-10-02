@@ -140,6 +140,27 @@ export function JournalPanel() {
           background: ${primaryColor}15;
           border-left-color: ${secondaryColor};
         }
+        .scrollable-content-journal {
+          max-height: calc(100vh - 200px);
+          overflow-y: auto;
+          padding-right: 8px;
+        }
+        .scrollable-content-journal::-webkit-scrollbar {
+          width: 10px;
+        }
+        .scrollable-content-journal::-webkit-scrollbar-track {
+          background: rgba(0,0,0,0.3);
+          border-radius: 5px;
+        }
+        .scrollable-content-journal::-webkit-scrollbar-thumb {
+          background: ${primaryColor};
+          border-radius: 5px;
+          border: 2px solid rgba(0,0,0,0.3);
+        }
+        .scrollable-content-journal::-webkit-scrollbar-thumb:hover {
+          background: ${secondaryColor};
+          box-shadow: 0 0 10px ${glowColor};
+        }
       `}</style>
 
       <div className="panel">
@@ -163,7 +184,7 @@ export function JournalPanel() {
 
         {/* SHIP TAB */}
         {tab === 'ship' && (
-          <>
+          <div className="scrollable-content-journal">
             <div className="journal-panel">
               <div className="section-header-journal">Pilot Statistics</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
@@ -239,12 +260,12 @@ export function JournalPanel() {
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
 
         {/* TRADES TAB */}
         {tab === 'trades' && (
-          <>
+          <div className="scrollable-content-journal">
             <div className="journal-panel">
               <div className="section-header-journal">Transaction History</div>
               {pageRows.length === 0 ? (
@@ -338,12 +359,12 @@ export function JournalPanel() {
                 ))}
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* ROUTES TAB */}
         {tab === 'routes' && (
-          <>
+          <div className="scrollable-content-journal">
             {hasIntel ? (
               <div className="journal-panel">
                 <div className="section-header-journal">Optimal Trade Routes</div>
@@ -492,7 +513,7 @@ export function JournalPanel() {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </>

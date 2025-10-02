@@ -274,6 +274,27 @@ export function MarketPanel() {
           font-weight: 700;
           text-align: center;
         }
+        .scrollable-content {
+          max-height: calc(100vh - 280px);
+          overflow-y: auto;
+          padding-right: 8px;
+        }
+        .scrollable-content::-webkit-scrollbar {
+          width: 10px;
+        }
+        .scrollable-content::-webkit-scrollbar-track {
+          background: rgba(0,0,0,0.3);
+          border-radius: 5px;
+        }
+        .scrollable-content::-webkit-scrollbar-thumb {
+          background: ${colors.primary};
+          border-radius: 5px;
+          border: 2px solid rgba(0,0,0,0.3);
+        }
+        .scrollable-content::-webkit-scrollbar-thumb:hover {
+          background: ${colors.secondary};
+          box-shadow: 0 0 10px ${colors.glow};
+        }
       `}</style>
 
       <div className="panel">
@@ -361,7 +382,7 @@ export function MarketPanel() {
 
         {/* HALL SECTION */}
         {section === 'hall' && (
-          <>
+          <div className="scrollable-content">
             {/* Shipyard Section */}
             {station.type === 'shipyard' && (
               <div className="sci-fi-panel">
@@ -601,62 +622,64 @@ export function MarketPanel() {
                 </div>
               </div>
             )}
-          </>
+          </div>
         )}
 
         {/* FABRICATION SECTION */}
         {section === 'fabrication' && (
-          <div className="sci-fi-panel">
-            <div className="section-header">Fabrication Bay</div>
-            {recipes.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 24, opacity: 0.7, fontFamily: 'monospace' }}>
-                ⚠ NO FABRICATION SERVICES AVAILABLE
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {recipes.map(r => {
-                  const have = ship.cargo[r.inputId] || 0;
-                  const canMake = Math.floor(have / r.inputPerOutput);
-                  const outIsGated = isGated(r.outputId);
-                  const unionBlocked = !isPirate && !hasUnion;
-                  const navBlocked = !hasNav && outIsGated;
-                  return (
-                    <div key={r.inputId} className="data-row" style={{ gridTemplateColumns: '2fr 1fr auto' }}>
-                      <div>
-                        <div style={{ fontWeight: 600, textTransform: 'capitalize', marginBottom: 4 }}>
-                          {r.inputId.replace(/_/g,' ')} → {r.outputId.replace(/_/g,' ')}
-                        </div>
-                        <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
-                          RATIO: {r.inputPerOutput}:1 | AVAILABLE: {have} units
-                        </div>
-                        {(unionBlocked || navBlocked) && (
-                          <div style={{ fontSize: 10, opacity: 0.6, marginTop: 4, color: '#ef4444' }}>
-                            {!isPirate && !hasUnion && '⚠ REQUIRES UNION MEMBERSHIP'}
-                            {!hasNav && outIsGated && (unionBlocked ? ' | ' : '') + '⚠ REQUIRES NAVIGATION ARRAY'}
+          <div className="scrollable-content">
+            <div className="sci-fi-panel">
+              <div className="section-header">Fabrication Bay</div>
+              {recipes.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: 24, opacity: 0.7, fontFamily: 'monospace' }}>
+                  ⚠ NO FABRICATION SERVICES AVAILABLE
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {recipes.map(r => {
+                    const have = ship.cargo[r.inputId] || 0;
+                    const canMake = Math.floor(have / r.inputPerOutput);
+                    const outIsGated = isGated(r.outputId);
+                    const unionBlocked = !isPirate && !hasUnion;
+                    const navBlocked = !hasNav && outIsGated;
+                    return (
+                      <div key={r.inputId} className="data-row" style={{ gridTemplateColumns: '2fr 1fr auto' }}>
+                        <div>
+                          <div style={{ fontWeight: 600, textTransform: 'capitalize', marginBottom: 4 }}>
+                            {r.inputId.replace(/_/g,' ')} → {r.outputId.replace(/_/g,' ')}
                           </div>
-                        )}
+                          <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
+                            RATIO: {r.inputPerOutput}:1 | AVAILABLE: {have} units
+                          </div>
+                          {(unionBlocked || navBlocked) && (
+                            <div style={{ fontSize: 10, opacity: 0.6, marginTop: 4, color: '#ef4444' }}>
+                              {!isPirate && !hasUnion && '⚠ REQUIRES UNION MEMBERSHIP'}
+                              {!hasNav && outIsGated && (unionBlocked ? ' | ' : '') + '⚠ REQUIRES NAVIGATION ARRAY'}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ fontFamily: 'monospace', color: colors.secondary, fontWeight: 700 }}>
+                          CAN MAKE: {canMake}
+                        </div>
+                        <button
+                          onClick={() => process(r.inputId, 1)}
+                          disabled={canMake <= 0 || unionBlocked || navBlocked}
+                          className="sci-fi-button"
+                        >
+                          FABRICATE 1
+                        </button>
                       </div>
-                      <div style={{ fontFamily: 'monospace', color: colors.secondary, fontWeight: 700 }}>
-                        CAN MAKE: {canMake}
-                      </div>
-                      <button
-                        onClick={() => process(r.inputId, 1)}
-                        disabled={canMake <= 0 || unionBlocked || navBlocked}
-                        className="sci-fi-button"
-                      >
-                        FABRICATE 1
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* PRODUCTION SECTION */}
         {section === 'production' && producedItems.length > 0 && (
-          <>
+          <div className="scrollable-content">
             <div className="quantity-control">
               <div style={{ fontWeight: 700, fontSize: 11, textTransform: 'uppercase', color: colors.secondary }}>
                 TRADE QUANTITY:
@@ -739,12 +762,12 @@ export function MarketPanel() {
                 })}
               </div>
             </div>
-          </>
+          </div>
         )}
 
         {/* MISSIONS SECTION */}
         {section === 'missions' && (
-          <>
+          <div className="scrollable-content">
             <div className="sci-fi-panel">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <div className="section-header" style={{ marginBottom: 0, borderBottom: 'none', paddingBottom: 0 }}>
@@ -894,7 +917,7 @@ export function MarketPanel() {
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </>

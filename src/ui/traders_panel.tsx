@@ -170,6 +170,27 @@ export function TradersPanel() {
           border-left-color: ${secondaryColor};
           transform: translateX(4px);
         }
+        .scrollable-content-traders {
+          max-height: calc(100vh - 480px);
+          overflow-y: auto;
+          padding-right: 8px;
+        }
+        .scrollable-content-traders::-webkit-scrollbar {
+          width: 10px;
+        }
+        .scrollable-content-traders::-webkit-scrollbar-track {
+          background: rgba(0,0,0,0.3);
+          border-radius: 5px;
+        }
+        .scrollable-content-traders::-webkit-scrollbar-thumb {
+          background: ${primaryColor};
+          border-radius: 5px;
+          border: 2px solid rgba(0,0,0,0.3);
+        }
+        .scrollable-content-traders::-webkit-scrollbar-thumb:hover {
+          background: ${secondaryColor};
+          box-shadow: 0 0 10px ${glowColor};
+        }
       `}</style>
 
       <div className="panel">
@@ -191,18 +212,19 @@ export function TradersPanel() {
             ℹ Real-time tracking of NPC trader vessels and their profit margins. Data refreshes every 2 seconds.
           </div>
 
-          {rows.length === 0 ? (
-            <div style={{
-              textAlign: 'center',
-              padding: 32,
-              opacity: 0.7,
-              fontFamily: 'monospace',
-              fontSize: 13,
-            }}>
-              ⚠ NO ACTIVE TRADERS DETECTED
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+          <div className="scrollable-content-traders">
+            {rows.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: 32,
+                opacity: 0.7,
+                fontFamily: 'monospace',
+                fontSize: 13,
+              }}>
+                ⚠ NO ACTIVE TRADERS DETECTED
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
               {rows.map((r, idx) => (
                 <div key={r.id} className="trader-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 12 }}>
@@ -285,12 +307,12 @@ export function TradersPanel() {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
 
-        {rows.length > 0 && (
-          <div className="traders-panel" style={{ marginTop: 0 }}>
+          {rows.length > 0 && (
+            <div style={{ marginTop: 16 }}>
             <div className="section-header-traders">Market Intelligence Summary</div>
             <div style={{
               display: 'grid',
@@ -350,8 +372,9 @@ export function TradersPanel() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </>
   );
