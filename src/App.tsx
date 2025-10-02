@@ -149,15 +149,13 @@ export function App() {
         {tutorialActive && hasChosenStarter && (
           <div style={{ position: 'absolute', left: 16, bottom: 16, zIndex: 30, maxWidth: 460 }}>
             <div style={{ background: 'rgba(11,18,32,0.92)', color: '#e5e7eb', padding: 12, borderRadius: 10, border: '1px solid #1f2937', boxShadow: '0 6px 20px rgba(0,0,0,0.4)' }}>
-              <div style={{ fontWeight: 700, marginBottom: 6 }}>Tutorial</div>
+              <div style={{ fontWeight: 700, marginBottom: 6 }}>Tutorial Mission</div>
               <div style={{ fontSize: 14, lineHeight: 1.4 }}>
-                {tutorialStep === 'dock' && 'Fly near a station (aim for a large structure) and press E to dock.'}
-                {tutorialStep === 'buy' && 'Open Market. Buy a cheap commodity (hint: green price) using the amount control.'}
-                {tutorialStep === 'sell' && 'Fly to a station where it sells for more (red sell price). Dock and sell what you bought.'}
-                {tutorialStep === 'join_union' && 'Dock at a City. In City Services, purchase Union Membership to unlock fabrication.'}
-                {tutorialStep === 'fabricate_process' && 'Go to a Fabricator or relevant station. In Fabrication, convert inputs to outputs (Make 1).'}
-                {tutorialStep === 'fabricate_sell' && 'Deliver your fabricated goods to a buyer station and sell them.'}
-                {tutorialStep === 'done' && 'Tutorial complete! Keep trading, upgrading, and exploring routes.'}
+                {tutorialStep === 'dock_refinery' && 'Fly to Helios Refinery (the large structure to the south) and press E to dock.'}
+                {tutorialStep === 'buy_fuel' && 'In the Market panel, buy some Refined Fuel. Use the amount control to select quantity, then click Buy.'}
+                {tutorialStep === 'fly_to_city' && 'Undock (press E), then fly to Sol City (northeast) and dock there (press E when close).'}
+                {tutorialStep === 'sell_fuel' && 'In the Market panel, sell your Refined Fuel. Cities pay premium prices for fuel!'}
+                {tutorialStep === 'done' && "Tutorial complete! You've made your first trade run. Keep exploring, upgrading, and finding profitable routes."}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                 <button onClick={() => setTutorialActive(false)} style={{ opacity: 0.9 }}>Skip tutorial</button>

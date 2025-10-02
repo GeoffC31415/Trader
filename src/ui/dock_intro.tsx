@@ -1,6 +1,7 @@
 import { useMemo, useEffect } from 'react';
 import { useGameStore } from '../state';
 import { ReputationBadge } from './components/reputation_badge';
+import { getReputationTier, getTierDisplay } from '../state/helpers/reputation_helpers';
 
 // Import all generated avatars as URLs via Vite's glob import
 const avatarModules = import.meta.glob('../../generated_avatars/*.png', { eager: true, as: 'url' }) as Record<string, string>;
@@ -51,6 +52,11 @@ export function DockIntro() {
   }, [stationId, dismiss]);
 
   if (!stationId || !station) return null;
+  
+  const stationRep = station.reputation || 0;
+  const repTier = getReputationTier(stationRep);
+  const tierDisplay = getTierDisplay(repTier);
+  
   return (
     <div
       style={{
@@ -59,10 +65,56 @@ export function DockIntro() {
       }}
     >
       <div style={{ background: 'rgba(12,15,22,1.0)', padding: 20, borderRadius: 12, width: '50vw', height: '50vh', color: '#e5e7eb', boxShadow: '0 8px 30px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <div style={{ opacity: 0.9 }}>Docked: {station.name}</div>
-          <ReputationBadge reputation={station.reputation || 0} size="medium" />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ opacity: 0.9, fontSize: 18 }}>Docked: {station.name}</div>
+          <ReputationBadge reputation={stationRep} size="medium" />
         </div>
+        {repTier !== 'stranger' && (
+          <div style={{ 
+            background: `linear-gradient(135deg, ${tierDisplay.color}20, ${tierDisplay.color}10)`,
+            border: `2px solid ${tierDisplay.color}`,
+            borderRadius: 12,
+            padding: '16px 20px',
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            boxShadow: `0 4px 20px ${tierDisplay.color}40`
+          }}>
+            <div style={{ 
+              fontSize: 48, 
+              color: tierDisplay.color,
+              textShadow: `0 0 20px ${tierDisplay.color}80`,
+              lineHeight: 1
+            }}>
+              ★
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ 
+                fontSize: 24, 
+                fontWeight: 700, 
+                color: tierDisplay.color,
+                marginBottom: 4,
+                textShadow: `0 0 10px ${tierDisplay.color}60`
+              }}>
+                {tierDisplay.name}
+              </div>
+              <div style={{ fontSize: 13, opacity: 0.9 }}>
+                You have earned a distinguished status at this station
+              </div>
+            </div>
+            <div style={{ 
+              fontSize: 36, 
+              fontWeight: 700,
+              color: tierDisplay.color,
+              textAlign: 'center',
+              minWidth: 80
+            }}>
+              {stationRep.toFixed(0)}
+              <div style={{ fontSize: 11, opacity: 0.7, fontWeight: 400 }}>Reputation</div>
+            </div>
+          </div>
+        )}
         {persona && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 16, alignItems: 'center', height: '100%' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

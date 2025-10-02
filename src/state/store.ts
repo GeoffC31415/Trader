@@ -44,7 +44,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
   hasChosenStarter: false,
   tutorialActive: false,
-  tutorialStep: 'dock',
+  tutorialStep: 'dock_refinery',
   tradeLog: [],
   profitByCommodity: {},
   avgCostByCommodity: {},
@@ -303,8 +303,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const near = state.stations.find(s => distance(s.position, state.ship.position) < 6 * SCALE);
     if (!near) return state;
     const next: Partial<GameState> = { ship: { ...state.ship, dockedStationId: near.id, velocity: [0,0,0] } as Ship, dockIntroVisibleId: near.id };
-    if (state.tutorialActive && state.tutorialStep === 'dock') {
-      (next as any).tutorialStep = 'buy';
+    if (state.tutorialActive) {
+      if (state.tutorialStep === 'dock_refinery' && near.id === 'sol-refinery') {
+        (next as any).tutorialStep = 'buy_fuel';
+      } else if (state.tutorialStep === 'fly_to_city' && near.type === 'city') {
+        (next as any).tutorialStep = 'sell_fuel';
+      }
     }
     return next as Partial<GameState> as GameState;
   }),
@@ -410,8 +414,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     };
     const tradeLog = [...state.tradeLog, trade];
     const next: Partial<GameState> = { ship: { ...state.ship, credits: state.ship.credits - totalCost, cargo } as Ship, stations, avgCostByCommodity: avgMap, tradeLog, npcTraders };
-    if (state.tutorialActive && state.tutorialStep === 'buy') {
-      (next as any).tutorialStep = 'sell';
+    if (state.tutorialActive && state.tutorialStep === 'buy_fuel' && commodityId === 'refined_fuel') {
+      (next as any).tutorialStep = 'fly_to_city';
     }
     return next as Partial<GameState> as GameState;
   }),
@@ -581,13 +585,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       celebrationSellRevenue: showCelebration ? celebrationSellRev : state.celebrationSellRevenue,
       celebrationBonusReward: showCelebration ? celebrationBonusAmount : state.celebrationBonusReward
     };
-    if (state.tutorialActive) {
-      if (state.tutorialStep === 'sell') {
-        (next as any).tutorialStep = 'join_union';
-      } else if (state.tutorialStep === 'fabricate_sell') {
-        (next as any).tutorialStep = 'done';
-        (next as any).tutorialActive = false;
-      }
+    if (state.tutorialActive && state.tutorialStep === 'sell_fuel' && commodityId === 'refined_fuel') {
+      (next as any).tutorialStep = 'done';
+      (next as any).tutorialActive = false;
     }
     return next as Partial<GameState> as GameState;
   }),
@@ -607,11 +607,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const newCargo = { ...state.ship.cargo };
     newCargo[inputId] = have - outCount * recipe.inputPerOutput;
     newCargo[recipe.outputId] = (newCargo[recipe.outputId] || 0) + outCount;
-    const next: Partial<GameState> = { ship: { ...state.ship, cargo: newCargo } as Ship };
-    if (state.tutorialActive && state.tutorialStep === 'fabricate_process') {
-      (next as any).tutorialStep = 'fabricate_sell';
-    }
-    return next as Partial<GameState> as GameState;
+    return { ship: { ...state.ship, cargo: newCargo } } as Partial<GameState> as GameState;
   }),
   upgrade: (type, amount, cost) => set((state) => {
     if (!state.ship.dockedStationId) return state;
@@ -639,11 +635,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (type === 'union') {
       if (station.type !== 'city') return state;
       if (state.ship.hasUnionMembership) return state;
-      const next: Partial<GameState> = { ship: { ...state.ship, credits: state.ship.credits - cost, hasUnionMembership: true } as Ship };
-      if (state.tutorialActive && state.tutorialStep === 'join_union') {
-        (next as any).tutorialStep = 'fabricate_process';
-      }
-      return next as Partial<GameState> as GameState;
+      return { ship: { ...state.ship, credits: state.ship.credits - cost, hasUnionMembership: true } } as Partial<GameState> as GameState;
     }
     const stats = { ...state.ship.stats };
     if (type === 'acc') {
@@ -689,11 +681,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     const baseVelocity: [number, number, number] = [0, 0, 0];
     if (kind === 'freighter') {
       const ship: Ship = { position: basePosition, velocity: baseVelocity, credits: 10000, cargo: {}, maxCargo: 300, canMine: false, enginePower: 0, engineTarget: 0, hasNavigationArray: false, hasUnionMembership: false, hasMarketIntel: false, kind: 'freighter', stats: { acc: 10, drag: 1.0, vmax: 11 } };
-      return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock' } as Partial<GameState> as GameState;
+      return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock_refinery' } as Partial<GameState> as GameState;
     }
     if (kind === 'clipper') {
       const ship: Ship = { position: basePosition, velocity: baseVelocity, credits: 10000, cargo: {}, maxCargo: 60, canMine: false, enginePower: 0, engineTarget: 0, hasNavigationArray: false, hasUnionMembership: false, hasMarketIntel: false, kind: 'clipper', stats: { acc: 18, drag: 0.9, vmax: 20 } };
-      return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock' } as Partial<GameState> as GameState;
+      return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock_refinery' } as Partial<GameState> as GameState;
     }
     if ((kind as any) === 'test') {
       // Spawn a racer with all upgrades and max caps for testing
@@ -714,15 +706,25 @@ export const useGameStore = create<GameState>((set, get) => ({
         kind: kindR,
         stats: { acc: shipCaps[kindR].acc, drag: 0.85, vmax: shipCaps[kindR].vmax },
       };
-      return { ship, hasChosenStarter: true, tutorialActive: false, tutorialStep: 'dock' } as Partial<GameState> as GameState;
+      
+      // Set varied reputation at local stations for testing reputation tiers
+      const stations = state.stations.map(s => {
+        if (s.id === 'aurum-fab') return { ...s, reputation: 25 }; // Trusted Trader
+        if (s.id === 'sol-city') return { ...s, reputation: 50 }; // Valued Partner
+        if (s.id === 'greenfields') return { ...s, reputation: 75 }; // Station Champion
+        if (s.id === 'sol-refinery') return { ...s, reputation: 100 }; // Station Hero
+        return s;
+      });
+      
+      return { ship, stations, hasChosenStarter: true, tutorialActive: false, tutorialStep: 'dock_refinery' } as Partial<GameState> as GameState;
     }
     const ship: Ship = { position: basePosition, velocity: baseVelocity, credits: 0, cargo: {}, maxCargo: 80, canMine: true, enginePower: 0, engineTarget: 0, hasNavigationArray: false, hasUnionMembership: false, hasMarketIntel: false, kind: 'miner', stats: { acc: 9, drag: 1.1, vmax: 11 } };
-    return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock' } as Partial<GameState> as GameState;
+    return { ship, hasChosenStarter: true, tutorialActive: !!opts?.tutorial, tutorialStep: 'dock_refinery' } as Partial<GameState> as GameState;
   }),
   setTutorialActive: (active) => set((state) => {
     if (state.tutorialActive === active) return state;
     const next: Partial<GameState> = { tutorialActive: active };
-    if (active && state.tutorialStep === 'done') (next as any).tutorialStep = 'dock';
+    if (active && state.tutorialStep === 'done') (next as any).tutorialStep = 'dock_refinery';
     return next as Partial<GameState> as GameState;
   }),
   setTutorialStep: (step) => set((state) => {
@@ -817,22 +819,23 @@ export const useGameStore = create<GameState>((set, get) => ({
       objectives.push(obj);
       
       // Spawn escort ships based on reputation at offering station
-      const offeringStation = state.stations.find(s => s.id === chosen.offeredById);
-      if (offeringStation) {
-        const stationRep = offeringStation.reputation || 0;
-        const escortCount = getEscortCount(stationRep);
-        const playerCargo = shipCaps[state.ship.kind]?.cargo ?? 100;
-        const escortCargoPerShip = Math.floor(playerCargo * 0.5);
-        
-        for (let i = 0; i < escortCount; i++) {
-          const escortId = `escort:${id}:${i}`;
-          const escort: NpcTrader = {
-            id: escortId,
-            shipKind: 'clipper',
-            commodityId: chosen.commodityId,
-            fromId: chosen.offeredById,
-            toId: chosen.toId,
-            speed: 80,
+      if (chosen.offeredById) {
+        const offeringStation = state.stations.find(s => s.id === chosen.offeredById);
+        if (offeringStation) {
+          const stationRep = offeringStation.reputation || 0;
+          const escortCount = getEscortCount(stationRep);
+          const playerCargo = shipCaps[state.ship.kind]?.cargo ?? 100;
+          const escortCargoPerShip = Math.floor(playerCargo * 0.5);
+          
+          for (let i = 0; i < escortCount; i++) {
+            const escortId = `escort:${id}:${i}`;
+            const escort: NpcTrader = {
+              id: escortId,
+              shipKind: 'clipper',
+              commodityId: chosen.commodityId,
+              fromId: chosen.offeredById,
+              toId: chosen.toId,
+              speed: 80,
             position: [
               state.ship.position[0] + (i + 1) * 30,
               state.ship.position[1],
@@ -847,6 +850,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           npcTraders.push(escort);
         }
       }
+    }
     }
     
     return { 
