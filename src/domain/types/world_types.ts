@@ -77,16 +77,19 @@ export type Ship = {
 
 export type NpcTrader = {
   id: string;
-  commodityId: Commodity['id'];
+  commodityId?: Commodity['id']; // Optional - not all NPCs carry commodities
   fromId: string;
   toId: string;
   position: [number, number, number];
   velocity?: [number, number, number];
-  speed: number;
+  speed?: number;
+  cargoCapacity?: number;
+  lastTradeTime?: number;
   // Precomputed piecewise path points from current position to destination, for curved movement
   path?: [number, number, number][];
   // Index of the next waypoint in `path` to move toward
   pathCursor?: number;
+  pathProgress?: number;
   // Escort ship properties
   isEscort?: boolean;
   escortingContract?: string;
@@ -100,6 +103,8 @@ export type NpcTrader = {
   // Mission properties
   isMissionTarget?: boolean; // true if spawned for a mission
   missionId?: string; // which mission this NPC belongs to
+  isMissionEscort?: boolean; // true if spawned as escort for defend missions
+  isAggressive?: boolean; // true if NPC attacks on sight
   kind?: 'freighter' | 'clipper' | 'miner'; // ship visual type
 };
 
@@ -197,6 +202,19 @@ export type GameState = {
   // Mission arcs system
   missionArcs: MissionArc[];
   missions: Mission[]; // all missions (offered, active, completed, failed)
+  // Mission state tracking (Phase 4)
+  stealthStates: Map<string, { stationId: string; suspicionLevel: number; detected: boolean }>;
+  escortStates: Map<string, {
+    missionId: string;
+    escortNpcId: string;
+    escortHp: number;
+    escortMaxHp: number;
+    destinationStationId: string;
+    lastWaveTime: number;
+    waveCount: number;
+    hasReachedDestination: boolean;
+    spawnedPirateIds: string[];
+  }>;
   // Combat state
   projectiles: Array<{
     id: string;

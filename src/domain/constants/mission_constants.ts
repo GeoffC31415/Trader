@@ -116,6 +116,69 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
   },
   
   // ---------------------------------------------------------------------------
+  // Arc 1: Greenfields Independence - Stage 2 (CHOICE MISSION)
+  // ---------------------------------------------------------------------------
+  
+  greenfields_stage_2: {
+    id: 'greenfields_stage_2',
+    arcId: 'greenfields_independence',
+    title: 'The Census',
+    description: 'Sol City and Greenfields both need you to investigate inspection logs. This is a critical decision that will determine the future of Greenfields Farm.',
+    type: 'choice',
+    stage: 2,
+    objectiveTemplates: [],
+    rewards: {
+      credits: 0, // Rewards come from choice
+      reputationChanges: {},
+    },
+    requiredRep: {
+      greenfields: 10,
+    },
+    availableAt: ['greenfields', 'sol-city'],
+    prerequisiteMissions: ['greenfields_stage_1'],
+    choiceOptions: [
+      {
+        id: 'side_greenfields',
+        label: 'Side with Greenfields',
+        description: 'Steal data chips from Sol City and deliver them to Sana Whit at Greenfields. Help expose Sol City\'s overreach.',
+        consequences: [
+          'Sol City raises prices for Greenfields goods by 15%',
+          'Greenfields gains independence from Sol City regulations',
+          'Future missions support agricultural autonomy',
+        ],
+        rewards: {
+          credits: 3000,
+          reputationChanges: {
+            'greenfields': 15,
+            'sol-city': -10,
+          },
+          permanentEffects: ['sol_city_price_increase_greenfields'],
+          unlocks: ['greenfields_stage_3'],
+        },
+      },
+      {
+        id: 'side_sol_city',
+        label: 'Side with Sol City',
+        description: 'Report Greenfields\' unregistered grow operations to Mira Vale at Sol City. Maintain order and stability.',
+        consequences: [
+          'Greenfields stock drops by 30% temporarily (2 minutes)',
+          'Sol City strengthens control over food supply',
+          'Future missions support central authority',
+        ],
+        rewards: {
+          credits: 3000,
+          reputationChanges: {
+            'sol-city': 15,
+            'greenfields': -10,
+          },
+          permanentEffects: ['greenfields_stock_drop'],
+          unlocks: ['sol_city_stage_3'],
+        },
+      },
+    ],
+  },
+  
+  // ---------------------------------------------------------------------------
   // Arc 2: Fabrication Wars - Stage 1
   // ---------------------------------------------------------------------------
   
@@ -321,6 +384,97 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
       'freeport': 15,
     },
     availableAt: ['freeport'],
+  },
+  
+  // ---------------------------------------------------------------------------
+  // Arc 4: Pirate Accords - Stage 2 (THREE-WAY CHOICE MISSION)
+  // ---------------------------------------------------------------------------
+  
+  pirate_accords_stage_2: {
+    id: 'pirate_accords_stage_2',
+    arcId: 'pirate_accords',
+    title: 'Choose Your Side',
+    description: 'The conflict between Hidden Cove, Sol City, and Freeport has reached a critical point. You must choose which path to take: join the pirates, enforce the law, or broker peace.',
+    type: 'choice',
+    stage: 2,
+    objectiveTemplates: [],
+    rewards: {
+      credits: 0, // Rewards come from choice
+      reputationChanges: {},
+    },
+    requiredRep: {
+      'freeport': 15,
+    },
+    availableAt: ['hidden-cove', 'sol-city', 'freeport'],
+    prerequisiteMissions: ['pirate_accords_stage_1'],
+    choiceOptions: [
+      {
+        id: 'join_pirates',
+        label: 'Join the Pirates (Hidden Cove)',
+        description: 'Raid 4 Sol City convoys and deliver stolen goods to Hidden Cove. Fight for freedom from government control.',
+        consequences: [
+          'Sol City marks you as hostile (combat on sight)',
+          'Access to black market trading',
+          'Pirate-aligned missions unlock',
+          'Cannot dock at Sol City or Sol Refinery',
+        ],
+        rewards: {
+          credits: 10000,
+          reputationChanges: {
+            'hidden-cove': 35,
+            'sol-city': -40,
+            'sol-refinery': -20,
+          },
+          permanentEffects: ['sol_city_hostile', 'black_market_access'],
+          unlocks: ['pirate_accords_stage_3_pirate'],
+        },
+        nextMissionId: 'pirate_accords_stage_3_pirate',
+      },
+      {
+        id: 'enforce_law',
+        label: 'Enforce the Law (Sol City)',
+        description: 'Destroy 6 pirate ships near Hidden Cove. Help Sol City restore order and eliminate the pirate threat.',
+        consequences: [
+          'Hidden Cove closes permanently (becomes hostile)',
+          'Bounty hunting missions unlock',
+          'Law enforcement bonuses at Sol City',
+          'Pirate attacks increase 50%',
+        ],
+        rewards: {
+          credits: 10000,
+          reputationChanges: {
+            'sol-city': 40,
+            'sol-refinery': 20,
+            'hidden-cove': -50,
+          },
+          permanentEffects: ['hidden_cove_hostile', 'bounty_hunting_unlocked', 'pirate_attacks_increase'],
+          unlocks: ['pirate_accords_stage_3_law'],
+        },
+        nextMissionId: 'pirate_accords_stage_3_law',
+      },
+      {
+        id: 'broker_peace',
+        label: 'Broker Peace (Freeport)',
+        description: 'Deliver reparations fund (20 luxury goods + 20 electronics + 20 pharmaceuticals) to establish peace between all factions.',
+        consequences: [
+          'Peace agreement holds between factions',
+          'Pirate attacks decrease 50%',
+          'Gain reputation with all three stations',
+          'Neutral path maintains all access',
+        ],
+        rewards: {
+          credits: 8000,
+          reputationChanges: {
+            'freeport': 30,
+            'sol-city': 30,
+            'hidden-cove': 30,
+          },
+          permanentEffects: ['pirate_attacks_decrease'],
+          unlocks: ['pirate_accords_stage_3_peace'],
+        },
+        nextMissionId: 'pirate_accords_stage_3_peace',
+      },
+    ],
   },
   
   // ---------------------------------------------------------------------------

@@ -7,6 +7,8 @@ import type { StationType } from '../domain/types/economy_types';
 import { CONTRACT_REFRESH_INTERVAL } from '../domain/constants/contract_constants';
 import { ReputationBadge } from './components/reputation_badge';
 import { getReputationTier, getTierDisplay, getTierPerks, getPriceDiscount } from '../state/helpers/reputation_helpers';
+import { MissionChoiceDialog } from './components/mission_choice_dialog';
+import type { Mission } from '../domain/types/mission_types';
 
 function getHallLabel(type: StationType): string {
   if (type === 'city') return 'Civic Exchange';
@@ -57,6 +59,7 @@ export function MarketPanel() {
   const missionArcs = useGameStore(s => s.missionArcs);
   const acceptMission = useGameStore(s => s.acceptMission);
   const abandonMission = useGameStore(s => s.abandonMission);
+  const makeMissionChoice = useGameStore(s => s.makeMissionChoice);
   
   // Auto-refresh contracts on mount and at regular intervals
   useEffect(() => {
@@ -72,6 +75,7 @@ export function MarketPanel() {
   }, []); // Empty deps - only run on mount/unmount
 
   const [qty, setQty] = useState<number>(1);
+  const [choiceMissionDialog, setChoiceMissionDialog] = useState<Mission | null>(null);
 
   const station = useMemo(() => stations.find(s => s.id === ship.dockedStationId), [stations, ship.dockedStationId]);
   const persona = station?.persona;

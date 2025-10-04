@@ -66,6 +66,21 @@ import {
   getMissionTimeRemaining,
 } from './helpers/mission_helpers';
 import type { Mission, MissionArc } from '../domain/types/mission_types';
+import { 
+  processStealthChecks, 
+  applyDetectionConsequences,
+  clearMissionStealthStates,
+} from '../systems/missions/stealth_system';
+import {
+  getActiveEscortMissions,
+  updateEscortState,
+  generatePirateWave,
+  addSpawnedPirateIds,
+  cleanupEscortState,
+  createEscortNpc,
+  createEscortState,
+  type EscortMissionState,
+} from '../systems/missions/escort_system';
 
 export const useGameStore = create<GameState>((set, get) => ({
   planets,
@@ -119,6 +134,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   // Mission arcs system
   missionArcs: initializeMissionArcs(),
   missions: [],
+  stealthStates: new Map(),
+  escortStates: new Map(),
   // Generate per-station mission offers (5 each) with rep gates
   // Missions are just contracts with metadata and optional emergency sell multipliers
   getSuggestedRoutes: (opts) => {
@@ -278,7 +295,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const stationById: Record<string, Station> = Object.fromEntries(stations.map(s => [s.id, s]));
     const stationStockDelta: Record<string, Record<string, number>> = {};
     const npcTraders = state.npcTraders.map(npc => {
-      // Escorts follow the player ship instead of trading
+      // Contract escorts follow the player ship
       if (npc.isEscort) {
         const playerPos = state.ship.position;
         const playerVel = state.ship.velocity;
@@ -324,7 +341,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         if (dist > 3) { // Move if not in formation
           // Move at a speed proportional to distance, with a cap based on player velocity
           const playerSpeed = Math.sqrt(playerVel[0]*playerVel[0] + playerVel[1]*playerVel[1] + playerVel[2]*playerVel[2]);
-          const maxSpeed = Math.max(playerSpeed * 1.2, npc.speed); // Slightly faster than player to catch up
+          const npcSpeed = npc.speed || 10;
+          const maxSpeed = Math.max(playerSpeed * 1.2, npcSpeed); // Slightly faster than player to catch up
           const speed = Math.min(maxSpeed * dt, dist);
           const ux = dx / Math.max(1e-6, dist);
           const uy = dy / Math.max(1e-6, dist);
@@ -339,11 +357,67 @@ export const useGameStore = create<GameState>((set, get) => ({
         return { ...npc, velocity: playerVel }; // Update velocity even when in position
       }
       
+      // Mission escorts follow their path to destination (Phase 4)
+      if (npc.isMissionEscort) {
+        const dest = stationById[npc.toId];
+        if (!dest) return npc;
+        
+        const npcSpeed = npc.speed || 8; // Mission escorts move at medium speed
+        const step = npcSpeed * dt;
+        let path = npc.path;
+        let progress = npc.pathProgress ?? 0;
+        
+        if (!path || path.length < 2) {
+          // Generate path if missing
+          const from = stationById[npc.fromId];
+          if (from) {
+            path = planNpcPath(from, dest, npc.position);
+            progress = 0;
+          }
+        }
+        
+        if (path && path.length > 0) {
+          let position: [number, number, number] = npc.position;
+          let cursor = Math.floor(progress);
+          
+          while (cursor < path.length) {
+            const target = path[cursor];
+            const dx = target[0] - position[0];
+            const dy = target[1] - position[1];
+            const dz = target[2] - position[2];
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            
+            if (dist <= step) {
+              position = [target[0], target[1], target[2]];
+              progress = cursor + 1;
+              cursor += 1;
+              continue;
+            }
+            
+            const ux = dx / Math.max(1e-6, dist);
+            const uy = dy / Math.max(1e-6, dist);
+            const uz = dz / Math.max(1e-6, dist);
+            position = [
+              position[0] + ux * step,
+              position[1] + uy * step,
+              position[2] + uz * step
+            ];
+            progress = cursor + (step / dist);
+            break;
+          }
+          
+          return { ...npc, position, path, pathProgress: progress };
+        }
+        
+        return npc;
+      }
+      
       // Regular NPC traders continue their trading routes
       const dest = stationById[npc.toId];
       const src = stationById[npc.fromId];
       if (!dest || !src) return npc;
-      const step = npc.speed * dt;
+      const npcSpeed = npc.speed || 10; // Default speed for regular traders
+      const step = npcSpeed * dt;
       let path = npc.path;
       let cursor = npc.pathCursor ?? 0;
       if (!path || path.length < 2) {
@@ -373,13 +447,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       // Arrived at end of path -> deliver and reverse route
       if (cursor >= (path?.length || 0)) {
         const deliver = 3;
-        const srcInv = src.inventory[npc.commodityId];
-        const dstInv = dest.inventory[npc.commodityId];
-        if (srcInv && srcInv.canSell !== false && dstInv && dstInv.canBuy !== false) {
-          stationStockDelta[src.id] = stationStockDelta[src.id] || {};
-          stationStockDelta[src.id][npc.commodityId] = (stationStockDelta[src.id][npc.commodityId] || 0) - deliver;
-          stationStockDelta[dest.id] = stationStockDelta[dest.id] || {};
-          stationStockDelta[dest.id][npc.commodityId] = (stationStockDelta[dest.id][npc.commodityId] || 0) + deliver;
+        // Only process commodity delivery if NPC is carrying a commodity
+        if (npc.commodityId) {
+          const srcInv = src.inventory[npc.commodityId];
+          const dstInv = dest.inventory[npc.commodityId];
+          if (srcInv && srcInv.canSell !== false && dstInv && dstInv.canBuy !== false) {
+            stationStockDelta[src.id] = stationStockDelta[src.id] || {};
+            stationStockDelta[src.id][npc.commodityId] = (stationStockDelta[src.id][npc.commodityId] || 0) - deliver;
+            stationStockDelta[dest.id] = stationStockDelta[dest.id] || {};
+            stationStockDelta[dest.id][npc.commodityId] = (stationStockDelta[dest.id][npc.commodityId] || 0) + deliver;
+          }
         }
         // Reverse route; plan curved path back
         const backPath = planNpcPath(dest, src, dest.position);
@@ -531,11 +608,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Remove dead NPCs
     updatedNpcTraders = updatedNpcTraders.filter(npc => npc.hp > 0);
 
-    // Detection system for stealth missions
+    // Mission system updates
     let updatedMissions = [...state.missions];
     let updatedArcs = [...state.missionArcs];
     const activeMissions = updatedMissions.filter(m => m.status === 'active');
-    const DETECTION_RADIUS = 5 * SCALE; // Detection range around stations (reduced)
+    let updatedStealthStates = state.stealthStates;
+    let updatedEscortStates = state.escortStates;
     
     // Process destroyed mission NPCs
     for (const destroyEvent of missionNpcDestroyedEvents) {
@@ -577,61 +655,149 @@ export const useGameStore = create<GameState>((set, get) => ({
               updatedArcs = updatedArcs.map(a => a.id === mission.arcId ? updatedArc : a);
             }
             
+            // Clean up mission states
+            updatedStealthStates = clearMissionStealthStates(updatedStealthStates, mission.id);
+            updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
+            
             console.log(`✅ Mission completed: ${updatedMission.title}!`);
           }
         }
       }
     }
     
-    for (const mission of activeMissions) {
-      const detectionObjectives = mission.objectives.filter(obj => obj.type === 'avoid_detection' && obj.completed);
+    // Stealth detection system (Phase 4)
+    const stealthResult = processStealthChecks(
+      ship,
+      stations,
+      activeMissions,
+      updatedStealthStates,
+      dt
+    );
+    updatedStealthStates = stealthResult.updatedStealthStates;
+    
+    // Process detections
+    for (const detectedStationId of stealthResult.detectedStations) {
+      const mission = activeMissions.find(m => 
+        m.objectives.some(obj => obj.type === 'avoid_detection' && obj.target === detectedStationId)
+      );
       
-      for (const objective of detectionObjectives) {
-        const targetStationId = objective.target;
-        if (!targetStationId) continue;
+      if (mission) {
+        console.log(`🚨 DETECTED near station! Mission failed: ${mission.title}`);
         
-        const targetStation = stations.find(s => s.id === targetStationId);
+        // Apply consequences
+        const consequences = applyDetectionConsequences(ship, stations, detectedStationId, mission);
+        ship = consequences.updatedShip;
+        stations = consequences.updatedStations;
         
-        if (targetStation) {
-          const dx = position[0] - targetStation.position[0];
-          const dy = position[1] - targetStation.position[1];
-          const dz = position[2] - targetStation.position[2];
-          const distToStation = Math.sqrt(dx*dx + dy*dy + dz*dz);
-          
-          // Check if player is within detection radius AND carrying contraband
-          const hasContraband = ship.cargo['luxury_goods'] && ship.cargo['luxury_goods'] > 0;
-          
-          if (distToStation < DETECTION_RADIUS && !ship.dockedStationId && hasContraband) {
-            console.log(`🚨 DETECTED near ${targetStation.name} with contraband! Mission failed.`);
-            
-            // Fail the objective
-            const missionEvent: MissionEvent = {
-              type: 'detection_triggered',
-              stationId: targetStationId,
-            };
-            
-            const updatedMission = updateMissionObjectives(mission, missionEvent);
-            
-            // Mark mission as failed
-            updatedMissions = updatedMissions.map(m => 
-              m.id === mission.id ? { ...updatedMission, status: 'failed' as const } : m
-            );
-            
-            // Confiscate contraband (luxury goods)
-            const cargo = { ...ship.cargo };
-            const confiscatedAmount = cargo['luxury_goods'] || 0;
-            console.log(`📦 ${confiscatedAmount} Luxury Goods confiscated!`);
-            delete cargo['luxury_goods'];
-            ship = { ...ship, cargo };
-            
-            // Apply reputation penalty at detection station
-            stations = stations.map(s => 
-              s.id === targetStationId 
-                ? { ...s, reputation: Math.max(-100, (s.reputation || 0) - 15) }
-                : s
-            );
-          }
+        // Log confiscations
+        for (const confiscated of consequences.confiscatedItems) {
+          console.log(`📦 ${confiscated.quantity} ${confiscated.commodityId} confiscated!`);
         }
+        
+        // Fail the objective
+        const missionEvent: MissionEvent = {
+          type: 'detection_triggered',
+          stationId: detectedStationId,
+        };
+        
+        const updatedMission = updateMissionObjectives(mission, missionEvent);
+        
+        // Mark mission as failed
+        updatedMissions = updatedMissions.map(m => 
+          m.id === mission.id ? { ...updatedMission, status: 'failed' as const } : m
+        );
+        
+        // Clean up stealth state for this mission
+        updatedStealthStates = clearMissionStealthStates(updatedStealthStates, mission.id);
+      }
+    }
+    
+    // Escort mission system (Phase 4)
+    const escortMissions = getActiveEscortMissions(activeMissions);
+    for (const mission of escortMissions) {
+      const escortState = updatedEscortStates.get(mission.id);
+      if (!escortState) continue;
+      
+      const escortNpc = updatedNpcTraders.find(n => n.id === escortState.escortNpcId);
+      const destinationStation = stations.find(s => s.id === escortState.destinationStationId);
+      
+      const updateResult = updateEscortState(
+        escortState,
+        escortNpc,
+        destinationStation,
+        currentTime,
+        dt
+      );
+      
+      updatedEscortStates.set(mission.id, updateResult.updatedState);
+      
+      // Handle escort destroyed
+      if (updateResult.escortDestroyed) {
+        console.log(`💥 Escort destroyed! Mission failed: ${mission.title}`);
+        updatedMissions = updatedMissions.map(m => 
+          m.id === mission.id ? { ...m, status: 'failed' as const } : m
+        );
+        updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
+        continue;
+      }
+      
+      // Handle escort reached destination
+      if (updateResult.hasReached) {
+        console.log(`✅ Escort reached destination safely!`);
+        const missionEvent: MissionEvent = {
+          type: 'escort_reached_destination',
+          npcId: escortState.escortNpcId,
+        };
+        
+        const updatedMission = updateMissionObjectives(mission, missionEvent);
+        updatedMissions = updatedMissions.map(m => 
+          m.id === mission.id ? updatedMission : m
+        );
+        
+        // Check if mission is complete
+        if (checkMissionCompletion(updatedMission)) {
+          updatedMissions = updatedMissions.map(m => 
+            m.id === mission.id ? { ...m, status: 'completed' as const } : m
+          );
+          
+          // Apply rewards
+          const rewardUpdates = applyMissionRewards(
+            { ...state, stations, ship } as GameState,
+            updatedMission
+          );
+          if (rewardUpdates.ship) ship = rewardUpdates.ship;
+          if (rewardUpdates.stations) stations = rewardUpdates.stations;
+          
+          // Advance arc
+          const arc = updatedArcs.find(a => a.id === mission.arcId);
+          if (arc) {
+            const updatedArc = advanceMissionArc(arc, mission.id);
+            updatedArcs = updatedArcs.map(a => a.id === mission.arcId ? updatedArc : a);
+          }
+          
+          updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
+          console.log(`✅ Mission completed: ${updatedMission.title}!`);
+        }
+      }
+      
+      // Spawn pirate waves
+      if (updateResult.shouldSpawnNewWave && escortNpc) {
+        console.log(`🏴‍☠️ Pirate wave ${updateResult.updatedState.waveCount} spawning!`);
+        const pirates = generatePirateWave(
+          mission.id,
+          updateResult.updatedState.waveCount,
+          escortNpc.position,
+          currentTime
+        );
+        
+        updatedNpcTraders.push(...pirates);
+        
+        // Track spawned pirate IDs
+        const pirateIds = pirates.map(p => p.id);
+        updatedEscortStates.set(
+          mission.id,
+          addSpawnedPirateIds(updateResult.updatedState, pirateIds)
+        );
       }
     }
 
@@ -644,6 +810,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       npcLastFireTimes,
       missions: updatedMissions,
       missionArcs: updatedArcs,
+      stealthStates: updatedStealthStates,
+      escortStates: updatedEscortStates,
     } as Partial<GameState> as GameState;
   }),
   thrust: (dir, dt) => set((state) => {
@@ -1474,6 +1642,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     
     // Spawn mission NPCs for combat missions
     let updatedNpcTraders = [...state.npcTraders];
+    let updatedEscortStates = state.escortStates;
+    
     if (mission.type === 'combat') {
       const destroyObjectives = mission.objectives.filter(obj => obj.type === 'destroy');
       for (const objective of destroyObjectives) {
@@ -1497,10 +1667,52 @@ export const useGameStore = create<GameState>((set, get) => ({
       }
     }
     
+    // Spawn escort NPC for escort/defend missions (Phase 4)
+    if (mission.type === 'escort') {
+      const defendObjective = mission.objectives.find(obj => obj.type === 'defend');
+      if (defendObjective && defendObjective.target) {
+        const destinationStationId = defendObjective.target;
+        const destinationStation = state.stations.find(s => s.id === destinationStationId);
+        const startStation = state.stations.find(s => mission.availableAt.includes(s.id));
+        
+        if (destinationStation && startStation) {
+          const currentTime = Date.now() / 1000;
+          
+          const escortNpc = createEscortNpc(
+            mission.id,
+            startStation,
+            destinationStation,
+            currentTime
+          );
+          
+          // Plan path for escort
+          const path = planNpcPath(startStation, destinationStation, startStation.position);
+          escortNpc.path = path;
+          escortNpc.pathProgress = 0;
+          
+          updatedNpcTraders = [...updatedNpcTraders, escortNpc];
+          
+          // Create escort state tracking
+          const escortState = createEscortState(
+            mission.id,
+            escortNpc.id,
+            destinationStationId,
+            currentTime
+          );
+          
+          updatedEscortStates = new Map(updatedEscortStates);
+          updatedEscortStates.set(mission.id, escortState);
+          
+          console.log(`🛡️ Spawned escort NPC for ${mission.title}`);
+        }
+      }
+    }
+    
     return {
       missions: updatedMissions,
       missionArcs: updatedArcs,
       npcTraders: updatedNpcTraders,
+      escortStates: updatedEscortStates,
     } as Partial<GameState> as GameState;
   }),
   
@@ -1521,9 +1733,25 @@ export const useGameStore = create<GameState>((set, get) => ({
         : s
     );
     
+    // Clean up mission states (Phase 4)
+    let updatedStealthStates = clearMissionStealthStates(state.stealthStates, missionId);
+    let updatedEscortStates = cleanupEscortState(state.escortStates, missionId);
+    
+    // Remove mission NPCs (escorts, spawned pirates, etc.)
+    let updatedNpcTraders = state.npcTraders.filter(npc => {
+      // Keep NPCs that aren't tied to this mission
+      if (npc.missionId !== missionId) return true;
+      // Remove mission escorts and mission targets
+      if (npc.isMissionEscort || npc.isMissionTarget) return false;
+      return true;
+    });
+    
     return {
       missions: updatedMissions,
       stations: updatedStations,
+      stealthStates: updatedStealthStates,
+      escortStates: updatedEscortStates,
+      npcTraders: updatedNpcTraders,
     } as Partial<GameState> as GameState;
   }),
   
