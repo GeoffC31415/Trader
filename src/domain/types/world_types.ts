@@ -97,6 +97,10 @@ export type NpcTrader = {
   hp: number;
   maxHp: number;
   isHostile?: boolean; // true for pirates, bounty hunters
+  // Mission properties
+  isMissionTarget?: boolean; // true if spawned for a mission
+  missionId?: string; // which mission this NPC belongs to
+  kind?: 'freighter' | 'clipper' | 'miner'; // ship visual type
 };
 
 export type TradeEntry = {

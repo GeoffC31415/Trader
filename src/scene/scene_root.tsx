@@ -55,6 +55,7 @@ function colorFromCommodity(id: string): string {
 
 import { Planet } from './components/primitives/Planet';
 import { StationVisual } from './components/stations/StationVisual';
+import { MissionMarkers } from './components/MissionMarkers';
 
 // Projectile rendering component
 function Projectiles() {
@@ -459,6 +460,8 @@ export function SceneRoot() {
       ))}
       {/* Projectiles */}
       <Projectiles />
+      {/* Mission markers */}
+      <MissionMarkers />
       <Ship turnLeft={!!pressed.current['a']} turnRight={!!pressed.current['d']} />
     </group>
   );

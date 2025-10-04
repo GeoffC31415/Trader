@@ -49,6 +49,7 @@ import {
   shouldNpcFire, 
   npcFireAtPlayer,
   getNpcAggressiveDirection,
+  spawnMissionNPCs,
 } from '../systems/combat/ai_combat';
 import { initializeMissionArcs, updateArcStatuses, generateMissionsForStation } from '../systems/missions/mission_generator';
 import { 
@@ -505,7 +506,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     
     // Handle NPC destruction (hp <= 0)
     const destroyedNpcs = updatedNpcTraders.filter(npc => npc.hp <= 0);
+    let missionNpcDestroyedEvents: { npcId: string; missionId?: string }[] = [];
+    
     for (const destroyed of destroyedNpcs) {
+      // Track mission NPC destruction
+      if (destroyed.isMissionTarget && destroyed.missionId) {
+        missionNpcDestroyedEvents.push({ npcId: destroyed.id, missionId: destroyed.missionId });
+      }
+      
       // Apply reputation loss for kill
       const fromStation = stations.find(s => s.id === destroyed.fromId);
       if (fromStation && !destroyed.isHostile) {
@@ -528,6 +536,52 @@ export const useGameStore = create<GameState>((set, get) => ({
     let updatedArcs = [...state.missionArcs];
     const activeMissions = updatedMissions.filter(m => m.status === 'active');
     const DETECTION_RADIUS = 5 * SCALE; // Detection range around stations (reduced)
+    
+    // Process destroyed mission NPCs
+    for (const destroyEvent of missionNpcDestroyedEvents) {
+      const missionEvent: MissionEvent = {
+        type: 'npc_destroyed',
+        npcId: destroyEvent.npcId,
+      };
+      
+      // Update relevant mission objectives
+      for (const mission of activeMissions) {
+        if (mission.id === destroyEvent.missionId || mission.type === 'combat') {
+          const updatedMission = updateMissionObjectives(mission, missionEvent);
+          updatedMissions = updatedMissions.map(m => 
+            m.id === mission.id ? updatedMission : m
+          );
+          
+          // Check if mission is now complete
+          if (checkMissionCompletion(updatedMission) && updatedMission.status === 'active') {
+            updatedMissions = updatedMissions.map(m => 
+              m.id === mission.id ? { ...m, status: 'completed' as const } : m
+            );
+            
+            // Apply rewards
+            const rewardUpdates = applyMissionRewards(
+              { ...state, stations, ship } as GameState,
+              updatedMission
+            );
+            if (rewardUpdates.ship) {
+              ship = rewardUpdates.ship;
+            }
+            if (rewardUpdates.stations) {
+              stations = rewardUpdates.stations;
+            }
+            
+            // Advance mission arc
+            const arc = updatedArcs.find(a => a.id === mission.arcId);
+            if (arc) {
+              const updatedArc = advanceMissionArc(arc, mission.id);
+              updatedArcs = updatedArcs.map(a => a.id === mission.arcId ? updatedArc : a);
+            }
+            
+            console.log(`✅ Mission completed: ${updatedMission.title}!`);
+          }
+        }
+      }
+    }
     
     for (const mission of activeMissions) {
       const detectionObjectives = mission.objectives.filter(obj => obj.type === 'avoid_detection' && obj.completed);
@@ -1418,9 +1472,35 @@ export const useGameStore = create<GameState>((set, get) => ({
         : arc
     );
     
+    // Spawn mission NPCs for combat missions
+    let updatedNpcTraders = [...state.npcTraders];
+    if (mission.type === 'combat') {
+      const destroyObjectives = mission.objectives.filter(obj => obj.type === 'destroy');
+      for (const objective of destroyObjectives) {
+        if (objective.quantity && objective.quantity > 0) {
+          // Spawn NPCs near a random station
+          const randomStation = state.stations[Math.floor(Math.random() * state.stations.length)];
+          const missionNpcs = spawnMissionNPCs(
+            mission.id,
+            {
+              count: objective.quantity,
+              hp: 80,
+              isHostile: true,
+              spawnNear: randomStation.id,
+              cargo: { electronics: 5, alloys: 3 },
+            },
+            state.stations
+          );
+          updatedNpcTraders = [...updatedNpcTraders, ...missionNpcs];
+          console.log(`🎯 Spawned ${objective.quantity} mission targets for ${mission.title}`);
+        }
+      }
+    }
+    
     return {
       missions: updatedMissions,
       missionArcs: updatedArcs,
+      npcTraders: updatedNpcTraders,
     } as Partial<GameState> as GameState;
   }),
   

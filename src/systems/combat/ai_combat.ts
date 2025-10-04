@@ -10,6 +10,7 @@ import {
   NPC_AGGRESSION_DURATION,
   NPC_WEAPON_ENERGY_COST,
   WEAPON_BASE_STATS,
+  NPC_BASE_HP,
 } from '../../domain/constants/weapon_constants';
 import { createProjectile, isInRange, calculateLeadPosition } from './weapon_systems';
 
@@ -155,4 +156,90 @@ export function getOptimalAttackDistance(): number {
   return NPC_WEAPON_RANGE * 0.7; // Stay at 70% of max range
 }
 
+// ============================================================================
+// Mission-Specific NPC Spawning
+// ============================================================================
+
+/**
+ * Spawn NPCs for combat missions (targets or escorts)
+ */
+export function spawnMissionNPCs(
+  missionId: string,
+  spawnConfig: MissionNpcSpawnConfig,
+  stations: any[] // Station[]
+): NpcTrader[] {
+  const npcs: NpcTrader[] = [];
+  
+  for (let i = 0; i < spawnConfig.count; i++) {
+    const npcId = `mission_npc_${missionId}_${i}_${Date.now()}`;
+    
+    // Choose spawn position
+    let spawnPos: [number, number, number];
+    let fromStation: any = stations[0];
+    let toStation: any = stations[1] || stations[0];
+    
+    if (spawnConfig.spawnNear) {
+      // Spawn near a specific station
+      const station = stations.find((s: any) => s.id === spawnConfig.spawnNear);
+      if (station) {
+        fromStation = station;
+        // Pick a different station as destination
+        toStation = stations.find((s: any) => s.id !== station.id) || stations[0];
+        
+        // Random offset from station
+        const offsetDist = 200 + Math.random() * 300;
+        const angle = Math.random() * Math.PI * 2;
+        const elevation = (Math.random() - 0.5) * 100;
+        spawnPos = [
+          station.position[0] + Math.cos(angle) * offsetDist,
+          station.position[1] + elevation,
+          station.position[2] + Math.sin(angle) * offsetDist,
+        ];
+      } else {
+        spawnPos = [0, 0, 0];
+      }
+    } else {
+      // Random position in mission area
+      spawnPos = [
+        (Math.random() - 0.5) * 2000,
+        (Math.random() - 0.5) * 200,
+        (Math.random() - 0.5) * 2000,
+      ];
+    }
+    
+    // Create NPC trader with mission-specific properties
+    const npc: NpcTrader = {
+      id: npcId,
+      commodityId: spawnConfig.cargo ? Object.keys(spawnConfig.cargo)[0] || 'grain' : 'grain',
+      fromId: fromStation.id,
+      toId: toStation.id,
+      position: spawnPos,
+      velocity: [0, 0, 0],
+      speed: 8,
+      path: [], // Simple patrol, no complex path
+      pathCursor: 0,
+      hp: spawnConfig.hp || NPC_BASE_HP,
+      maxHp: spawnConfig.hp || NPC_BASE_HP,
+      isHostile: spawnConfig.isHostile || false,
+      isMissionTarget: true,
+      missionId: missionId,
+      kind: spawnConfig.shipKind || 'freighter',
+      shipKind: spawnConfig.shipKind || 'freighter',
+    };
+    
+    npcs.push(npc);
+  }
+  
+  return npcs;
+}
+
+export type MissionNpcSpawnConfig = {
+  count: number;
+  hp?: number;
+  isHostile?: boolean; // If true, will attack player on sight
+  spawnNear?: string; // Station ID to spawn near
+  patrolRoute?: string[]; // Array of station IDs to patrol
+  cargo?: Record<string, number>; // Cargo to carry
+  shipKind?: 'freighter' | 'clipper' | 'miner';
+};
 

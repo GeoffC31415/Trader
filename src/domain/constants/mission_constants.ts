@@ -202,6 +202,40 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
   },
   
   // ---------------------------------------------------------------------------
+  // Arc 2: Fabrication Wars - Stage 3 (Combat Test)
+  // ---------------------------------------------------------------------------
+  
+  fabrication_wars_stage_3: {
+    id: 'fabrication_wars_stage_3',
+    arcId: 'fabrication_wars',
+    title: 'Sabotage the Supply Line',
+    description: 'Destroy 5 NPC traders carrying electronics or alloys to disrupt the enemy\'s fabrication supply chain. Must destroy within 10 minutes.',
+    type: 'combat',
+    stage: 3,
+    objectiveTemplates: [
+      {
+        id: 'destroy_traders',
+        type: 'destroy',
+        description: 'Destroy 5 supply traders',
+        quantity: 5,
+      },
+    ],
+    rewards: {
+      credits: 7000,
+      reputationChanges: {
+        'aurum-fab': 25, // Rewards whoever you chose in stage 1
+        'drydock': -30,
+      },
+    },
+    requiredRep: {
+      'aurum-fab': 40,
+    },
+    availableAt: ['aurum-fab'],
+    timeLimit: 600, // 10 minutes
+    prerequisiteMissions: ['fabrication_wars_aurum_stage_1'],
+  },
+  
+  // ---------------------------------------------------------------------------
   // Arc 3: Energy Monopoly - Stage 1
   // ---------------------------------------------------------------------------
   
