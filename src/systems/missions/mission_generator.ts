@@ -89,7 +89,8 @@ export function createMissionFromTemplate(template: MissionTemplate): Mission {
     objectives: template.objectiveTemplates.map(objTemplate => ({
       ...objTemplate,
       current: 0,
-      completed: false,
+      // Avoid detection objectives start as completed (they fail if triggered)
+      completed: objTemplate.type === 'avoid_detection',
     })),
     rewards: template.rewards,
     requiredRep: template.requiredRep,

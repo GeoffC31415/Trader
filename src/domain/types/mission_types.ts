@@ -26,6 +26,7 @@ export type MissionObjective = {
   type: MissionObjectiveType;
   description: string;
   target?: string; // commodityId, npcId, stationId
+  targetStation?: string; // for deliver missions - which station to deliver to
   quantity?: number;
   current: number;
   completed: boolean;

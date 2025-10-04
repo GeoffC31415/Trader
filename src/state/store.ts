@@ -523,13 +523,73 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Remove dead NPCs
     updatedNpcTraders = updatedNpcTraders.filter(npc => npc.hp > 0);
 
+    // Detection system for stealth missions
+    let updatedMissions = [...state.missions];
+    let updatedArcs = [...state.missionArcs];
+    const activeMissions = updatedMissions.filter(m => m.status === 'active');
+    const DETECTION_RADIUS = 5 * SCALE; // Detection range around stations (reduced)
+    
+    for (const mission of activeMissions) {
+      const detectionObjectives = mission.objectives.filter(obj => obj.type === 'avoid_detection' && obj.completed);
+      
+      for (const objective of detectionObjectives) {
+        const targetStationId = objective.target;
+        if (!targetStationId) continue;
+        
+        const targetStation = stations.find(s => s.id === targetStationId);
+        
+        if (targetStation) {
+          const dx = position[0] - targetStation.position[0];
+          const dy = position[1] - targetStation.position[1];
+          const dz = position[2] - targetStation.position[2];
+          const distToStation = Math.sqrt(dx*dx + dy*dy + dz*dz);
+          
+          // Check if player is within detection radius AND carrying contraband
+          const hasContraband = ship.cargo['luxury_goods'] && ship.cargo['luxury_goods'] > 0;
+          
+          if (distToStation < DETECTION_RADIUS && !ship.dockedStationId && hasContraband) {
+            console.log(`🚨 DETECTED near ${targetStation.name} with contraband! Mission failed.`);
+            
+            // Fail the objective
+            const missionEvent: MissionEvent = {
+              type: 'detection_triggered',
+              stationId: targetStationId,
+            };
+            
+            const updatedMission = updateMissionObjectives(mission, missionEvent);
+            
+            // Mark mission as failed
+            updatedMissions = updatedMissions.map(m => 
+              m.id === mission.id ? { ...updatedMission, status: 'failed' as const } : m
+            );
+            
+            // Confiscate contraband (luxury goods)
+            const cargo = { ...ship.cargo };
+            const confiscatedAmount = cargo['luxury_goods'] || 0;
+            console.log(`📦 ${confiscatedAmount} Luxury Goods confiscated!`);
+            delete cargo['luxury_goods'];
+            ship = { ...ship, cargo };
+            
+            // Apply reputation penalty at detection station
+            stations = stations.map(s => 
+              s.id === targetStationId 
+                ? { ...s, reputation: Math.max(-100, (s.reputation || 0) - 15) }
+                : s
+            );
+          }
+        }
+      }
+    }
+
     return { 
       ship, 
       stations, 
       npcTraders: updatedNpcTraders, 
       projectiles, 
       npcAggression, 
-      npcLastFireTimes 
+      npcLastFireTimes,
+      missions: updatedMissions,
+      missionArcs: updatedArcs,
     } as Partial<GameState> as GameState;
   }),
   thrust: (dir, dt) => set((state) => {
@@ -853,6 +913,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     
     // Update mission objectives for delivery missions
     let updatedMissions = [...state.missions];
+    let updatedArcs = [...state.missionArcs];
+    let updatedStationsFromMissions = stations;
     const activeMissions = updatedMissions.filter(m => m.status === 'active');
     
     for (const mission of activeMissions) {
@@ -867,6 +929,35 @@ export const useGameStore = create<GameState>((set, get) => ({
       updatedMissions = updatedMissions.map(m => 
         m.id === mission.id ? updatedMission : m
       );
+      
+      // Check if mission is now complete
+      if (checkMissionCompletion(updatedMission) && updatedMission.status === 'active') {
+        // Mark mission as completed
+        updatedMissions = updatedMissions.map(m => 
+          m.id === mission.id ? { ...m, status: 'completed' as const } : m
+        );
+        
+        // Apply rewards
+        const rewardUpdates = applyMissionRewards(
+          { ...state, stations: updatedStationsFromMissions, ship: { ...state.ship, credits: totalCredits, cargo } } as GameState,
+          updatedMission
+        );
+        if (rewardUpdates.ship) {
+          totalCredits = rewardUpdates.ship.credits;
+        }
+        if (rewardUpdates.stations) {
+          updatedStationsFromMissions = rewardUpdates.stations;
+        }
+        
+        // Advance mission arc
+        const arc = updatedArcs.find(a => a.id === mission.arcId);
+        if (arc) {
+          const updatedArc = advanceMissionArc(arc, mission.id);
+          updatedArcs = updatedArcs.map(a => a.id === mission.arcId ? updatedArc : a);
+        }
+        
+        console.log(`Mission completed: ${updatedMission.title}!`);
+      }
     }
     
     // Despawn escorts that have no cargo left
@@ -877,7 +968,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     
     const next: Partial<GameState> = { 
       ship: { ...state.ship, credits: totalCredits, cargo } as Ship, 
-      stations, 
+      stations: updatedStationsFromMissions, 
       profitByCommodity: profit, 
       avgCostByCommodity: avgMap, 
       tradeLog,
@@ -886,6 +977,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       activeObjectiveId,
       npcTraders,
       missions: updatedMissions,
+      missionArcs: updatedArcs,
       celebrationVisible: showCelebration ? Date.now() : state.celebrationVisible,
       celebrationBuyCost: showCelebration ? celebrationBuyCost : state.celebrationBuyCost,
       celebrationSellRevenue: showCelebration ? celebrationSellRev : state.celebrationSellRevenue,

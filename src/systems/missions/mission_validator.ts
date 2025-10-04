@@ -12,12 +12,25 @@ export function validateObjective(
 ): { completed: boolean; current: number } {
   switch (objective.type) {
     case 'deliver':
-      if (event.type === 'commodity_sold' && event.commodityId === objective.target && event.stationId) {
-        const newCurrent = objective.current + (event.quantity || 0);
-        return {
-          completed: newCurrent >= (objective.quantity || 0),
-          current: newCurrent,
-        };
+      if (event.type === 'commodity_sold' && event.commodityId === objective.target) {
+        // Check if we need to deliver to a specific station
+        if (objective.targetStation) {
+          // Must deliver to the specified station
+          if (event.stationId === objective.targetStation) {
+            const newCurrent = objective.current + (event.quantity || 0);
+            return {
+              completed: newCurrent >= (objective.quantity || 0),
+              current: newCurrent,
+            };
+          }
+        } else {
+          // No specific station required, any sale counts
+          const newCurrent = objective.current + (event.quantity || 0);
+          return {
+            completed: newCurrent >= (objective.quantity || 0),
+            current: newCurrent,
+          };
+        }
       }
       break;
       
@@ -76,9 +89,10 @@ export function validateObjective(
         // Detection fails the objective immediately
         return {
           completed: false,
-          current: objective.current,
+          current: 1, // Mark as triggered
         };
       }
+      // If no detection event, keep current state (should start as completed)
       break;
   }
   

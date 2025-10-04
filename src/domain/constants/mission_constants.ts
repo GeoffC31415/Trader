@@ -82,7 +82,7 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
     id: 'greenfields_stage_1',
     arcId: 'greenfields_independence',
     title: 'Breaking the Chain',
-    description: 'Sana Whit needs luxury goods delivered to Greenfields without Sol City knowing. Avoid the detection radius near Sol City.',
+    description: 'Sana Whit needs luxury goods delivered to Greenfields without Sol City knowing. Avoid flying near Sol City while carrying contraband luxury goods, or they will be confiscated.',
     type: 'delivery',
     stage: 1,
     objectiveTemplates: [
@@ -90,13 +90,14 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
         id: 'deliver_luxury',
         type: 'deliver',
         description: 'Deliver 10 Luxury Goods to Greenfields',
-        target: 'luxury', // commodity ID
+        target: 'luxury_goods', // commodity ID
+        targetStation: 'greenfields', // destination station
         quantity: 10,
       },
       {
         id: 'avoid_sol_city',
         type: 'avoid_detection',
-        description: 'Avoid detection near Sol City',
+        description: 'Don\'t get caught near Sol City with contraband',
         target: 'sol-city',
         optional: false,
       },
@@ -144,6 +145,7 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
         type: 'deliver',
         description: 'Return data to Aurum Fab',
         target: 'data_chip', // special mission item
+        targetStation: 'aurum-fab',
         quantity: 1,
       },
     ],
@@ -181,6 +183,7 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
         type: 'deliver',
         description: 'Deliver fake schematics to Aurum Fab',
         target: 'fake_data_chip',
+        targetStation: 'aurum-fab',
         quantity: 1,
       },
     ],
@@ -268,6 +271,7 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
         type: 'deliver',
         description: 'Deliver proposal to Hidden Cove',
         target: 'diplomatic_pouch',
+        targetStation: 'hidden-cove',
         quantity: 1,
       },
     ],
@@ -302,6 +306,7 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
         type: 'deliver',
         description: 'Deliver pamphlets to Greenfields',
         target: 'union_pamphlet',
+        targetStation: 'greenfields',
         quantity: 1,
       },
       {
@@ -309,6 +314,7 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
         type: 'deliver',
         description: 'Deliver pamphlets to Sol Refinery',
         target: 'union_pamphlet',
+        targetStation: 'sol-refinery',
         quantity: 1,
       },
       {
@@ -316,6 +322,7 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
         type: 'deliver',
         description: 'Deliver pamphlets to Freeport',
         target: 'union_pamphlet',
+        targetStation: 'freeport',
         quantity: 1,
       },
       {
@@ -323,6 +330,7 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
         type: 'deliver',
         description: 'Deliver pamphlets to Hidden Cove',
         target: 'union_pamphlet',
+        targetStation: 'hidden-cove',
         quantity: 1,
       },
       {
@@ -330,6 +338,7 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
         type: 'deliver',
         description: 'Deliver pamphlets to Ceres Power Plant',
         target: 'union_pamphlet',
+        targetStation: 'ceres-pp',
         quantity: 1,
       },
     ],

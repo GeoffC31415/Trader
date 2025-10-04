@@ -106,6 +106,11 @@ export function MarketPanel() {
     [missions]
   );
 
+  const failedMissions = useMemo(() => 
+    missions.filter(m => m.status === 'failed'),
+    [missions]
+  );
+
   const [section, setSection] = useState<'hall' | 'fabrication' | 'production' | 'missions'>('hall');
   useEffect(() => {
     setSection('hall');
@@ -958,6 +963,40 @@ export function MarketPanel() {
                           >
                             ABANDON
                           </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {/* Failed Story Missions */}
+            {failedMissions.length > 0 && (
+              <div className="sci-fi-panel">
+                <div className="section-header" style={{ color: '#ef4444' }}>Failed Missions</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {failedMissions.map(mission => {
+                    const arc = missionArcs.find(a => a.id === mission.arcId);
+                    
+                    return (
+                      <div key={mission.id} style={{
+                        padding: 16,
+                        background: 'rgba(239,68,68,0.1)',
+                        border: '2px solid rgba(239,68,68,0.4)',
+                        borderLeft: '5px solid #ef4444',
+                        borderRadius: 8,
+                      }}>
+                        <div style={{ marginBottom: 8 }}>
+                          <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace', marginBottom: 4, color: '#ef4444' }}>
+                            {arc?.name || 'Story Mission'} — Stage {mission.stage} — FAILED
+                          </div>
+                          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4, textDecoration: 'line-through', opacity: 0.7 }}>
+                            {mission.title}
+                          </div>
+                          <div style={{ fontSize: 12, opacity: 0.8, color: '#f87171' }}>
+                            Mission failed. You can re-accept this mission to try again.
+                          </div>
                         </div>
                       </div>
                     );
