@@ -4,8 +4,12 @@ import * as THREE from 'three';
 import { useGameStore } from '../state';
 import { Html, Sparkles } from '@react-three/drei';
 import type { StationType } from '../domain/types/economy_types';
+import { FreighterModel } from './components/ships/FreighterModel';
+import { ClipperModel } from './components/ships/ClipperModel';
+import { MinerModel } from './components/ships/MinerModel';
 
 const SCALE = 10;
+const SHOW_ASTEROIDS = false; // Set to false to disable asteroid rendering for better performance
 
 function colorFromCommodity(id: string): string {
   const palette: Record<string, string> = {
@@ -50,383 +54,58 @@ function colorFromCommodity(id: string): string {
 }
 
 import { Planet } from './components/primitives/Planet';
+import { StationVisual } from './components/stations/StationVisual';
 
-function StationBox({ position, name, color = '#7dd3fc' }: { position: [number, number, number]; name: string; color?: string }) {
-  return (
-    <group position={position as any}>
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[4, 2, 4]} />
-        <meshStandardMaterial color={new THREE.Color(color)} roughness={0.7} metalness={0.1} />
-      </mesh>
-      <Html center distanceFactor={50}><div style={{ fontSize: 28 }}>{name}</div></Html>
-    </group>
-  );
-}
-
-function ShipyardVisual({ position, name, hideLabel = false }: { position: [number, number, number]; name: string; hideLabel?: boolean }) {
-  return (
-    <group position={position as any}>
-      <mesh castShadow receiveShadow>
-        <torusKnotGeometry args={[3, 0.5, 120, 32]} />
-        <meshStandardMaterial color={new THREE.Color('#34d399')} metalness={0.6} roughness={0.2} emissive={new THREE.Color('#10b981')} emissiveIntensity={0.2} />
-      </mesh>
-      <mesh position={[0, -2.5, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[2, 2, 1, 24]} />
-        <meshStandardMaterial color={new THREE.Color('#065f46')} metalness={0.3} roughness={0.6} />
-      </mesh>
-      {!hideLabel && <Html center distanceFactor={50}><div style={{ fontSize: 14, opacity: 0.5 }}>{name}</div></Html>}
-    </group>
-  );
-}
-
-function StationVisual({ position, name, type, hideLabel = false }: { position: [number, number, number]; name: string; type: StationType; hideLabel?: boolean }) {
-  // Base color palette by function (subtle, desaturated)
-  const base = useMemo(() => ({
-    refinery: '#9a7b4f',
-    fabricator: '#6b7280',
-    power_plant: '#6ee7b7',
-    city: '#cbd5e1',
-    trading_post: '#f1c40f',
-    mine: '#8b5e3c',
-    farm: '#86efac',
-    research: '#67e8f9',
-    orbital_hab: '#e5e7eb',
-    shipyard: '#34d399',
-    pirate: '#a855f7',
-  } as Record<string, string>), []);
-
-  const accent = useMemo(() => ({
-    refinery: '#b45309',
-    fabricator: '#8b5cf6',
-    power_plant: '#10b981',
-    city: '#60a5fa',
-    trading_post: '#f59e0b',
-    mine: '#92400e',
-    farm: '#22c55e',
-    research: '#22d3ee',
-    orbital_hab: '#94a3b8',
-    shipyard: '#10b981',
-    pirate: '#7c3aed',
-  } as Record<string, string>), []);
-
-  return (
-    <group position={position as any}>
-      {/* Keep overall footprint ~4 x 2 x 4 */}
-      {type === 'refinery' && (
-        <group>
-          <mesh position={[0, 0, 0]} castShadow receiveShadow>
-            <boxGeometry args={[4, 1.4, 4]} />
-            <meshStandardMaterial color={new THREE.Color(base.refinery)} metalness={0.2} roughness={0.7} />
-          </mesh>
-          {/* Stacks */}
-          <mesh position={[-1.2, 1.2, -0.8]} castShadow>
-            <cylinderGeometry args={[0.3, 0.3, 1.6, 12]} />
-            <meshStandardMaterial color={new THREE.Color(accent.refinery)} metalness={0.3} roughness={0.6} />
-          </mesh>
-          <mesh position={[1.2, 1.2, 0.8]} castShadow>
-            <cylinderGeometry args={[0.3, 0.3, 1.6, 12]} />
-            <meshStandardMaterial color={new THREE.Color(accent.refinery)} metalness={0.3} roughness={0.6} />
-          </mesh>
-          {/* Pipes */}
-          <mesh position={[0, 0.4, 0]} rotation={[0, Math.PI / 4, 0]} castShadow>
-            <torusGeometry args={[1.6, 0.08, 10, 60]} />
-            <meshStandardMaterial color={new THREE.Color('#a3a3a3')} metalness={0.6} roughness={0.4} />
-          </mesh>
-        </group>
-      )}
-      {type === 'fabricator' && (
-        <group>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[3.8, 1.2, 3.8]} />
-            <meshStandardMaterial color={new THREE.Color(base.fabricator)} metalness={0.4} roughness={0.5} />
-          </mesh>
-          <mesh position={[0, 0.9, 0]} castShadow>
-            <dodecahedronGeometry args={[1.1, 0]} />
-            <meshStandardMaterial color={new THREE.Color(accent.fabricator)} metalness={0.6} roughness={0.3} emissive={new THREE.Color('#4c1d95')} emissiveIntensity={0.15} />
-          </mesh>
-        </group>
-      )}
-      {type === 'power_plant' && (
-        <group>
-          <mesh castShadow receiveShadow>
-            <cylinderGeometry args={[1.6, 1.6, 2, 24]} />
-            <meshStandardMaterial color={new THREE.Color(base.power_plant)} metalness={0.3} roughness={0.5} emissive={new THREE.Color(accent.power_plant)} emissiveIntensity={0.12} />
-          </mesh>
-          <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
-            <torusGeometry args={[2.2, 0.1, 12, 80]} />
-            <meshStandardMaterial color={new THREE.Color('#14532d')} metalness={0.2} roughness={0.7} />
-          </mesh>
-        </group>
-      )}
-      {type === 'city' && (
-        <group>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[4, 0.8, 4]} />
-            <meshStandardMaterial color={new THREE.Color(base.city)} metalness={0.2} roughness={0.8} />
-          </mesh>
-          {/* Towers */}
-          <mesh position={[-1, 1.1, -1]} castShadow>
-            <boxGeometry args={[0.6, 2, 0.6]} />
-            <meshStandardMaterial color={new THREE.Color('#dbeafe')} />
-          </mesh>
-          <mesh position={[1, 1.3, 1]} castShadow>
-            <boxGeometry args={[0.5, 2.4, 0.5]} />
-            <meshStandardMaterial color={new THREE.Color('#bfdbfe')} />
-          </mesh>
-        </group>
-      )}
-      {type === 'trading_post' && (
-        <group>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[3.6, 1.0, 3.6]} />
-            <meshStandardMaterial color={new THREE.Color(base.trading_post)} metalness={0.3} roughness={0.6} />
-          </mesh>
-          <mesh position={[0, 0.8, 0]} rotation={[0, 0, 0]} castShadow>
-            <octahedronGeometry args={[0.9, 0]} />
-            <meshStandardMaterial color={new THREE.Color(accent.trading_post)} metalness={0.5} roughness={0.3} />
-          </mesh>
-        </group>
-      )}
-      {type === 'pirate' && (
-        <group>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[3.6, 1.0, 3.6]} />
-            <meshStandardMaterial color={new THREE.Color(base.pirate)} metalness={0.6} roughness={0.4} emissive={new THREE.Color('#4c1d95')} emissiveIntensity={0.2} />
-          </mesh>
-          <mesh position={[0, 1.0, 0]} rotation={[0, 0, 0]} castShadow>
-            <dodecahedronGeometry args={[0.9, 0]} />
-            <meshStandardMaterial color={new THREE.Color(accent.pirate)} metalness={0.7} roughness={0.3} />
-          </mesh>
-        </group>
-      )}
-      {type === 'mine' && (
-        <group>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[4, 1.0, 4]} />
-            <meshStandardMaterial color={new THREE.Color(base.mine)} metalness={0.15} roughness={0.9} />
-          </mesh>
-          {/* Cranes */}
-          <mesh position={[-1.4, 1.0, 0]} rotation={[0, 0, Math.PI / 6]} castShadow>
-            <cylinderGeometry args={[0.1, 0.1, 2, 8]} />
-            <meshStandardMaterial color={new THREE.Color('#78350f')} />
-          </mesh>
-          <mesh position={[1.4, 1.0, 0]} rotation={[0, 0, -Math.PI / 6]} castShadow>
-            <cylinderGeometry args={[0.1, 0.1, 2, 8]} />
-            <meshStandardMaterial color={new THREE.Color('#78350f')} />
-          </mesh>
-        </group>
-      )}
-      {type === 'farm' && (
-        <group>
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={[3.6, 0.8, 3.6]} />
-            <meshStandardMaterial color={new THREE.Color(base.farm)} metalness={0.1} roughness={0.9} />
-          </mesh>
-          {/* Domes */}
-          <mesh position={[-0.9, 0.8, -0.9]} castShadow>
-            <sphereGeometry args={[0.7, 16, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#bbf7d0')} roughness={0.6} />
-          </mesh>
-          <mesh position={[0.9, 0.8, 0.9]} castShadow>
-            <sphereGeometry args={[0.6, 16, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#bbf7d0')} roughness={0.6} />
-          </mesh>
-        </group>
-      )}
-      {type === 'research' && (
-        <group>
-          <mesh castShadow receiveShadow>
-            <cylinderGeometry args={[1.4, 1.4, 1.6, 20]} />
-            <meshStandardMaterial color={new THREE.Color(base.research)} metalness={0.4} roughness={0.4} emissive={new THREE.Color(accent.research)} emissiveIntensity={0.1} />
-          </mesh>
-          <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
-            <torusGeometry args={[2.0, 0.08, 12, 64]} />
-            <meshStandardMaterial color={new THREE.Color('#155e75')} metalness={0.2} roughness={0.7} />
-          </mesh>
-        </group>
-      )}
-      {type === 'orbital_hab' && (
-        <group>
-          <mesh castShadow receiveShadow>
-            <torusGeometry args={[2.0, 0.25, 14, 80]} />
-            <meshStandardMaterial color={new THREE.Color(base.orbital_hab)} metalness={0.2} roughness={0.8} />
-          </mesh>
-          <mesh castShadow>
-            <cylinderGeometry args={[0.4, 0.4, 2, 16]} />
-            <meshStandardMaterial color={new THREE.Color(accent.orbital_hab)} metalness={0.2} roughness={0.7} />
-          </mesh>
-        </group>
-      )}
-      {type === 'shipyard' && (
-        <ShipyardVisual position={[0,0,0] as any} name={name} hideLabel={hideLabel} />
-      )}
-      {type !== 'shipyard' && !hideLabel && (
-        <Html center distanceFactor={50}><div style={{ fontSize: 14, opacity: 0.5 }}>{name}</div></Html>
-      )}
-    </group>
-  );
-}
-
-function FreighterModel({ power, turnLeftPower, turnRightPower, hasRig }: { power: number; turnLeftPower: number; turnRightPower: number; hasRig: boolean }) {
+// Projectile rendering component
+function Projectiles() {
+  const projectiles = useGameStore(s => s.projectiles);
+  
   return (
     <>
-      {/* Hull - gold freighter */}
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[3.8, 1.2, 6.2]} />
-        <meshStandardMaterial color={new THREE.Color('#d4af37')} metalness={0.7} roughness={0.35} />
-      </mesh>
-      {/* Cargo spine */}
-      <mesh position={[0, -0.5, 0]} castShadow receiveShadow>
-        <boxGeometry args={[3.4, 0.3, 5.6]} />
-        <meshStandardMaterial color={new THREE.Color('#8a6d1a')} metalness={0.6} roughness={0.5} />
-      </mesh>
-      {/* Bridge bubble */}
-      <mesh position={[0, 0.4, 2.4]} scale={[1.2, 0.7, 1.1]} castShadow>
-        <sphereGeometry args={[1.4, 24, 24]} />
-        <meshStandardMaterial color={new THREE.Color('#ffe9a8')} metalness={0.2} roughness={0.2} emissive={new THREE.Color('#b45309')} emissiveIntensity={0.08} transparent opacity={0.5} />
-      </mesh>
-      {/* Engines - 3 clustered, modest flame */}
-      {[-1, 0, 1].map((ix, i) => (
-        <group key={i} position={[ix * 1.0, -0.2, -3.6]}>
-          <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.26, 0.34, 0.6, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#8a6d1a')} metalness={0.8} roughness={0.3} />
-          </mesh>
-          <mesh position={[0, 0, -0.4]}>
-            <sphereGeometry args={[0.16, 12, 12]} />
-            <meshStandardMaterial color={new THREE.Color('#ffd08a')} emissive={new THREE.Color('#f59e0b')} emissiveIntensity={0.15 + 0.9 * power} />
-          </mesh>
-          <mesh position={[0, 0, -0.9]} rotation={[Math.PI / 2, 0, 0]} scale={[0.5 + 0.5 * power, 1, Math.max(0.08, 0.9 * power)]}>
-            <cylinderGeometry args={[0.02, 0.3, 1.1, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#ffd08a')} emissive={new THREE.Color('#fb923c')} emissiveIntensity={0.25 + 0.7 * power} transparent opacity={0.7 * power} roughness={0.2} metalness={0} />
-          </mesh>
-        </group>
-      ))}
-      <Sparkles count={Math.max(8, Math.floor(24 + power * 90))} scale={[2.6, 2.6, 3.2]} size={1.2} speed={0.6 + power} color={new THREE.Color('#ffd08a') as any} opacity={0.7} position={[0, -0.2, -3.9] as any} />
-      {/* Mining rig mount if purchased */}
-      {hasRig && (
-        <group position={[0, -0.45, 2.8]}>
-          <mesh castShadow>
-            <cylinderGeometry args={[0.1, 0.1, 1.2, 12]} />
-            <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.7} roughness={0.3} />
-          </mesh>
-          <mesh position={[0, 0.8, 0]} castShadow>
-            <coneGeometry args={[0.25, 0.6, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#d1d5db')} metalness={0.6} roughness={0.4} />
-          </mesh>
-        </group>
-      )}
-    </>
-  );
-}
-
-function ClipperModel({ power, turnLeftPower, turnRightPower, hasRig }: { power: number; turnLeftPower: number; turnRightPower: number; hasRig: boolean }) {
-  return (
-    <>
-      {/* Sleek red fuselage */}
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[2.4, 0.8, 5.0]} />
-        <meshStandardMaterial color={new THREE.Color('#ef4444')} metalness={0.6} roughness={0.35} />
-      </mesh>
-      {/* Nose cone */}
-      <mesh position={[0, 0, 2.8]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <coneGeometry args={[0.9, 1.0, 20]} />
-        <meshStandardMaterial color={new THREE.Color('#b91c1c')} metalness={0.7} roughness={0.4} />
-      </mesh>
-      {/* Wings */}
-      <mesh position={[-1.6, 0.0, 0.6]} rotation={[0, 0.1, 0.2]} castShadow>
-        <boxGeometry args={[0.2, 0.1, 3.0]} />
-        <meshStandardMaterial color={new THREE.Color('#7f1d1d')} metalness={0.6} roughness={0.5} />
-      </mesh>
-      <mesh position={[1.6, 0.0, 0.6]} rotation={[0, -0.1, -0.2]} castShadow>
-        <boxGeometry args={[0.2, 0.1, 3.0]} />
-        <meshStandardMaterial color={new THREE.Color('#7f1d1d')} metalness={0.6} roughness={0.5} />
-      </mesh>
-      {/* Dual engines - stronger exhaust */}
-      {[-1, 1].map((ix, i) => (
-        <group key={i} position={[ix * 0.9, -0.2, -3.0]}>
-          <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.24, 0.34, 0.6, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#991b1b')} metalness={0.8} roughness={0.3} />
-          </mesh>
-          <mesh position={[0, 0, -0.4]}>
-            <sphereGeometry args={[0.17, 12, 12]} />
-            <meshStandardMaterial color={new THREE.Color('#fecaca')} emissive={new THREE.Color('#f87171')} emissiveIntensity={0.2 + 1.3 * power} />
-          </mesh>
-          <mesh position={[0, 0, -0.9]} rotation={[Math.PI / 2, 0, 0]} scale={[0.7 + 0.7 * power, 1, Math.max(0.12, 1.4 * power)]}>
-            <cylinderGeometry args={[0.02, 0.32, 1.2, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#fecaca')} emissive={new THREE.Color('#ef4444')} emissiveIntensity={0.35 + 1.0 * power} transparent opacity={0.8 * power} roughness={0.2} metalness={0} />
-          </mesh>
-        </group>
-      ))}
-      <Sparkles count={Math.max(12, Math.floor(30 + power * 150))} scale={[2.0, 2.0, 2.6]} size={1.0} speed={0.9 + power} color={new THREE.Color('#ffd08a') as any} opacity={0.75} position={[0, -0.2, -3.4] as any} />
-      {/* Rig if purchased */}
-      {hasRig && (
-        <group position={[0, -0.4, 2.4]}>
-          <mesh castShadow>
-            <cylinderGeometry args={[0.08, 0.08, 1.0, 12]} />
-            <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.7} roughness={0.3} />
-          </mesh>
-          <mesh position={[0, 0.7, 0]} castShadow>
-            <coneGeometry args={[0.22, 0.5, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#e5e7eb')} metalness={0.6} roughness={0.4} />
-          </mesh>
-        </group>
-      )}
-    </>
-  );
-}
-
-function MinerModel({ power, turnLeftPower, turnRightPower, hasRig }: { power: number; turnLeftPower: number; turnRightPower: number; hasRig: boolean }) {
-  return (
-    <>
-      {/* Brown utilitarian hull */}
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[3.2, 1.2, 5.2]} />
-        <meshStandardMaterial color={new THREE.Color('#8b5e3c')} metalness={0.4} roughness={0.6} />
-      </mesh>
-      {/* Side cargo pods */}
-      <mesh position={[-1.9, -0.2, 0]} castShadow>
-        <boxGeometry args={[0.6, 0.8, 2.8]} />
-        <meshStandardMaterial color={new THREE.Color('#7c4a2a')} metalness={0.3} roughness={0.7} />
-      </mesh>
-      <mesh position={[1.9, -0.2, 0]} castShadow>
-        <boxGeometry args={[0.6, 0.8, 2.8]} />
-        <meshStandardMaterial color={new THREE.Color('#7c4a2a')} metalness={0.3} roughness={0.7} />
-      </mesh>
-      {/* Drill rig - always visible for miner */}
-      <group position={[0, -0.4, 2.6]}>
-        <mesh castShadow>
-          <cylinderGeometry args={[0.12, 0.12, 1.2, 12]} />
-          <meshStandardMaterial color={new THREE.Color('#9ca3af')} metalness={0.7} roughness={0.3} />
-        </mesh>
-        <mesh position={[0, 0.8, 0]} castShadow>
-          <coneGeometry args={[0.28, 0.7, 16]} />
-          <meshStandardMaterial color={new THREE.Color('#d1d5db')} metalness={0.6} roughness={0.4} />
-        </mesh>
-        <mesh position={[0, 0.2, -0.3]} rotation={[0, 0, 0]} castShadow>
-          <boxGeometry args={[0.6, 0.34, 0.5]} />
-          <meshStandardMaterial color={new THREE.Color('#374151')} metalness={0.5} roughness={0.6} />
-        </mesh>
-      </group>
-      {/* Small twin engines */}
-      {[-0.8, 0.8].map((x, i) => (
-        <group key={i} position={[x, -0.2, -3.0]}>
-          <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.22, 0.3, 0.6, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#6b4b2e')} metalness={0.6} roughness={0.4} />
-          </mesh>
-          <mesh position={[0, 0, -0.4]}>
-            <sphereGeometry args={[0.16, 12, 12]} />
-            <meshStandardMaterial color={new THREE.Color('#ffd08a')} emissive={new THREE.Color('#b45309')} emissiveIntensity={0.15 + 0.8 * power} />
-          </mesh>
-          <mesh position={[0, 0, -0.9]} rotation={[Math.PI / 2, 0, 0]} scale={[0.5 + 0.5 * power, 1, Math.max(0.08, 0.9 * power)]}>
-            <cylinderGeometry args={[0.02, 0.28, 1.0, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#ffd08a')} emissive={new THREE.Color('#b45309')} emissiveIntensity={0.25 + 0.7 * power} transparent opacity={0.7 * power} roughness={0.2} metalness={0} />
-          </mesh>
-        </group>
-      ))}
-      <Sparkles count={Math.max(8, Math.floor(20 + power * 80))} scale={[2.2, 2.2, 2.8]} size={1.0} speed={0.6 + power} color={new THREE.Color('#ffd08a') as any} opacity={0.7} position={[0, -0.2, -3.2] as any} />
+      {projectiles.map(proj => {
+        // Color based on weapon kind
+        let color = '#ff4444'; // default red
+        if (proj.weaponKind === 'laser') color = '#ff4444'; // red
+        if (proj.weaponKind === 'plasma') color = '#44ff44'; // green
+        if (proj.weaponKind === 'railgun') color = '#4444ff'; // blue
+        if (proj.weaponKind === 'missile') color = '#ffff44'; // yellow
+        
+        // Player projectiles brighter than NPC
+        if (proj.ownerType === 'player') {
+          color = new THREE.Color(color).multiplyScalar(1.5).getHexString();
+          color = '#' + color;
+        }
+        
+        // Render as a stretched capsule or line
+        const length = proj.weaponKind === 'laser' ? 8 : 4;
+        const dir = new THREE.Vector3(proj.velocity[0], proj.velocity[1], proj.velocity[2]).normalize();
+        const endPos = new THREE.Vector3(
+          proj.position[0] - dir.x * length,
+          proj.position[1] - dir.y * length,
+          proj.position[2] - dir.z * length
+        );
+        
+        return (
+          <group key={proj.id}>
+            <mesh position={proj.position as any}>
+              <sphereGeometry args={[0.3, 8, 8]} />
+              <meshBasicMaterial color={color} />
+            </mesh>
+            <line>
+              <bufferGeometry
+                attach="geometry"
+                attributes={{
+                  position: new THREE.Float32BufferAttribute(
+                    [proj.position[0], proj.position[1], proj.position[2], endPos.x, endPos.y, endPos.z],
+                    3
+                  )
+                }}
+              />
+              <lineBasicMaterial color={color} linewidth={2} />
+            </line>
+          </group>
+        );
+      })}
     </>
   );
 }
@@ -437,8 +116,6 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
   const hasNav = !!ship.hasNavigationArray;
   const groupRef = useRef<THREE.Group>(null);
   const power = ship.enginePower || 0;
-  const turnLeftPower = turnLeft ? 1 : 0;
-  const turnRightPower = turnRight ? 1 : 0;
 
   useFrame((_: unknown, dt: number) => {
     const g = groupRef.current;
@@ -457,16 +134,16 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
   return (
     <group ref={groupRef} position={ship.position as any}>
       {ship.kind === 'freighter' && (
-        <FreighterModel power={power} turnLeftPower={turnLeftPower} turnRightPower={turnRightPower} hasRig={hasRig} />
+        <FreighterModel power={power} hasRig={hasRig} />
       )}
       {ship.kind === 'clipper' && (
-        <ClipperModel power={power} turnLeftPower={turnLeftPower} turnRightPower={turnRightPower} hasRig={hasRig} />
+        <ClipperModel power={power} hasRig={hasRig} />
       )}
       {ship.kind === 'racer' && (
-        <ClipperModel power={power} turnLeftPower={turnLeftPower} turnRightPower={turnRightPower} hasRig={hasRig} />
+        <ClipperModel power={power} hasRig={hasRig} />
       )}
       {ship.kind === 'miner' && (
-        <MinerModel power={power} turnLeftPower={turnLeftPower} turnRightPower={turnRightPower} hasRig={true} />
+        <MinerModel power={power} />
       )}
       {/* Common nav dish */}
       {hasNav && (
@@ -557,7 +234,7 @@ function EscortShip({ escort, playerPosition, playerVelocity }: { escort: any; p
   return (
     <group ref={groupRef} position={escort.position as any}>
       {/* Escorts use clipper model with green tint to distinguish them */}
-      <ClipperModel power={power} turnLeftPower={0} turnRightPower={0} hasRig={false} />
+      <ClipperModel power={power} hasRig={false} />
       {/* Green identification marker */}
       <mesh position={[0, 1.5, 0]}>
         <sphereGeometry args={[0.2, 8, 8]} />
@@ -590,6 +267,7 @@ export function SceneRoot() {
   const isDragging = useRef<boolean>(false);
 
   const pressed = useRef<Record<string, boolean>>({});
+  const lastFacingDir = useRef<[number, number, number]>([0, 0, 1]); // Default forward direction
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
@@ -613,6 +291,16 @@ export function SceneRoot() {
       setEngineTarget(1);
     } else {
       setEngineTarget(0);
+    }
+    
+    // Update last facing direction when ship is moving
+    const vx = ship.velocity[0];
+    const vy = ship.velocity[1];
+    const vz = ship.velocity[2];
+    const speedSq = vx * vx + vy * vy + vz * vz;
+    if (speedSq > 0.001) {
+      const speed = Math.sqrt(speedSq);
+      lastFacingDir.current = [vx / speed, vy / speed, vz / speed];
     }
     
     tick(dt);
@@ -650,6 +338,39 @@ export function SceneRoot() {
       if (key === 'e') { tryDock(); return; }
       if (key === 'q') { undock(); return; }
       if (key === 'm') { mine(); return; }
+      if (key === ' ' || e.code === 'Space') { 
+        e.preventDefault(); // Prevent page scroll
+        
+        // Calculate target position based on ship's forward direction (from velocity)
+        const state = useGameStore.getState();
+        const ship = state.ship;
+        const vx = ship.velocity[0];
+        const vy = ship.velocity[1];
+        const vz = ship.velocity[2];
+        const speedSq = vx * vx + vy * vy + vz * vz;
+        
+        let dirX: number, dirY: number, dirZ: number;
+        if (speedSq < 0.001) {
+          // Ship is stationary, use last facing direction (where model is pointing)
+          [dirX, dirY, dirZ] = lastFacingDir.current;
+        } else {
+          // Fire in the direction of ship's velocity (where it's pointing)
+          const speed = Math.sqrt(speedSq);
+          dirX = vx / speed;
+          dirY = vy / speed;
+          dirZ = vz / speed;
+        }
+        
+        const fireRange = 100; // Distance ahead to aim
+        const targetPos: [number, number, number] = [
+          ship.position[0] + dirX * fireRange,
+          ship.position[1] + dirY * fireRange,
+          ship.position[2] + dirZ * fireRange,
+        ];
+        
+        state.fireWeapon(targetPos);
+        return;
+      }
       pressed.current[key] = true;
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -679,7 +400,7 @@ export function SceneRoot() {
       ))}
       {belts.map(b => (
         <group key={b.id}>
-          <BeltRing position={b.position} radius={b.radius} name={b.name} />
+          <BeltRing position={b.position} radius={b.radius} name={b.name} showAsteroids={SHOW_ASTEROIDS} />
           {Math.abs(
             Math.hypot(
               ship.position[0]-b.position[0],
@@ -736,6 +457,8 @@ export function SceneRoot() {
       {npcTraders.filter(n => n.isEscort).map(n => (
         <EscortShip key={n.id} escort={n} playerPosition={ship.position} playerVelocity={ship.velocity} />
       ))}
+      {/* Projectiles */}
+      <Projectiles />
       <Ship turnLeft={!!pressed.current['a']} turnRight={!!pressed.current['d']} />
     </group>
   );

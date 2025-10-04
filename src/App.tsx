@@ -1,4 +1,4 @@
-import { StrictMode, useState } from 'react';
+import { StrictMode, useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Stars, Environment } from '@react-three/drei';
 import * as THREE from 'three';
@@ -143,7 +143,9 @@ export function App() {
           <pointLight position={[500, 500, 500]} intensity={0.9} distance={2000} />
           <Environment preset="city" />
           <Stars radius={2000} depth={500} count={4000} factor={4} saturation={0} fade speed={1} />
-          <SceneRoot />
+          <Suspense fallback={null}>
+            <SceneRoot />
+          </Suspense>
         </Canvas>
         {/* Tutorial overlay */}
         {tutorialActive && hasChosenStarter && (

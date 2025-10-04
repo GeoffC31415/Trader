@@ -66,7 +66,7 @@ export function spawnNpcTraders(stations: Station[], count: number): NpcTrader[]
     const position: [number, number, number] = [ from.position[0] + jitter[0], from.position[1] + jitter[1], from.position[2] + jitter[2] ];
     const to = byId[r.toId];
     const path = planNpcPath(from, to, position);
-    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed, path, pathCursor: 1 });
+    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed, path, pathCursor: 1, hp: 80, maxHp: 80, isHostile: false });
   }
   while (pick.length < count && routes.length > 0) {
     const r = routes[Math.floor(Math.random() * routes.length)];
@@ -75,7 +75,7 @@ export function spawnNpcTraders(stations: Station[], count: number): NpcTrader[]
     const position: [number, number, number] = [from.position[0], from.position[1], from.position[2]];
     const to = byId[r.toId];
     const path = planNpcPath(from, to, position);
-    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed, path, pathCursor: 1 });
+    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed, path, pathCursor: 1, hp: 80, maxHp: 80, isHostile: false });
   }
   return pick;
 }
