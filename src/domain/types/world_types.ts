@@ -202,6 +202,12 @@ export type GameState = {
   celebrationBuyCost?: number; // total cost of purchased goods
   celebrationSellRevenue?: number; // revenue from selling goods
   celebrationBonusReward?: number; // bonus reward for completion
+  // Mission celebration data
+  missionCelebrationData?: {
+    missionId: string;
+    credits: number;
+    reputationChanges: Record<string, number>;
+  };
   // Mission arcs system
   missionArcs: MissionArc[];
   missions: Mission[]; // all missions (offered, active, completed, failed)

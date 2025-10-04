@@ -9,6 +9,8 @@ import { ReputationBadge } from './components/reputation_badge';
 import { getReputationTier, getTierDisplay, getTierPerks, getPriceDiscount } from '../state/helpers/reputation_helpers';
 import { MissionChoiceDialog } from './components/mission_choice_dialog';
 import type { Mission } from '../domain/types/mission_types';
+import { getFactionForStation, FACTIONS, type FactionId } from '../domain/constants/faction_constants';
+import { getFactionReputation, getFactionStanding, getFactionStandingDisplay } from '../systems/reputation/faction_system';
 
 function getHallLabel(type: StationType): string {
   if (type === 'city') return 'Civic Exchange';
@@ -1016,11 +1018,46 @@ export function MarketPanel() {
             )}
             
             <div className="sci-fi-panel">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
                 <div className="section-header" style={{ marginBottom: 0, borderBottom: 'none', paddingBottom: 0 }}>
                   Available Contracts
                 </div>
-                <ReputationBadge reputation={station?.reputation || 0} label="Station Reputation" size="small" />
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                  <ReputationBadge reputation={station?.reputation || 0} label="Station Reputation" size="small" />
+                  {station && (() => {
+                    const factionId = getFactionForStation(station.id);
+                    if (!factionId) return null;
+                    const factionRep = getFactionReputation(factionId, stations);
+                    const factionStanding = getFactionStanding(factionRep);
+                    const standingDisplay = getFactionStandingDisplay(factionStanding);
+                    const faction = FACTIONS[factionId];
+                    return (
+                      <div style={{
+                        padding: '6px 12px',
+                        background: `${standingDisplay.color}15`,
+                        border: `1px solid ${standingDisplay.color}`,
+                        borderRadius: 6,
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                      title={`${faction.name}: ${standingDisplay.description}`}
+                      >
+                        <span style={{ opacity: 0.7 }}>Faction:</span>
+                        <span style={{ color: standingDisplay.color, fontWeight: 600 }}>
+                          {faction.name}
+                        </span>
+                        <span style={{ opacity: 0.5 }}>•</span>
+                        <span style={{ color: standingDisplay.color }}>
+                          {standingDisplay.name}
+                        </span>
+                        <span style={{ opacity: 0.7 }}>({factionRep})</span>
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
               <div style={{
                 padding: 12,

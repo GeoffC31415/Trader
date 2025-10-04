@@ -10,6 +10,7 @@ import { Minimap } from './ui/minimap';
 import { useGameStore } from './state';
 import { DockIntro } from './ui/dock_intro';
 import { Celebration } from './ui/celebration';
+import { MissionCelebration } from './ui/mission_celebration';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal' | 'traders'>('market');
@@ -59,6 +60,7 @@ export function App() {
         {hasNav && <Minimap />}
         <DockIntro />
         <Celebration />
+        <MissionCelebration />
         {!hasChosenStarter && (
           <div
             style={{

@@ -3,6 +3,7 @@
 import type { Mission, MissionArc } from '../../domain/types/mission_types';
 import type { GameState } from '../../domain/types/world_types';
 import { getMissionTemplatesByStage } from '../../domain/constants/mission_constants';
+import { applyMultipleReputationChanges } from '../../systems/reputation/faction_system';
 
 /**
  * Advance mission arc to next stage
@@ -11,12 +12,25 @@ export function advanceMissionArc(arc: MissionArc, completedMissionId: string): 
   const updatedCompletedMissions = [...arc.completedMissions, completedMissionId];
   
   // Check if all missions in current stage are completed
+  // For branching paths (like stage 3 in Greenfields), we only need ONE path completed
   const currentStageMissions = getMissionTemplatesByStage(arc.id, arc.currentStage);
-  const allStageCompleted = currentStageMissions.every(template => 
-    updatedCompletedMissions.includes(template.id)
-  );
   
-  if (allStageCompleted) {
+  // If there are multiple missions at this stage (branching paths), check if at least one is completed
+  // Otherwise, check if all are completed
+  let shouldAdvance = false;
+  if (currentStageMissions.length > 1) {
+    // Branching path: advance if ANY mission in this stage is completed
+    shouldAdvance = currentStageMissions.some(template => 
+      updatedCompletedMissions.includes(template.id)
+    );
+  } else {
+    // Linear path: advance only if ALL missions are completed
+    shouldAdvance = currentStageMissions.every(template => 
+      updatedCompletedMissions.includes(template.id)
+    );
+  }
+  
+  if (shouldAdvance) {
     // Move to next stage or complete arc
     const nextStage = arc.currentStage + 1;
     const hasNextStageMissions = getMissionTemplatesByStage(arc.id, nextStage).length > 0;
@@ -47,6 +61,7 @@ export function advanceMissionArc(arc: MissionArc, completedMissionId: string): 
 
 /**
  * Apply mission rewards to game state
+ * Now includes faction reputation propagation
  */
 export function applyMissionRewards(
   gameState: GameState,
@@ -57,17 +72,11 @@ export function applyMissionRewards(
   // Apply credit reward
   const newCredits = gameState.ship.credits + rewards.credits;
   
-  // Apply reputation changes
-  const newStations = gameState.stations.map(station => {
-    const repChange = rewards.reputationChanges[station.id];
-    if (repChange === undefined) return station;
-    
-    const newRep = Math.max(-100, Math.min(100, (station.reputation || 0) + repChange));
-    return {
-      ...station,
-      reputation: newRep,
-    };
-  });
+  // Apply reputation changes with faction propagation
+  const newStations = applyMultipleReputationChanges(
+    gameState.stations,
+    rewards.reputationChanges
+  );
   
   // Apply permanent effects (handled separately in store actions)
   // These will modify prices, availability, etc.

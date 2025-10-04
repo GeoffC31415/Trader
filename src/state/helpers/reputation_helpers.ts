@@ -109,3 +109,13 @@ export function getTierPerks(reputation: number): string[] {
   return perks;
 }
 
+/**
+ * Get unfriendly price markup
+ * Stations with negative reputation charge higher prices
+ */
+export function getUnfriendlyMarkup(reputation: number): number {
+  if (reputation >= 0) return 0;
+  if (reputation >= -49) return 0.25; // 25% markup for unfriendly (-1 to -49)
+  return 0.50; // 50% markup for hostile (< -50)
+}
+

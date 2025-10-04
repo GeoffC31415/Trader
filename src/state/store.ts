@@ -32,7 +32,16 @@ import { distance, clampMagnitude } from '../shared/math/vec3';
 import { planets, stations as initialStations, belts } from './world';
 import { spawnNpcTraders, planNpcPath } from './npc';
 import { processContractCompletion, processPartialDelivery } from './helpers/contract_helpers';
-import { getPriceDiscount, getContractMultiplierBonus, getEscortCount, getEscortCargoCapacity } from './helpers/reputation_helpers';
+import { getPriceDiscount, getContractMultiplierBonus, getEscortCount, getEscortCargoCapacity, getUnfriendlyMarkup } from './helpers/reputation_helpers';
+import { 
+  applyReputationWithPropagation, 
+  applyMultipleReputationChanges,
+  isStationHostile, 
+  canDockAtStation,
+  getFactionReputation,
+  getAllFactionReputations,
+} from '../systems/reputation/faction_system';
+import { getFactionForStation, HOSTILE_EFFECTS } from '../domain/constants/faction_constants';
 import type { GameState, RouteSuggestion, Ship, Station, Objective, Contract, NpcTrader } from '../domain/types/world_types';
 import type { StationInventory } from '../domain/types/economy_types';
 import type { ShipWeapon, Projectile } from '../domain/types/combat_types';
@@ -297,7 +306,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     const stationById: Record<string, Station> = Object.fromEntries(stations.map(s => [s.id, s]));
     const stationStockDelta: Record<string, Record<string, number>> = {};
-    const npcTraders = state.npcTraders.map(npc => {
+    const npcTraders = state.npcTraders.map((npc): NpcTrader => {
       // Contract escorts follow the player ship
       if (npc.isEscort) {
         const playerPos = state.ship.position;
@@ -483,6 +492,58 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
     }
 
+    // Hostile station defender spawning (Phase 6)
+    // Check if player is approaching hostile stations and spawn defenders
+    let updatedNpcTraders = npcTraders;
+    if (!state.ship.dockedStationId) { // Only check when player is flying
+      for (const station of stations) {
+        if (isStationHostile(station)) {
+          const distToStation = distance(state.ship.position, station.position);
+          
+          // Spawn defenders if player is within defense spawn range
+          if (distToStation < HOSTILE_EFFECTS.DEFENSE_SPAWN_DISTANCE) {
+            // Check if we already have defenders for this station
+            const existingDefenders = updatedNpcTraders.filter(npc => 
+              npc.isHostile && 
+              npc.fromId === station.id && 
+              npc.id.startsWith(`defender:${station.id}`)
+            );
+            
+            const needDefenders = HOSTILE_EFFECTS.DEFENDER_COUNT - existingDefenders.length;
+            
+            if (needDefenders > 0) {
+              // Spawn new defenders
+              for (let i = 0; i < needDefenders; i++) {
+                const angle = (Math.PI * 2 * i) / HOSTILE_EFFECTS.DEFENDER_COUNT;
+                const spawnRadius = HOSTILE_EFFECTS.DEFENSE_SPAWN_DISTANCE * 0.6;
+                const defenderPos: [number, number, number] = [
+                  station.position[0] + Math.cos(angle) * spawnRadius,
+                  station.position[1],
+                  station.position[2] + Math.sin(angle) * spawnRadius,
+                ];
+                
+                const defender: NpcTrader = {
+                  id: `defender:${station.id}:${Date.now()}:${i}`,
+                  fromId: station.id,
+                  toId: station.id, // Defenders patrol around station
+                  position: defenderPos,
+                  velocity: [0, 0, 0],
+                  speed: 1.5, // Faster than normal traders
+                  hp: NPC_BASE_HP * 2, // Tougher than normal NPCs
+                  maxHp: NPC_BASE_HP * 2,
+                  isHostile: true,
+                  isAggressive: true, // Attack player on sight
+                  kind: 'clipper', // Fast combat ship
+                };
+                
+                updatedNpcTraders.push(defender);
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Combat logic
     let ship = { ...state.ship, position, velocity: [vx, vy, vz] as [number, number, number], enginePower };
     
@@ -501,8 +562,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     let npcLastFireTimes = { ...state.npcLastFireTimes };
     const damageEvents: Array<{ targetId: string; targetType: 'player' | 'npc'; damage: number; sourceId: string; sourceType: 'player' | 'npc' }> = [];
     
-    // Cast npcTraders to correct type (positions are tuples)
-    const npcTradersTyped = npcTraders as NpcTrader[];
+    // Cast updatedNpcTraders to correct type (positions are tuples)
+    const npcTradersTyped = updatedNpcTraders as NpcTrader[];
     
     // Check projectile collisions
     const projectilesToRemove = new Set<string>();
@@ -518,7 +579,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     projectiles = projectiles.filter(p => !projectilesToRemove.has(p.id));
     
     // Apply damage and update aggression
-    let updatedNpcTraders = [...npcTradersTyped];
+    updatedNpcTraders = [...npcTradersTyped];
     for (const event of damageEvents) {
       if (event.targetType === 'player') {
         ship.hp = Math.max(0, ship.hp - event.damage);
@@ -539,14 +600,10 @@ export const useGameStore = create<GameState>((set, get) => ({
               );
               npcAggression[npc.id] = aggressionState;
               
-              // Apply reputation loss for hitting NPC
+              // Apply reputation loss for hitting NPC (with faction propagation)
               const fromStation = stations.find(s => s.id === npc.fromId);
-              if (fromStation) {
-                stations = stations.map(s => 
-                  s.id === fromStation.id 
-                    ? { ...s, reputation: Math.max(-100, (s.reputation || 0) + REP_LOSS_PER_HIT) }
-                    : s
-                );
+              if (fromStation && !npc.isHostile) {
+                stations = applyReputationWithPropagation(stations, fromStation.id, REP_LOSS_PER_HIT);
               }
             }
             
@@ -594,14 +651,10 @@ export const useGameStore = create<GameState>((set, get) => ({
         missionNpcDestroyedEvents.push({ npcId: destroyed.id, missionId: destroyed.missionId });
       }
       
-      // Apply reputation loss for kill
+      // Apply reputation loss for kill (with faction propagation)
       const fromStation = stations.find(s => s.id === destroyed.fromId);
       if (fromStation && !destroyed.isHostile) {
-        stations = stations.map(s => 
-          s.id === fromStation.id 
-            ? { ...s, reputation: Math.max(-100, (s.reputation || 0) + REP_LOSS_PER_NPC_KILL) }
-            : s
-        );
+        stations = applyReputationWithPropagation(stations, fromStation.id, REP_LOSS_PER_NPC_KILL);
       }
       
       // Drop cargo (simple: add to a nearby "debris" - for now, skip actual spawning)
@@ -789,7 +842,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         const pirates = generatePirateWave(
           mission.id,
           updateResult.updatedState.waveCount,
-          escortNpc.position,
+          escortNpc.position as [number, number, number],
           currentTime
         );
         
@@ -839,6 +892,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (state.ship.dockedStationId) return state;
     const near = state.stations.find(s => distance(s.position, state.ship.position) < 6 * SCALE);
     if (!near) return state;
+    
+    // Check if station is hostile or closed (Phase 6)
+    if (!canDockAtStation(near)) {
+      console.log(`Cannot dock at ${near.name}: ${isStationHostile(near) ? 'Station is hostile' : 'Station is closed'}`);
+      return state;
+    }
     
     // Generate available missions for this station
     const playerReputation: Record<string, number> = {};
@@ -921,8 +980,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const item = station.inventory[commodityId];
     if (!item || item.canSell === false) return state;
     const rep = station.reputation || 0;
-    const buyDiscount = Math.max(0, Math.min(0.10, 0.10 * (rep / 100)));
-    const unitBuyPrice = Math.max(1, Math.round(item.buy * (1 - buyDiscount)));
+    // Positive rep: discount, negative rep: markup
+    const buyDiscount = rep >= 0 
+      ? Math.max(0, Math.min(0.10, 0.10 * (rep / 100)))
+      : 0;
+    const buyMarkup = rep < 0 ? getUnfriendlyMarkup(rep) : 0;
+    const unitBuyPrice = Math.max(1, Math.round(item.buy * (1 - buyDiscount + buyMarkup)));
     const totalCost = unitBuyPrice * quantity;
     const used = Object.values(state.ship.cargo).reduce((a, b) => a + b, 0);
     if (state.ship.credits < totalCost) return state;
@@ -959,9 +1022,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     
     const cargo = { ...state.ship.cargo, [commodityId]: prevQty + playerBuying };
     const reduced = { ...station.inventory, [commodityId]: { ...item, stock: Math.max(0, (item.stock || 0) - quantity) } };
-    // Small reputation increase for fair trade at source
+    // Small reputation increase for fair trade at source (with faction propagation)
     const repDelta = Math.min(2, 0.02 * quantity);
-    const stations = state.stations.map(s => s.id === station.id ? { ...s, inventory: reduced, reputation: Math.max(0, Math.min(100, (s.reputation || 0) + repDelta)) } : s);
+    const stations = applyReputationWithPropagation(
+      state.stations.map(s => s.id === station.id ? { ...s, inventory: reduced } : s),
+      station.id,
+      repDelta
+    );
     const avgMap = { ...state.avgCostByCommodity } as Record<string, number>;
     const oldAvg = avgMap[commodityId] || 0;
     const newQty = prevQty + playerBuying;
@@ -1015,8 +1082,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     
     const qty = quantity;
     const rep = station.reputation || 0;
-    const sellPremium = Math.max(0, Math.min(0.07, 0.07 * (rep / 100)));
-    const unitSellPrice = Math.max(1, Math.round(item.sell * (1 + sellPremium)));
+    // Positive rep: premium, negative rep: penalty
+    const sellPremium = rep >= 0
+      ? Math.max(0, Math.min(0.07, 0.07 * (rep / 100)))
+      : 0;
+    const sellPenalty = rep < 0 ? getUnfriendlyMarkup(rep) : 0;
+    const unitSellPrice = Math.max(1, Math.round(item.sell * (1 + sellPremium - sellPenalty)));
     const revenue = unitSellPrice * qty;
     const cargo = { ...state.ship.cargo, [commodityId]: have - fromPlayer };
     let nextInv = { ...station.inventory } as StationInventory;
@@ -1033,12 +1104,16 @@ export const useGameStore = create<GameState>((set, get) => ({
         nextInv[commodityId] = { ...nextInv[commodityId], stock: ((nextInv[commodityId].stock || 0) - qty) + remainder };
       }
     }
-    // Reputation gain scales with station need and quantity
+    // Reputation gain scales with station need and quantity (with faction propagation)
     const bias = getPriceBiasForStation(station.type as any, commodityId);
     const biasW = bias === 'expensive' ? 1.6 : (bias === 'cheap' ? 0.6 : 1.0);
     const priceW = Math.max(0.6, Math.min(2.0, (item.sell || 1) / Math.max(1, item.buy || 1)));
     const repDelta = Math.min(5, 0.06 * qty * biasW * priceW);
-    const stations = state.stations.map(s => s.id === station.id ? { ...s, inventory: nextInv, reputation: Math.max(0, Math.min(100, (s.reputation || 0) + repDelta)) } : s);
+    const stations = applyReputationWithPropagation(
+      state.stations.map(s => s.id === station.id ? { ...s, inventory: nextInv } : s),
+      station.id,
+      repDelta
+    );
     const avgMap = { ...state.avgCostByCommodity } as Record<string, number>;
     const avgCost = avgMap[commodityId] || 0;
     const realized = (unitSellPrice - avgCost) * qty;
@@ -1181,7 +1256,64 @@ export const useGameStore = create<GameState>((set, get) => ({
           updatedArcs = updatedArcs.map(a => a.id === mission.arcId ? updatedArc : a);
         }
         
+        // Trigger mission celebration with narrative
+        const missionCelebrationData = {
+          missionId: updatedMission.id,
+          credits: updatedMission.rewards.credits,
+          reputationChanges: updatedMission.rewards.reputationChanges,
+        };
+        
         console.log(`Mission completed: ${updatedMission.title}!`);
+        
+        // Regenerate missions for current station if docked
+        let finalMissions = updatedMissions;
+        if (state.ship.dockedStationId) {
+          const playerReputation: Record<string, number> = {};
+          for (const st of updatedStationsFromMissions) {
+            if (st.reputation !== undefined) {
+              playerReputation[st.id] = st.reputation;
+            }
+          }
+          const playerUpgrades: string[] = [];
+          if (state.ship.hasNavigationArray) playerUpgrades.push('nav');
+          if (state.ship.hasUnionMembership) playerUpgrades.push('union');
+          if (state.ship.hasMarketIntel) playerUpgrades.push('intel');
+          
+          const activeMissionsAfterCompletion = finalMissions.filter(m => m.status === 'active');
+          const newMissions = generateMissionsForStation(
+            state.ship.dockedStationId,
+            playerReputation,
+            playerUpgrades,
+            updatedArcs,
+            activeMissionsAfterCompletion,
+            updatedArcs.filter(a => a.status === 'completed').map(a => a.id)
+          );
+          
+          // Merge with existing missions (don't duplicate)
+          const existingMissionIds = new Set(finalMissions.map(m => m.id));
+          const missionsToAdd = newMissions.filter(m => !existingMissionIds.has(m.id));
+          finalMissions = [...finalMissions, ...missionsToAdd];
+        }
+        
+        // Return early with celebration
+        return {
+          ship: { ...state.ship, credits: totalCredits, cargo },
+          stations: updatedStationsFromMissions,
+          contracts,
+          tradeLog,
+          profitByCommodity: profit,
+          avgCostByCommodity: avgMap,
+          npcTraders,
+          missions: finalMissions,
+          missionArcs: updatedArcs,
+          missionCelebrationData,
+          celebrationVisible: showCelebration ? Date.now() : state.celebrationVisible,
+          celebrationBuyCost: showCelebration ? celebrationBuyCost : state.celebrationBuyCost,
+          celebrationSellRevenue: showCelebration ? celebrationSellRev : state.celebrationSellRevenue,
+          celebrationBonusReward: showCelebration ? celebrationBonusAmount : state.celebrationBonusReward,
+          objectives,
+          activeObjectiveId,
+        } as Partial<GameState> as GameState;
       }
     }
     
@@ -1330,7 +1462,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         hasUnionMembership: true,
         hasMarketIntel: true,
         kind: kindR,
-        stats: { acc: shipCaps[kindR].acc, drag: 0.85, vmax: shipCaps[kindR].vmax },
+        stats: { acc: shipCaps[kindR].acc * 2, drag: 0.85, vmax: shipCaps[kindR].vmax * 2 },
         weapon: testWeapon,
         hp: PLAYER_MAX_HP,
         maxHp: PLAYER_MAX_HP,
@@ -1504,11 +1636,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
   abandonContract: (id) => set((state) => {
     const contracts = (state.contracts || []).map(c => c.id === id ? { ...c, status: 'failed' } : c);
-    // Minor rep penalty at destination if known
+    // Minor rep penalty at destination if known (with faction propagation)
     const chosen = (state.contracts || []).find(c => c.id === id);
     let stations = state.stations;
     if (chosen?.toId) {
-      stations = stations.map(s => s.id === chosen.toId ? { ...s, reputation: Math.max(0, ((s.reputation || 0) - 2)) } : s);
+      stations = applyReputationWithPropagation(stations, chosen.toId, -2);
     }
     const objectives = (state.objectives || []).map(o => o.id === `obj:${id}` ? { ...o, status: 'failed' } : o);
     const activeObjectiveId = state.activeObjectiveId === `obj:${id}` ? undefined : state.activeObjectiveId;
@@ -1728,13 +1860,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       m.id === missionId ? { ...m, status: 'cancelled' as const } : m
     );
     
-    // Apply small reputation penalty at offering station
+    // Apply small reputation penalty at offering station (with faction propagation)
     const offeringStationId = mission.availableAt[0];
-    const updatedStations = state.stations.map(s => 
-      s.id === offeringStationId 
-        ? { ...s, reputation: Math.max(-100, (s.reputation || 0) - 5) }
-        : s
-    );
+    const updatedStations = applyReputationWithPropagation(state.stations, offeringStationId, -5);
     
     // Clean up mission states (Phase 4)
     let updatedStealthStates = clearMissionStealthStates(state.stealthStates, missionId);
@@ -1811,7 +1939,53 @@ export const useGameStore = create<GameState>((set, get) => ({
           updatedArcs = updatedArcs.map(a => a.id === mission.arcId ? updatedArc : a);
         }
         
+        // Trigger mission celebration with narrative
+        const missionCelebrationData = {
+          missionId: mission.id,
+          credits: mission.rewards.credits,
+          reputationChanges: mission.rewards.reputationChanges,
+        };
+        
         console.log(`Mission completed: ${mission.title}`);
+        
+        // Regenerate missions for current station if docked
+        let finalMissions = updatedMissions;
+        if (updatedShip.dockedStationId) {
+          const playerReputation: Record<string, number> = {};
+          for (const st of updatedStations) {
+            if (st.reputation !== undefined) {
+              playerReputation[st.id] = st.reputation;
+            }
+          }
+          const playerUpgrades: string[] = [];
+          if (updatedShip.hasNavigationArray) playerUpgrades.push('nav');
+          if (updatedShip.hasUnionMembership) playerUpgrades.push('union');
+          if (updatedShip.hasMarketIntel) playerUpgrades.push('intel');
+          
+          const activeMissionsAfterCompletion = finalMissions.filter(m => m.status === 'active');
+          const newMissions = generateMissionsForStation(
+            updatedShip.dockedStationId,
+            playerReputation,
+            playerUpgrades,
+            updatedArcs,
+            activeMissionsAfterCompletion,
+            updatedArcs.filter(a => a.status === 'completed').map(a => a.id)
+          );
+          
+          // Merge with existing missions (don't duplicate)
+          const existingMissionIds = new Set(finalMissions.map(m => m.id));
+          const missionsToAdd = newMissions.filter(m => !existingMissionIds.has(m.id));
+          finalMissions = [...finalMissions, ...missionsToAdd];
+        }
+        
+        // Return with celebration data
+        return {
+          missions: finalMissions,
+          missionArcs: updatedArcs,
+          stations: updatedStations,
+          ship: updatedShip,
+          missionCelebrationData,
+        } as Partial<GameState> as GameState;
       }
     }
     
@@ -1869,9 +2043,17 @@ export const useGameStore = create<GameState>((set, get) => ({
       updatedArcs = state.missionArcs.map(a => a.id === mission.arcId ? updatedArc : a);
     }
     
+    // Trigger mission celebration with narrative
+    const missionCelebrationData = {
+      missionId: mission.id,
+      credits: mission.rewards.credits,
+      reputationChanges: mission.rewards.reputationChanges,
+    };
+    
     return {
       missions: updatedMissions,
       missionArcs: updatedArcs,
+      missionCelebrationData,
       ...rewardUpdates,
       ...effectUpdates,
     } as Partial<GameState> as GameState;
