@@ -52,6 +52,12 @@ export function MarketPanel() {
   const abandonContract = useGameStore(s => s.abandonContract);
   const setTrackedStation = useGameStore(s => s.setTrackedStation);
   
+  // Mission arc system
+  const missions = useGameStore(s => s.missions);
+  const missionArcs = useGameStore(s => s.missionArcs);
+  const acceptMission = useGameStore(s => s.acceptMission);
+  const abandonMission = useGameStore(s => s.abandonMission);
+  
   // Auto-refresh contracts on mount and at regular intervals
   useEffect(() => {
     const store = useGameStore.getState();
@@ -88,6 +94,16 @@ export function MarketPanel() {
   const stationContracts = useMemo(() => 
     contracts.filter(c => c.toId === station?.id && c.status === 'offered'),
     [contracts, station?.id]
+  );
+
+  const stationMissions = useMemo(() => 
+    missions.filter(m => m.availableAt.includes(station?.id || '') && m.status === 'offered'),
+    [missions, station?.id]
+  );
+
+  const activeMissions = useMemo(() => 
+    missions.filter(m => m.status === 'active'),
+    [missions]
   );
 
   const [section, setSection] = useState<'hall' | 'fabrication' | 'production' | 'missions'>('hall');
@@ -768,6 +784,188 @@ export function MarketPanel() {
         {/* MISSIONS SECTION */}
         {section === 'missions' && (
           <div className="scrollable-content">
+            {/* Mission Arcs */}
+            {stationMissions.length > 0 && (
+              <div className="sci-fi-panel">
+                <div className="section-header">Story Missions</div>
+                <div style={{
+                  padding: 12,
+                  background: `${colors.primary}10`,
+                  border: `1px solid ${colors.primary}30`,
+                  borderRadius: 6,
+                  marginBottom: 16,
+                  fontSize: 12,
+                  opacity: 0.9,
+                }}>
+                  ℹ Story missions with choices that shape the system. Permanent consequences and unique rewards.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {stationMissions.map(mission => {
+                    const arc = missionArcs.find(a => a.id === mission.arcId);
+                    const reqRepOk = !mission.requiredRep || Object.entries(mission.requiredRep).every(
+                      ([stId, minRep]) => (stations.find(s => s.id === stId)?.reputation || 0) >= minRep
+                    );
+                    
+                    return (
+                      <div key={mission.id} style={{
+                        padding: 16,
+                        background: `${colors.primary}15`,
+                        border: `2px solid ${colors.secondary}40`,
+                        borderLeft: `5px solid ${colors.secondary}`,
+                        borderRadius: 8,
+                      }}>
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace', marginBottom: 4, color: colors.secondary }}>
+                            {arc?.name || 'Story Mission'} — Stage {mission.stage}
+                          </div>
+                          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+                            {mission.title}
+                          </div>
+                          <div style={{ fontSize: 13, opacity: 0.9, marginBottom: 12, lineHeight: 1.5 }}>
+                            {mission.description}
+                          </div>
+                        </div>
+                        
+                        {/* Objectives */}
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace', marginBottom: 6 }}>
+                            OBJECTIVES:
+                          </div>
+                          {mission.objectives.map(obj => (
+                            <div key={obj.id} style={{ 
+                              fontSize: 12, 
+                              marginBottom: 4, 
+                              paddingLeft: 12,
+                              opacity: obj.optional ? 0.7 : 1,
+                            }}>
+                              • {obj.description}{obj.optional && ' (Optional)'}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Rewards */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
+                          <div>
+                            <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace', marginBottom: 4 }}>
+                              REWARDS:
+                            </div>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>
+                              ${mission.rewards.credits.toLocaleString()}
+                            </div>
+                            {Object.entries(mission.rewards.reputationChanges).length > 0 && (
+                              <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>
+                                {Object.entries(mission.rewards.reputationChanges).map(([stId, change]) => (
+                                  <span key={stId} style={{ 
+                                    marginRight: 8,
+                                    color: change > 0 ? '#10b981' : '#ef4444'
+                                  }}>
+                                    {change > 0 ? '+' : ''}{change} rep
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {mission.requiredRep && !reqRepOk && (
+                              <div style={{ fontSize: 11, color: '#ef4444', marginTop: 6, fontFamily: 'monospace' }}>
+                                ✗ Insufficient reputation
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => acceptMission(mission.id)}
+                            disabled={!reqRepOk}
+                            className="sci-fi-button"
+                            style={{ padding: '10px 24px', fontSize: 14, fontWeight: 700 }}
+                          >
+                            ACCEPT MISSION
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
+            {/* Active Story Missions */}
+            {activeMissions.length > 0 && (
+              <div className="sci-fi-panel">
+                <div className="section-header">Active Story Missions</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {activeMissions.map(mission => {
+                    const arc = missionArcs.find(a => a.id === mission.arcId);
+                    const completedObjectives = mission.objectives.filter(o => o.completed).length;
+                    const totalObjectives = mission.objectives.filter(o => !o.optional).length;
+                    const progress = (completedObjectives / totalObjectives) * 100;
+                    
+                    return (
+                      <div key={mission.id} style={{
+                        padding: 16,
+                        background: `${colors.primary}15`,
+                        border: `2px solid ${colors.secondary}40`,
+                        borderLeft: `5px solid ${progress >= 100 ? '#10b981' : colors.secondary}`,
+                        borderRadius: 8,
+                      }}>
+                        <div style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace', marginBottom: 4, color: colors.secondary }}>
+                            {arc?.name || 'Story Mission'} — Stage {mission.stage}
+                          </div>
+                          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+                            {mission.title}
+                          </div>
+                        </div>
+                        
+                        {/* Progress Bar */}
+                        <div style={{
+                          background: 'rgba(0,0,0,0.3)',
+                          borderRadius: 4,
+                          height: 8,
+                          overflow: 'hidden',
+                          marginBottom: 12,
+                        }}>
+                          <div style={{
+                            width: `${Math.min(100, progress)}%`,
+                            height: '100%',
+                            background: progress >= 100 ? '#22c55e' : `linear-gradient(90deg, ${colors.primary}, ${colors.secondary})`,
+                            transition: 'width 0.3s ease',
+                            boxShadow: `0 0 10px ${progress >= 100 ? '#22c55e' : colors.glow}`,
+                          }} />
+                        </div>
+                        
+                        {/* Objectives */}
+                        <div style={{ marginBottom: 12 }}>
+                          {mission.objectives.map(obj => (
+                            <div key={obj.id} style={{ 
+                              fontSize: 12, 
+                              marginBottom: 4,
+                              paddingLeft: 12,
+                              opacity: obj.completed ? 0.6 : 1,
+                              textDecoration: obj.completed ? 'line-through' : 'none',
+                            }}>
+                              {obj.completed ? '✓' : '○'} {obj.description}
+                              {obj.quantity && obj.quantity > 1 && ` (${obj.current}/${obj.quantity})`}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                          <button 
+                            onClick={() => abandonMission(mission.id)} 
+                            className="sci-fi-button"
+                            style={{
+                              background: 'linear-gradient(135deg, rgba(239,68,68,0.3), rgba(239,68,68,0.2))',
+                              borderColor: '#ef4444',
+                            }}
+                          >
+                            ABANDON
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+            
             <div className="sci-fi-panel">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <div className="section-header" style={{ marginBottom: 0, borderBottom: 'none', paddingBottom: 0 }}>

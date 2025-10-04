@@ -1,5 +1,7 @@
 import type { Commodity, StationInventory } from '../types/economy_types';
 import type { StationType } from '../types/economy_types';
+import type { ShipWeapon } from './combat_types';
+import type { Mission, MissionArc } from './mission_types';
 
 export type StationPersona = {
   id: string;
@@ -65,6 +67,12 @@ export type Ship = {
     drag: number;
     vmax: number;
   };
+  // Combat properties
+  weapon: ShipWeapon;
+  hp: number;
+  maxHp: number;
+  energy: number;
+  maxEnergy: number;
 };
 
 export type NpcTrader = {
@@ -85,6 +93,10 @@ export type NpcTrader = {
   escortCargoCapacity?: number;
   escortCargoUsed?: number;
   shipKind?: 'freighter' | 'clipper' | 'miner';
+  // Combat properties
+  hp: number;
+  maxHp: number;
+  isHostile?: boolean; // true for pirates, bounty hunters
 };
 
 export type TradeEntry = {
@@ -178,6 +190,29 @@ export type GameState = {
   celebrationBuyCost?: number; // total cost of purchased goods
   celebrationSellRevenue?: number; // revenue from selling goods
   celebrationBonusReward?: number; // bonus reward for completion
+  // Mission arcs system
+  missionArcs: MissionArc[];
+  missions: Mission[]; // all missions (offered, active, completed, failed)
+  // Combat state
+  projectiles: Array<{
+    id: string;
+    ownerId: string;
+    ownerType: 'player' | 'npc';
+    position: [number, number, number];
+    velocity: [number, number, number];
+    damage: number;
+    lifetime: number;
+    maxLifetime: number;
+    weaponKind: 'laser' | 'plasma' | 'railgun' | 'missile';
+  }>;
+  lastFireTime: number; // player's last fire time
+  npcLastFireTimes: Record<string, number>; // npcId -> last fire time
+  npcAggression: Record<string, {
+    npcId: string;
+    isAggressive: boolean;
+    targetId?: string;
+    lastAttackedTime?: number;
+  }>;
   getSuggestedRoutes: (opts?: { limit?: number; prioritizePerDistance?: boolean }) => RouteSuggestion[];
   tick: (dt: number) => void;
   thrust: (dir: [number, number, number], dt: number) => void;
@@ -199,6 +234,16 @@ export type GameState = {
   generateContracts: (opts?: { limit?: number }) => void;
   acceptContract: (id: string) => void;
   abandonContract: (id: string) => void;
+  // Mission arc actions
+  acceptMission: (missionId: string) => void;
+  abandonMission: (missionId: string) => void;
+  checkMissionProgress: () => void;
+  completeMission: (missionId: string) => void;
+  makeMissionChoice: (missionId: string, choiceId: string) => void;
+  // Combat actions
+  fireWeapon: (targetPos?: [number, number, number]) => void;
+  upgradeWeapon: (upgradeType: 'damage' | 'fireRate' | 'range', cost: number) => void;
+  purchaseWeapon: (weaponKind: 'laser' | 'plasma' | 'railgun' | 'missile', cost: number) => void;
 };
 
 
