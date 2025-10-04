@@ -880,12 +880,18 @@ export function MarketPanel() {
                             )}
                           </div>
                           <button
-                            onClick={() => acceptMission(mission.id)}
+                            onClick={() => {
+                              if (mission.type === 'choice') {
+                                setChoiceMissionDialog(mission);
+                              } else {
+                                acceptMission(mission.id);
+                              }
+                            }}
                             disabled={!reqRepOk}
                             className="sci-fi-button"
                             style={{ padding: '10px 24px', fontSize: 14, fontWeight: 700 }}
                           >
-                            ACCEPT MISSION
+                            {mission.type === 'choice' ? 'CHOOSE PATH' : 'ACCEPT MISSION'}
                           </button>
                         </div>
                       </div>
@@ -1161,6 +1167,18 @@ export function MarketPanel() {
           </div>
         )}
       </div>
+      
+      {/* Mission Choice Dialog */}
+      {choiceMissionDialog && (
+        <MissionChoiceDialog
+          mission={choiceMissionDialog}
+          onChoose={(choiceId) => {
+            makeMissionChoice(choiceMissionDialog.id, choiceId);
+            setChoiceMissionDialog(null);
+          }}
+          onCancel={() => setChoiceMissionDialog(null)}
+        />
+      )}
     </>
   );
 }

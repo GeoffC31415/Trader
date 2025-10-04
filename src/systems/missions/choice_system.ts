@@ -55,7 +55,7 @@ export function applyChoicePermanentEffects(
               type: 'stock_reduction',
               targetStation: 'greenfields',
               multiplier: 0.7, // 30% reduction
-              expiresAt: gameState.time + 120, // 2 minutes
+              expiresAt: Date.now() + 120000, // 2 minutes in milliseconds
             },
           ],
         };
@@ -182,7 +182,7 @@ export function applyChoicePermanentEffects(
               type: 'price_increase',
               commodityCategory: 'fuel',
               multiplier: 1.15,
-              expiresAt: gameState.time + 600, // 10 minutes
+              expiresAt: Date.now() + 600000, // 10 minutes in milliseconds
             },
           ],
         };
@@ -304,7 +304,7 @@ export function applyChoicePermanentEffects(
               id: `worker_lockout_${Date.now()}`,
               type: 'fabrication_disabled',
               targetStations: ['greenfields', 'drydock', 'sol-refinery'],
-              expiresAt: gameState.time + 600, // 10 minutes
+              expiresAt: Date.now() + 600000, // 10 minutes in milliseconds
             },
           ],
         };

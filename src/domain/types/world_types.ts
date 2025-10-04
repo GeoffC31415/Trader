@@ -29,6 +29,9 @@ export type Station = {
   persona?: StationPersona;
   // Station-specific reputation with the player (0-100). Higher means better prices/opportunities later.
   reputation?: number;
+  // Mission choice consequences (Phase 5)
+  isHostile?: boolean; // Station refuses docking, spawns defenders
+  isClosed?: boolean; // Station is permanently closed
 };
 
 export type Planet = {
@@ -215,6 +218,25 @@ export type GameState = {
     hasReachedDestination: boolean;
     spawnedPirateIds: string[];
   }>;
+  // Mission choice system (Phase 5)
+  permanentEffects?: Array<{
+    type: 'price_discount' | 'fabrication_discount' | 'production_efficiency';
+    stationId: string;
+    commodityCategory?: string;
+    discount?: number;
+    efficiency?: number;
+  }>;
+  timedEffects?: Array<{
+    id: string;
+    type: 'stock_reduction' | 'price_increase' | 'fabrication_disabled';
+    targetStation?: string;
+    targetStations?: string[];
+    commodityCategory?: string;
+    multiplier?: number;
+    expiresAt: number;
+  }>;
+  pirateAggressionMultiplier?: number;
+  unlockedFeatures?: string[];
   // Combat state
   projectiles: Array<{
     id: string;

@@ -102,15 +102,15 @@ export function MissionMarkers() {
         
         return (
           <group key={stationId} position={station.position}>
-            {/* Blue ring marker above station */}
-            <mesh position={[0, 80, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            {/* Blue ring marker below station */}
+            <mesh position={[0, -80, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <ringGeometry args={[30, 36, 32]} />
               <meshBasicMaterial color="#6b9aff" transparent opacity={opacity} />
             </mesh>
             
             {/* Mission destination label */}
             <Html
-              position={[0, 95, 0]}
+              position={[0, -95, 0]}
               center
               style={{
                 pointerEvents: 'none',

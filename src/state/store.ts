@@ -65,6 +65,9 @@ import {
   canAcceptMission,
   getMissionTimeRemaining,
 } from './helpers/mission_helpers';
+import { 
+  applyChoicePermanentEffects,
+} from '../systems/missions/choice_system';
 import type { Mission, MissionArc } from '../domain/types/mission_types';
 import { 
   processStealthChecks, 
@@ -1909,6 +1912,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Apply choice rewards
     const rewardUpdates = applyMissionRewards(state, updatedMission);
     
+    // Apply permanent effects from the choice
+    const permanentEffectsUpdates = choice.rewards.permanentEffects 
+      ? applyChoicePermanentEffects(state, choice.rewards.permanentEffects)
+      : {};
+    
     // Advance arc
     const arc = updatedArcs.find(a => a.id === mission.arcId);
     let finalArcs = updatedArcs;
@@ -1921,6 +1929,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       missions: updatedMissions,
       missionArcs: finalArcs,
       ...rewardUpdates,
+      ...permanentEffectsUpdates,
     } as Partial<GameState> as GameState;
   }),
 }));
