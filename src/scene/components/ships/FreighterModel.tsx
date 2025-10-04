@@ -1,28 +1,30 @@
-import { Sparkles } from '@react-three/drei';
+import { Sparkles, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 export function FreighterModel({ power, hasRig }: { power: number; hasRig: boolean }) {
+  const { scene } = useGLTF('/ships/freighter_ship.glb');
+  
+  // Clone the scene so each ship instance is independent
+  const clonedScene = useMemo(() => scene.clone(), [scene]);
+  
+  // Setup shadows and materials
+  useEffect(() => {
+    clonedScene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+  }, [clonedScene]);
+
   return (
     <>
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[3.8, 1.2, 6.2]} />
-        <meshStandardMaterial color={new THREE.Color('#d4af37')} metalness={0.7} roughness={0.35} />
-      </mesh>
-      <mesh position={[0, -0.5, 0]} castShadow receiveShadow>
-        <boxGeometry args={[3.4, 0.3, 5.6]} />
-        <meshStandardMaterial color={new THREE.Color('#8a6d1a')} metalness={0.6} roughness={0.5} />
-      </mesh>
-      <mesh position={[0, 0.4, 2.4]} scale={[1.2, 0.7, 1.1]} castShadow>
-        <sphereGeometry args={[1.4, 24, 24]} />
-        <meshStandardMaterial color={new THREE.Color('#ffe9a8')} metalness={0.2} roughness={0.2} emissive={new THREE.Color('#b45309')} emissiveIntensity={0.08} transparent opacity={0.5} />
-      </mesh>
+      <primitive object={clonedScene} position={[0, -3.8, 1.9]} />
+      
+      {/* Engine glow effects */}
       {[-1, 0, 1].map((ix, i) => (
         <group key={i} position={[ix * 1.0, -0.2, -3.6]}>
-          <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.26, 0.34, 0.6, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#8a6d1a')} metalness={0.8} roughness={0.3} />
-          </mesh>
           <mesh position={[0, 0, -0.4]}>
             <sphereGeometry args={[0.16, 12, 12]} />
             <meshStandardMaterial color={new THREE.Color('#ffd08a')} emissive={new THREE.Color('#f59e0b')} emissiveIntensity={0.15 + 0.9 * power} />
@@ -33,7 +35,9 @@ export function FreighterModel({ power, hasRig }: { power: number; hasRig: boole
           </mesh>
         </group>
       ))}
+      
       <Sparkles count={Math.max(8, Math.floor(24 + power * 90))} scale={[2.6, 2.6, 3.2]} size={1.2} speed={0.6 + power} color={new THREE.Color('#ffd08a') as any} opacity={0.7} position={[0, -0.2, -3.9] as any} />
+      
       {hasRig && (
         <group position={[0, -0.45, 2.8]}>
           <mesh castShadow>
@@ -49,5 +53,8 @@ export function FreighterModel({ power, hasRig }: { power: number; hasRig: boole
     </>
   );
 }
+
+// Preload the model for better performance
+useGLTF.preload('/ships/freighter_ship.glb');
 
 

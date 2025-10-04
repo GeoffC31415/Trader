@@ -1,32 +1,30 @@
-import { Sparkles } from '@react-three/drei';
+import { Sparkles, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 export function ClipperModel({ power, hasRig }: { power: number; hasRig: boolean }) {
+  const { scene } = useGLTF('/ships/racer_ship.glb');
+  
+  // Clone the scene so each ship instance is independent
+  const clonedScene = useMemo(() => scene.clone(), [scene]);
+  
+  // Setup shadows and materials
+  useEffect(() => {
+    clonedScene.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+  }, [clonedScene]);
+
   return (
     <>
-      <mesh castShadow receiveShadow>
-        <boxGeometry args={[2.4, 0.8, 5.0]} />
-        <meshStandardMaterial color={new THREE.Color('#ef4444')} metalness={0.6} roughness={0.35} />
-      </mesh>
-      <mesh position={[0, 0, 2.8]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-        <coneGeometry args={[0.9, 1.0, 20]} />
-        <meshStandardMaterial color={new THREE.Color('#b91c1c')} metalness={0.7} roughness={0.4} />
-      </mesh>
-      <mesh position={[-1.6, 0.0, 0.6]} rotation={[0, 0.1, 0.2]} castShadow>
-        <boxGeometry args={[0.2, 0.1, 3.0]} />
-        <meshStandardMaterial color={new THREE.Color('#7f1d1d')} metalness={0.6} roughness={0.5} />
-      </mesh>
-      <mesh position={[1.6, 0.0, 0.6]} rotation={[0, -0.1, -0.2]} castShadow>
-        <boxGeometry args={[0.2, 0.1, 3.0]} />
-        <meshStandardMaterial color={new THREE.Color('#7f1d1d')} metalness={0.6} roughness={0.5} />
-      </mesh>
+      <primitive object={clonedScene} rotation={[0, Math.PI / 2, 0]} position={[0, 0, 1.85]} />
+      
+      {/* Engine glow effects */}
       {[-1, 1].map((ix, i) => (
         <group key={i} position={[ix * 0.9, -0.2, -3.0]}>
-          <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.24, 0.34, 0.6, 16]} />
-            <meshStandardMaterial color={new THREE.Color('#991b1b')} metalness={0.8} roughness={0.3} />
-          </mesh>
           <mesh position={[0, 0, -0.4]}>
             <sphereGeometry args={[0.17, 12, 12]} />
             <meshStandardMaterial color={new THREE.Color('#fecaca')} emissive={new THREE.Color('#f87171')} emissiveIntensity={0.2 + 1.3 * power} />
@@ -37,7 +35,9 @@ export function ClipperModel({ power, hasRig }: { power: number; hasRig: boolean
           </mesh>
         </group>
       ))}
+      
       <Sparkles count={Math.max(12, Math.floor(30 + power * 150))} scale={[2.0, 2.0, 2.6]} size={1.0} speed={0.9 + power} color={new THREE.Color('#ffd08a') as any} opacity={0.75} position={[0, -0.2, -3.4] as any} />
+      
       {hasRig && (
         <group position={[0, -0.4, 2.4]}>
           <mesh castShadow>
@@ -53,5 +53,8 @@ export function ClipperModel({ power, hasRig }: { power: number; hasRig: boolean
     </>
   );
 }
+
+// Preload the model for better performance
+useGLTF.preload('/ships/racer_ship.glb');
 
 
