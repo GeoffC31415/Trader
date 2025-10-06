@@ -450,7 +450,7 @@ export function SceneRoot() {
           <mesh castShadow>
             <sphereGeometry args={[0.6, 16, 16]} />
             {/* Commodity color mapping via HSL from id hash for visual distinction; expensive goods slower already */}
-            <meshStandardMaterial color={new THREE.Color(colorFromCommodity(n.commodityId))} metalness={0.2} roughness={0.6} />
+            <meshStandardMaterial color={new THREE.Color(colorFromCommodity(n.commodityId || 'fuel'))} metalness={0.2} roughness={0.6} />
           </mesh>
         </group>
       ))}

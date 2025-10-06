@@ -19,7 +19,8 @@ export type MissionObjectiveType =
   | 'visit' 
   | 'defend' 
   | 'wait'
-  | 'avoid_detection';
+  | 'avoid_detection'
+  | 'escort';
 
 export type MissionObjective = {
   id: string;

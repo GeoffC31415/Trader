@@ -28,13 +28,15 @@ export function TradersPanel() {
     return npcTraders.map(npc => {
       const from = stationById[npc.fromId];
       const to = stationById[npc.toId];
-      const fromInv = from?.inventory[npc.commodityId];
-      const toInv = to?.inventory[npc.commodityId];
+      const commodityId = npc.commodityId || 'fuel';
+      const fromInv = from?.inventory[commodityId];
+      const toInv = to?.inventory[commodityId];
       const unitBuy = fromInv?.buy ?? 0;
       const unitSell = toInv?.sell ?? 0;
       const unitMargin = unitSell - unitBuy;
       const dist = (from && to) ? distance(from.position as any, to.position as any) : 0;
-      const travelTime = npc.speed > 0 ? dist / npc.speed : 0;
+      const speed = npc.speed ?? 1;
+      const travelTime = speed > 0 ? dist / speed : 0;
       const tripProfit = unitMargin * deliverUnits;
       const profitPerSec = travelTime > 0 ? tripProfit / travelTime : 0;
       return {
@@ -42,7 +44,7 @@ export function TradersPanel() {
         fromName: from?.name || npc.fromId,
         toName: to?.name || npc.toId,
         route: from && to ? `${from.name} → ${to.name}` : `${npc.fromId} → ${npc.toId}`,
-        commodityId: npc.commodityId,
+        commodityId,
         unitMargin,
         tripProfit,
         profitPerSec,
@@ -242,7 +244,7 @@ export function TradersPanel() {
                         {r.fromName} → {r.toName}
                       </div>
                       <div style={{ fontSize: 13, textTransform: 'capitalize', opacity: 0.9, marginBottom: 4 }}>
-                        <span style={{ opacity: 0.6 }}>Commodity:</span> {r.commodityId.replace(/_/g, ' ')}
+                        <span style={{ opacity: 0.6 }}>Commodity:</span> {(r.commodityId || 'fuel').replace(/_/g, ' ')}
                       </div>
                       <div style={{ fontSize: 11, fontFamily: 'monospace', opacity: 0.7 }}>
                         Distance: {r.dist.toFixed(1)} units
