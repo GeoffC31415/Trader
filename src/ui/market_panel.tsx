@@ -3,6 +3,7 @@ import { useGameStore } from '../state';
 import { shipCaps, shipBaseStats } from '../state';
 import { getPriceBiasForStation, gatedCommodities } from '../systems/economy/pricing';
 import { processRecipes } from '../systems/economy/recipes';
+import { commodityById } from '../state/world';
 import type { StationType } from '../domain/types/economy_types';
 import { CONTRACT_REFRESH_INTERVAL } from '../domain/constants/contract_constants';
 import { ReputationBadge } from './components/reputation_badge';
@@ -267,7 +268,7 @@ export function MarketPanel() {
         }
         .commodity-grid {
           display: grid;
-          grid-template-columns: 2fr 1fr 0.7fr 2fr;
+          grid-template-columns: auto 2fr 1fr 0.7fr 2fr;
           gap: 12px 16px;
           font-family: monospace;
           font-size: 13px;
@@ -593,6 +594,7 @@ export function MarketPanel() {
               <div className="sci-fi-panel">
                 <div className="section-header">Commodity Exchange</div>
                 <div className="commodity-grid">
+                  <div className="commodity-grid-header"></div>
                   <div className="commodity-grid-header">COMMODITY</div>
                   <div className="commodity-grid-header">PRICE (BUY / SELL)</div>
                   <div className="commodity-grid-header">HELD</div>
@@ -606,8 +608,24 @@ export function MarketPanel() {
                     const sellPremium = Math.max(0, Math.min(0.07, 0.07 * (rep / 100)));
                     const adjBuy = Math.max(1, Math.round(p.buy * (1 - buyDiscount)));
                     const adjSell = Math.max(1, Math.round(p.sell * (1 + sellPremium)));
+                    const commodity = commodityById[id];
                     return (
                       <Fragment key={id}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {commodity?.icon && (
+                            <img 
+                              src={commodity.icon} 
+                              alt={commodity.name}
+                              style={{ 
+                                width: 32, 
+                                height: 32, 
+                                objectFit: 'contain',
+                                filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))'
+                              }}
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          )}
+                        </div>
                         <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
                           {id.replace(/_/g, ' ')}
                         </div>
@@ -669,11 +687,35 @@ export function MarketPanel() {
                     const outIsGated = isGated(r.outputId);
                     const unionBlocked = !isPirate && !hasUnion;
                     const navBlocked = !hasNav && outIsGated;
+                    const inputCommodity = commodityById[r.inputId];
+                    const outputCommodity = commodityById[r.outputId];
                     return (
                       <div key={r.inputId} className="data-row" style={{ gridTemplateColumns: '2fr 1fr auto' }}>
                         <div>
-                          <div style={{ fontWeight: 600, textTransform: 'capitalize', marginBottom: 4 }}>
-                            {r.inputId.replace(/_/g,' ')} → {r.outputId.replace(/_/g,' ')}
+                          <div style={{ fontWeight: 600, textTransform: 'capitalize', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              {inputCommodity?.icon && (
+                                <img 
+                                  src={inputCommodity.icon} 
+                                  alt={inputCommodity.name}
+                                  style={{ width: 20, height: 20, objectFit: 'contain' }}
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
+                              )}
+                              <span>{r.inputId.replace(/_/g,' ')}</span>
+                            </div>
+                            <span>→</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              {outputCommodity?.icon && (
+                                <img 
+                                  src={outputCommodity.icon} 
+                                  alt={outputCommodity.name}
+                                  style={{ width: 20, height: 20, objectFit: 'contain' }}
+                                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
+                              )}
+                              <span>{r.outputId.replace(/_/g,' ')}</span>
+                            </div>
                           </div>
                           <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
                             RATIO: {r.inputPerOutput}:1 | AVAILABLE: {have} units
@@ -734,6 +776,7 @@ export function MarketPanel() {
             <div className="sci-fi-panel">
               <div className="section-header">Local Production</div>
               <div className="commodity-grid">
+                <div className="commodity-grid-header"></div>
                 <div className="commodity-grid-header">COMMODITY</div>
                 <div className="commodity-grid-header">PRICE (BUY / SELL)</div>
                 <div className="commodity-grid-header">HELD</div>
@@ -747,8 +790,24 @@ export function MarketPanel() {
                   const sellPremium = Math.max(0, Math.min(0.07, 0.07 * (rep / 100)));
                   const adjBuy = Math.max(1, Math.round(p.buy * (1 - buyDiscount)));
                   const adjSell = Math.max(1, Math.round(p.sell * (1 + sellPremium)));
+                  const commodity = commodityById[id];
                   return (
                     <Fragment key={id}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {commodity?.icon && (
+                          <img 
+                            src={commodity.icon} 
+                            alt={commodity.name}
+                            style={{ 
+                              width: 32, 
+                              height: 32, 
+                              objectFit: 'contain',
+                              filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))'
+                            }}
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        )}
+                      </div>
                       <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
                         {id.replace(/_/g, ' ')}
                       </div>

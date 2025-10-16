@@ -8,6 +8,7 @@ export const CommoditySchema = z.object({
   category: z.enum(['fuel', 'gas', 'food', 'luxury', 'raw', 'industrial', 'tech', 'medical', 'energy', 'consumer']),
   baseBuy: z.number().positive(),
   baseSell: z.number().positive(),
+  icon: z.string().optional(),
 });
 export type Commodity = z.infer<typeof CommoditySchema>;
 

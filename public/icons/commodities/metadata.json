@@ -1,0 +1,147 @@
+{
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "generatedAt": "2025-10-16T22:04:49.792Z",
+  "results": [
+    {
+      "id": "refined_fuel",
+      "prompt": "Commodity: refined fuel.\nFuturistic refined fuel canister, glowing blue liquid, metallic container with hazard stripes, sci-fi industrial design\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\refined_fuel.png"
+    },
+    {
+      "id": "hydrogen",
+      "prompt": "Commodity: hydrogen.\nHydrogen gas cylinder, pressurized container with H2 symbol, cool blue glow, technical markings, clean sci-fi aesthetic\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\hydrogen.png"
+    },
+    {
+      "id": "oxygen",
+      "prompt": "Commodity: oxygen.\nOxygen gas tank, medical-grade container with O2 label, white and light blue colors, sterile appearance, futuristic design\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\oxygen.png"
+    },
+    {
+      "id": "water",
+      "prompt": "Commodity: water.\nClear water container, transparent liquid in modern bottle, droplets, clean and pure appearance, sci-fi water vessel\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\water.png"
+    },
+    {
+      "id": "sugar",
+      "prompt": "Commodity: sugar.\nSugar crystals in transparent container, white granules, modern packaging, agricultural product, clean sci-fi style\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\sugar.png"
+    },
+    {
+      "id": "coffee",
+      "prompt": "Commodity: coffee.\nPremium coffee beans in futuristic container, rich brown color, aromatic luxury goods, space-age packaging\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\coffee.png"
+    },
+    {
+      "id": "tobacco",
+      "prompt": "Commodity: tobacco.\nTobacco leaves in premium sealed container, luxury item, golden-brown tones, ornate futuristic packaging\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\tobacco.png"
+    },
+    {
+      "id": "grain",
+      "prompt": "Commodity: grain.\nWheat grain bundle, golden stalks, agricultural staple, clean modern design, farming icon\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\grain.png"
+    },
+    {
+      "id": "meat",
+      "prompt": "Commodity: meat.\nSynthetic meat product in cryo-container, protein supply, red-pink tones, refrigerated packaging, futuristic food\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\meat.png"
+    },
+    {
+      "id": "spices",
+      "prompt": "Commodity: spices.\nExotic spices in ornate containers, vibrant colors, luxury commodity, multiple small bottles, premium quality\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\spices.png"
+    },
+    {
+      "id": "rare_minerals",
+      "prompt": "Commodity: rare minerals.\nCrystalline rare minerals, glowing purple and blue crystals, valuable gems, raw precious materials, sci-fi aesthetic\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\rare_minerals.png"
+    },
+    {
+      "id": "iron_ore",
+      "prompt": "Commodity: iron ore.\nIron ore chunks, dark grey metallic rocks, raw industrial material, mining product, rough texture\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\iron_ore.png"
+    },
+    {
+      "id": "copper_ore",
+      "prompt": "Commodity: copper ore.\nCopper ore pieces, orange-brown metallic stone, raw mining material, industrial commodity, rough mineral chunks\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\copper_ore.png"
+    },
+    {
+      "id": "silicon",
+      "prompt": "Commodity: silicon.\nPure silicon wafer, shiny grey metallic disc, tech material, reflective surface, semiconductor grade\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\silicon.png"
+    },
+    {
+      "id": "steel",
+      "prompt": "Commodity: steel.\nSteel ingots, polished metal bars, industrial alloy, grey metallic sheen, manufactured material, stacked ingots\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\steel.png"
+    },
+    {
+      "id": "alloys",
+      "prompt": "Commodity: alloys.\nAdvanced alloy ingots, iridescent metallic bars, high-tech material, rainbow sheen, premium industrial product\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\alloys.png"
+    },
+    {
+      "id": "electronics",
+      "prompt": "Commodity: electronics.\nElectronic components on circuit board, microchips and resistors, green PCB, tech components, modern design\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\electronics.png"
+    },
+    {
+      "id": "microchips",
+      "prompt": "Commodity: microchips.\nAdvanced microchip processor, silicon wafer with circuits, golden pins, high-tech component, intricate patterns\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\microchips.png"
+    },
+    {
+      "id": "batteries",
+      "prompt": "Commodity: batteries.\nFuturistic energy cell battery, glowing power indicator, cylindrical design, electric blue accents, energy storage\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\batteries.png"
+    },
+    {
+      "id": "medical_supplies",
+      "prompt": "Commodity: medical supplies.\nMedical supply kit, white and red cross markings, sterile packaging, emergency supplies, healthcare items\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\medical_supplies.png"
+    },
+    {
+      "id": "pharmaceuticals",
+      "prompt": "Commodity: pharmaceuticals.\nPharmaceutical pills and vials, colorful capsules in blister pack, medical bottles, premium healthcare products\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\pharmaceuticals.png"
+    },
+    {
+      "id": "textiles",
+      "prompt": "Commodity: textiles.\nRolled fabric textiles, colorful cloth patterns, textile industry, woven materials, consumer goods\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\textiles.png"
+    },
+    {
+      "id": "plastics",
+      "prompt": "Commodity: plastics.\nPlastic polymer pellets, colorful resin beads in container, industrial raw material, manufacturing component\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\plastics.png"
+    },
+    {
+      "id": "machinery",
+      "prompt": "Commodity: machinery.\nIndustrial machinery parts, gears and pistons, mechanical components, steel and chrome, heavy industry\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\machinery.png"
+    },
+    {
+      "id": "fertilizer",
+      "prompt": "Commodity: fertilizer.\nAgricultural fertilizer bag, chemical granules, farming supply, green plant growth icon, industrial agriculture\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\fertilizer.png"
+    },
+    {
+      "id": "luxury_goods",
+      "prompt": "Commodity: luxury goods.\nPremium luxury items, gold jewelry and fine goods, elegant packaging, high-value merchandise, sophisticated design\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\luxury_goods.png"
+    },
+    {
+      "id": "data_drives",
+      "prompt": "Commodity: data drives.\nFuturistic data storage drive, holographic data cube, glowing information vessel, high-tech storage device\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\data_drives.png"
+    },
+    {
+      "id": "nanomaterials",
+      "prompt": "Commodity: nanomaterials.\nAdvanced nanomaterials, microscopic particle visualization, glowing molecular structures, cutting-edge technology, quantum materials\nClean icon design for game UI, centered subject on neutral background. Isometric or 3/4 view, studio lighting, professional product photography style. High detail, sharp focus, vibrant colors appropriate to the item. Subtle depth of field, minimal shadows, game asset quality. Consistent style across set, sci-fi aesthetic. Icon keyword: TRADE-COMMODITY-ICONS-01. Output as PNG with transparent or dark neutral background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\commodities\\nanomaterials.png"
+    }
+  ]
+}

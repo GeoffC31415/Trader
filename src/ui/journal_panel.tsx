@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, Fragment } from 'react';
 import { usePoll } from '../shared/hooks/use_poll';
 import { useGameStore } from '../state';
+import { commodityById } from '../state/world';
 
 const primaryColor = '#3b82f6';
 const secondaryColor = '#60a5fa';
@@ -249,14 +250,32 @@ export function JournalPanel() {
                 </div>
               ) : (
                 <div className="data-grid-journal">
-                  {cargoEntries.map(([id, q]) => (
-                    <div key={id} className="stat-row-journal">
-                      <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
-                        {id.replace(/_/g, ' ')}
+                  {cargoEntries.map(([id, q]) => {
+                    const commodity = commodityById[id];
+                    return (
+                      <div key={id} className="stat-row-journal">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {commodity?.icon && (
+                            <img 
+                              src={commodity.icon} 
+                              alt={commodity.name}
+                              style={{ 
+                                width: 28, 
+                                height: 28, 
+                                objectFit: 'contain',
+                                filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))'
+                              }}
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          )}
+                          <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
+                            {id.replace(/_/g, ' ')}
+                          </div>
+                        </div>
+                        <div style={{ color: secondaryColor, fontWeight: 700 }}>{q} units</div>
                       </div>
-                      <div style={{ color: secondaryColor, fontWeight: 700 }}>{q} units</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
