@@ -5,7 +5,7 @@ import OpenAI from 'openai';
 import vm from 'node:vm';
 
 const DEFAULT_SOURCE = path.resolve(process.cwd(), 'src/data/commodity_icon_prompts.ts');
-const DEFAULT_OUT = path.resolve(process.cwd(), 'public/icons/commodities');
+const DEFAULT_OUT = path.resolve(process.cwd(), 'public/icons/commodities/masters');
 const DEFAULT_MODEL = 'gpt-image-1';
 const DEFAULT_SIZE = '1024x1024';
 

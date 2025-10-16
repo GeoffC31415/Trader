@@ -1,0 +1,22 @@
+{
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "generatedAt": "2025-10-16T23:15:39.969Z",
+  "results": [
+    {
+      "id": "tab_traders",
+      "prompt": "UI Asset: tab traders.\nNPC traders panel icon, multiple ships or trader network, commerce vessels, orange accent\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\masters\\tab_traders.png"
+    },
+    {
+      "id": "tab_ship",
+      "prompt": "UI Asset: tab ship.\nShip status icon, spacecraft silhouette or ship profile, vessel indicator, blue accent\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\masters\\tab_ship.png"
+    },
+    {
+      "id": "system_sensors",
+      "prompt": "UI Asset: system sensors.\nSensor array system icon, advanced scanning equipment, market intelligence hardware, purple data streams\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\masters\\system_sensors.png"
+    }
+  ]
+}

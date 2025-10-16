@@ -12,6 +12,7 @@ import { MissionChoiceDialog } from './components/mission_choice_dialog';
 import type { Mission } from '../domain/types/mission_types';
 import { getFactionForStation, FACTIONS, type FactionId } from '../domain/constants/faction_constants';
 import { getFactionReputation, getFactionStanding, getFactionStandingDisplay } from '../systems/reputation/faction_system';
+import { UIIcon } from './components/ui_icon';
 
 function getHallLabel(type: StationType): string {
   if (type === 'city') return 'Civic Exchange';
@@ -342,11 +343,16 @@ export function MarketPanel() {
               background: `${colors.primary}15`,
               border: `1px solid ${colors.primary}`,
               borderRadius: 6,
-              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
             }}>
-              <div style={{ fontSize: 9, opacity: 0.7, fontFamily: 'monospace', marginBottom: 2 }}>CREDITS</div>
-              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace', color: colors.secondary }}>
-                ${ship.credits.toLocaleString()}
+              <UIIcon name="icon_credits" size={20} style={{ filter: `drop-shadow(0 0 4px ${colors.glow})` }} />
+              <div>
+                <div style={{ fontSize: 9, opacity: 0.7, fontFamily: 'monospace', marginBottom: 2 }}>CREDITS</div>
+                <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace', color: colors.secondary }}>
+                  ${ship.credits.toLocaleString()}
+                </div>
               </div>
             </div>
             <div style={{
@@ -354,11 +360,16 @@ export function MarketPanel() {
               background: `${colors.primary}15`,
               border: `1px solid ${colors.primary}`,
               borderRadius: 6,
-              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
             }}>
-              <div style={{ fontSize: 9, opacity: 0.7, fontFamily: 'monospace', marginBottom: 2 }}>CARGO</div>
-              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace', color: colors.secondary }}>
-                {Object.values(ship.cargo).reduce((a,b)=>a+b,0)}/{ship.maxCargo}
+              <UIIcon name="system_cargo" size={20} style={{ filter: `drop-shadow(0 0 4px ${colors.glow})` }} />
+              <div>
+                <div style={{ fontSize: 9, opacity: 0.7, fontFamily: 'monospace', marginBottom: 2 }}>CARGO</div>
+                <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace', color: colors.secondary }}>
+                  {Object.values(ship.cargo).reduce((a,b)=>a+b,0)}/{ship.maxCargo}
+                </div>
               </div>
             </div>
             <div style={{
@@ -366,11 +377,16 @@ export function MarketPanel() {
               background: `${colors.primary}15`,
               border: `1px solid ${colors.primary}`,
               borderRadius: 6,
-              textAlign: 'center',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
             }}>
-              <div style={{ fontSize: 9, opacity: 0.7, fontFamily: 'monospace', marginBottom: 2 }}>REPUTATION</div>
-              <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace', color: colors.secondary }}>
-                {(station.reputation || 0).toFixed(0)}
+              <UIIcon name="icon_reputation" size={20} style={{ filter: `drop-shadow(0 0 4px ${colors.glow})` }} />
+              <div>
+                <div style={{ fontSize: 9, opacity: 0.7, fontFamily: 'monospace', marginBottom: 2 }}>REPUTATION</div>
+                <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace', color: colors.secondary }}>
+                  {(station.reputation || 0).toFixed(0)}
+                </div>
               </div>
             </div>
             <button
@@ -391,20 +407,24 @@ export function MarketPanel() {
         {/* Section Tabs */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <button onClick={() => setSection('hall')} className={`sci-fi-button ${section === 'hall' ? 'active' : ''}`}>
+            <UIIcon name="tab_market" size={16} style={{ marginRight: 6 }} />
             {hallLabel}
           </button>
           {hasFabrication && (
             <button onClick={() => setSection('fabrication')} className={`sci-fi-button ${section === 'fabrication' ? 'active' : ''}`}>
-              ⚙ Fabrication
+              <UIIcon name="tab_fabrication" size={16} style={{ marginRight: 6 }} />
+              Fabrication
             </button>
           )}
           {hasProduction && (
             <button onClick={() => setSection('production')} className={`sci-fi-button ${section === 'production' ? 'active' : ''}`}>
-              📦 Production
+              <UIIcon name="tab_production" size={16} style={{ marginRight: 6 }} />
+              Production
             </button>
           )}
           <button onClick={() => setSection('missions')} className={`sci-fi-button ${section === 'missions' ? 'active' : ''}`}>
-            📋 Missions {stationContracts.length > 0 && `(${stationContracts.length})`}
+            <UIIcon name="tab_missions" size={16} style={{ marginRight: 6 }} />
+            Missions {stationContracts.length > 0 && `(${stationContracts.length})`}
           </button>
         </div>
 
@@ -424,7 +444,10 @@ export function MarketPanel() {
                   {/* Upgrades */}
                   <div className="data-row">
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Acceleration Boost</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <UIIcon name="system_engine" size={20} />
+                        Acceleration Boost
+                      </div>
                       <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {ship.stats.acc.toFixed(1)}</div>
                     </div>
                     <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,000</div>
@@ -433,7 +456,10 @@ export function MarketPanel() {
 
                   <div className="data-row">
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Velocity Enhancer</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <UIIcon name="system_engine" size={20} />
+                        Velocity Enhancer
+                      </div>
                       <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {ship.stats.vmax.toFixed(1)}</div>
                     </div>
                     <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,000</div>
@@ -442,7 +468,10 @@ export function MarketPanel() {
 
                   <div className="data-row">
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Cargo Bay Expansion</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <UIIcon name="system_cargo" size={20} />
+                        Cargo Bay Expansion
+                      </div>
                       <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {ship.maxCargo} units</div>
                     </div>
                     <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,200</div>
@@ -451,7 +480,10 @@ export function MarketPanel() {
 
                   <div className="data-row">
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Mining Rig Installation</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <UIIcon name="system_mining" size={20} />
+                        Mining Rig Installation
+                      </div>
                       <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
                         Status: {ship.canMine ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
                       </div>
@@ -464,7 +496,10 @@ export function MarketPanel() {
 
                   <div className="data-row">
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Navigation Array</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <UIIcon name="system_navigation" size={20} />
+                        Navigation Array
+                      </div>
                       <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
                         Status: {ship.hasNavigationArray ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
                       </div>
@@ -477,7 +512,10 @@ export function MarketPanel() {
 
                   <div className="data-row">
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: 2 }}>Mercantile Data Nexus</div>
+                      <div style={{ fontWeight: 600, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <UIIcon name="system_sensors" size={20} />
+                        Mercantile Data Nexus
+                      </div>
                       <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
                         Status: {hasIntel ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
                       </div>

@@ -28,6 +28,14 @@ export const uiAssetPrompts = [
     id: 'tab_routes',
     prompt: 'Navigation routes icon, connected waypoints, flight path network, mapping symbol, teal accent'
   },
+  {
+    id: 'tab_traders',
+    prompt: 'NPC traders panel icon, multiple ships or trader network, commerce vessels, orange accent'
+  },
+  {
+    id: 'tab_ship',
+    prompt: 'Ship status icon, spacecraft silhouette or ship profile, vessel indicator, blue accent'
+  },
 
   // Status Indicators
   {
@@ -145,6 +153,10 @@ export const uiAssetPrompts = [
   {
     id: 'system_weapons',
     prompt: 'Weapon system icon, turret or laser cannon, combat armament, red targeting'
+  },
+  {
+    id: 'system_sensors',
+    prompt: 'Sensor array system icon, advanced scanning equipment, market intelligence hardware, purple data streams'
   },
 
   // Contract/Mission Tags

@@ -46,7 +46,7 @@ export OPENAI_API_KEY='your-key-here'
 npm run generate:ui
 ```
 
-**Cost:** ~$0.78 (39 × $0.02 at 512×512)
+**Cost:** ~$1.56 (39 × $0.04 at 1024×1024)
 
 ### Resize for Optimization
 
@@ -297,11 +297,11 @@ npm run generate:ui
 
 | Size | File Size (avg) | Total (39 icons) | Use Case |
 |------|----------------|------------------|----------|
-| 512×512 | ~0.3 MB | ~12 MB | Original quality |
+| 1024×1024 | ~1.2 MB | ~47 MB | Original quality |
 | **128×128** | **~0.015 MB** | **~0.6 MB** | **Recommended** ⭐ |
 | 64×64 | ~0.008 MB | ~0.3 MB | Tiny icons |
 
-Recommended: Generate at 512×512, resize to 128×128.
+Recommended: Generate at 1024×1024, resize to 128×128.
 
 ## Benefits
 

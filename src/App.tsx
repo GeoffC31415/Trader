@@ -11,6 +11,7 @@ import { useGameStore } from './state';
 import { DockIntro } from './ui/dock_intro';
 import { Celebration } from './ui/celebration';
 import { MissionCelebration } from './ui/mission_celebration';
+import { UIIcon } from './ui/components/ui_icon';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal' | 'traders'>('market');
@@ -50,14 +51,65 @@ export function App() {
       <div style={{ width: '100%', height: '100%', position: 'relative' }}>
         <div className="ui-overlay">
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <button onClick={() => setActive('market')} style={{ fontWeight: active==='market'?700:400 }}>Market</button>
-            <button onClick={() => setActive('journal')} style={{ fontWeight: active==='journal'?700:400 }}>Journal</button>
-            <button onClick={() => setActive('traders')} disabled={!hasIntel} title={!hasIntel ? 'Requires Mercantile Data Nexus upgrade' : undefined} style={{ fontWeight: active==='traders'?700:400, opacity: hasIntel ? 1 : 0.6 }}>Traders</button>
+            <button onClick={() => setActive('market')} style={{ fontWeight: active==='market'?700:400, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <UIIcon name="tab_market" size={14} />
+              Market
+            </button>
+            <button onClick={() => setActive('journal')} style={{ fontWeight: active==='journal'?700:400, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <UIIcon name="tab_journal" size={14} />
+              Journal
+            </button>
+            <button onClick={() => setActive('traders')} disabled={!hasIntel} title={!hasIntel ? 'Requires Mercantile Data Nexus upgrade' : undefined} style={{ fontWeight: active==='traders'?700:400, opacity: hasIntel ? 1 : 0.6, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <UIIcon name="tab_traders" size={14} />
+              Traders
+            </button>
           </div>
           {active === 'market' ? <MarketPanel /> : active === 'journal' ? <JournalPanel /> : <TradersPanel />}
         </div>
         <div className="vignette" />
         {hasNav && <Minimap />}
+        
+        {/* Ship Status Indicator */}
+        {hasChosenStarter && (
+          <div style={{
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            background: 'rgba(11,18,32,0.9)',
+            color: '#e5e7eb',
+            padding: '10px 16px',
+            borderRadius: 8,
+            border: '1px solid #1f2937',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            fontSize: 12,
+            fontFamily: 'monospace',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+            zIndex: 20,
+          }}>
+            <UIIcon 
+              name={ship.dockedAt ? 'status_docked' : 'status_traveling'} 
+              size={20} 
+              style={{ 
+                filter: ship.dockedAt 
+                  ? 'drop-shadow(0 0 6px #10b981)' 
+                  : 'drop-shadow(0 0 6px #60a5fa)' 
+              }} 
+            />
+            <div>
+              <div style={{ opacity: 0.7, fontSize: 9, marginBottom: 2 }}>STATUS</div>
+              <div style={{ 
+                fontWeight: 700, 
+                color: ship.dockedAt ? '#10b981' : '#60a5fa',
+                textTransform: 'uppercase',
+              }}>
+                {ship.dockedAt ? 'DOCKED' : 'TRAVELING'}
+              </div>
+            </div>
+          </div>
+        )}
+        
         <DockIntro />
         <Celebration />
         <MissionCelebration />

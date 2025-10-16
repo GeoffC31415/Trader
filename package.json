@@ -11,7 +11,9 @@
     "generate:icons": "node scripts/generate_commodity_icons.mjs",
     "generate:avatars": "node scripts/generate_avatars.mjs",
     "generate:ui": "node scripts/generate_ui_assets.mjs",
-    "resize:icons": "node scripts/resize_icons.mjs"
+    "resize:icons": "node scripts/resize_icons.mjs",
+    "resize:all": "node scripts/resize_all.mjs",
+    "organize:masters": "node scripts/organize_masters.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^9.103.0",

@@ -1,0 +1,202 @@
+{
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "generatedAt": "2025-10-16T22:45:13.931Z",
+  "results": [
+    {
+      "id": "tab_market",
+      "prompt": "UI Asset: tab market.\nMarket trading icon, shopping cart or exchange symbol, clean line art, sci-fi style, glowing cyan accent\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tab_market.png"
+    },
+    {
+      "id": "tab_fabrication",
+      "prompt": "UI Asset: tab fabrication.\nIndustrial fabrication icon, gear and wrench crossed, manufacturing symbol, mechanical design, orange accent\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tab_fabrication.png"
+    },
+    {
+      "id": "tab_production",
+      "prompt": "UI Asset: tab production.\nProduction facility icon, factory or assembly line symbol, output arrows, industrial design, green accent\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tab_production.png"
+    },
+    {
+      "id": "tab_missions",
+      "prompt": "UI Asset: tab missions.\nMission briefing icon, clipboard with checklist, quest marker, assignment symbol, blue accent\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tab_missions.png"
+    },
+    {
+      "id": "tab_journal",
+      "prompt": "UI Asset: tab journal.\nShip log journal icon, open book or data pad, records symbol, documentation icon, purple accent\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tab_journal.png"
+    },
+    {
+      "id": "tab_cargo",
+      "prompt": "UI Asset: tab cargo.\nCargo hold icon, storage container or crate symbol, inventory design, amber accent\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tab_cargo.png"
+    },
+    {
+      "id": "tab_routes",
+      "prompt": "UI Asset: tab routes.\nNavigation routes icon, connected waypoints, flight path network, mapping symbol, teal accent\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tab_routes.png"
+    },
+    {
+      "id": "status_docked",
+      "prompt": "UI Asset: status docked.\nDocked status indicator, ship connected to station, docking clamps engaged, green status light\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\status_docked.png"
+    },
+    {
+      "id": "status_undocked",
+      "prompt": "UI Asset: status undocked.\nUndocked/flying status indicator, ship in free space, thrusters active, blue status light\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\status_undocked.png"
+    },
+    {
+      "id": "status_mining",
+      "prompt": "UI Asset: status mining.\nMining operation indicator, drill or laser beam extracting ore, asteroid mining, yellow status light\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\status_mining.png"
+    },
+    {
+      "id": "status_trading",
+      "prompt": "UI Asset: status trading.\nTrading activity indicator, exchange arrows, cargo transfer, commerce symbol, cyan status light\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\status_trading.png"
+    },
+    {
+      "id": "status_traveling",
+      "prompt": "UI Asset: status traveling.\nTraveling status indicator, ship in motion, speed lines, navigation active, purple status light\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\status_traveling.png"
+    },
+    {
+      "id": "status_combat",
+      "prompt": "UI Asset: status combat.\nCombat alert indicator, weapon systems armed, red warning light, tactical status\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\status_combat.png"
+    },
+    {
+      "id": "msg_info",
+      "prompt": "UI Asset: msg info.\nInformation message icon, i in circle, neutral information symbol, blue info badge\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\msg_info.png"
+    },
+    {
+      "id": "msg_success",
+      "prompt": "UI Asset: msg success.\nSuccess message icon, checkmark in circle, confirmation symbol, green success badge\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\msg_success.png"
+    },
+    {
+      "id": "msg_warning",
+      "prompt": "UI Asset: msg warning.\nWarning message icon, exclamation point in triangle, caution symbol, amber warning badge\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\msg_warning.png"
+    },
+    {
+      "id": "msg_error",
+      "prompt": "UI Asset: msg error.\nError message icon, X in circle or alert symbol, critical warning, red error badge\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\msg_error.png"
+    },
+    {
+      "id": "msg_quest",
+      "prompt": "UI Asset: msg quest.\nQuest/mission notification icon, star or quest marker, opportunity symbol, gold quest badge\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\msg_quest.png"
+    },
+    {
+      "id": "corner_tl",
+      "prompt": "UI Asset: corner tl.\nSci-fi panel corner decoration top-left, angular geometric design, circuit pattern, cyan accent lines, futuristic frame element\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\corner_tl.png"
+    },
+    {
+      "id": "corner_tr",
+      "prompt": "UI Asset: corner tr.\nSci-fi panel corner decoration top-right, angular geometric design, circuit pattern, cyan accent lines, futuristic frame element, mirrored from top-left\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\corner_tr.png"
+    },
+    {
+      "id": "corner_bl",
+      "prompt": "UI Asset: corner bl.\nSci-fi panel corner decoration bottom-left, angular geometric design, circuit pattern, cyan accent lines, futuristic frame element, mirrored from top-left\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\corner_bl.png"
+    },
+    {
+      "id": "corner_br",
+      "prompt": "UI Asset: corner br.\nSci-fi panel corner decoration bottom-right, angular geometric design, circuit pattern, cyan accent lines, futuristic frame element, mirrored from top-left\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\corner_br.png"
+    },
+    {
+      "id": "icon_credits",
+      "prompt": "UI Asset: icon credits.\nCurrency credits icon, coin or credit chip symbol, money indicator, gold metallic design\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\icon_credits.png"
+    },
+    {
+      "id": "icon_reputation",
+      "prompt": "UI Asset: icon reputation.\nReputation icon, star rating or badge symbol, standing indicator, silver metallic design\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\icon_reputation.png"
+    },
+    {
+      "id": "icon_distance",
+      "prompt": "UI Asset: icon distance.\nDistance measurement icon, ruler or range finder symbol, measurement tool, white clean design\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\icon_distance.png"
+    },
+    {
+      "id": "icon_time",
+      "prompt": "UI Asset: icon time.\nTime remaining icon, clock or countdown symbol, timer indicator, cyan accent\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\icon_time.png"
+    },
+    {
+      "id": "icon_quantity",
+      "prompt": "UI Asset: icon quantity.\nQuantity counter icon, stacked items or count symbol, amount indicator, white clean design\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\icon_quantity.png"
+    },
+    {
+      "id": "icon_locked",
+      "prompt": "UI Asset: icon locked.\nLocked/gated content icon, padlock symbol, access restricted indicator, red lock\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\icon_locked.png"
+    },
+    {
+      "id": "icon_unlocked",
+      "prompt": "UI Asset: icon unlocked.\nUnlocked/available content icon, open lock symbol, access granted indicator, green unlock\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\icon_unlocked.png"
+    },
+    {
+      "id": "system_engine",
+      "prompt": "UI Asset: system engine.\nEngine system icon, thruster or propulsion symbol, power core, blue glow\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\system_engine.png"
+    },
+    {
+      "id": "system_cargo",
+      "prompt": "UI Asset: system cargo.\nCargo bay system icon, storage hold or container bay, capacity indicator, amber tone\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\system_cargo.png"
+    },
+    {
+      "id": "system_mining",
+      "prompt": "UI Asset: system mining.\nMining rig system icon, industrial drill or laser cutter, extraction tool, yellow accent\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\system_mining.png"
+    },
+    {
+      "id": "system_navigation",
+      "prompt": "UI Asset: system navigation.\nNavigation array system icon, radar dish or sensor array, scanning equipment, cyan pulse\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\system_navigation.png"
+    },
+    {
+      "id": "system_weapons",
+      "prompt": "UI Asset: system weapons.\nWeapon system icon, turret or laser cannon, combat armament, red targeting\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\system_weapons.png"
+    },
+    {
+      "id": "tag_standard",
+      "prompt": "UI Asset: tag standard.\nStandard contract tag, basic delivery symbol, normal priority, blue badge\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tag_standard.png"
+    },
+    {
+      "id": "tag_bulk",
+      "prompt": "UI Asset: tag bulk.\nBulk cargo tag, large quantity symbol, high volume indicator, purple badge\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tag_bulk.png"
+    },
+    {
+      "id": "tag_rush",
+      "prompt": "UI Asset: tag rush.\nRush delivery tag, urgent priority symbol, time sensitive, red fast forward badge\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tag_rush.png"
+    },
+    {
+      "id": "tag_fabrication",
+      "prompt": "UI Asset: tag fabrication.\nFabrication contract tag, manufacturing required symbol, production badge, orange gear icon\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tag_fabrication.png"
+    },
+    {
+      "id": "tag_emergency",
+      "prompt": "UI Asset: tag emergency.\nEmergency contract tag, critical priority symbol, urgent need, red alert badge\nClean UI icon design for game interface, centered on transparent background. Flat or slightly 3D design, minimal shadows, professional interface quality. High contrast, clear silhouette, readable at small sizes (16-32px). Sci-fi aesthetic with technological details, glowing accents where appropriate. Consistent style across set, modern game UI design. Icon keyword: SPACE-TRADER-UI-ICONS-01. Output as PNG with transparent background.",
+      "file": "D:\\Documents\\Code\\Trader\\public\\icons\\ui\\tag_emergency.png"
+    }
+  ]
+}

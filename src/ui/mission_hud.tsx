@@ -3,6 +3,7 @@
 import { useGameStore } from '../state';
 import { formatTimeRemaining, getMissionTimeRemaining } from '../state/helpers/mission_helpers';
 import { useState, useEffect } from 'react';
+import { UIIcon } from './components/ui_icon';
 
 export function MissionHud() {
   const missions = useGameStore(s => s.missions);
@@ -56,8 +57,12 @@ export function MissionHud() {
         marginBottom: 8,
         textTransform: 'uppercase',
         letterSpacing: '0.5px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
       }}>
-        📋 {primaryMission.title}
+        <UIIcon name="tab_missions" size={18} />
+        {primaryMission.title}
       </div>
       
       {/* Time Remaining */}

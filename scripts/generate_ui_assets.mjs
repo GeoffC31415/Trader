@@ -5,9 +5,9 @@ import OpenAI from 'openai';
 import vm from 'node:vm';
 
 const DEFAULT_SOURCE = path.resolve(process.cwd(), 'src/data/ui_asset_prompts.ts');
-const DEFAULT_OUT = path.resolve(process.cwd(), 'public/icons/ui');
+const DEFAULT_OUT = path.resolve(process.cwd(), 'public/icons/ui/masters');
 const DEFAULT_MODEL = 'gpt-image-1';
-const DEFAULT_SIZE = '512x512';
+const DEFAULT_SIZE = '1024x1024';
 
 // UI asset style template - clean icons optimized for interface use
 const STYLE_PROMPT = [
@@ -28,6 +28,7 @@ function parseArgs(argv) {
     else if (a === '--out') args.out = argv[++i];
     else if (a === '--model') args.model = argv[++i];
     else if (a === '--size') args.size = argv[++i];
+    else if (a === '--ids') args.ids = argv[++i];
     else if (a === '--dry') args.dry = true;
   }
   return args;
@@ -88,12 +89,19 @@ async function writeImagePng(outDir, id, b64) {
 
 async function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-async function generateAll({ source, out, model, size, dry }) {
+async function generateAll({ source, out, model, size, dry, ids }) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY env var is required');
   const openai = new OpenAI({ apiKey });
-  const prompts = await readPrompts(source);
+  let prompts = await readPrompts(source);
   await ensureDir(out);
+
+  // Filter by IDs if specified
+  if (ids) {
+    const idList = ids.split(',').map(id => id.trim());
+    prompts = prompts.filter(p => idList.includes(p.id));
+    console.log(`\n🎯 Filtering to ${prompts.length} specified IDs: ${idList.join(', ')}`);
+  }
 
   console.log(`\n🎨 Generating ${prompts.length} UI assets...\n`);
 
@@ -151,6 +159,7 @@ async function generateAll({ source, out, model, size, dry }) {
       model: args.model || DEFAULT_MODEL,
       size: args.size || DEFAULT_SIZE,
       dry: !!args.dry,
+      ids: args.ids,
     });
   } catch (err) {
     console.error('Error:', err?.message || err);

@@ -3,7 +3,8 @@ import path from 'path';
 import process from 'process';
 import sharp from 'sharp';
 
-const DEFAULT_INPUT = path.resolve(process.cwd(), 'public/icons/commodities');
+const DEFAULT_INPUT = path.resolve(process.cwd(), 'public/icons/commodities/masters');
+const DEFAULT_OUTPUT = path.resolve(process.cwd(), 'public/icons/commodities');
 const DEFAULT_SIZE = 128;
 
 function parseArgs(argv) {
@@ -14,6 +15,7 @@ function parseArgs(argv) {
     else if (a === '--output' || a === '-o') args.output = argv[++i];
     else if (a === '--size' || a === '-s') args.size = parseInt(argv[++i], 10);
     else if (a === '--dry') args.dry = true;
+    else if (a === '--force' || a === '-f') args.force = true;
   }
   return args;
 }
@@ -23,10 +25,10 @@ async function getAllPngFiles(dir) {
   const pngFiles = entries
     .filter(e => e.isFile() && e.name.toLowerCase().endsWith('.png'))
     .map(e => path.join(dir, e.name));
-  return pngFiles;
+  return pngFiles;  
 }
 
-async function resizeImage(inputPath, outputPath, size, dry = false) {
+async function resizeImage(inputPath, outputPath, size, dry = false, force = false) {
   const beforeStats = await fs.stat(inputPath);
   const beforeSize = (beforeStats.size / 1024 / 1024).toFixed(2);
 
@@ -35,9 +37,9 @@ async function resizeImage(inputPath, outputPath, size, dry = false) {
   const currentWidth = metadata.width;
   const currentHeight = metadata.height;
 
-  // Skip if already the target size
-  if (currentWidth === size && currentHeight === size) {
-    console.log(`  ⊘ ${path.basename(inputPath)}: Already ${size}×${size} (skipped)`);
+  // Skip if already the target size (unless force flag is set)
+  if (!force && currentWidth === size && currentHeight === size) {
+    console.log(`  ⊘ ${path.basename(inputPath)}: Already ${size}×${size} (skipped, use --force to overwrite)`);
     return null; // Don't count in totals
   }
 
@@ -65,15 +67,20 @@ async function resizeImage(inputPath, outputPath, size, dry = false) {
   return { before: beforeStats.size, after: afterStats.size };
 }
 
-async function resizeAll({ input, output, size, dry }) {
+async function resizeAll({ input, output, size, dry, force }) {
   const inputDir = input || DEFAULT_INPUT;
-  const outputDir = output || inputDir; // default: overwrite originals
+  const outputDir = output || DEFAULT_OUTPUT; // default: separate optimized directory
   const targetSize = size || DEFAULT_SIZE;
+  
+  // Auto-enable force when input/output are different (masters → game-ready workflow)
+  const autoForce = inputDir !== outputDir;
+  const shouldForce = force || autoForce;
 
-  console.log(`\nResizing icons in: ${inputDir}`);
-  console.log(`Target size: ${targetSize}x${targetSize}`);
-  console.log(`Output: ${outputDir === inputDir ? 'overwrite originals' : outputDir}`);
-  if (dry) console.log('DRY RUN - no files will be modified\n');
+  console.log(`\n📸 Master Icons: ${inputDir}`);
+  console.log(`🎮 Game Icons: ${outputDir}`);
+  console.log(`📐 Target size: ${targetSize}×${targetSize}`);
+  if (shouldForce) console.log('🔄 Mode: OVERWRITE (will replace existing files)');
+  if (dry) console.log('🔍 DRY RUN - no files will be modified\n');
   else console.log('');
 
   const pngFiles = await getAllPngFiles(inputDir);
@@ -104,7 +111,7 @@ async function resizeAll({ input, output, size, dry }) {
     try {
       // Use temp file to avoid corruption if overwriting
       const tempPath = outputPath + '.tmp';
-      const result = await resizeImage(inputPath, dry ? outputPath : tempPath, targetSize, dry);
+      const result = await resizeImage(inputPath, dry ? outputPath : tempPath, targetSize, dry, shouldForce);
 
       if (result === null) {
         // Already correct size, skipped
@@ -156,6 +163,7 @@ async function resizeAll({ input, output, size, dry }) {
       output: args.output,
       size: args.size,
       dry: !!args.dry,
+      force: !!args.force,
     });
   } catch (err) {
     console.error('Error:', err?.message || err);

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, Fragment } from 'react';
 import { usePoll } from '../shared/hooks/use_poll';
 import { useGameStore } from '../state';
 import { commodityById } from '../state/world';
+import { UIIcon } from './components/ui_icon';
 
 const primaryColor = '#3b82f6';
 const secondaryColor = '#60a5fa';
@@ -168,10 +169,12 @@ export function JournalPanel() {
         {/* Tab Buttons */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <button onClick={() => setTab('ship')} className={`journal-button ${tab === 'ship' ? 'active' : ''}`}>
-            🚀 Ship Status
+            <UIIcon name="tab_ship" size={16} style={{ marginRight: 6 }} />
+            Ship Status
           </button>
           <button onClick={() => setTab('trades')} className={`journal-button ${tab === 'trades' ? 'active' : ''}`}>
-            📊 Trading Log
+            <UIIcon name="tab_journal" size={16} style={{ marginRight: 6 }} />
+            Trading Log
           </button>
           <button
             onClick={() => setTab('routes')}
@@ -179,7 +182,8 @@ export function JournalPanel() {
             title={!hasIntel ? 'Requires Mercantile Data Nexus upgrade' : undefined}
             className={`journal-button ${tab === 'routes' ? 'active' : ''}`}
           >
-            🗺️ Routes
+            <UIIcon name="tab_routes" size={16} style={{ marginRight: 6 }} />
+            Routes
           </button>
         </div>
 
