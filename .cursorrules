@@ -300,3 +300,5 @@ setEngineTarget(1.0); // Set engine to full power
 - Zustand docs: https://docs.pmnd.rs/zustand/
 - Project README: Comprehensive architecture and extension guide
 
+## Documentation
+- Place all summary markdown files for large or long tasks into the `docs` folder.
