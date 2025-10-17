@@ -18,6 +18,7 @@ type UIIconProps = {
  */
 export function UIIcon({ name, size = 20, className, style, alt }: UIIconProps) {
   const iconPath = `/icons/ui/${name}.png`;
+  const masterIconPath = `/icons/ui/masters/${name}.png`;
   
   return (
     <img
@@ -33,8 +34,13 @@ export function UIIcon({ name, size = 20, className, style, alt }: UIIconProps) 
         ...style,
       }}
       onError={(e) => {
-        // Hide if icon doesn't exist yet
-        e.currentTarget.style.display = 'none';
+        // Try masters folder if main folder fails
+        if (e.currentTarget.src !== window.location.origin + masterIconPath) {
+          e.currentTarget.src = masterIconPath;
+        } else {
+          // Hide if icon doesn't exist in either location
+          e.currentTarget.style.display = 'none';
+        }
       }}
     />
   );
@@ -65,6 +71,18 @@ export function CornerDecorations({ color = '#3b82f6', opacity = 0.5, size = 32 
     filter: `drop-shadow(0 0 4px ${color})`,
   };
 
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, name: string) => {
+    const img = e.currentTarget;
+    const masterPath = `/icons/ui/masters/${name}.png`;
+    // Try masters folder if main folder fails
+    if (img.src !== window.location.origin + masterPath) {
+      img.src = masterPath;
+    } else {
+      // Hide if icon doesn't exist in either location
+      img.style.display = 'none';
+    }
+  };
+
   return (
     <>
       {/* Top Left */}
@@ -72,7 +90,7 @@ export function CornerDecorations({ color = '#3b82f6', opacity = 0.5, size = 32 
         src="/icons/ui/corner_tl.png"
         alt=""
         style={{ ...cornerStyle, top: 0, left: 0 }}
-        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        onError={(e) => handleImageError(e, 'corner_tl')}
       />
       
       {/* Top Right */}
@@ -80,7 +98,7 @@ export function CornerDecorations({ color = '#3b82f6', opacity = 0.5, size = 32 
         src="/icons/ui/corner_tr.png"
         alt=""
         style={{ ...cornerStyle, top: 0, right: 0 }}
-        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        onError={(e) => handleImageError(e, 'corner_tr')}
       />
       
       {/* Bottom Left */}
@@ -88,7 +106,7 @@ export function CornerDecorations({ color = '#3b82f6', opacity = 0.5, size = 32 
         src="/icons/ui/corner_bl.png"
         alt=""
         style={{ ...cornerStyle, bottom: 0, left: 0 }}
-        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        onError={(e) => handleImageError(e, 'corner_bl')}
       />
       
       {/* Bottom Right */}
@@ -96,7 +114,7 @@ export function CornerDecorations({ color = '#3b82f6', opacity = 0.5, size = 32 
         src="/icons/ui/corner_br.png"
         alt=""
         style={{ ...cornerStyle, bottom: 0, right: 0 }}
-        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+        onError={(e) => handleImageError(e, 'corner_br')}
       />
     </>
   );

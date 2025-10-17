@@ -16,7 +16,7 @@ export const planets: Planet[] = [
 ];
 
 const baseStations: Station[] = [
-  { id: 'sol-city', name: 'Sol City [Consumes: fuel/meds/lux]', type: 'city', position: sp([52, 0, 6]), inventory: {} as StationInventory, persona: {
+  { id: 'sol-city', name: 'Sol City', type: 'city', position: sp([52, 0, 6]), inventory: {} as StationInventory, persona: {
     id: 'sol-city-rep',
     name: 'Mira Vale',
     title: 'Civic Trade Liaison',
@@ -39,7 +39,7 @@ const baseStations: Station[] = [
       'We maintain defensive systems for a reason. Pirates understand force.',
     ],
   } },
-  { id: 'sol-refinery', name: 'Helios Refinery [Cheap: fuel/hydrogen]', type: 'refinery', position: sp([48, 0, -10]), inventory: {} as StationInventory, persona: {
+  { id: 'sol-refinery', name: 'Helios Refinery', type: 'refinery', position: sp([48, 0, -10]), inventory: {} as StationInventory, persona: {
     id: 'helios-rep',
     name: 'Rex Calder',
     title: 'Refinery Quartermaster',
@@ -62,7 +62,7 @@ const baseStations: Station[] = [
       'Union\'s organizing. Corporate types are nervous. Good.',
     ],
   } },
-  { id: 'aurum-fab', name: 'Aurum Fabricator [Cheap: electronics/chips/alloys]', type: 'fabricator', position: sp([40, 0, -14]), inventory: {} as StationInventory, persona: {
+  { id: 'aurum-fab', name: 'Aurum Fabricator', type: 'fabricator', position: sp([40, 0, -14]), inventory: {} as StationInventory, persona: {
     id: 'aurum-fab-rep',
     name: 'Dr. Elin Kade',
     title: 'Fabrication Overseer',
@@ -85,7 +85,7 @@ const baseStations: Station[] = [
       'Automation isn\'t replacing workers, it\'s multiplying their output. Eventually.',
     ],
   } },
-  { id: 'greenfields', name: 'Greenfields Farm [Food production: grain/meat/sugar]', type: 'farm', position: sp([44, 0, -4]), inventory: {} as StationInventory, persona: {
+  { id: 'greenfields', name: 'Greenfields Farm', type: 'farm', position: sp([44, 0, -4]), inventory: {} as StationInventory, persona: {
     id: 'greenfields-rep',
     name: 'Sana Whit',
     title: 'Agrarian Coop Steward',
@@ -108,7 +108,7 @@ const baseStations: Station[] = [
       'Watch for Sol City inspection ships. They\'re getting aggressive.',
     ],
   } },
-  { id: 'ceres-pp', name: 'Ceres Power Plant [Cheap: batteries/fuel]', type: 'power_plant', position: sp([-56, 0, 86]), inventory: {} as StationInventory, persona: {
+  { id: 'ceres-pp', name: 'Ceres Power Plant', type: 'power_plant', position: sp([-56, 0, 86]), inventory: {} as StationInventory, persona: {
     id: 'ceres-pp-rep',
     name: 'Ivo Renn',
     title: 'Grid Balancer',
@@ -131,7 +131,7 @@ const baseStations: Station[] = [
       'Watch fabrication contracts. We need a reliable supplier for critical components.',
     ],
   } },
-  { id: 'freeport', name: 'Freeport Station [Mixed market]', type: 'trading_post', position: sp([-40, 0, 70]), inventory: {} as StationInventory, persona: {
+  { id: 'freeport', name: 'Freeport Station', type: 'trading_post', position: sp([-40, 0, 70]), inventory: {} as StationInventory, persona: {
     id: 'freeport-rep',
     name: 'Kalla Rook',
     title: 'Free Merchant Convener',
@@ -154,7 +154,7 @@ const baseStations: Station[] = [
       'Peace talks are risky. But war is expensive. Someone has to try.',
     ],
   } },
-  { id: 'drydock', name: 'Drydock Shipyard [Upgrades available]', type: 'shipyard', position: sp([-30, 0, 90]), inventory: {} as StationInventory, persona: {
+  { id: 'drydock', name: 'Drydock Shipyard', type: 'shipyard', position: sp([-30, 0, 90]), inventory: {} as StationInventory, persona: {
     id: 'drydock-rep',
     name: 'Chief Harlan',
     title: 'Dockmaster',
@@ -177,7 +177,7 @@ const baseStations: Station[] = [
       'Strike talk\'s serious this time. System might get rocky. Stock up.',
     ],
   } },
-  { id: 'hidden-cove', name: 'Hidden Cove [Pirate: All fabrication]', type: 'pirate', position: sp([0, 40, 160]), inventory: {} as StationInventory, persona: {
+  { id: 'hidden-cove', name: 'Hidden Cove', type: 'pirate', position: sp([0, 40, 160]), inventory: {} as StationInventory, persona: {
     id: 'hidden-cove-rep',
     name: 'Vex Marrow',
     title: 'Chief Quartermaster',
