@@ -259,7 +259,8 @@ export function buyCommodity(
   avgCostByCommodity: Record<string, number>,
   commodityId: string,
   quantity: number,
-  activeContract: any
+  activeContract: any,
+  priceMultiplier?: number
 ): BuyResult | null {
   if (!ship.dockedStationId || quantity <= 0) return null;
   if (!ship.hasNavigationArray && (gatedCommodities as readonly string[]).includes(commodityId))
@@ -272,7 +273,8 @@ export function buyCommodity(
   if (!item || item.canSell === false) return null;
 
   const rep = station.reputation || 0;
-  const unitBuyPrice = applyReputationToBuyPrice(item.buy, rep);
+  const unitBuyBase = applyReputationToBuyPrice(item.buy, rep);
+  const unitBuyPrice = Math.max(1, Math.round(unitBuyBase * (priceMultiplier ?? 1)));
   const totalCost = unitBuyPrice * quantity;
 
   const used = Object.values(ship.cargo).reduce((a, b) => a + b, 0);

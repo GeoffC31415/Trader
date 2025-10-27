@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '../state';
-import { getMissionCompletionNarrative } from '../domain/constants/mission_completion_narratives';
+import { renderMissionCompletionNarrative } from '../domain/constants/mission_completion_narratives';
 
 export function MissionCelebration() {
   const missionCelebrationData = useGameStore(s => s.missionCelebrationData);
@@ -59,7 +59,10 @@ export function MissionCelebration() {
 
   if (!visible || !missionCelebrationData) return null;
 
-  const narrative = getMissionCompletionNarrative(missionCelebrationData.missionId);
+  const narrative = renderMissionCompletionNarrative(
+    missionCelebrationData.missionId,
+    missionCelebrationData.narrativeContext || {}
+  );
   
   if (!narrative) {
     // Fallback for missions without custom narratives
@@ -185,6 +188,32 @@ export function MissionCelebration() {
         >
           Mission Complete
         </div>
+
+        {/* Context chips */}
+        {(missionCelebrationData.narrativeContext || missionCelebrationData.allyAssistUnlocked) && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12, justifyContent: 'center' }}>
+            {missionCelebrationData.narrativeContext?.routeStart && missionCelebrationData.narrativeContext?.routeEnd && (
+              <span style={{ padding: '6px 10px', borderRadius: 999, background: 'rgba(59,130,246,0.15)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.35)' }}>
+                Route: {missionCelebrationData.narrativeContext.routeStart} → {missionCelebrationData.narrativeContext.routeEnd}
+              </span>
+            )}
+            {missionCelebrationData.narrativeContext?.stealthUsed && (
+              <span style={{ padding: '6px 10px', borderRadius: 999, background: 'rgba(34,197,94,0.12)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.35)' }}>
+                Method: Stealth
+              </span>
+            )}
+            {typeof missionCelebrationData.narrativeContext?.enemiesDestroyed === 'number' && missionCelebrationData.narrativeContext.enemiesDestroyed > 0 && (
+              <span style={{ padding: '6px 10px', borderRadius: 999, background: 'rgba(239,68,68,0.12)', color: '#f87171', border: '1px solid rgba(239,68,68,0.35)' }}>
+                Hostiles neutralized: {missionCelebrationData.narrativeContext.enemiesDestroyed}
+              </span>
+            )}
+            {missionCelebrationData.allyAssistUnlocked && (
+              <span style={{ padding: '6px 10px', borderRadius: 999, background: 'rgba(168,85,247,0.12)', color: '#a78bfa', border: '1px solid rgba(168,85,247,0.35)' }}>
+                Ally assist unlocked: {missionCelebrationData.allyAssistUnlocked.by} • {missionCelebrationData.allyAssistUnlocked.type}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Epilogue text - main narrative */}
         <div

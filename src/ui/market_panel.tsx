@@ -48,6 +48,9 @@ export function MarketPanel() {
   const stations = useGameStore(s => s.stations);
   const buy = useGameStore(s => s.buy);
   const sell = useGameStore(s => s.sell);
+  const allyAssistTokens = useGameStore(s => s.allyAssistTokens || []);
+  const consumeAssist = useGameStore(s => s.consumeAssist);
+  const setPending = useGameStore.setState;
   const undock = useGameStore(s => s.undock);
   const process = useGameStore(s => s.process);
   const upgrade = useGameStore(s => s.upgrade);
@@ -83,6 +86,10 @@ export function MarketPanel() {
 
   const station = useMemo(() => stations.find(s => s.id === ship.dockedStationId), [stations, ship.dockedStationId]);
   const persona = station?.persona;
+  const stationAssist = useMemo(() => {
+    if (!station) return undefined;
+    return allyAssistTokens.find(t => !t.consumed && t.by === station.id);
+  }, [allyAssistTokens, station?.id]);
 
   const items = station ? Object.entries(station.inventory) : [];
   const recipes = station ? (processRecipes[station.type] || []) : [];
@@ -389,6 +396,37 @@ export function MarketPanel() {
                 </div>
               </div>
             </div>
+            {stationAssist && (
+              <div style={{
+                padding: '8px 12px',
+                background: `${colors.secondary}20`,
+                border: `1px solid ${colors.secondary}`,
+                borderRadius: 6,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}>
+                <UIIcon name="icon_star" size={18} style={{ filter: `drop-shadow(0 0 4px ${colors.glow})` }} />
+                <div style={{ fontFamily: 'monospace' }}>
+                  <div style={{ fontSize: 10, opacity: 0.7 }}>ALLY ASSIST</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: colors.secondary }}>
+                    {stationAssist.type.replace('_', ' ')} • {stationAssist.description}
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    // Manual-use: set pending effect for next purchase at this station
+                    const multiplier = stationAssist.type === 'discount' || stationAssist.type === 'refuel' ? 0.9 : 1.0;
+                    setPending({ pendingAssist: { by: station.id, type: stationAssist.type as any, multiplier } });
+                    consumeAssist(stationAssist.type, station.id);
+                  }}
+                  className="sci-fi-button"
+                  style={{ padding: '6px 10px', fontSize: 11 }}
+                >
+                  USE
+                </button>
+              </div>
+            )}
             <button
               onClick={undock}
               className="sci-fi-button"

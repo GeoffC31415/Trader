@@ -148,6 +148,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   missions: [],
   stealthStates: new Map(),
   escortStates: new Map(),
+  relationships: {},
+  allyAssistTokens: [],
   // Generate per-station mission offers (5 each) with rep gates
   // Missions are just contracts with metadata and optional emergency sell multipliers
   getSuggestedRoutes: (opts) => {
@@ -1738,6 +1740,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ship: { ...state.ship, credits: state.ship.credits - cost, weapon },
     } as Partial<GameState> as GameState;
   }),
+  consumeAssist: (type, by) => false,
   
   // =========================================================================
   // Mission Arc Actions

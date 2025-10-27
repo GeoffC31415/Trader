@@ -100,3 +100,23 @@ export type MissionTemplate = {
   prerequisiteMissions?: string[]; // mission IDs that must be completed first
 };
 
+// Narrative rendering context captured at completion time
+export type NarrativeContext = {
+  playerName?: string;
+  shipKind?: string;
+  deliveredUnits?: number;
+  commodityName?: string;
+  timeElapsedSec?: number;
+  enemiesDestroyed?: number;
+  stealthUsed?: boolean;
+  routeStart?: string;
+  routeEnd?: string;
+  stationsVisited?: string[];
+  casualties?: number;
+  sidedWith?: 'greenfields' | 'sol_city' | 'aurum' | 'drydock' | 'pirates' | 'law' | 'peace';
+  priceDeltaApplied?: number;
+  // Phase 3: trust snapshot for narrative variants
+  trustTiers?: Record<string, number>; // stationId -> tier (-2..2)
+  trustScores?: Record<string, number>; // optional raw scores
+};
+

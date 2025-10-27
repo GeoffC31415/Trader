@@ -49,7 +49,7 @@ export function App() {
   return (
     <StrictMode>
       <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-        <div className="ui-overlay">
+        <div className={`ui-overlay${hasNav ? ' has-minimap' : ''}`}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <button onClick={() => setActive('market')} style={{ fontWeight: active==='market'?700:400, display: 'flex', alignItems: 'center', gap: 6 }}>
               <UIIcon name="tab_market" size={14} />

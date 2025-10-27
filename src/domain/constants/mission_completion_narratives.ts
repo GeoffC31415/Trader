@@ -1,5 +1,7 @@
 // Mission completion narratives - shown after mission success
 
+import type { NarrativeContext } from '../types/mission_types';
+
 export type MissionCompletionNarrative = {
   missionId: string;
   title: string;
@@ -11,7 +13,22 @@ export type MissionCompletionNarrative = {
   };
 };
 
-export const MISSION_COMPLETION_NARRATIVES: Record<string, MissionCompletionNarrative> = {
+export type NarrativeVariant = {
+  when: (ctx: NarrativeContext) => boolean;
+  epilogue?: string;
+  outcomes?: string[];
+  quote?: {
+    text: string;
+    speaker: string;
+  };
+};
+
+export type MissionCompletionNarrativeEnhanced = MissionCompletionNarrative & {
+  template?: boolean; // epilogue/outcomes may contain {tokens}
+  variants?: NarrativeVariant[];
+};
+
+export const MISSION_COMPLETION_NARRATIVES: Record<string, MissionCompletionNarrativeEnhanced> = {
   
   // ============================================================================
   // Arc 1: Greenfields Independence
@@ -20,17 +37,28 @@ export const MISSION_COMPLETION_NARRATIVES: Record<string, MissionCompletionNarr
   greenfields_stage_1: {
     missionId: 'greenfields_stage_1',
     title: 'Seeds of Rebellion',
-    epilogue: 'The luxury goods arrived safely at Greenfields, slipping past Sol City\'s detection grid like smoke through fingers. Sana Whit stands at the loading dock, watching her people unload crates that represent more than contraband—they represent possibility. "This is how it starts," she tells you, her voice quiet but firm. "Small acts of defiance that grow into movements." Through the viewport, you can see Sol City\'s towers glinting in the distance, unaware that the agricultural revolution has already begun.',
+    template: true,
+    epilogue: 'You slip {deliveredUnits} units of {commodityName} into Greenfields on a quiet vector from {routeStart} to {routeEnd}, your {shipKind} riding the drift while Sol City scanners sweep past empty space. Sana Whit meets you at the bay, not with ceremony but with purpose. “Movements start small,” she says, watching crates move hand to hand. Because you got goods here without clearance, farmers have leverage for the first time in years. Prices won’t change overnight. Power will.',
     outcomes: [
-      'Greenfields receives critical supplies outside Sol City oversight',
-      'Agricultural independence movement gains momentum',
-      'Sol City\'s regulatory grip begins to weaken',
-      'Future smuggling routes established',
+      'You established a covert lane: {routeStart} → {routeEnd}',
+      'Greenfields gains independent supply for {commodityName}',
+      'Sol City oversight weakened along this route',
+      'Smuggling corridor seeded via {stationsVisited}',
     ],
     quote: {
-      text: 'They control the regulations. But they can\'t control the harvest.',
+      text: 'They write the rules. You just proved we can work without them.',
       speaker: 'Sana Whit',
     },
+    variants: [
+      {
+        when: (ctx) => !!ctx.stealthUsed,
+        epilogue: 'Your transponder spoof holds the whole route; no scans pinged. Sana Whit clocks the quiet discipline. Because you stayed invisible, Greenfields can act in daylight.',
+      },
+      {
+        when: (ctx) => !!ctx.trustTiers && (ctx.trustTiers['greenfields'] ?? 0) >= 1,
+        quote: { text: 'Because you kept it clean, we can seed more lanes.', speaker: 'Sana Whit' },
+      },
+    ],
   },
   
   greenfields_stage_3: {
@@ -69,18 +97,29 @@ export const MISSION_COMPLETION_NARRATIVES: Record<string, MissionCompletionNarr
   sol_city_stage_3: {
     missionId: 'sol_city_stage_3',
     title: 'By the Book',
-    epilogue: 'Inspector Chavez completes her audit at Greenfields under your armed protection. Her findings are damning—fourteen regulatory violations, each documented with bureaucratic precision. The pirates never stood a chance against your weapons; the inspection report is the real threat. Back at Sol City, Mira Vale reviews the data with satisfaction. "This isn\'t about punishment," she explains, though her actions suggest otherwise. "It\'s about accountability." Greenfields\' fabrication access is temporarily revoked pending compliance. Regulations have teeth. You helped them bite.',
+    template: true,
+    epilogue: 'You kept the audit clean—no interruptions, no accidents. Fourteen violations captured while you deterred interference the honest way: by being visibly ready for a fight you never had to start. Back at Sol City, Mira doesn’t smile; she closes a file. Because you protected the process, Greenfields faces a lockdown and a path to compliance—if they can afford it.',
     outcomes: [
-      'Greenfields subjected to regulatory lockdown',
-      'Fabrication access suspended temporarily',
-      'Sol City authority reinforced through enforcement',
-      'Agricultural violations officially documented',
-      'Inspector Chavez completes her twenty-fourth year of service',
+      'Inspection completed under your protection; 14 violations logged',
+      'Fabrication access suspended pending compliance',
+      'Sol City enforcement strengthened by your action',
+      'Price scrutiny increases across agricultural trades',
     ],
     quote: {
-      text: 'Law applies equally. Even when it\'s unpopular.',
+      text: 'Law is only fair when it’s enforced. You made that possible.',
       speaker: 'Inspector Chavez',
     },
+    variants: [
+      {
+        when: (ctx) => (ctx.enemiesDestroyed ?? 0) === 0,
+        epilogue: 'No shots fired. The message landed anyway. Mira Vale notices restraint.',
+        quote: { text: 'You enforced the law without spectacle. I can work with that.', speaker: 'Mira Vale' },
+      },
+      {
+        when: (ctx) => !!ctx.trustTiers && (ctx.trustTiers['sol-city'] ?? 0) >= 1,
+        quote: { text: 'You’ve earned expedited clearance. Don’t waste it.', speaker: 'Mira Vale' },
+      },
+    ],
   },
   
   sol_city_stage_4: {
@@ -222,18 +261,28 @@ export const MISSION_COMPLETION_NARRATIVES: Record<string, MissionCompletionNarr
   fabrication_wars_stage_4_drydock: {
     missionId: 'fabrication_wars_stage_4_drydock',
     title: 'Craftsmanship Vindicated',
-    epilogue: 'Your ship docks at Ceres first. Fifty units of fabricated goods, each one inspected by hand, each one bearing the mark of human excellence. Ivo Renn examines a sample component, turning it in the light. "Quality differential is measurable," he admits. Then he signs the contract. Drydock wins. Five years of guaranteed business. Three hundred workers erupt in celebration on the floor below. Chief Harlan just nods once, exhausted but vindicated. Human craftsmanship can compete. Workers can win. Sometimes. When they\'re willing to pay the price. And you helped them pay it.',
+    template: true,
+    epilogue: 'You dock at Ceres first with {deliveredUnits} units, each inspected by hand, each bearing the stamp of real work. Ivo Renn turns a component in the light. “Quality differential is measurable,” he says, and signs. Because you delivered on time and on standard, Drydock wins five years—and three hundred families keep their futures.',
     outcomes: [
-      'Drydock wins exclusive 5-year supply contract with Ceres',
-      'Artisan craftsmanship model validated',
+      'Drydock wins exclusive 5-year contract with Ceres',
       'All fabrication at Drydock discounted permanently (-10%)',
-      'Worker-owned production proves competitive',
-      'Three hundred families secure stable future',
+      'Artisan craftsmanship proves competitive at scale',
+      'Three hundred worker families secure stability',
     ],
     quote: {
-      text: 'We didn\'t just win a contract. We proved we matter.',
+      text: 'You showed up for workers when it counted. We’ll show up for you.',
       speaker: 'Chief Harlan',
     },
+    variants: [
+      {
+        when: (ctx) => (ctx.timeElapsedSec ?? 9999) < 600,
+        epilogue: 'Fast enough to move prices before anyone adjusted. Harlan clocks the speed—and the care.',
+      },
+      {
+        when: (ctx) => !!ctx.trustTiers && (ctx.trustTiers['drydock'] ?? 0) >= 1,
+        quote: { text: 'You’ve got a bench here anytime you need it.', speaker: 'Chief Harlan' },
+      },
+    ],
   },
   
   // ============================================================================
@@ -310,16 +359,16 @@ export const MISSION_COMPLETION_NARRATIVES: Record<string, MissionCompletionNarr
   energy_monopoly_stage_4_ceres: {
     missionId: 'energy_monopoly_stage_4_ceres',
     title: 'Total Market Control',
-    epilogue: 'Twelve minutes. Five stations. Every unit of refined fuel in the system, now sitting in Ceres Power Plant\'s storage tanks. Ivo Renn studies real-time market feeds showing panic buying, price spikes, and desperate station managers trying to secure emergency reserves that don\'t exist. "Grid failures kill thousands," he says calmly. "Market volatility kills thousands. I prevent both." Ceres now controls 90% of the system\'s fuel supply. Stability, purchased with monopolistic control. Nine years without a power failure. No station can match that record. Is this oppression? Or just efficiency taken to its logical conclusion? Hospitals have guaranteed power. Traders face guaranteed prices. Freedom is reduced. Safety is increased. Choose your values.',
+    template: true,
+    epilogue: 'In twelve minutes, you moved the last reserves that mattered. Five stations report empty shelves; Ceres reports stability. Because you consolidated supply on schedule, Ivo Renn can set the price of light for the system. Hospitals will never flicker. Neither will the margins.',
     outcomes: [
-      'Ceres controls 90% of system fuel supply',
-      'Permanent monopoly established',
-      'Fuel discount available exclusively at Ceres (-15%)',
-      'Market volatility eliminated through control',
-      'Economic freedom sacrificed for grid stability',
+      'You delivered decisive shipments to Ceres',
+      'Ceres controls {priceDeltaApplied}% of refined fuel supply',
+      'Exclusive fuel discount at Ceres (-15%)',
+      'Market volatility suppressed; trade freedom reduced',
     ],
     quote: {
-      text: 'Nine years without failure. I\'ll carry the moral weight if it keeps the lights on.',
+      text: 'I’ll carry the weight. You carried the fuel.',
       speaker: 'Ivo Renn',
     },
   },
@@ -384,19 +433,24 @@ export const MISSION_COMPLETION_NARRATIVES: Record<string, MissionCompletionNarr
   pirate_accords_stage_3_peace: {
     missionId: 'pirate_accords_stage_3_peace',
     title: 'Against All Odds',
-    epilogue: 'Two waves of extremists repelled. Sol City hardliners who wanted Vex dead. Pirate zealots who wanted Mira dead. Both factions preferring war to the messy complexity of peace. You defended the conference from both sides—your weapons making no distinction between law enforcement and pirate ideology, just threats to negotiation. Inside the hall, Mira Vale and Vex Marrow signed an agreement neither one completely likes. That\'s how you know it might actually work. Freeport becomes official neutral ground. Pirate attacks decrease by treaty. Sol City agrees to reduce patrols. Nobody won. Nobody lost completely. That\'s called compromise. It feels unsatisfying. It\'s also the only path where most people survive.',
+    template: true,
+    epilogue: 'Twice they tried to end the talks—once in Sol colors, once in pirate paint. You made no distinction, only room for words. Inside, Mira and Vex sign a document neither loves. Because you kept the doors open, trade lanes might stay that way.',
     outcomes: [
-      'Peace agreement signed between Sol City and Hidden Cove',
-      'Pirate attacks decrease 50% system-wide',
+      'Both extremist assaults repelled ({enemiesDestroyed} ships neutralized)',
       'Freeport recognized as neutral ground',
-      'Both extremist attacks repelled',
-      'Reputation increased with all three factions',
-      'Trade routes safer for all participants',
+      'Pirate raids decrease; Sol patrols scaled back',
+      'Reputation rises with all parties for restraint',
     ],
     quote: {
-      text: 'Peace isn\'t pretty. But it beats the alternative. Usually.',
+      text: 'Peace is work. Today you did the heavy lifting.',
       speaker: 'Kalla Rook',
     },
+    variants: [
+      {
+        when: (ctx) => !!ctx.trustTiers && (ctx.trustTiers['freeport'] ?? 0) >= 1,
+        quote: { text: 'Use Freeport when you need air. We’ll hold the door.', speaker: 'Kalla Rook' },
+      },
+    ],
   },
   
   // ============================================================================
@@ -460,5 +514,67 @@ export const MISSION_COMPLETION_NARRATIVES: Record<string, MissionCompletionNarr
 // Helper function to get narrative by mission ID
 export function getMissionCompletionNarrative(missionId: string): MissionCompletionNarrative | undefined {
   return MISSION_COMPLETION_NARRATIVES[missionId];
+}
+
+function renderStringTemplate(tpl: string, ctx: NarrativeContext): string {
+  return tpl.replace(/\{(\w+)\}/g, (_, key) => {
+    const value = (ctx as any)[key];
+    if (value === undefined || value === null) return '';
+    if (Array.isArray(value)) return value.join(', ');
+    return String(value);
+  });
+}
+
+function mergeVariant(base: MissionCompletionNarrativeEnhanced, variant?: NarrativeVariant): MissionCompletionNarrativeEnhanced {
+  if (!variant) return base;
+  return {
+    ...base,
+    epilogue: variant.epilogue ?? base.epilogue,
+    outcomes: variant.outcomes ?? base.outcomes,
+    quote: variant.quote ?? base.quote,
+  };
+}
+
+export function renderMissionCompletionNarrative(
+  missionId: string,
+  ctx: NarrativeContext = {}
+): MissionCompletionNarrative | undefined {
+  const base = MISSION_COMPLETION_NARRATIVES[missionId];
+  if (!base) return undefined;
+
+  // Select first matching variant if any
+  const selected = base.variants?.find(v => {
+    try {
+      return v.when(ctx);
+    } catch {
+      return false;
+    }
+  });
+  const effective = mergeVariant(base, selected);
+
+  if (!effective.template) {
+    return {
+      missionId: effective.missionId,
+      title: effective.title,
+      epilogue: effective.epilogue,
+      outcomes: effective.outcomes,
+      quote: effective.quote,
+    };
+  }
+
+  // Interpolate tokens
+  const epilogue = renderStringTemplate(effective.epilogue, ctx);
+  const outcomes = effective.outcomes.map(o => renderStringTemplate(o, ctx));
+  const quote = effective.quote
+    ? { text: renderStringTemplate(effective.quote.text, ctx), speaker: effective.quote.speaker }
+    : undefined;
+
+  return {
+    missionId: effective.missionId,
+    title: effective.title,
+    epilogue,
+    outcomes,
+    quote,
+  };
 }
 

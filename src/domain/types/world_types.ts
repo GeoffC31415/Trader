@@ -1,7 +1,7 @@
 import type { Commodity, StationInventory } from '../types/economy_types';
 import type { StationType } from '../types/economy_types';
 import type { ShipWeapon } from './combat_types';
-import type { Mission, MissionArc } from './mission_types';
+import type { Mission, MissionArc, NarrativeContext } from './mission_types';
 
 export type StationPersona = {
   id: string;
@@ -179,6 +179,24 @@ export type Contract = {
   sellMultiplier?: number; // extra sell multiplier at destination for emergency missions
 };
 
+// Trust & Ally Assist system (Phase 1)
+export type TrustRecord = {
+  score: number; // -2..+2
+  tier: -2 | -1 | 0 | 1 | 2;
+  lastChangeAt?: number;
+  lastAssistGrantedAt?: number;
+};
+
+export type AllyAssistToken = {
+  id: string; // uid
+  by: string; // stationId key (e.g., 'greenfields')
+  type: 'escort' | 'discount' | 'waiver' | 'refuel' | 'repair' | 'fabrication_rush';
+  description: string;
+  createdAt: number;
+  expiresAt?: number;
+  consumed?: boolean;
+};
+
 export type GameState = {
   planets: Planet[];
   stations: Station[];
@@ -207,6 +225,21 @@ export type GameState = {
     missionId: string;
     credits: number;
     reputationChanges: Record<string, number>;
+    narrativeContext?: NarrativeContext;
+    allyAssistUnlocked?: {
+      by: string; // stationId or character id
+      type: 'escort' | 'discount' | 'waiver' | 'refuel' | 'repair' | 'fabrication_rush';
+      description: string;
+    };
+  };
+  // Relationships & ally assists
+  relationships?: Record<string, TrustRecord>; // key by stationId or character key
+  allyAssistTokens?: AllyAssistToken[];
+  pendingAssist?: {
+    by: string;
+    type: 'discount' | 'waiver' | 'refuel';
+    multiplier: number; // 1.0 for waiver
+    commodityId?: string;
   };
   // Mission arcs system
   missionArcs: MissionArc[];
@@ -294,6 +327,8 @@ export type GameState = {
   fireWeapon: (targetPos?: [number, number, number]) => void;
   upgradeWeapon: (upgradeType: 'damage' | 'fireRate' | 'range', cost: number) => void;
   purchaseWeapon: (weaponKind: 'laser' | 'plasma' | 'railgun' | 'missile', cost: number) => void;
+  // Ally assists
+  consumeAssist: (type: AllyAssistToken['type'], by?: string) => boolean;
 };
 
 

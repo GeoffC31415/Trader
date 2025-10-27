@@ -37,7 +37,7 @@ import { applyMissionRewards, advanceMissionArc, canAcceptMission, applyPermanen
 import { applyChoicePermanentEffects } from '../systems/missions/choice_system';
 import { gatedCommodities, getPriceBiasForStation } from '../systems/economy/pricing';
 import { findRecipeForStation } from '../systems/economy/recipes';
-import type { GameState, Ship, Station, Objective, Contract, NpcTrader } from '../domain/types/world_types';
+import type { GameState, Ship, Station, Objective, Contract, NpcTrader, AllyAssistToken } from '../domain/types/world_types';
 import type { ShipWeapon } from '../domain/types/combat_types';
 import type { Mission } from '../domain/types/mission_types';
 
@@ -67,6 +67,7 @@ import {
   acceptMissionAction,
   abandonMissionAction,
 } from './modules/missions';
+import { setTrust, hasUnconsumedToken, grantAssist, computeTrustDeltas, defaultAssistForStation, getTrustTiersSnapshot, tierForScore, canGrantToken, maybeProbabilityGrant } from './relationships';
 
 export const useGameStore = create<GameState>((set, get) => ({
   planets,
@@ -122,6 +123,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   missions: [],
   stealthStates: new Map(),
   escortStates: new Map(),
+  relationships: {},
+  allyAssistTokens: [],
 
   // Route suggestions (now delegated to economy module)
   getSuggestedRoutes: (opts) => {
@@ -137,6 +140,21 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       // 2. Economy - jitter prices
       let stations = jitterPrices(state.stations, dt);
+
+      // Phase 3: gentle trust decay toward 0 over time
+      if (state.relationships) {
+        const decayRate = 0.005 * dt; // very gentle
+        const relationships = { ...state.relationships };
+        for (const key of Object.keys(relationships)) {
+          const r = relationships[key];
+          if (!r) continue;
+          let score = r.score;
+          if (score > 0) score = Math.max(0, score - decayRate);
+          else if (score < 0) score = Math.min(0, score + decayRate);
+          relationships[key] = { ...r, score, tier: tierForScore(score) } as any;
+        }
+        (state as any).relationships = relationships;
+      }
 
       // 3. NPCs - update movement and trading
       const npcResult = updateNpcTraders(
@@ -380,6 +398,21 @@ export const useGameStore = create<GameState>((set, get) => ({
         c => c.status === 'accepted' && c.commodityId === commodityId
       );
 
+      // Phase 2 refined: use pendingAssist if set via USE button
+      let priceMultiplier: number | undefined = undefined;
+      const pending = (state as any).pendingAssist as GameState['pendingAssist'] | undefined;
+      const station = state.ship.dockedStationId;
+      if (pending && station && pending.by === station) {
+        // Scope: refuel only applies to refined_fuel at ceres-pp, discount applies at station, waiver is 1.0
+        if (pending.type === 'refuel' && commodityId === 'refined_fuel' && station === 'ceres-pp') {
+          priceMultiplier = pending.multiplier;
+        } else if (pending.type === 'discount') {
+          priceMultiplier = pending.multiplier;
+        } else if (pending.type === 'waiver') {
+          priceMultiplier = 1.0;
+        }
+      }
+
       const result = buyCommodity(
         state.ship,
         state.stations,
@@ -387,7 +420,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         state.avgCostByCommodity,
         commodityId,
         quantity,
-        activeContract
+        activeContract,
+        priceMultiplier
       );
 
       if (!result) return state;
@@ -399,6 +433,8 @@ export const useGameStore = create<GameState>((set, get) => ({
         npcTraders: result.npcTraders,
         avgCostByCommodity: result.avgCostByCommodity,
         tradeLog,
+        // Clear pendingAssist after use
+        pendingAssist: undefined,
       };
 
       if (
@@ -554,12 +590,37 @@ export const useGameStore = create<GameState>((set, get) => ({
             );
           }
 
-          // Trigger mission celebration with narrative
-          const missionCelebrationData = {
+          // Trigger mission celebration with narrative and trust snapshot
+          const missionCelebrationData: GameState['missionCelebrationData'] = {
             missionId: updatedMission.id,
             credits: updatedMission.rewards.credits,
             reputationChanges: updatedMission.rewards.reputationChanges,
+            narrativeContext: {
+              trustTiers: getTrustTiersSnapshot(state.relationships),
+            },
           };
+
+          // Apply trust deltas and balanced token grant here as well (sell-path completion)
+          const now2 = Date.now();
+          let relationships2 = { ...(state.relationships || {}) };
+          let allyAssistTokens2 = [...(state.allyAssistTokens || [])];
+          const deltas2 = computeTrustDeltas(updatedMission.id, missionCelebrationData.narrativeContext || {});
+          for (const { by, delta } of deltas2) {
+            const before = relationships2[by];
+            const beforeTier = before?.tier ?? 0;
+            const after = setTrust(before, delta, now2);
+            relationships2[by] = after;
+            const crossedToSupporter = beforeTier < 1 && after.tier >= 1;
+            const eligible = canGrantToken(now2, after, allyAssistTokens2, by, 3, 60_000);
+            const prob = crossedToSupporter ? 1.0 : after.tier >= 1 ? 0.15 : 0;
+            if (eligible && prob > 0 && maybeProbabilityGrant(prob)) {
+              const preset = defaultAssistForStation(by);
+              const token = grantAssist(by, preset.type, preset.description, now2);
+              allyAssistTokens2.push(token);
+              relationships2[by] = { ...after, lastAssistGrantedAt: now2 } as any;
+              missionCelebrationData.allyAssistUnlocked = { by, type: preset.type, description: preset.description };
+            }
+          }
 
           console.log(`Mission completed: ${updatedMission.title}!`);
 
@@ -609,6 +670,8 @@ export const useGameStore = create<GameState>((set, get) => ({
             missions: finalMissions,
             missionArcs: updatedArcs,
             missionCelebrationData,
+            relationships: relationships2,
+            allyAssistTokens: allyAssistTokens2,
             celebrationVisible: showCelebration ? Date.now() : state.celebrationVisible,
             celebrationBuyCost: showCelebration
               ? celebrationBuyCost
@@ -1122,6 +1185,20 @@ export const useGameStore = create<GameState>((set, get) => ({
       } as Partial<GameState> as GameState;
     }),
 
+  // Ally assists (Phase 1): consume a token by type (and optional source)
+  consumeAssist: (type, by) => {
+    let consumed = false;
+    set(state => {
+      const tokens = [...(state.allyAssistTokens || [])];
+      const idx = tokens.findIndex(t => !t.consumed && t.type === type && (!by || t.by === by));
+      if (idx === -1) return state;
+      tokens[idx] = { ...tokens[idx], consumed: true };
+      consumed = true;
+      return { allyAssistTokens: tokens } as Partial<GameState> as GameState;
+    });
+    return consumed;
+  },
+
   // Mission actions
   acceptMission: missionId =>
     set(state => {
@@ -1219,12 +1296,46 @@ export const useGameStore = create<GameState>((set, get) => ({
             );
           }
 
-          // Trigger mission celebration with narrative
-          const missionCelebrationData = {
+          // Trigger mission celebration with narrative + minimal context
+          const firstDeliver = mission.objectives.find(o => o.type === 'deliver');
+          const narrativeContext = {
+            shipKind: updatedShip.kind,
+            deliveredUnits: firstDeliver?.current || firstDeliver?.quantity,
+            commodityName: firstDeliver?.target,
+            routeStart: state.stations.find(s => s.id === state.ship.dockedStationId)?.name,
+            routeEnd: updatedShip.dockedStationId ? state.stations.find(s => s.id === updatedShip.dockedStationId)?.name : undefined,
+            enemiesDestroyed: 0,
+            stealthUsed: state.stealthStates.get(mission.id)?.detected === false,
+            trustTiers: getTrustTiersSnapshot(state.relationships),
+          };
+          const missionCelebrationData: GameState['missionCelebrationData'] = {
             missionId: mission.id,
             credits: mission.rewards.credits,
             reputationChanges: mission.rewards.reputationChanges,
+            narrativeContext,
           };
+
+          // Apply trust deltas and possibly grant assist token (Phase 1)
+          const now = Date.now();
+          let relationships = { ...(state.relationships || {}) };
+          let allyAssistTokens = [...(state.allyAssistTokens || [])];
+          const deltas = computeTrustDeltas(mission.id, narrativeContext);
+          for (const { by, delta } of deltas) {
+            const before = relationships[by];
+            const beforeTier = before?.tier ?? 0;
+            const after = setTrust(before, delta, now);
+            relationships[by] = after;
+            const crossedToSupporter = beforeTier < 1 && after.tier >= 1;
+            const eligible = canGrantToken(now, after, allyAssistTokens, by, 3, 60_000);
+            const prob = crossedToSupporter ? 1.0 : after.tier >= 1 ? 0.15 : 0;
+            if (eligible && prob > 0 && maybeProbabilityGrant(prob)) {
+              const preset = defaultAssistForStation(by);
+              const token = grantAssist(by, preset.type, preset.description, now);
+              allyAssistTokens.push(token);
+              relationships[by] = { ...after, lastAssistGrantedAt: now } as any;
+              missionCelebrationData.allyAssistUnlocked = { by, type: preset.type, description: preset.description };
+            }
+          }
 
           console.log(`Mission completed: ${mission.title}`);
 
@@ -1269,6 +1380,8 @@ export const useGameStore = create<GameState>((set, get) => ({
             stations: updatedStations,
             ship: updatedShip,
             missionCelebrationData,
+            relationships,
+            allyAssistTokens,
           } as Partial<GameState> as GameState;
         }
       }
@@ -1329,17 +1442,50 @@ export const useGameStore = create<GameState>((set, get) => ({
         );
       }
 
-      // Trigger mission celebration with narrative
-      const missionCelebrationData = {
+      // Trigger mission celebration with narrative + minimal context
+      const firstDeliver = mission.objectives.find(o => o.type === 'deliver');
+      const narrativeContext = {
+        shipKind: state.ship.kind,
+        deliveredUnits: firstDeliver?.current || firstDeliver?.quantity,
+        commodityName: firstDeliver?.target,
+        routeStart: state.ship.dockedStationId ? state.stations.find(s => s.id === state.ship.dockedStationId)?.name : undefined,
+        routeEnd: state.ship.dockedStationId ? state.stations.find(s => s.id === state.ship.dockedStationId)?.name : undefined,
+        enemiesDestroyed: 0,
+        stealthUsed: state.stealthStates.get(mission.id)?.detected === false,
+        trustTiers: getTrustTiersSnapshot(state.relationships),
+      };
+      const missionCelebrationData: GameState['missionCelebrationData'] = {
         missionId: mission.id,
         credits: mission.rewards.credits,
         reputationChanges: mission.rewards.reputationChanges,
+        narrativeContext,
       };
+
+      // Phase 1: trust & assist token grant
+      const now = Date.now();
+      let relationships = { ...(state.relationships || {}) };
+      let allyAssistTokens = [...(state.allyAssistTokens || [])];
+      const deltas = computeTrustDeltas(mission.id, narrativeContext);
+      for (const { by, delta } of deltas) {
+        const before = relationships[by];
+        const beforeTier = before?.tier ?? 0;
+        const after = setTrust(before, delta, now);
+        relationships[by] = after;
+        const crossedToSupporter = beforeTier < 1 && after.tier >= 1;
+        if (crossedToSupporter && !hasUnconsumedToken(allyAssistTokens, by)) {
+          const preset = defaultAssistForStation(by);
+          const token = grantAssist(by, preset.type, preset.description, now);
+          allyAssistTokens.push(token);
+          missionCelebrationData.allyAssistUnlocked = { by, type: preset.type, description: preset.description };
+        }
+      }
 
       return {
         missions: updatedMissions,
         missionArcs: updatedArcs,
         missionCelebrationData,
+        relationships,
+        allyAssistTokens,
         ...rewardUpdates,
         ...effectUpdates,
       } as Partial<GameState> as GameState;
