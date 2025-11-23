@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import type { StationType } from '../constants/station_types';
 
-export type StationType = 'refinery' | 'fabricator' | 'power_plant' | 'city' | 'trading_post' | 'mine' | 'farm' | 'research' | 'orbital_hab' | 'shipyard' | 'pirate';
+export type { StationType };
 
 export const CommoditySchema = z.object({
   id: z.string(),

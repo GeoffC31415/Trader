@@ -1,6 +1,7 @@
 // Weapon system constants
 
-import type { WeaponKind, ShipWeapon } from '../types/combat_types';
+import type { WeaponKind } from './weapon_kinds';
+import type { ShipWeapon } from '../types/combat_types';
 
 // Base weapon stats (before upgrades)
 export const WEAPON_BASE_STATS: Record<WeaponKind, Omit<ShipWeapon, 'damageLevel' | 'fireRateLevel' | 'rangeLevel'>> = {

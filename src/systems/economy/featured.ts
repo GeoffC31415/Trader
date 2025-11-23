@@ -1,7 +1,7 @@
 import type { StationType } from '../../domain/types/economy_types';
 import type { Commodity } from '../../domain/types/economy_types';
 import { generateCommodities } from './commodities';
-import { economy_constants } from './constants';
+import { getEconomyConfig } from '../../config/game_config';
 
 type StationMeta = { id: string; type: StationType; position: [number, number, number] };
 type FeaturedKey = string; // `${stationId}:${commodityId}`
@@ -17,9 +17,10 @@ export function ensureFeaturedInitialized(stations: StationMeta[] | undefined): 
   }
   if (!stations || stations.length === 0) return;
   featuredMap = new Map();
+  const config = getEconomyConfig();
   const candidates = stations.filter(s => s.type !== 'refinery' && s.type !== 'farm');
-  const count = economy_constants.featured.count;
-  const cats = new Set(economy_constants.featured.candidate_categories as unknown as string[]);
+  const count = config.featured.count;
+  const cats = new Set(config.featured.candidateCategories);
   const pool: { station: StationMeta; commodityId: string }[] = [];
   for (const st of candidates) {
     for (const c of generateCommodities()) {
@@ -30,7 +31,7 @@ export function ensureFeaturedInitialized(stations: StationMeta[] | undefined): 
   for (let i = 0; i < Math.min(count, pool.length); i++) {
     const idx = Math.floor(Math.random() * pool.length);
     const picked = pool.splice(idx, 1)[0];
-    const mult = economy_constants.featured.min_multiplier + Math.random() * (economy_constants.featured.max_multiplier - economy_constants.featured.min_multiplier);
+    const mult = config.featured.minMultiplier + Math.random() * (config.featured.maxMultiplier - config.featured.minMultiplier);
     const ttlMs = (20 + Math.floor(Math.random() * 10)) * 60 * 1000; // 20-30 minutes
     featuredMap.set(`${picked.station.id}:${picked.commodityId}`, { multiplier: mult, expiresAt: Date.now() + ttlMs });
   }

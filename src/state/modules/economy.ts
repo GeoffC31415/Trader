@@ -9,6 +9,7 @@ import { gatedCommodities, ensureSpread, getPriceBiasForStation } from '../../sy
 import { processRecipes, findRecipeForStation } from '../../systems/economy/recipes';
 import { shipCaps } from '../../domain/constants/ship_constants';
 import { applyReputationWithPropagation } from '../../systems/reputation/faction_system';
+import { getEconomyConfig } from '../../config/game_config';
 import { 
   applyReputationToBuyPrice, 
   applyReputationToSellPrice,
@@ -195,7 +196,8 @@ export function getSuggestedRoutes(
  * @returns Updated stations with jittered prices
  */
 export function jitterPrices(stations: Station[], dt: number): Station[] {
-  const jitterChance = Math.min(1, dt * 2);
+  const config = getEconomyConfig();
+  const jitterChance = Math.min(1, dt * config.jitterChancePerSecond);
   
   if (Math.random() >= jitterChance) {
     return stations; // No jitter this frame
@@ -205,21 +207,21 @@ export function jitterPrices(stations: Station[], dt: number): Station[] {
     const inv = { ...st.inventory } as StationInventory;
     const keys = Object.keys(inv);
 
-    // Jitter 3 random commodities per station
-    for (let i = 0; i < 3; i++) {
+    // Jitter random commodities per station
+    for (let i = 0; i < config.jitterCommoditiesPerStation; i++) {
       const k = keys[Math.floor(Math.random() * keys.length)];
       const item = inv[k];
       if (!item) continue;
 
-      const factorBuy = 1 + (Math.random() * 2 - 1) * 0.1;
-      const factorSell = 1 + (Math.random() * 2 - 1) * 0.1;
+      const factorBuy = 1 + (Math.random() * 2 - 1) * config.jitterFactor;
+      const factorSell = 1 + (Math.random() * 2 - 1) * config.jitterFactor;
       const nextBuy = Math.max(1, Math.round(item.buy * factorBuy));
       const nextSell = Math.max(1, Math.round(item.sell * factorSell));
       const adjusted = ensureSpread({
         buy: nextBuy,
         sell: nextSell,
-        minPercent: 0.08,
-        minAbsolute: 3,
+        minPercent: config.minSpreadPercent,
+        minAbsolute: config.minSpreadAbsolute,
       });
 
       inv[k] = { ...item, buy: adjusted.buy, sell: adjusted.sell };

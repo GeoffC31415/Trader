@@ -1,7 +1,8 @@
 import type { Commodity, StationInventory } from '../types/economy_types';
 import type { StationType } from '../types/economy_types';
-import type { ShipWeapon } from './combat_types';
+import type { ShipWeapon, WeaponKind } from './combat_types';
 import type { Mission, MissionArc, NarrativeContext } from './mission_types';
+import type { ShipKind } from '../constants/ship_kinds';
 
 export type StationPersona = {
   id: string;
@@ -64,7 +65,7 @@ export type Ship = {
   hasNavigationArray?: boolean;
   hasUnionMembership?: boolean;
   hasMarketIntel?: boolean;
-  kind: 'freighter' | 'clipper' | 'miner' | 'heavy_freighter' | 'racer' | 'industrial_miner';
+  kind: ShipKind;
   stats: {
     acc: number;
     drag: number;
@@ -308,8 +309,8 @@ export type GameState = {
   sell: (commodityId: string, quantity: number) => void;
   process: (inputId: string, outputs: number) => void;
   upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel', amount: number, cost: number) => void;
-  replaceShip: (kind: 'freighter' | 'clipper' | 'miner' | 'heavy_freighter' | 'racer' | 'industrial_miner', cost: number) => void;
-  chooseStarter: (kind: 'freighter' | 'clipper' | 'miner' | 'test', opts?: { tutorial?: boolean }) => void;
+  replaceShip: (kind: ShipKind, cost: number) => void;
+  chooseStarter: (kind: ShipKind | 'test', opts?: { tutorial?: boolean }) => void;
   setTutorialActive: (active: boolean) => void;
   setTutorialStep: (step: GameState['tutorialStep']) => void;
   // Objectives & contracts actions
@@ -326,7 +327,7 @@ export type GameState = {
   // Combat actions
   fireWeapon: (targetPos?: [number, number, number]) => void;
   upgradeWeapon: (upgradeType: 'damage' | 'fireRate' | 'range', cost: number) => void;
-  purchaseWeapon: (weaponKind: 'laser' | 'plasma' | 'railgun' | 'missile', cost: number) => void;
+  purchaseWeapon: (weaponKind: WeaponKind, cost: number) => void;
   // Ally assists
   consumeAssist: (type: AllyAssistToken['type'], by?: string) => boolean;
 };

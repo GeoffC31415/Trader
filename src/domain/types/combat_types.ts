@@ -1,6 +1,8 @@
 // Combat system types
 
-export type WeaponKind = 'laser' | 'plasma' | 'railgun' | 'missile';
+import type { WeaponKind } from '../constants/weapon_kinds';
+
+export type { WeaponKind };
 
 export type ShipWeapon = {
   kind: WeaponKind;

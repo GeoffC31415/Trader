@@ -13,6 +13,7 @@ import type { Mission } from '../domain/types/mission_types';
 import { getFactionForStation, FACTIONS, type FactionId } from '../domain/constants/faction_constants';
 import { getFactionReputation, getFactionStanding, getFactionStandingDisplay } from '../systems/reputation/faction_system';
 import { UIIcon } from './components/ui_icon';
+import { getMissionTemplatesByStage } from '../domain/constants/mission_constants';
 
 function getHallLabel(type: StationType): string {
   if (type === 'city') return 'Civic Exchange';
@@ -115,6 +116,73 @@ export function MarketPanel() {
     missions.filter(m => m.availableAt.includes(station?.id || '') && m.status === 'offered'),
     [missions, station?.id]
   );
+
+  // Per-arc: show the next mission at this station that is locked due to insufficient reputation
+  const repLockedNextMissions = useMemo(() => {
+    if (!station) return [] as Array<{
+      arcId: string;
+      arcName: string;
+      stage: number;
+      missionId: string;
+      title: string;
+      description: string;
+      deficits: Array<{ stationId: string; required: number; current: number; missing: number }>;
+    }>;
+
+    const playerRep: Record<string, number> = {};
+    stations.forEach(s => { playerRep[s.id] = s.reputation || 0; });
+
+    const activeIds = new Set(missions.filter(m => m.status === 'active').map(m => m.id));
+
+    const results: Array<{
+      arcId: string;
+      arcName: string;
+      stage: number;
+      missionId: string;
+      title: string;
+      description: string;
+      deficits: Array<{ stationId: string; required: number; current: number; missing: number }>;
+      deficitSum: number;
+    }> = [];
+
+    for (const arc of missionArcs) {
+      if (arc.status === 'locked' || arc.status === 'completed') continue;
+      const templates = getMissionTemplatesByStage(arc.id, arc.currentStage)
+        .filter(t => t.availableAt.includes(station.id))
+        .filter(t => !activeIds.has(t.id) && !arc.completedMissions.includes(t.id));
+
+      // Consider only those failing reputation checks
+      const lockedCandidates = templates.map(t => {
+        const req = t.requiredRep || {};
+        const deficits = Object.entries(req).map(([stId, minRep]) => {
+          const current = playerRep[stId] || 0;
+          const missing = Math.max(0, minRep - current);
+          return { stationId: stId, required: minRep, current, missing };
+        });
+        const meets = deficits.every(d => d.missing === 0);
+        const deficitSum = deficits.reduce((sum, d) => sum + d.missing, 0);
+        return { template: t, meets, deficits, deficitSum };
+      }).filter(x => !x.meets);
+
+      if (lockedCandidates.length === 0) continue;
+      lockedCandidates.sort((a, b) => a.deficitSum - b.deficitSum);
+      const pick = lockedCandidates[0];
+      results.push({
+        arcId: arc.id,
+        arcName: arc.name,
+        stage: arc.currentStage,
+        missionId: pick.template.id,
+        title: pick.template.title,
+        description: pick.template.description,
+        deficits: pick.deficits,
+        deficitSum: pick.deficitSum,
+      });
+    }
+
+    // Stable order by arc name
+    results.sort((a, b) => a.arcName.localeCompare(b.arcName));
+    return results.map(({ deficitSum, ...rest }) => rest);
+  }, [station?.id, missionArcs, missions, stations]);
 
   const activeMissions = useMemo(() => 
     missions.filter(m => m.status === 'active'),
@@ -1034,6 +1102,57 @@ export function MarketPanel() {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* Locked Next Missions (by reputation) */}
+            {repLockedNextMissions.length > 0 && (
+              <div className="sci-fi-panel">
+                <div className="section-header" style={{ color: '#f87171' }}>Next Story Missions (Locked)</div>
+                <div style={{
+                  padding: 12,
+                  background: `${colors.primary}10`,
+                  border: `1px solid ${colors.primary}30`,
+                  borderRadius: 6,
+                  marginBottom: 16,
+                  fontSize: 12,
+                  opacity: 0.9,
+                }}>
+                  ✗ You need more reputation to unlock these missions. Improve standing at the listed stations.
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {repLockedNextMissions.map(item => (
+                    <div key={`${item.arcId}:${item.missionId}`} style={{
+                      padding: 16,
+                      background: `${colors.primary}10`,
+                      border: '2px solid rgba(248,113,113,0.4)',
+                      borderLeft: '5px solid #ef4444',
+                      borderRadius: 8,
+                    }}>
+                      <div style={{ marginBottom: 8 }}>
+                        <div style={{ fontSize: 11, opacity: 0.8, fontFamily: 'monospace', marginBottom: 4, color: '#fca5a5' }}>
+                          {item.arcName} — Stage {item.stage}
+                        </div>
+                        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>
+                          {item.title}
+                        </div>
+                        <div style={{ fontSize: 12, opacity: 0.85 }}>
+                          {item.description}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11, fontFamily: 'monospace', color: '#fca5a5' }}>
+                        Requires reputation:
+                        <div style={{ marginTop: 6 }}>
+                          {item.deficits.map(d => (
+                            <div key={d.stationId}>
+                              • {stations.find(s => s.id === d.stationId)?.name || d.stationId}: {d.current} / {d.required}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

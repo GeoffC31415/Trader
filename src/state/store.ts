@@ -20,6 +20,8 @@ import {
   PLAYER_MAX_HP,
   PLAYER_MAX_ENERGY,
 } from '../domain/constants/weapon_constants';
+import { createShip } from '../domain/registries/ship_registry';
+import type { ShipKind } from '../domain/constants/ship_kinds';
 import { planets, stations as initialStations, belts } from './world';
 import { spawnNpcTraders } from './npc';
 import { processContractCompletion, processPartialDelivery } from './helpers/contract_helpers';
@@ -54,7 +56,6 @@ import {
 import {
   getSuggestedRoutes,
   jitterPrices,
-  buyCommodity,
   sellCommodity,
   processCommodity,
   upgradeShip,
@@ -68,6 +69,8 @@ import {
   abandonMissionAction,
 } from './modules/missions';
 import { setTrust, hasUnconsumedToken, grantAssist, computeTrustDeltas, defaultAssistForStation, getTrustTiersSnapshot, tierForScore, canGrantToken, maybeProbabilityGrant } from './relationships';
+import { createSellAction } from './actions/economy/sell_action';
+import { createBuyAction } from './actions/economy/buy_action';
 
 export const useGameStore = create<GameState>((set, get) => ({
   planets,
@@ -391,340 +394,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       return { ship: { ...state.ship, cargo } } as Partial<GameState> as GameState;
     }),
 
-  // Economy actions - delegated to economy module
-  buy: (commodityId, quantity) =>
-    set(state => {
-      const activeContract = (state.contracts || []).find(
-        c => c.status === 'accepted' && c.commodityId === commodityId
-      );
+  // Economy actions - delegated to action modules
+  buy: createBuyAction(get, (updates) => set(state => ({ ...state, ...updates }))),
 
-      // Phase 2 refined: use pendingAssist if set via USE button
-      let priceMultiplier: number | undefined = undefined;
-      const pending = (state as any).pendingAssist as GameState['pendingAssist'] | undefined;
-      const station = state.ship.dockedStationId;
-      if (pending && station && pending.by === station) {
-        // Scope: refuel only applies to refined_fuel at ceres-pp, discount applies at station, waiver is 1.0
-        if (pending.type === 'refuel' && commodityId === 'refined_fuel' && station === 'ceres-pp') {
-          priceMultiplier = pending.multiplier;
-        } else if (pending.type === 'discount') {
-          priceMultiplier = pending.multiplier;
-        } else if (pending.type === 'waiver') {
-          priceMultiplier = 1.0;
-        }
-      }
-
-      const result = buyCommodity(
-        state.ship,
-        state.stations,
-        state.npcTraders,
-        state.avgCostByCommodity,
-        commodityId,
-        quantity,
-        activeContract,
-        priceMultiplier
-      );
-
-      if (!result) return state;
-
-      const tradeLog = [...state.tradeLog, result.trade];
-      const next: Partial<GameState> = {
-        ship: result.ship,
-        stations: result.stations,
-        npcTraders: result.npcTraders,
-        avgCostByCommodity: result.avgCostByCommodity,
-        tradeLog,
-        // Clear pendingAssist after use
-        pendingAssist: undefined,
-      };
-
-      if (
-        state.tutorialActive &&
-        state.tutorialStep === 'buy_fuel' &&
-        commodityId === 'refined_fuel'
-      ) {
-        (next as any).tutorialStep = 'deliver_fuel';
-      }
-
-      return next as Partial<GameState> as GameState;
-    }),
-
-  sell: (commodityId, quantity) =>
-    set(state => {
-      const activeContract = (state.contracts || []).find(
-        c =>
-          c.status === 'accepted' &&
-          c.toId === state.ship.dockedStationId &&
-          c.commodityId === commodityId
-      );
-      const escorts = state.npcTraders.filter(
-        n => n.isEscort && activeContract && n.escortingContract === activeContract.id
-      );
-
-      const result = sellCommodity(
-        state.ship,
-        state.stations,
-        state.npcTraders,
-        state.profitByCommodity,
-        state.avgCostByCommodity,
-        commodityId,
-        quantity,
-        escorts
-      );
-
-      if (!result) return state;
-
-      const station = state.stations.find(s => s.id === state.ship.dockedStationId);
-      const tradeLog = [...state.tradeLog, result.trade];
-
-      // Check for contract progress/completion
-      let contracts = state.contracts || [];
-      let objectives = state.objectives || [];
-      let activeObjectiveId = state.activeObjectiveId;
-      let totalCredits = state.ship.credits + result.revenue;
-      let showCelebration = false;
-      let celebrationBuyCost = 0;
-      let celebrationSellRev = 0;
-      let celebrationBonusAmount = 0;
-      let npcTraders = result.npcTraders;
-
-      if (activeContract) {
-        const previousDelivered = activeContract.deliveredUnits || 0;
-        const remainingNeeded = activeContract.units - previousDelivered;
-        const nowDelivering = Math.min(quantity, remainingNeeded);
-        const newTotalDelivered = previousDelivered + nowDelivering;
-
-        // Apply contract pricing to delivered units
-        let unitPay = result.unitSellPrice;
-        if (activeContract.sellMultiplier && activeContract.sellMultiplier > 1) {
-          unitPay = Math.max(
-            1,
-            Math.round(result.unitSellPrice * activeContract.sellMultiplier)
-          );
-        }
-        // Add extra revenue for contract units
-        const extraRevenue = (unitPay - result.unitSellPrice) * nowDelivering;
-        totalCredits += extraRevenue;
-
-        // Check if contract is now complete
-        if (newTotalDelivered >= activeContract.units) {
-          // Contract completed! Process completion
-          const completion = processContractCompletion({
-            activeContract,
-            nowDelivering,
-            unitSellPrice: result.unitSellPrice,
-            tradeLog,
-            contracts,
-            objectives,
-            activeObjectiveId,
-          });
-
-          contracts = completion.contracts;
-          objectives = completion.objectives;
-          activeObjectiveId = completion.activeObjectiveId;
-          celebrationBuyCost = completion.celebrationBuyCost;
-          celebrationSellRev = completion.celebrationSellRevenue;
-          celebrationBonusAmount = completion.celebrationBonusAmount;
-          totalCredits += completion.bonusCredits;
-          showCelebration = true;
-        } else {
-          // Partial delivery - update progress
-          contracts = processPartialDelivery({
-            activeContract,
-            newTotalDelivered,
-            contracts,
-          });
-        }
-      }
-
-      // Update mission objectives for delivery missions
-      let updatedMissions = [...state.missions];
-      let updatedArcs = [...state.missionArcs];
-      let updatedStationsFromMissions = result.stations;
-      const activeMissions = updatedMissions.filter(m => m.status === 'active');
-
-      for (const mission of activeMissions) {
-        const missionEvent: MissionEvent = {
-          type: 'commodity_sold',
-          commodityId,
-          quantity,
-          stationId: station!.id,
-        };
-
-        const updatedMission = updateMissionObjectives(mission, missionEvent);
-        updatedMissions = updatedMissions.map(m =>
-          m.id === mission.id ? updatedMission : m
-        );
-
-        // Check if mission is now complete
-        if (
-          checkMissionCompletion(updatedMission) &&
-          updatedMission.status === 'active'
-        ) {
-          // Mark mission as completed
-          updatedMissions = updatedMissions.map(m =>
-            m.id === mission.id ? { ...m, status: 'completed' as const } : m
-          );
-
-          // Apply rewards
-          const rewardUpdates = applyMissionRewards(
-            {
-              ...state,
-              stations: updatedStationsFromMissions,
-              ship: { ...state.ship, credits: totalCredits, cargo: result.ship.cargo },
-            } as GameState,
-            updatedMission
-          );
-          if (rewardUpdates.ship) {
-            totalCredits = rewardUpdates.ship.credits;
-          }
-          if (rewardUpdates.stations) {
-            updatedStationsFromMissions = rewardUpdates.stations;
-          }
-
-          // Advance mission arc
-          const arc = updatedArcs.find(a => a.id === mission.arcId);
-          if (arc) {
-            const updatedArc = advanceMissionArc(arc, mission.id);
-            updatedArcs = updatedArcs.map(a =>
-              a.id === mission.arcId ? updatedArc : a
-            );
-          }
-
-          // Trigger mission celebration with narrative and trust snapshot
-          const missionCelebrationData: GameState['missionCelebrationData'] = {
-            missionId: updatedMission.id,
-            credits: updatedMission.rewards.credits,
-            reputationChanges: updatedMission.rewards.reputationChanges,
-            narrativeContext: {
-              trustTiers: getTrustTiersSnapshot(state.relationships),
-            },
-          };
-
-          // Apply trust deltas and balanced token grant here as well (sell-path completion)
-          const now2 = Date.now();
-          let relationships2 = { ...(state.relationships || {}) };
-          let allyAssistTokens2 = [...(state.allyAssistTokens || [])];
-          const deltas2 = computeTrustDeltas(updatedMission.id, missionCelebrationData.narrativeContext || {});
-          for (const { by, delta } of deltas2) {
-            const before = relationships2[by];
-            const beforeTier = before?.tier ?? 0;
-            const after = setTrust(before, delta, now2);
-            relationships2[by] = after;
-            const crossedToSupporter = beforeTier < 1 && after.tier >= 1;
-            const eligible = canGrantToken(now2, after, allyAssistTokens2, by, 3, 60_000);
-            const prob = crossedToSupporter ? 1.0 : after.tier >= 1 ? 0.15 : 0;
-            if (eligible && prob > 0 && maybeProbabilityGrant(prob)) {
-              const preset = defaultAssistForStation(by);
-              const token = grantAssist(by, preset.type, preset.description, now2);
-              allyAssistTokens2.push(token);
-              relationships2[by] = { ...after, lastAssistGrantedAt: now2 } as any;
-              missionCelebrationData.allyAssistUnlocked = { by, type: preset.type, description: preset.description };
-            }
-          }
-
-          console.log(`Mission completed: ${updatedMission.title}!`);
-
-          // Regenerate missions for current station if docked
-          let finalMissions = updatedMissions;
-          if (state.ship.dockedStationId) {
-            const playerReputation: Record<string, number> = {};
-            for (const st of updatedStationsFromMissions) {
-              if (st.reputation !== undefined) {
-                playerReputation[st.id] = st.reputation;
-              }
-            }
-            const playerUpgrades: string[] = [];
-            if (state.ship.hasNavigationArray) playerUpgrades.push('nav');
-            if (state.ship.hasUnionMembership) playerUpgrades.push('union');
-            if (state.ship.hasMarketIntel) playerUpgrades.push('intel');
-
-            const activeMissionsAfterCompletion = finalMissions.filter(
-              m => m.status === 'active'
-            );
-            const newMissions = generateMissionsForStation(
-              state.ship.dockedStationId,
-              playerReputation,
-              playerUpgrades,
-              updatedArcs,
-              activeMissionsAfterCompletion,
-              updatedArcs.filter(a => a.status === 'completed').map(a => a.id)
-            );
-
-            // Merge with existing missions (don't duplicate)
-            const existingMissionIds = new Set(finalMissions.map(m => m.id));
-            const missionsToAdd = newMissions.filter(
-              m => !existingMissionIds.has(m.id)
-            );
-            finalMissions = [...finalMissions, ...missionsToAdd];
-          }
-
-          // Return early with celebration
-          return {
-            ship: { ...result.ship, credits: totalCredits },
-            stations: updatedStationsFromMissions,
-            contracts,
-            tradeLog,
-            profitByCommodity: result.profitByCommodity,
-            avgCostByCommodity: result.avgCostByCommodity,
-            npcTraders,
-            missions: finalMissions,
-            missionArcs: updatedArcs,
-            missionCelebrationData,
-            relationships: relationships2,
-            allyAssistTokens: allyAssistTokens2,
-            celebrationVisible: showCelebration ? Date.now() : state.celebrationVisible,
-            celebrationBuyCost: showCelebration
-              ? celebrationBuyCost
-              : state.celebrationBuyCost,
-            celebrationSellRevenue: showCelebration
-              ? celebrationSellRev
-              : state.celebrationSellRevenue,
-            celebrationBonusReward: showCelebration
-              ? celebrationBonusAmount
-              : state.celebrationBonusReward,
-            objectives,
-            activeObjectiveId,
-          } as Partial<GameState> as GameState;
-        }
-      }
-
-      const next: Partial<GameState> = {
-        ship: { ...result.ship, credits: totalCredits },
-        stations: updatedStationsFromMissions,
-        profitByCommodity: result.profitByCommodity,
-        avgCostByCommodity: result.avgCostByCommodity,
-        tradeLog,
-        contracts,
-        objectives,
-        activeObjectiveId,
-        npcTraders,
-        missions: updatedMissions,
-        missionArcs: updatedArcs,
-        celebrationVisible: showCelebration ? Date.now() : state.celebrationVisible,
-        celebrationBuyCost: showCelebration
-          ? celebrationBuyCost
-          : state.celebrationBuyCost,
-        celebrationSellRevenue: showCelebration
-          ? celebrationSellRev
-          : state.celebrationSellRevenue,
-        celebrationBonusReward: showCelebration
-          ? celebrationBonusAmount
-          : state.celebrationBonusReward,
-      };
-
-      // Tutorial completes when contract is completed (showCelebration = contract was just completed)
-      if (
-        state.tutorialActive &&
-        state.tutorialStep === 'deliver_fuel' &&
-        commodityId === 'refined_fuel' &&
-        showCelebration
-      ) {
-        (next as any).tutorialStep = 'done';
-        (next as any).tutorialActive = false;
-      }
-
-      return next as Partial<GameState> as GameState;
-    }),
+  sell: createSellAction(get, (updates) => set(state => ({ ...state, ...updates }))),
 
   process: (inputId, outputs) =>
     set(state => {
@@ -764,139 +437,16 @@ export const useGameStore = create<GameState>((set, get) => ({
       const usedCargo = Object.values(state.ship.cargo).reduce((a, b) => a + b, 0);
       if (usedCargo > 0) return state;
 
-      const basePosition: [number, number, number] = state.ship.position;
-      const baseVelocity: [number, number, number] = [0, 0, 0];
-      let next: Ship | undefined;
+      // Use ship registry to create new ship, preserving upgrades
+      const next = createShip(kind as ShipKind, state.ship.position, {
+        credits: state.ship.credits - cost,
+        hasNavigationArray: state.ship.hasNavigationArray,
+        hasUnionMembership: state.ship.hasUnionMembership,
+        hasMarketIntel: state.ship.hasMarketIntel,
+        weapon: state.ship.weapon, // Preserve weapon upgrades
+        dockedStationId: state.ship.dockedStationId,
+      });
 
-      if (kind === 'freighter') {
-        next = {
-          position: basePosition,
-          velocity: baseVelocity,
-          credits: state.ship.credits - cost,
-          cargo: {},
-          maxCargo: 300,
-          canMine: state.ship.canMine,
-          enginePower: 0,
-          engineTarget: 0,
-          hasNavigationArray: state.ship.hasNavigationArray,
-          hasUnionMembership: state.ship.hasUnionMembership,
-          hasMarketIntel: state.ship.hasMarketIntel,
-          kind: 'freighter',
-          stats: { acc: 10, drag: 1.0, vmax: 11 },
-          weapon: state.ship.weapon,
-          hp: PLAYER_MAX_HP,
-          maxHp: PLAYER_MAX_HP,
-          energy: PLAYER_MAX_ENERGY,
-          maxEnergy: PLAYER_MAX_ENERGY,
-        };
-      } else if (kind === 'clipper') {
-        next = {
-          position: basePosition,
-          velocity: baseVelocity,
-          credits: state.ship.credits - cost,
-          cargo: {},
-          maxCargo: 60,
-          canMine: state.ship.canMine,
-          enginePower: 0,
-          engineTarget: 0,
-          hasNavigationArray: state.ship.hasNavigationArray,
-          hasUnionMembership: state.ship.hasUnionMembership,
-          hasMarketIntel: state.ship.hasMarketIntel,
-          kind: 'clipper',
-          stats: { acc: 18, drag: 0.9, vmax: 20 },
-          weapon: state.ship.weapon,
-          hp: PLAYER_MAX_HP,
-          maxHp: PLAYER_MAX_HP,
-          energy: PLAYER_MAX_ENERGY,
-          maxEnergy: PLAYER_MAX_ENERGY,
-        };
-      } else if (kind === 'miner') {
-        next = {
-          position: basePosition,
-          velocity: baseVelocity,
-          credits: state.ship.credits - cost,
-          cargo: {},
-          maxCargo: 80,
-          canMine: true,
-          enginePower: 0,
-          engineTarget: 0,
-          hasNavigationArray: state.ship.hasNavigationArray,
-          hasUnionMembership: state.ship.hasUnionMembership,
-          hasMarketIntel: state.ship.hasMarketIntel,
-          kind: 'miner',
-          stats: { acc: 9, drag: 1.1, vmax: 11 },
-          weapon: state.ship.weapon,
-          hp: PLAYER_MAX_HP,
-          maxHp: PLAYER_MAX_HP,
-          energy: PLAYER_MAX_ENERGY,
-          maxEnergy: PLAYER_MAX_ENERGY,
-        };
-      } else if (kind === 'heavy_freighter') {
-        next = {
-          position: basePosition,
-          velocity: baseVelocity,
-          credits: state.ship.credits - cost,
-          cargo: {},
-          maxCargo: 600,
-          canMine: state.ship.canMine,
-          enginePower: 0,
-          engineTarget: 0,
-          hasNavigationArray: state.ship.hasNavigationArray,
-          hasUnionMembership: state.ship.hasUnionMembership,
-          hasMarketIntel: state.ship.hasMarketIntel,
-          kind: 'heavy_freighter',
-          stats: { acc: 9, drag: 1.0, vmax: 12 },
-          weapon: state.ship.weapon,
-          hp: PLAYER_MAX_HP,
-          maxHp: PLAYER_MAX_HP,
-          energy: PLAYER_MAX_ENERGY,
-          maxEnergy: PLAYER_MAX_ENERGY,
-        };
-      } else if (kind === 'racer') {
-        next = {
-          position: basePosition,
-          velocity: baseVelocity,
-          credits: state.ship.credits - cost,
-          cargo: {},
-          maxCargo: 40,
-          canMine: state.ship.canMine,
-          enginePower: 0,
-          engineTarget: 0,
-          hasNavigationArray: state.ship.hasNavigationArray,
-          hasUnionMembership: state.ship.hasUnionMembership,
-          hasMarketIntel: state.ship.hasMarketIntel,
-          kind: 'racer',
-          stats: { acc: 24, drag: 0.85, vmax: 28 },
-          weapon: state.ship.weapon,
-          hp: PLAYER_MAX_HP,
-          maxHp: PLAYER_MAX_HP,
-          energy: PLAYER_MAX_ENERGY,
-          maxEnergy: PLAYER_MAX_ENERGY,
-        };
-      } else if (kind === 'industrial_miner') {
-        next = {
-          position: basePosition,
-          velocity: baseVelocity,
-          credits: state.ship.credits - cost,
-          cargo: {},
-          maxCargo: 160,
-          canMine: true,
-          enginePower: 0,
-          engineTarget: 0,
-          hasNavigationArray: state.ship.hasNavigationArray,
-          hasUnionMembership: state.ship.hasUnionMembership,
-          hasMarketIntel: state.ship.hasMarketIntel,
-          kind: 'industrial_miner',
-          stats: { acc: 10, drag: 1.05, vmax: 12 },
-          weapon: state.ship.weapon,
-          hp: PLAYER_MAX_HP,
-          maxHp: PLAYER_MAX_HP,
-          energy: PLAYER_MAX_ENERGY,
-          maxEnergy: PLAYER_MAX_ENERGY,
-        };
-      }
-
-      next = { ...next!, dockedStationId: state.ship.dockedStationId } as Ship;
       return { ship: next } as Partial<GameState> as GameState;
     }),
 
@@ -904,102 +454,30 @@ export const useGameStore = create<GameState>((set, get) => ({
   chooseStarter: (kind, opts) =>
     set(state => {
       const basePosition: [number, number, number] = state.ship.position;
-      const baseVelocity: [number, number, number] = [0, 0, 0];
-      const baseWeapon: ShipWeapon = {
-        ...WEAPON_BASE_STATS.laser,
-        damageLevel: 0,
-        fireRateLevel: 0,
-        rangeLevel: 0,
-      };
 
-      if (kind === 'freighter') {
-        const ship: Ship = {
-          position: basePosition,
-          velocity: baseVelocity,
-          credits: 10000,
-          cargo: {},
-          maxCargo: 300,
-          canMine: false,
-          enginePower: 0,
-          engineTarget: 0,
-          hasNavigationArray: false,
-          hasUnionMembership: false,
-          hasMarketIntel: false,
-          kind: 'freighter',
-          stats: { acc: 10, drag: 1.0, vmax: 11 },
-          weapon: baseWeapon,
-          hp: PLAYER_MAX_HP,
-          maxHp: PLAYER_MAX_HP,
-          energy: PLAYER_MAX_ENERGY,
-          maxEnergy: PLAYER_MAX_ENERGY,
-        };
-        return {
-          ship,
-          hasChosenStarter: true,
-          tutorialActive: !!opts?.tutorial,
-          tutorialStep: 'dock_city',
-        } as Partial<GameState> as GameState;
-      }
-
-      if (kind === 'clipper') {
-        const ship: Ship = {
-          position: basePosition,
-          velocity: baseVelocity,
-          credits: 10000,
-          cargo: {},
-          maxCargo: 60,
-          canMine: false,
-          enginePower: 0,
-          engineTarget: 0,
-          hasNavigationArray: false,
-          hasUnionMembership: false,
-          hasMarketIntel: false,
-          kind: 'clipper',
-          stats: { acc: 18, drag: 0.9, vmax: 20 },
-          weapon: baseWeapon,
-          hp: PLAYER_MAX_HP,
-          maxHp: PLAYER_MAX_HP,
-          energy: PLAYER_MAX_ENERGY,
-          maxEnergy: PLAYER_MAX_ENERGY,
-        };
-        return {
-          ship,
-          hasChosenStarter: true,
-          tutorialActive: !!opts?.tutorial,
-          tutorialStep: 'dock_city',
-        } as Partial<GameState> as GameState;
-      }
-
+      // Handle test ship (special case with all upgrades)
       if ((kind as any) === 'test') {
-        // Spawn a racer with all upgrades and max caps for testing
-        const credits = 999999;
-        const kindR: Ship['kind'] = 'racer';
+        const kindR: ShipKind = 'racer';
         const testWeapon: ShipWeapon = {
           ...WEAPON_BASE_STATS.railgun,
           damageLevel: 5,
           fireRateLevel: 3,
           rangeLevel: 3,
         };
-        const ship: Ship = {
-          position: basePosition,
-          velocity: baseVelocity,
-          credits,
-          cargo: {},
-          maxCargo: shipCaps[kindR].cargo,
+        const ship = createShip(kindR, basePosition, {
+          credits: 999999,
           canMine: true,
-          enginePower: 0,
-          engineTarget: 0,
           hasNavigationArray: true,
           hasUnionMembership: true,
           hasMarketIntel: true,
-          kind: kindR,
-          stats: { acc: shipCaps[kindR].acc * 2, drag: 0.85, vmax: shipCaps[kindR].vmax * 2 },
+          maxCargo: shipCaps[kindR].cargo,
+          stats: {
+            acc: shipCaps[kindR].acc * 2,
+            drag: 0.85,
+            vmax: shipCaps[kindR].vmax * 2,
+          },
           weapon: testWeapon,
-          hp: PLAYER_MAX_HP,
-          maxHp: PLAYER_MAX_HP,
-          energy: PLAYER_MAX_ENERGY,
-          maxEnergy: PLAYER_MAX_ENERGY,
-        };
+        });
 
         // Set varied reputation at local stations for testing reputation tiers
         const stations = state.stations.map(s => {
@@ -1019,26 +497,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         } as Partial<GameState> as GameState;
       }
 
-      const ship: Ship = {
-        position: basePosition,
-        velocity: baseVelocity,
-        credits: 0,
-        cargo: {},
-        maxCargo: 80,
-        canMine: true,
-        enginePower: 0,
-        engineTarget: 0,
-        hasNavigationArray: false,
-        hasUnionMembership: false,
-        hasMarketIntel: false,
-        kind: 'miner',
-        stats: { acc: 9, drag: 1.1, vmax: 11 },
-        weapon: baseWeapon,
-        hp: PLAYER_MAX_HP,
-        maxHp: PLAYER_MAX_HP,
-        energy: PLAYER_MAX_ENERGY,
-        maxEnergy: PLAYER_MAX_ENERGY,
-      };
+      // Use ship registry for normal starter ships
+      const ship = createShip(kind as ShipKind, basePosition);
+
       return {
         ship,
         hasChosenStarter: true,

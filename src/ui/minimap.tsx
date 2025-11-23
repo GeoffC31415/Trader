@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useGameStore } from '../state/game_state';
+import { useGameStore } from '../state';
 
 type Vec3 = [number, number, number];
 

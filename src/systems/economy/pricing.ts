@@ -2,6 +2,7 @@ import type { Commodity } from '../../domain/types/economy_types';
 import type { StationType } from '../../domain/types/economy_types';
 import type { StationInventory } from '../../domain/types/economy_types';
 import { economy_constants } from './constants';
+import { getEconomyConfig } from '../../config/game_config';
 import { processRecipes, type ProcessRecipe } from './recipes';
 import { ensureFeaturedInitialized, getFeaturedMultiplier } from './featured';
 
@@ -140,37 +141,40 @@ function nearestProducerDistance(commodityId: string, here: [number, number, num
 }
 
 function distancePremiumFor(category: Commodity['category'], distance: number): number {
-  const norm = economy_constants.distance_norm;
-  const k = (economy_constants.k_dist_by_category as any)[category] || 0.2;
+  const config = getEconomyConfig();
+  const norm = config.distanceNorm;
+  const k = config.kDistByCategory[category] || 0.2;
   const premium = k * Math.max(0, Math.min(1, distance / Math.max(1, norm)));
-  return Math.min(economy_constants.max_distance_premium, premium);
+  return Math.min(config.maxDistancePremium, premium);
 }
 
 function applyAffinity(type: StationType, category: Commodity['category'], baseBuy: number, baseSell: number): { buy: number; sell: number } {
-  const matrix = (economy_constants.affinity as any)[type] || {};
-  const entry = matrix[category];
-  if (!entry) return { buy: baseBuy, sell: baseSell };
-  return { buy: Math.round(baseBuy * entry.buy), sell: Math.round(baseSell * entry.sell) };
+  const config = getEconomyConfig();
+  const aff = config.affinity[type]?.[category];
+  if (!aff) return { buy: baseBuy, sell: baseSell };
+  return { buy: Math.round(baseBuy * aff.buy), sell: Math.round(baseSell * aff.sell) };
 }
 
 function applyStockCurve(category: Commodity['category'], buy: number, sell: number, stock: number, target: number): { buy: number; sell: number } {
   if (target <= 0) return { buy, sell };
   const ratio = Math.max(0, Math.min(2, stock / target));
-  const k = economy_constants.k_stock;
-  const m = Math.max(economy_constants.min_stock_multiplier, Math.min(economy_constants.max_stock_multiplier, 1 + k * (1 - ratio)));
-  const buyM = Math.max(economy_constants.min_buy_stock_multiplier, Math.min(economy_constants.max_buy_stock_multiplier, m));
+  const config = getEconomyConfig();
+  const k = config.kStock;
+  const m = Math.max(config.minStockMultiplier, Math.min(config.maxStockMultiplier, 1 + k * (1 - ratio)));
+  const buyM = Math.max(config.minBuyStockMultiplier, Math.min(config.maxBuyStockMultiplier, m));
   return { buy: Math.round(buy * buyM), sell: Math.round(sell * m) };
 }
 
 function getCraftFloorFor(category: Commodity['category']): number {
-  const map = economy_constants.craft_floor_margin as any;
-  return map[category] || 20;
+  const config = getEconomyConfig();
+  return config.craftFloorMargin[category] || 20;
 }
 
 export function priceForStation(type: StationType, commodities: Commodity[], here?: [number, number, number], stationsMeta?: StationMeta[], stationId?: string): StationInventory {
   ensureFeaturedInitialized(stationsMeta);
   const rules = rulesByType[type];
-  const volatility = 0.16;
+  const config = getEconomyConfig();
+  const volatility = config.volatility;
   const inv: StationInventory = {};
   const recipes = processRecipes[type] || [];
   const inputSet = new Set(recipes.map(r => r.inputId));
@@ -188,7 +192,7 @@ export function priceForStation(type: StationType, commodities: Commodity[], her
     baseSell = withAffinity.sell;
     const buy = fluctuate(baseBuy, volatility);
     let sell = fluctuate(baseSell, volatility);
-    const adjusted = ensureSpread({ buy, sell, minPercent: 0.08, minAbsolute: 3 });
+    const adjusted = ensureSpread({ buy, sell, minPercent: config.minSpreadPercent, minAbsolute: config.minSpreadAbsolute });
     const d = nearestProducerDistance(c.id, here, stationsMeta);
     const distPremium = distancePremiumFor(c.category, d);
     const featuredM = getFeaturedMultiplier(stationId, c.id);
