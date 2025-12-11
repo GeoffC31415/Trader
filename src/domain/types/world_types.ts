@@ -330,6 +330,18 @@ export type GameState = {
   purchaseWeapon: (weaponKind: WeaponKind, cost: number) => void;
   // Ally assists
   consumeAssist: (type: AllyAssistToken['type'], by?: string) => boolean;
+  // Notifications
+  notifications?: Notification[];
+  addNotification: (notif: Omit<Notification, 'id' | 'createdAt'>) => void;
+  dismissNotification: (id: string) => void;
+};
+
+export type Notification = {
+  id: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  message: string;
+  duration?: number; // milliseconds, undefined = manual dismiss only
+  createdAt: number;
 };
 
 

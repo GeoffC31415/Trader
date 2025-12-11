@@ -11,6 +11,7 @@
 
 import { create } from 'zustand';
 import { SCALE, sp } from '../domain/constants/world_constants';
+import { DOCKING_RANGE_WORLD, MINING_RANGE_WORLD } from '../domain/constants/game_constants';
 import { shipCaps } from '../domain/constants/ship_constants';
 import {
   WEAPON_BASE_STATS,
@@ -39,7 +40,8 @@ import { applyMissionRewards, advanceMissionArc, canAcceptMission, applyPermanen
 import { applyChoicePermanentEffects } from '../systems/missions/choice_system';
 import { gatedCommodities, getPriceBiasForStation } from '../systems/economy/pricing';
 import { findRecipeForStation } from '../systems/economy/recipes';
-import type { GameState, Ship, Station, Objective, Contract, NpcTrader, AllyAssistToken } from '../domain/types/world_types';
+import type { GameState, Ship, Station, Objective, Contract, NpcTrader, AllyAssistToken, TrustRecord, Notification } from '../domain/types/world_types';
+import { createNotification } from './modules/notifications';
 import type { ShipWeapon } from '../domain/types/combat_types';
 import type { Mission } from '../domain/types/mission_types';
 
@@ -128,6 +130,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   escortStates: new Map(),
   relationships: {},
   allyAssistTokens: [],
+  notifications: [],
 
   // Route suggestions (now delegated to economy module)
   getSuggestedRoutes: (opts) => {
@@ -145,18 +148,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       let stations = jitterPrices(state.stations, dt);
 
       // Phase 3: gentle trust decay toward 0 over time
-      if (state.relationships) {
+      let relationships = state.relationships;
+      if (relationships) {
         const decayRate = 0.005 * dt; // very gentle
-        const relationships = { ...state.relationships };
-        for (const key of Object.keys(relationships)) {
-          const r = relationships[key];
+        const updatedRelationships: Record<string, TrustRecord> = { ...relationships };
+        for (const key of Object.keys(updatedRelationships)) {
+          const r = updatedRelationships[key];
           if (!r) continue;
           let score = r.score;
           if (score > 0) score = Math.max(0, score - decayRate);
           else if (score < 0) score = Math.min(0, score + decayRate);
-          relationships[key] = { ...r, score, tier: tierForScore(score) } as any;
+          updatedRelationships[key] = { ...r, score, tier: tierForScore(score) };
         }
-        (state as any).relationships = relationships;
+        relationships = updatedRelationships;
       }
 
       // 3. NPCs - update movement and trading
@@ -234,6 +238,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         missionArcs: missionResult.missionArcs,
         stealthStates: missionResult.stealthStates,
         escortStates: missionResult.escortStates,
+        relationships,
       } as Partial<GameState> as GameState;
     }),
 
@@ -264,17 +269,19 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (!state.hasChosenStarter) return state;
       if (state.ship.dockedStationId) return state;
       const near = state.stations.find(
-        s => distance(s.position, state.ship.position) < 6 * SCALE
+        s => distance(s.position, state.ship.position) < DOCKING_RANGE_WORLD
       );
       if (!near) return state;
 
       // Check if station is hostile or closed
       if (!canDockAtStation(near)) {
-        console.log(
-          `Cannot dock at ${near.name}: ${
-            isStationHostile(near) ? 'Station is hostile' : 'Station is closed'
-          }`
-        );
+        const reason = isStationHostile(near) ? 'Station is hostile' : 'Station is closed';
+        const addNotification = get().addNotification;
+        addNotification({
+          type: 'error',
+          message: `Cannot dock at ${near.name}: ${reason}`,
+          duration: 3000,
+        });
         return state;
       }
 
@@ -315,9 +322,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       if (state.tutorialActive) {
         if (state.tutorialStep === 'dock_city' && near.type === 'city') {
-          (next as any).tutorialStep = 'accept_mission';
+          next.tutorialStep = 'accept_mission';
         } else if (state.tutorialStep === 'goto_refinery' && near.id === 'sol-refinery') {
-          (next as any).tutorialStep = 'buy_fuel';
+          next.tutorialStep = 'buy_fuel';
         }
       }
 
@@ -351,7 +358,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       const belts = state.belts;
       const near = belts.find(b => {
         const d = distance(state.ship.position, b.position);
-        return Math.abs(d - b.radius) < 6 * SCALE;
+        return Math.abs(d - b.radius) < MINING_RANGE_WORLD;
       });
       if (!near) return state;
 
@@ -451,12 +458,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     }),
 
   // Starter selection
-  chooseStarter: (kind, opts) =>
+  chooseStarter: (kind: ShipKind | 'test', opts) =>
     set(state => {
       const basePosition: [number, number, number] = state.ship.position;
 
       // Handle test ship (special case with all upgrades)
-      if ((kind as any) === 'test') {
+      if (kind === 'test') {
         const kindR: ShipKind = 'racer';
         const testWeapon: ShipWeapon = {
           ...WEAPON_BASE_STATS.railgun,
@@ -514,7 +521,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (state.tutorialActive === active) return state;
       const next: Partial<GameState> = { tutorialActive: active };
       if (active && state.tutorialStep === 'done')
-        (next as any).tutorialStep = 'dock_city';
+        next.tutorialStep = 'dock_city';
       return next as Partial<GameState> as GameState;
     }),
 
@@ -569,7 +576,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         state.tutorialStep === 'accept_mission' &&
         chosen?.commodityId === 'refined_fuel'
       ) {
-        (next as any).tutorialStep = 'goto_refinery';
+        next.tutorialStep = 'goto_refinery';
       }
 
       return next as Partial<GameState> as GameState;
@@ -793,7 +800,7 @@ export const useGameStore = create<GameState>((set, get) => ({
               const preset = defaultAssistForStation(by);
               const token = grantAssist(by, preset.type, preset.description, now);
               allyAssistTokens.push(token);
-              relationships[by] = { ...after, lastAssistGrantedAt: now } as any;
+              relationships[by] = { ...after, lastAssistGrantedAt: now };
               missionCelebrationData.allyAssistUnlocked = { by, type: preset.type, description: preset.description };
             }
           }
@@ -1006,6 +1013,24 @@ export const useGameStore = create<GameState>((set, get) => ({
         missionArcs: finalArcs,
         ...rewardUpdates,
         ...permanentEffectsUpdates,
+      } as Partial<GameState> as GameState;
+    }),
+
+  // Notification actions
+  addNotification: (notif) =>
+    set(state => {
+      const notification: Notification = {
+        ...createNotification(notif.type, notif.message, notif.duration),
+      };
+      return {
+        notifications: [...(state.notifications || []), notification],
+      } as Partial<GameState> as GameState;
+    }),
+
+  dismissNotification: (id) =>
+    set(state => {
+      return {
+        notifications: (state.notifications || []).filter(n => n.id !== id),
       } as Partial<GameState> as GameState;
     }),
 }));

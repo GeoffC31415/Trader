@@ -7,8 +7,9 @@ import type { StationType } from '../domain/types/economy_types';
 import { FreighterModel } from './components/ships/FreighterModel';
 import { ClipperModel } from './components/ships/ClipperModel';
 import { MinerModel } from './components/ships/MinerModel';
-
-const SCALE = 10;
+import { useGameInput } from '../input/use_game_input';
+import { SCALE } from '../domain/constants/world_constants';
+import { DOCKING_RANGE_WORLD, MINING_RANGE_WORLD } from '../domain/constants/game_constants';
 const SHOW_ASTEROIDS = false; // Set to false to disable asteroid rendering for better performance
 
 function colorFromCommodity(id: string): string {
@@ -257,9 +258,6 @@ export function SceneRoot() {
   const tick = useGameStore(s => s.tick);
   const thrust = useGameStore(s => s.thrust);
   const setEngineTarget = useGameStore(s => s.setEngineTarget);
-  const tryDock = useGameStore(s => s.tryDock);
-  const undock = useGameStore(s => s.undock);
-  const mine = useGameStore(s => s.mine);
   const ship = useGameStore(s => s.ship);
   const trackedStationId = useGameStore(s => s.trackedStationId);
   const { camera } = useThree();
@@ -267,8 +265,7 @@ export function SceneRoot() {
   const yawRef = useRef<number>(0);
   const isDragging = useRef<boolean>(false);
 
-  const pressed = useRef<Record<string, boolean>>({});
-  const lastFacingDir = useRef<[number, number, number]>([0, 0, 1]); // Default forward direction
+  const { pressed, lastFacingDir } = useGameInput();
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
@@ -280,28 +277,18 @@ export function SceneRoot() {
     const rightPlanar = new THREE.Vector3().crossVectors(fwdPlanar, up).normalize();
 
     const dir = new THREE.Vector3();
-    if (pressed.current['w']) dir.add(fwdPlanar);
-    if (pressed.current['s']) dir.addScaledVector(fwdPlanar, -1);
-    if (pressed.current['a']) dir.addScaledVector(rightPlanar, -1);
-    if (pressed.current['d']) dir.add(rightPlanar);
-    if (pressed.current['r']) dir.add(up);
-    if (pressed.current['f']) dir.addScaledVector(up, -1);
+    if (pressed['w']) dir.add(fwdPlanar);
+    if (pressed['s']) dir.addScaledVector(fwdPlanar, -1);
+    if (pressed['a']) dir.addScaledVector(rightPlanar, -1);
+    if (pressed['d']) dir.add(rightPlanar);
+    if (pressed['r']) dir.add(up);
+    if (pressed['f']) dir.addScaledVector(up, -1);
     if (dir.lengthSq() > 0) {
       dir.normalize();
       thrust([dir.x, dir.y, dir.z], dt);
       setEngineTarget(1);
     } else {
       setEngineTarget(0);
-    }
-    
-    // Update last facing direction when ship is moving
-    const vx = ship.velocity[0];
-    const vy = ship.velocity[1];
-    const vz = ship.velocity[2];
-    const speedSq = vx * vx + vy * vy + vz * vz;
-    if (speedSq > 0.001) {
-      const speed = Math.sqrt(speedSq);
-      lastFacingDir.current = [vx / speed, vy / speed, vz / speed];
     }
     
     tick(dt);
@@ -318,6 +305,7 @@ export function SceneRoot() {
     camera.lookAt(target.x, target.y + 2, target.z); // look slightly above ship
   });
 
+  // Mouse camera control
   useEffect(() => {
     const onMouseDown = (e: MouseEvent) => {
       if (e.button === 1) { // middle mouse
@@ -334,63 +322,15 @@ export function SceneRoot() {
       if (!isDragging.current) return;
       yawRef.current += (e.movementX || 0) * 0.005; // sensitivity
     };
-    const onKeyDown = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
-      if (key === 'e') { tryDock(); return; }
-      if (key === 'q') { undock(); return; }
-      if (key === 'm') { mine(); return; }
-      if (key === ' ' || e.code === 'Space') { 
-        e.preventDefault(); // Prevent page scroll
-        
-        // Calculate target position based on ship's forward direction (from velocity)
-        const state = useGameStore.getState();
-        const ship = state.ship;
-        const vx = ship.velocity[0];
-        const vy = ship.velocity[1];
-        const vz = ship.velocity[2];
-        const speedSq = vx * vx + vy * vy + vz * vz;
-        
-        let dirX: number, dirY: number, dirZ: number;
-        if (speedSq < 0.001) {
-          // Ship is stationary, use last facing direction (where model is pointing)
-          [dirX, dirY, dirZ] = lastFacingDir.current;
-        } else {
-          // Fire in the direction of ship's velocity (where it's pointing)
-          const speed = Math.sqrt(speedSq);
-          dirX = vx / speed;
-          dirY = vy / speed;
-          dirZ = vz / speed;
-        }
-        
-        const fireRange = 100; // Distance ahead to aim
-        const targetPos: [number, number, number] = [
-          ship.position[0] + dirX * fireRange,
-          ship.position[1] + dirY * fireRange,
-          ship.position[2] + dirZ * fireRange,
-        ];
-        
-        state.fireWeapon(targetPos);
-        return;
-      }
-      pressed.current[key] = true;
-    };
-    const onKeyUp = (e: KeyboardEvent) => {
-      const key = e.key.toLowerCase();
-      pressed.current[key] = false;
-    };
     window.addEventListener('mousedown', onMouseDown);
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
     return () => {
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
     };
-  }, [tryDock, undock, mine]);
+  }, []);
 
   const dockIntroVisibleId = useGameStore(s => s.dockIntroVisibleId);
   return (
@@ -408,7 +348,7 @@ export function SceneRoot() {
               ship.position[1]-b.position[1],
               ship.position[2]-b.position[2]
             ) - b.radius
-          ) < 6 * SCALE && !ship.dockedStationId && (
+            ) < MINING_RANGE_WORLD && !ship.dockedStationId && (
             <Html position={[b.position[0], b.position[1]+3, b.position[2]]} center distanceFactor={60}>
               <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6 }}>
                 <span style={{ fontSize: 12, opacity: 0.5 }}>
@@ -427,7 +367,7 @@ export function SceneRoot() {
             ship.position[0]-s.position[0],
             ship.position[1]-s.position[1],
             ship.position[2]-s.position[2]
-          ) < 6 * SCALE && !ship.dockedStationId && (
+            ) < MINING_RANGE_WORLD && !ship.dockedStationId && (
             <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center distanceFactor={60}>
               <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6 }}>
                 <span style={{ fontSize: 12, opacity: 0.5 }}>Press E to Dock</span>
@@ -462,7 +402,7 @@ export function SceneRoot() {
       <Projectiles />
       {/* Mission markers */}
       <MissionMarkers />
-      <Ship turnLeft={!!pressed.current['a']} turnRight={!!pressed.current['d']} />
+      <Ship turnLeft={!!pressed['a']} turnRight={!!pressed['d']} />
     </group>
   );
 }
