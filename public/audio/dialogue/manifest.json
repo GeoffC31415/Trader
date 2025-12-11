@@ -1,0 +1,1029 @@
+{
+  "generatedAt": "2025-12-11T22:39:33.855Z",
+  "totalFiles": 195,
+  "characters": {
+    "sol-city": {
+      "characterName": "Mira Vale",
+      "lineCount": 26,
+      "files": [
+        {
+          "id": "mira_concern_pirates",
+          "filename": "mira_concern_pirates.mp3",
+          "path": "audio/dialogue/sol-city/mira_concern_pirates.mp3"
+        },
+        {
+          "id": "mira_concern_stability",
+          "filename": "mira_concern_stability.mp3",
+          "path": "audio/dialogue/sol-city/mira_concern_stability.mp3"
+        },
+        {
+          "id": "mira_farewell_neutral",
+          "filename": "mira_farewell_neutral.mp3",
+          "path": "audio/dialogue/sol-city/mira_farewell_neutral.mp3"
+        },
+        {
+          "id": "mira_farewell_trusted",
+          "filename": "mira_farewell_trusted.mp3",
+          "path": "audio/dialogue/sol-city/mira_farewell_trusted.mp3"
+        },
+        {
+          "id": "mira_gossip_harlan",
+          "filename": "mira_gossip_harlan.mp3",
+          "path": "audio/dialogue/sol-city/mira_gossip_harlan.mp3"
+        },
+        {
+          "id": "mira_gossip_kalla",
+          "filename": "mira_gossip_kalla.mp3",
+          "path": "audio/dialogue/sol-city/mira_gossip_kalla.mp3"
+        },
+        {
+          "id": "mira_gossip_rex",
+          "filename": "mira_gossip_rex.mp3",
+          "path": "audio/dialogue/sol-city/mira_gossip_rex.mp3"
+        },
+        {
+          "id": "mira_gossip_sana",
+          "filename": "mira_gossip_sana.mp3",
+          "path": "audio/dialogue/sol-city/mira_gossip_sana.mp3"
+        },
+        {
+          "id": "mira_gossip_vex",
+          "filename": "mira_gossip_vex.mp3",
+          "path": "audio/dialogue/sol-city/mira_gossip_vex.mp3"
+        },
+        {
+          "id": "mira_greet_acquaint",
+          "filename": "mira_greet_acquaint.mp3",
+          "path": "audio/dialogue/sol-city/mira_greet_acquaint.mp3"
+        },
+        {
+          "id": "mira_greet_allied",
+          "filename": "mira_greet_allied.mp3",
+          "path": "audio/dialogue/sol-city/mira_greet_allied.mp3"
+        },
+        {
+          "id": "mira_greet_contact",
+          "filename": "mira_greet_contact.mp3",
+          "path": "audio/dialogue/sol-city/mira_greet_contact.mp3"
+        },
+        {
+          "id": "mira_greet_firstvisit",
+          "filename": "mira_greet_firstvisit.mp3",
+          "path": "audio/dialogue/sol-city/mira_greet_firstvisit.mp3"
+        },
+        {
+          "id": "mira_greet_longtime",
+          "filename": "mira_greet_longtime.mp3",
+          "path": "audio/dialogue/sol-city/mira_greet_longtime.mp3"
+        },
+        {
+          "id": "mira_greet_stranger",
+          "filename": "mira_greet_stranger.mp3",
+          "path": "audio/dialogue/sol-city/mira_greet_stranger.mp3"
+        },
+        {
+          "id": "mira_greet_trusted",
+          "filename": "mira_greet_trusted.mp3",
+          "path": "audio/dialogue/sol-city/mira_greet_trusted.mp3"
+        },
+        {
+          "id": "mira_memory_bigtrader",
+          "filename": "mira_memory_bigtrader.mp3",
+          "path": "audio/dialogue/sol-city/mira_memory_bigtrader.mp3"
+        },
+        {
+          "id": "mira_memory_missions",
+          "filename": "mira_memory_missions.mp3",
+          "path": "audio/dialogue/sol-city/mira_memory_missions.mp3"
+        },
+        {
+          "id": "mira_react_broke_strike",
+          "filename": "mira_react_broke_strike.mp3",
+          "path": "audio/dialogue/sol-city/mira_react_broke_strike.mp3"
+        },
+        {
+          "id": "mira_react_enforced_law",
+          "filename": "mira_react_enforced_law.mp3",
+          "path": "audio/dialogue/sol-city/mira_react_enforced_law.mp3"
+        },
+        {
+          "id": "mira_react_joined_pirates",
+          "filename": "mira_react_joined_pirates.mp3",
+          "path": "audio/dialogue/sol-city/mira_react_joined_pirates.mp3"
+        },
+        {
+          "id": "mira_react_sided_green",
+          "filename": "mira_react_sided_green.mp3",
+          "path": "audio/dialogue/sol-city/mira_react_sided_green.mp3"
+        },
+        {
+          "id": "mira_react_sided_sol",
+          "filename": "mira_react_sided_sol.mp3",
+          "path": "audio/dialogue/sol-city/mira_react_sided_sol.mp3"
+        },
+        {
+          "id": "mira_tip_fuel",
+          "filename": "mira_tip_fuel.mp3",
+          "path": "audio/dialogue/sol-city/mira_tip_fuel.mp3"
+        },
+        {
+          "id": "mira_tip_luxury",
+          "filename": "mira_tip_luxury.mp3",
+          "path": "audio/dialogue/sol-city/mira_tip_luxury.mp3"
+        },
+        {
+          "id": "mira_tip_pharma",
+          "filename": "mira_tip_pharma.mp3",
+          "path": "audio/dialogue/sol-city/mira_tip_pharma.mp3"
+        }
+      ]
+    },
+    "sol-refinery": {
+      "characterName": "Rex Calder",
+      "lineCount": 25,
+      "files": [
+        {
+          "id": "rex_concern_prices",
+          "filename": "rex_concern_prices.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_concern_prices.mp3"
+        },
+        {
+          "id": "rex_concern_union",
+          "filename": "rex_concern_union.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_concern_union.mp3"
+        },
+        {
+          "id": "rex_farewell_neutral",
+          "filename": "rex_farewell_neutral.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_farewell_neutral.mp3"
+        },
+        {
+          "id": "rex_farewell_trusted",
+          "filename": "rex_farewell_trusted.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_farewell_trusted.mp3"
+        },
+        {
+          "id": "rex_gossip_harlan",
+          "filename": "rex_gossip_harlan.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_gossip_harlan.mp3"
+        },
+        {
+          "id": "rex_gossip_ivo",
+          "filename": "rex_gossip_ivo.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_gossip_ivo.mp3"
+        },
+        {
+          "id": "rex_gossip_kade",
+          "filename": "rex_gossip_kade.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_gossip_kade.mp3"
+        },
+        {
+          "id": "rex_gossip_mira",
+          "filename": "rex_gossip_mira.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_gossip_mira.mp3"
+        },
+        {
+          "id": "rex_gossip_sana",
+          "filename": "rex_gossip_sana.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_gossip_sana.mp3"
+        },
+        {
+          "id": "rex_greet_acquaint",
+          "filename": "rex_greet_acquaint.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_greet_acquaint.mp3"
+        },
+        {
+          "id": "rex_greet_allied",
+          "filename": "rex_greet_allied.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_greet_allied.mp3"
+        },
+        {
+          "id": "rex_greet_contact",
+          "filename": "rex_greet_contact.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_greet_contact.mp3"
+        },
+        {
+          "id": "rex_greet_firstvisit",
+          "filename": "rex_greet_firstvisit.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_greet_firstvisit.mp3"
+        },
+        {
+          "id": "rex_greet_longtime",
+          "filename": "rex_greet_longtime.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_greet_longtime.mp3"
+        },
+        {
+          "id": "rex_greet_stranger",
+          "filename": "rex_greet_stranger.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_greet_stranger.mp3"
+        },
+        {
+          "id": "rex_greet_trusted",
+          "filename": "rex_greet_trusted.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_greet_trusted.mp3"
+        },
+        {
+          "id": "rex_memory_frequent",
+          "filename": "rex_memory_frequent.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_memory_frequent.mp3"
+        },
+        {
+          "id": "rex_react_broke_strike",
+          "filename": "rex_react_broke_strike.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_react_broke_strike.mp3"
+        },
+        {
+          "id": "rex_react_defended_convoy",
+          "filename": "rex_react_defended_convoy.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_react_defended_convoy.mp3"
+        },
+        {
+          "id": "rex_react_exposed_ceres",
+          "filename": "rex_react_exposed_ceres.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_react_exposed_ceres.mp3"
+        },
+        {
+          "id": "rex_react_protected_ceres",
+          "filename": "rex_react_protected_ceres.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_react_protected_ceres.mp3"
+        },
+        {
+          "id": "rex_react_supported_strike",
+          "filename": "rex_react_supported_strike.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_react_supported_strike.mp3"
+        },
+        {
+          "id": "rex_tip_electronics",
+          "filename": "rex_tip_electronics.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_tip_electronics.mp3"
+        },
+        {
+          "id": "rex_tip_fuel",
+          "filename": "rex_tip_fuel.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_tip_fuel.mp3"
+        },
+        {
+          "id": "rex_tip_processing",
+          "filename": "rex_tip_processing.mp3",
+          "path": "audio/dialogue/sol-refinery/rex_tip_processing.mp3"
+        }
+      ]
+    },
+    "aurum-fab": {
+      "characterName": "Dr. Elin Kade",
+      "lineCount": 22,
+      "files": [
+        {
+          "id": "kade_concern_drydock",
+          "filename": "kade_concern_drydock.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_concern_drydock.mp3"
+        },
+        {
+          "id": "kade_concern_union",
+          "filename": "kade_concern_union.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_concern_union.mp3"
+        },
+        {
+          "id": "kade_farewell_neutral",
+          "filename": "kade_farewell_neutral.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_farewell_neutral.mp3"
+        },
+        {
+          "id": "kade_farewell_trusted",
+          "filename": "kade_farewell_trusted.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_farewell_trusted.mp3"
+        },
+        {
+          "id": "kade_gossip_harlan",
+          "filename": "kade_gossip_harlan.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_gossip_harlan.mp3"
+        },
+        {
+          "id": "kade_gossip_ivo",
+          "filename": "kade_gossip_ivo.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_gossip_ivo.mp3"
+        },
+        {
+          "id": "kade_gossip_mira",
+          "filename": "kade_gossip_mira.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_gossip_mira.mp3"
+        },
+        {
+          "id": "kade_gossip_sana",
+          "filename": "kade_gossip_sana.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_gossip_sana.mp3"
+        },
+        {
+          "id": "kade_greet_acquaint",
+          "filename": "kade_greet_acquaint.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_greet_acquaint.mp3"
+        },
+        {
+          "id": "kade_greet_allied",
+          "filename": "kade_greet_allied.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_greet_allied.mp3"
+        },
+        {
+          "id": "kade_greet_contact",
+          "filename": "kade_greet_contact.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_greet_contact.mp3"
+        },
+        {
+          "id": "kade_greet_firstvisit",
+          "filename": "kade_greet_firstvisit.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_greet_firstvisit.mp3"
+        },
+        {
+          "id": "kade_greet_stranger",
+          "filename": "kade_greet_stranger.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_greet_stranger.mp3"
+        },
+        {
+          "id": "kade_greet_trusted",
+          "filename": "kade_greet_trusted.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_greet_trusted.mp3"
+        },
+        {
+          "id": "kade_memory_bigtrader",
+          "filename": "kade_memory_bigtrader.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_memory_bigtrader.mp3"
+        },
+        {
+          "id": "kade_react_aurum_won",
+          "filename": "kade_react_aurum_won.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_react_aurum_won.mp3"
+        },
+        {
+          "id": "kade_react_chose_aurum",
+          "filename": "kade_react_chose_aurum.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_react_chose_aurum.mp3"
+        },
+        {
+          "id": "kade_react_chose_drydock",
+          "filename": "kade_react_chose_drydock.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_react_chose_drydock.mp3"
+        },
+        {
+          "id": "kade_react_corporate_win",
+          "filename": "kade_react_corporate_win.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_react_corporate_win.mp3"
+        },
+        {
+          "id": "kade_tip_alloys",
+          "filename": "kade_tip_alloys.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_tip_alloys.mp3"
+        },
+        {
+          "id": "kade_tip_materials",
+          "filename": "kade_tip_materials.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_tip_materials.mp3"
+        },
+        {
+          "id": "kade_tip_silicon",
+          "filename": "kade_tip_silicon.mp3",
+          "path": "audio/dialogue/aurum-fab/kade_tip_silicon.mp3"
+        }
+      ]
+    },
+    "greenfields": {
+      "characterName": "Sana Whit",
+      "lineCount": 25,
+      "files": [
+        {
+          "id": "sana_concern_independence",
+          "filename": "sana_concern_independence.mp3",
+          "path": "audio/dialogue/greenfields/sana_concern_independence.mp3"
+        },
+        {
+          "id": "sana_concern_inspections",
+          "filename": "sana_concern_inspections.mp3",
+          "path": "audio/dialogue/greenfields/sana_concern_inspections.mp3"
+        },
+        {
+          "id": "sana_farewell_neutral",
+          "filename": "sana_farewell_neutral.mp3",
+          "path": "audio/dialogue/greenfields/sana_farewell_neutral.mp3"
+        },
+        {
+          "id": "sana_farewell_trusted",
+          "filename": "sana_farewell_trusted.mp3",
+          "path": "audio/dialogue/greenfields/sana_farewell_trusted.mp3"
+        },
+        {
+          "id": "sana_gossip_harlan",
+          "filename": "sana_gossip_harlan.mp3",
+          "path": "audio/dialogue/greenfields/sana_gossip_harlan.mp3"
+        },
+        {
+          "id": "sana_gossip_ivo",
+          "filename": "sana_gossip_ivo.mp3",
+          "path": "audio/dialogue/greenfields/sana_gossip_ivo.mp3"
+        },
+        {
+          "id": "sana_gossip_kalla",
+          "filename": "sana_gossip_kalla.mp3",
+          "path": "audio/dialogue/greenfields/sana_gossip_kalla.mp3"
+        },
+        {
+          "id": "sana_gossip_mira",
+          "filename": "sana_gossip_mira.mp3",
+          "path": "audio/dialogue/greenfields/sana_gossip_mira.mp3"
+        },
+        {
+          "id": "sana_gossip_rex",
+          "filename": "sana_gossip_rex.mp3",
+          "path": "audio/dialogue/greenfields/sana_gossip_rex.mp3"
+        },
+        {
+          "id": "sana_greet_acquaint",
+          "filename": "sana_greet_acquaint.mp3",
+          "path": "audio/dialogue/greenfields/sana_greet_acquaint.mp3"
+        },
+        {
+          "id": "sana_greet_allied",
+          "filename": "sana_greet_allied.mp3",
+          "path": "audio/dialogue/greenfields/sana_greet_allied.mp3"
+        },
+        {
+          "id": "sana_greet_contact",
+          "filename": "sana_greet_contact.mp3",
+          "path": "audio/dialogue/greenfields/sana_greet_contact.mp3"
+        },
+        {
+          "id": "sana_greet_firstvisit",
+          "filename": "sana_greet_firstvisit.mp3",
+          "path": "audio/dialogue/greenfields/sana_greet_firstvisit.mp3"
+        },
+        {
+          "id": "sana_greet_longtime",
+          "filename": "sana_greet_longtime.mp3",
+          "path": "audio/dialogue/greenfields/sana_greet_longtime.mp3"
+        },
+        {
+          "id": "sana_greet_stranger",
+          "filename": "sana_greet_stranger.mp3",
+          "path": "audio/dialogue/greenfields/sana_greet_stranger.mp3"
+        },
+        {
+          "id": "sana_greet_trusted",
+          "filename": "sana_greet_trusted.mp3",
+          "path": "audio/dialogue/greenfields/sana_greet_trusted.mp3"
+        },
+        {
+          "id": "sana_memory_frequent",
+          "filename": "sana_memory_frequent.mp3",
+          "path": "audio/dialogue/greenfields/sana_memory_frequent.mp3"
+        },
+        {
+          "id": "sana_react_controlled",
+          "filename": "sana_react_controlled.mp3",
+          "path": "audio/dialogue/greenfields/sana_react_controlled.mp3"
+        },
+        {
+          "id": "sana_react_independent",
+          "filename": "sana_react_independent.mp3",
+          "path": "audio/dialogue/greenfields/sana_react_independent.mp3"
+        },
+        {
+          "id": "sana_react_sided_green",
+          "filename": "sana_react_sided_green.mp3",
+          "path": "audio/dialogue/greenfields/sana_react_sided_green.mp3"
+        },
+        {
+          "id": "sana_react_sided_sol",
+          "filename": "sana_react_sided_sol.mp3",
+          "path": "audio/dialogue/greenfields/sana_react_sided_sol.mp3"
+        },
+        {
+          "id": "sana_react_supported_strike",
+          "filename": "sana_react_supported_strike.mp3",
+          "path": "audio/dialogue/greenfields/sana_react_supported_strike.mp3"
+        },
+        {
+          "id": "sana_tip_fertilizer",
+          "filename": "sana_tip_fertilizer.mp3",
+          "path": "audio/dialogue/greenfields/sana_tip_fertilizer.mp3"
+        },
+        {
+          "id": "sana_tip_food",
+          "filename": "sana_tip_food.mp3",
+          "path": "audio/dialogue/greenfields/sana_tip_food.mp3"
+        },
+        {
+          "id": "sana_tip_sugar",
+          "filename": "sana_tip_sugar.mp3",
+          "path": "audio/dialogue/greenfields/sana_tip_sugar.mp3"
+        }
+      ]
+    },
+    "ceres-pp": {
+      "characterName": "Ivo Renn",
+      "lineCount": 23,
+      "files": [
+        {
+          "id": "ivo_concern_competition",
+          "filename": "ivo_concern_competition.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_concern_competition.mp3"
+        },
+        {
+          "id": "ivo_concern_stability",
+          "filename": "ivo_concern_stability.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_concern_stability.mp3"
+        },
+        {
+          "id": "ivo_farewell_neutral",
+          "filename": "ivo_farewell_neutral.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_farewell_neutral.mp3"
+        },
+        {
+          "id": "ivo_farewell_trusted",
+          "filename": "ivo_farewell_trusted.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_farewell_trusted.mp3"
+        },
+        {
+          "id": "ivo_gossip_harlan",
+          "filename": "ivo_gossip_harlan.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_gossip_harlan.mp3"
+        },
+        {
+          "id": "ivo_gossip_kade",
+          "filename": "ivo_gossip_kade.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_gossip_kade.mp3"
+        },
+        {
+          "id": "ivo_gossip_mira",
+          "filename": "ivo_gossip_mira.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_gossip_mira.mp3"
+        },
+        {
+          "id": "ivo_gossip_rex",
+          "filename": "ivo_gossip_rex.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_gossip_rex.mp3"
+        },
+        {
+          "id": "ivo_gossip_vex",
+          "filename": "ivo_gossip_vex.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_gossip_vex.mp3"
+        },
+        {
+          "id": "ivo_greet_acquaint",
+          "filename": "ivo_greet_acquaint.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_greet_acquaint.mp3"
+        },
+        {
+          "id": "ivo_greet_allied",
+          "filename": "ivo_greet_allied.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_greet_allied.mp3"
+        },
+        {
+          "id": "ivo_greet_contact",
+          "filename": "ivo_greet_contact.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_greet_contact.mp3"
+        },
+        {
+          "id": "ivo_greet_firstvisit",
+          "filename": "ivo_greet_firstvisit.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_greet_firstvisit.mp3"
+        },
+        {
+          "id": "ivo_greet_stranger",
+          "filename": "ivo_greet_stranger.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_greet_stranger.mp3"
+        },
+        {
+          "id": "ivo_greet_trusted",
+          "filename": "ivo_greet_trusted.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_greet_trusted.mp3"
+        },
+        {
+          "id": "ivo_memory_bigtrader",
+          "filename": "ivo_memory_bigtrader.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_memory_bigtrader.mp3"
+        },
+        {
+          "id": "ivo_react_corporate_win",
+          "filename": "ivo_react_corporate_win.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_react_corporate_win.mp3"
+        },
+        {
+          "id": "ivo_react_exposed",
+          "filename": "ivo_react_exposed.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_react_exposed.mp3"
+        },
+        {
+          "id": "ivo_react_monopoly",
+          "filename": "ivo_react_monopoly.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_react_monopoly.mp3"
+        },
+        {
+          "id": "ivo_react_protected",
+          "filename": "ivo_react_protected.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_react_protected.mp3"
+        },
+        {
+          "id": "ivo_tip_batteries",
+          "filename": "ivo_tip_batteries.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_tip_batteries.mp3"
+        },
+        {
+          "id": "ivo_tip_fuel",
+          "filename": "ivo_tip_fuel.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_tip_fuel.mp3"
+        },
+        {
+          "id": "ivo_tip_reserves",
+          "filename": "ivo_tip_reserves.mp3",
+          "path": "audio/dialogue/ceres-pp/ivo_tip_reserves.mp3"
+        }
+      ]
+    },
+    "freeport": {
+      "characterName": "Kalla Rook",
+      "lineCount": 24,
+      "files": [
+        {
+          "id": "kalla_concern_freedom",
+          "filename": "kalla_concern_freedom.mp3",
+          "path": "audio/dialogue/freeport/kalla_concern_freedom.mp3"
+        },
+        {
+          "id": "kalla_concern_peace",
+          "filename": "kalla_concern_peace.mp3",
+          "path": "audio/dialogue/freeport/kalla_concern_peace.mp3"
+        },
+        {
+          "id": "kalla_farewell_neutral",
+          "filename": "kalla_farewell_neutral.mp3",
+          "path": "audio/dialogue/freeport/kalla_farewell_neutral.mp3"
+        },
+        {
+          "id": "kalla_farewell_trusted",
+          "filename": "kalla_farewell_trusted.mp3",
+          "path": "audio/dialogue/freeport/kalla_farewell_trusted.mp3"
+        },
+        {
+          "id": "kalla_gossip_harlan",
+          "filename": "kalla_gossip_harlan.mp3",
+          "path": "audio/dialogue/freeport/kalla_gossip_harlan.mp3"
+        },
+        {
+          "id": "kalla_gossip_ivo",
+          "filename": "kalla_gossip_ivo.mp3",
+          "path": "audio/dialogue/freeport/kalla_gossip_ivo.mp3"
+        },
+        {
+          "id": "kalla_gossip_mira",
+          "filename": "kalla_gossip_mira.mp3",
+          "path": "audio/dialogue/freeport/kalla_gossip_mira.mp3"
+        },
+        {
+          "id": "kalla_gossip_sana",
+          "filename": "kalla_gossip_sana.mp3",
+          "path": "audio/dialogue/freeport/kalla_gossip_sana.mp3"
+        },
+        {
+          "id": "kalla_gossip_vex",
+          "filename": "kalla_gossip_vex.mp3",
+          "path": "audio/dialogue/freeport/kalla_gossip_vex.mp3"
+        },
+        {
+          "id": "kalla_greet_acquaint",
+          "filename": "kalla_greet_acquaint.mp3",
+          "path": "audio/dialogue/freeport/kalla_greet_acquaint.mp3"
+        },
+        {
+          "id": "kalla_greet_allied",
+          "filename": "kalla_greet_allied.mp3",
+          "path": "audio/dialogue/freeport/kalla_greet_allied.mp3"
+        },
+        {
+          "id": "kalla_greet_contact",
+          "filename": "kalla_greet_contact.mp3",
+          "path": "audio/dialogue/freeport/kalla_greet_contact.mp3"
+        },
+        {
+          "id": "kalla_greet_firstvisit",
+          "filename": "kalla_greet_firstvisit.mp3",
+          "path": "audio/dialogue/freeport/kalla_greet_firstvisit.mp3"
+        },
+        {
+          "id": "kalla_greet_longtime",
+          "filename": "kalla_greet_longtime.mp3",
+          "path": "audio/dialogue/freeport/kalla_greet_longtime.mp3"
+        },
+        {
+          "id": "kalla_greet_stranger",
+          "filename": "kalla_greet_stranger.mp3",
+          "path": "audio/dialogue/freeport/kalla_greet_stranger.mp3"
+        },
+        {
+          "id": "kalla_greet_trusted",
+          "filename": "kalla_greet_trusted.mp3",
+          "path": "audio/dialogue/freeport/kalla_greet_trusted.mp3"
+        },
+        {
+          "id": "kalla_memory_frequent",
+          "filename": "kalla_memory_frequent.mp3",
+          "path": "audio/dialogue/freeport/kalla_memory_frequent.mp3"
+        },
+        {
+          "id": "kalla_react_defended_conf",
+          "filename": "kalla_react_defended_conf.mp3",
+          "path": "audio/dialogue/freeport/kalla_react_defended_conf.mp3"
+        },
+        {
+          "id": "kalla_react_law",
+          "filename": "kalla_react_law.mp3",
+          "path": "audio/dialogue/freeport/kalla_react_law.mp3"
+        },
+        {
+          "id": "kalla_react_peace",
+          "filename": "kalla_react_peace.mp3",
+          "path": "audio/dialogue/freeport/kalla_react_peace.mp3"
+        },
+        {
+          "id": "kalla_react_pirate",
+          "filename": "kalla_react_pirate.mp3",
+          "path": "audio/dialogue/freeport/kalla_react_pirate.mp3"
+        },
+        {
+          "id": "kalla_tip_alloys",
+          "filename": "kalla_tip_alloys.mp3",
+          "path": "audio/dialogue/freeport/kalla_tip_alloys.mp3"
+        },
+        {
+          "id": "kalla_tip_spreads",
+          "filename": "kalla_tip_spreads.mp3",
+          "path": "audio/dialogue/freeport/kalla_tip_spreads.mp3"
+        },
+        {
+          "id": "kalla_tip_sugar",
+          "filename": "kalla_tip_sugar.mp3",
+          "path": "audio/dialogue/freeport/kalla_tip_sugar.mp3"
+        }
+      ]
+    },
+    "drydock": {
+      "characterName": "Chief Harlan",
+      "lineCount": 26,
+      "files": [
+        {
+          "id": "harlan_concern_strike",
+          "filename": "harlan_concern_strike.mp3",
+          "path": "audio/dialogue/drydock/harlan_concern_strike.mp3"
+        },
+        {
+          "id": "harlan_concern_union",
+          "filename": "harlan_concern_union.mp3",
+          "path": "audio/dialogue/drydock/harlan_concern_union.mp3"
+        },
+        {
+          "id": "harlan_farewell_neutral",
+          "filename": "harlan_farewell_neutral.mp3",
+          "path": "audio/dialogue/drydock/harlan_farewell_neutral.mp3"
+        },
+        {
+          "id": "harlan_farewell_trusted",
+          "filename": "harlan_farewell_trusted.mp3",
+          "path": "audio/dialogue/drydock/harlan_farewell_trusted.mp3"
+        },
+        {
+          "id": "harlan_gossip_ivo",
+          "filename": "harlan_gossip_ivo.mp3",
+          "path": "audio/dialogue/drydock/harlan_gossip_ivo.mp3"
+        },
+        {
+          "id": "harlan_gossip_kade",
+          "filename": "harlan_gossip_kade.mp3",
+          "path": "audio/dialogue/drydock/harlan_gossip_kade.mp3"
+        },
+        {
+          "id": "harlan_gossip_kalla",
+          "filename": "harlan_gossip_kalla.mp3",
+          "path": "audio/dialogue/drydock/harlan_gossip_kalla.mp3"
+        },
+        {
+          "id": "harlan_gossip_rex",
+          "filename": "harlan_gossip_rex.mp3",
+          "path": "audio/dialogue/drydock/harlan_gossip_rex.mp3"
+        },
+        {
+          "id": "harlan_gossip_sana",
+          "filename": "harlan_gossip_sana.mp3",
+          "path": "audio/dialogue/drydock/harlan_gossip_sana.mp3"
+        },
+        {
+          "id": "harlan_greet_acquaint",
+          "filename": "harlan_greet_acquaint.mp3",
+          "path": "audio/dialogue/drydock/harlan_greet_acquaint.mp3"
+        },
+        {
+          "id": "harlan_greet_allied",
+          "filename": "harlan_greet_allied.mp3",
+          "path": "audio/dialogue/drydock/harlan_greet_allied.mp3"
+        },
+        {
+          "id": "harlan_greet_contact",
+          "filename": "harlan_greet_contact.mp3",
+          "path": "audio/dialogue/drydock/harlan_greet_contact.mp3"
+        },
+        {
+          "id": "harlan_greet_firstvisit",
+          "filename": "harlan_greet_firstvisit.mp3",
+          "path": "audio/dialogue/drydock/harlan_greet_firstvisit.mp3"
+        },
+        {
+          "id": "harlan_greet_longtime",
+          "filename": "harlan_greet_longtime.mp3",
+          "path": "audio/dialogue/drydock/harlan_greet_longtime.mp3"
+        },
+        {
+          "id": "harlan_greet_stranger",
+          "filename": "harlan_greet_stranger.mp3",
+          "path": "audio/dialogue/drydock/harlan_greet_stranger.mp3"
+        },
+        {
+          "id": "harlan_greet_trusted",
+          "filename": "harlan_greet_trusted.mp3",
+          "path": "audio/dialogue/drydock/harlan_greet_trusted.mp3"
+        },
+        {
+          "id": "harlan_memory_missions",
+          "filename": "harlan_memory_missions.mp3",
+          "path": "audio/dialogue/drydock/harlan_memory_missions.mp3"
+        },
+        {
+          "id": "harlan_react_broke_strike",
+          "filename": "harlan_react_broke_strike.mp3",
+          "path": "audio/dialogue/drydock/harlan_react_broke_strike.mp3"
+        },
+        {
+          "id": "harlan_react_chose_aurum",
+          "filename": "harlan_react_chose_aurum.mp3",
+          "path": "audio/dialogue/drydock/harlan_react_chose_aurum.mp3"
+        },
+        {
+          "id": "harlan_react_chose_drydock",
+          "filename": "harlan_react_chose_drydock.mp3",
+          "path": "audio/dialogue/drydock/harlan_react_chose_drydock.mp3"
+        },
+        {
+          "id": "harlan_react_drydock_won",
+          "filename": "harlan_react_drydock_won.mp3",
+          "path": "audio/dialogue/drydock/harlan_react_drydock_won.mp3"
+        },
+        {
+          "id": "harlan_react_supported_strike",
+          "filename": "harlan_react_supported_strike.mp3",
+          "path": "audio/dialogue/drydock/harlan_react_supported_strike.mp3"
+        },
+        {
+          "id": "harlan_react_union_win",
+          "filename": "harlan_react_union_win.mp3",
+          "path": "audio/dialogue/drydock/harlan_react_union_win.mp3"
+        },
+        {
+          "id": "harlan_tip_cargo",
+          "filename": "harlan_tip_cargo.mp3",
+          "path": "audio/dialogue/drydock/harlan_tip_cargo.mp3"
+        },
+        {
+          "id": "harlan_tip_chips",
+          "filename": "harlan_tip_chips.mp3",
+          "path": "audio/dialogue/drydock/harlan_tip_chips.mp3"
+        },
+        {
+          "id": "harlan_tip_quality",
+          "filename": "harlan_tip_quality.mp3",
+          "path": "audio/dialogue/drydock/harlan_tip_quality.mp3"
+        }
+      ]
+    },
+    "hidden-cove": {
+      "characterName": "Vex Marrow",
+      "lineCount": 24,
+      "files": [
+        {
+          "id": "vex_concern_freedom",
+          "filename": "vex_concern_freedom.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_concern_freedom.mp3"
+        },
+        {
+          "id": "vex_concern_sol",
+          "filename": "vex_concern_sol.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_concern_sol.mp3"
+        },
+        {
+          "id": "vex_farewell_neutral",
+          "filename": "vex_farewell_neutral.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_farewell_neutral.mp3"
+        },
+        {
+          "id": "vex_farewell_trusted",
+          "filename": "vex_farewell_trusted.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_farewell_trusted.mp3"
+        },
+        {
+          "id": "vex_gossip_harlan",
+          "filename": "vex_gossip_harlan.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_gossip_harlan.mp3"
+        },
+        {
+          "id": "vex_gossip_ivo",
+          "filename": "vex_gossip_ivo.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_gossip_ivo.mp3"
+        },
+        {
+          "id": "vex_gossip_kalla",
+          "filename": "vex_gossip_kalla.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_gossip_kalla.mp3"
+        },
+        {
+          "id": "vex_gossip_mira",
+          "filename": "vex_gossip_mira.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_gossip_mira.mp3"
+        },
+        {
+          "id": "vex_gossip_sana",
+          "filename": "vex_gossip_sana.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_gossip_sana.mp3"
+        },
+        {
+          "id": "vex_greet_acquaint",
+          "filename": "vex_greet_acquaint.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_greet_acquaint.mp3"
+        },
+        {
+          "id": "vex_greet_allied",
+          "filename": "vex_greet_allied.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_greet_allied.mp3"
+        },
+        {
+          "id": "vex_greet_contact",
+          "filename": "vex_greet_contact.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_greet_contact.mp3"
+        },
+        {
+          "id": "vex_greet_firstvisit",
+          "filename": "vex_greet_firstvisit.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_greet_firstvisit.mp3"
+        },
+        {
+          "id": "vex_greet_longtime",
+          "filename": "vex_greet_longtime.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_greet_longtime.mp3"
+        },
+        {
+          "id": "vex_greet_stranger",
+          "filename": "vex_greet_stranger.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_greet_stranger.mp3"
+        },
+        {
+          "id": "vex_greet_trusted",
+          "filename": "vex_greet_trusted.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_greet_trusted.mp3"
+        },
+        {
+          "id": "vex_memory_bigtrader",
+          "filename": "vex_memory_bigtrader.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_memory_bigtrader.mp3"
+        },
+        {
+          "id": "vex_react_attacked_sol",
+          "filename": "vex_react_attacked_sol.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_react_attacked_sol.mp3"
+        },
+        {
+          "id": "vex_react_enforced_law",
+          "filename": "vex_react_enforced_law.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_react_enforced_law.mp3"
+        },
+        {
+          "id": "vex_react_joined",
+          "filename": "vex_react_joined.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_react_joined.mp3"
+        },
+        {
+          "id": "vex_react_peace",
+          "filename": "vex_react_peace.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_react_peace.mp3"
+        },
+        {
+          "id": "vex_tip_fabrication",
+          "filename": "vex_tip_fabrication.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_tip_fabrication.mp3"
+        },
+        {
+          "id": "vex_tip_luxury",
+          "filename": "vex_tip_luxury.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_tip_luxury.mp3"
+        },
+        {
+          "id": "vex_tip_minerals",
+          "filename": "vex_tip_minerals.mp3",
+          "path": "audio/dialogue/hidden-cove/vex_tip_minerals.mp3"
+        }
+      ]
+    }
+  }
+}

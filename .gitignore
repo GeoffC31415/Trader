@@ -2,6 +2,3 @@ node_modules
 
 # Environment variables
 .env
-
-# Generated audio files
-public/audio/dialogue/
