@@ -1,9 +1,15 @@
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useEffect, useState, useRef } from 'react';
 import { useGameStore } from '../state';
 import { ReputationBadge } from './components/reputation_badge';
 import { getReputationTier, getTierDisplay, getTierPerks } from '../state/helpers/reputation_helpers';
 import { processRecipes } from '../systems/economy/recipes';
 import type { StationType } from '../domain/types/economy_types';
+import { getPlayerRelationshipTier, RELATIONSHIP_TIER_DISPLAY, createEmptyMemory } from '../domain/types/character_types';
+import { selectDialoguePair, resolveDialoguePairAudio } from '../systems/dialogue/dialogue_selector';
+import { getCharacterDialogue } from '../domain/constants/character_dialogue';
+import { getCharacterRelationships, CHARACTER_NAMES } from '../domain/constants/character_relationships';
+import type { DialogueContext, DialogueResult } from '../domain/types/character_types';
+import { preloadManifest } from '../shared/audio/dialogue_audio';
 
 // Import all generated avatars as URLs via Vite's glob import
 const avatarModules = import.meta.glob('../../generated_avatars/*.png', { eager: true, as: 'url' }) as Record<string, string>;
@@ -51,17 +57,163 @@ export function DockIntro() {
   const [scanlineOffset, setScanlineOffset] = useState(0);
   const [glitchActive, setGlitchActive] = useState(false);
   
-  const line = useMemo(() => {
-    if (!persona) return undefined;
-    const rep = station?.reputation || 0;
-    const tier = rep >= 70 ? 'high' : rep >= 30 ? 'mid' : 'low';
-    const lines = tier === 'high' ? (persona.lines_high || []) : tier === 'mid' ? (persona.lines_mid || []) : (persona.lines_low || []);
-    const tips = tier === 'high' ? (persona.tips_high || []) : tier === 'mid' ? (persona.tips_mid || []) : (persona.tips_low || []);
-    const fallback = [...(persona.lines || []), ...(persona.tips || [])];
-    const pool = [...lines, ...tips, ...fallback];
-    if (pool.length === 0) return undefined;
-    return pool[Math.floor(Math.random() * pool.length)];
-  }, [stationId, station?.reputation]);
+  // Get mission arc state for dialogue context
+  const missionArcs = useGameStore(s => s.missionArcs);
+  const completedArcs = useMemo(() => 
+    missionArcs.filter(a => a.status === 'completed').map(a => a.id), 
+    [missionArcs]
+  );
+  const activeArcs = useMemo(() => 
+    missionArcs.filter(a => a.status === 'in_progress').map(a => a.id), 
+    [missionArcs]
+  );
+  
+  // Build dialogue context and select lines
+  const dialogueLinesBase = useMemo((): { greeting: DialogueResult | null; contextual: DialogueResult | null } => {
+    if (!station || !persona) return { greeting: null, contextual: null };
+    
+    // Get conditional dialogue for this character
+    const characterDialogue = getCharacterDialogue(station.id);
+    
+    // If no conditional dialogue, fall back to legacy system
+    if (characterDialogue.length === 0) {
+      const rep = station?.reputation || 0;
+      const tier = rep >= 70 ? 'high' : rep >= 30 ? 'mid' : 'low';
+      const lines = tier === 'high' ? (persona.lines_high || []) : tier === 'mid' ? (persona.lines_mid || []) : (persona.lines_low || []);
+      const tips = tier === 'high' ? (persona.tips_high || []) : tier === 'mid' ? (persona.tips_mid || []) : (persona.tips_low || []);
+      const fallback = [...(persona.lines || []), ...(persona.tips || [])];
+      const pool = [...lines, ...tips, ...fallback];
+      if (pool.length === 0) return { greeting: null, contextual: null };
+      const randomLine = pool[Math.floor(Math.random() * pool.length)];
+      return { 
+        greeting: { line: { id: 'legacy', text: randomLine, category: 'greeting' } },
+        contextual: null 
+      };
+    }
+    
+    // Build dialogue context
+    const memory = station.characterMemory ?? createEmptyMemory();
+    const context: DialogueContext = {
+      stationId: station.id,
+      playerRep: station.reputation ?? 0,
+      playerRelationshipTier: getPlayerRelationshipTier(station.reputation ?? 0),
+      characterMemory: memory,
+      knownPlayerActions: memory.knownActions,
+      completedArcs,
+      activeArcs,
+      worldState: {},
+      currentGameTime: Date.now() / 1000,
+    };
+    
+    return selectDialoguePair(characterDialogue, context);
+  }, [stationId, station?.reputation, completedArcs, activeArcs]);
+
+  // Resolve audio URLs asynchronously
+  const [dialogueLines, setDialogueLines] = useState<{ greeting: DialogueResult | null; contextual: DialogueResult | null }>(dialogueLinesBase);
+  
+  useEffect(() => {
+    if (!station) {
+      setDialogueLines({ greeting: null, contextual: null });
+      return;
+    }
+    
+    // Resolve audio paths
+    resolveDialoguePairAudio(dialogueLinesBase, station.id).then(resolved => {
+      setDialogueLines(resolved);
+    });
+  }, [dialogueLinesBase, station?.id]);
+
+  // Audio playback refs
+  const greetingAudioRef = useRef<HTMLAudioElement | null>(null);
+  const contextualAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Play greeting audio when it changes
+  useEffect(() => {
+    if (!dialogueLines.greeting?.audioUrl) return;
+    
+    // Stop any existing audio
+    if (greetingAudioRef.current) {
+      greetingAudioRef.current.pause();
+      greetingAudioRef.current = null;
+    }
+    
+    // Create and play new audio
+    const audio = new Audio(dialogueLines.greeting.audioUrl);
+    audio.volume = 0.7; // Slightly quieter so it doesn't overpower UI sounds
+    greetingAudioRef.current = audio;
+    
+    audio.play().catch(error => {
+      // Silently fail if audio can't play (e.g., user hasn't interacted yet)
+      console.debug('Could not play dialogue audio:', error);
+    });
+    
+    // Cleanup on unmount or when audio changes
+    return () => {
+      if (greetingAudioRef.current) {
+        greetingAudioRef.current.pause();
+        greetingAudioRef.current = null;
+      }
+    };
+  }, [dialogueLines.greeting?.audioUrl]);
+
+  // Play contextual audio when it changes (with slight delay after greeting)
+  useEffect(() => {
+    if (!dialogueLines.contextual?.audioUrl) return;
+    
+    // Stop any existing contextual audio
+    if (contextualAudioRef.current) {
+      contextualAudioRef.current.pause();
+      contextualAudioRef.current = null;
+    }
+    
+    // Wait for greeting to finish (or 2 seconds, whichever is shorter)
+    // Use a reasonable delay - greeting audio is typically 2-4 seconds
+    const delay = greetingAudioRef.current && greetingAudioRef.current.duration > 0
+      ? Math.min(greetingAudioRef.current.duration * 1000 + 300, 3000) // Add 300ms buffer, max 3s
+      : 2000; // Default 2 second delay
+    
+    const timeoutId = setTimeout(() => {
+      const audio = new Audio(dialogueLines.contextual!.audioUrl!);
+      audio.volume = 0.7;
+      contextualAudioRef.current = audio;
+      
+      audio.play().catch(error => {
+        console.debug('Could not play contextual dialogue audio:', error);
+      });
+    }, delay);
+    
+    return () => {
+      clearTimeout(timeoutId);
+      if (contextualAudioRef.current) {
+        contextualAudioRef.current.pause();
+        contextualAudioRef.current = null;
+      }
+    };
+  }, [dialogueLines.contextual?.audioUrl]);
+
+  // Preload manifest on mount
+  useEffect(() => {
+    preloadManifest();
+  }, []);
+  
+  // Legacy single line for backwards compatibility
+  const line = dialogueLines.greeting?.line.text;
+  const contextualLine = dialogueLines.contextual?.line.text;
+  
+  // Player relationship tier with this character
+  const relationshipTier = useMemo(() => 
+    getPlayerRelationshipTier(station?.reputation ?? 0),
+    [station?.reputation]
+  );
+  const relationshipDisplay = RELATIONSHIP_TIER_DISPLAY[relationshipTier];
+  
+  // Character relationships (who this character knows)
+  const characterRelationships = useMemo(() => {
+    if (!station) return [];
+    return getCharacterRelationships(station.id)
+      .filter(r => r.publicKnowledge)
+      .slice(0, 3);
+  }, [station?.id]);
   
   const avatarUrl = useMemo(() => {
     if (!station || !persona) return undefined;
@@ -372,22 +524,127 @@ export function DockIntro() {
                 
                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
                   <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 4 }}>{persona.name}</div>
-                  <div style={{ fontSize: 13, color: colors.secondary, fontStyle: 'italic' }}>{persona.title}</div>
+                  <div style={{ fontSize: 13, color: colors.secondary, fontStyle: 'italic', marginBottom: 8 }}>{persona.title}</div>
+                  
+                  {/* Relationship Status Badge */}
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 12px',
+                    background: `${relationshipDisplay.color}20`,
+                    border: `1px solid ${relationshipDisplay.color}60`,
+                    borderRadius: 16,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: relationshipDisplay.color,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                  }}>
+                    <span style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: relationshipDisplay.color,
+                      boxShadow: `0 0 6px ${relationshipDisplay.color}`,
+                    }} />
+                    {relationshipDisplay.name}
+                  </div>
                 </div>
 
-                {line && (
+                {/* Dialogue Lines */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 'auto' }}>
+                  {/* Greeting Line */}
+                  {line && (
+                    <div style={{
+                      background: `linear-gradient(135deg, ${colors.primary}15, ${colors.primary}05)`,
+                      border: `1px solid ${colors.primary}40`,
+                      borderLeft: `4px solid ${colors.primary}`,
+                      borderRadius: 6,
+                      padding: 14,
+                      fontSize: 14,
+                      fontStyle: 'italic',
+                      lineHeight: 1.6,
+                    }}>
+                      "{line}"
+                    </div>
+                  )}
+                  
+                  {/* Contextual Line (gossip, reaction, etc.) */}
+                  {contextualLine && (
+                    <div style={{
+                      background: `linear-gradient(135deg, ${colors.secondary}10, ${colors.secondary}05)`,
+                      border: `1px solid ${colors.secondary}30`,
+                      borderLeft: `4px solid ${colors.secondary}80`,
+                      borderRadius: 6,
+                      padding: 14,
+                      fontSize: 13,
+                      fontStyle: 'italic',
+                      lineHeight: 1.6,
+                      opacity: 0.9,
+                    }}>
+                      <span style={{ 
+                        fontSize: 10, 
+                        textTransform: 'uppercase', 
+                        opacity: 0.7, 
+                        display: 'block',
+                        marginBottom: 4,
+                        fontStyle: 'normal',
+                        letterSpacing: '0.05em',
+                      }}>
+                        {dialogueLines.contextual?.line.category === 'gossip' ? '◦ Word around the station' : 
+                         dialogueLines.contextual?.line.category === 'reaction' ? '◦ About recent events' :
+                         dialogueLines.contextual?.line.category === 'memory' ? '◦ Remembers you' :
+                         dialogueLines.contextual?.line.category === 'concern' ? '◦ Current concerns' :
+                         '◦ Local intel'}
+                      </span>
+                      "{contextualLine}"
+                    </div>
+                  )}
+                </div>
+                
+                {/* Character Relationships */}
+                {characterRelationships.length > 0 && (
                   <div style={{
-                    background: `linear-gradient(135deg, ${colors.primary}15, ${colors.primary}05)`,
-                    border: `1px solid ${colors.primary}40`,
-                    borderLeft: `4px solid ${colors.primary}`,
+                    marginTop: 16,
+                    padding: 12,
+                    background: 'rgba(255,255,255,0.03)',
                     borderRadius: 6,
-                    padding: 16,
-                    fontSize: 14,
-                    fontStyle: 'italic',
-                    lineHeight: 1.6,
-                    marginTop: 'auto',
+                    border: '1px solid rgba(255,255,255,0.08)',
                   }}>
-                    "{line}"
+                    <div style={{
+                      fontSize: 10,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      opacity: 0.6,
+                      marginBottom: 8,
+                    }}>
+                      Known Connections
+                    </div>
+                    {characterRelationships.map(rel => (
+                      <div key={rel.targetId} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        fontSize: 12,
+                        marginBottom: 4,
+                        opacity: 0.85,
+                      }}>
+                        <span style={{
+                          color: rel.attitude === 'allied' || rel.attitude === 'friendly' ? '#34d399' :
+                                 rel.attitude === 'rival' || rel.attitude === 'hostile' ? '#f87171' :
+                                 rel.attitude === 'complicated' ? '#fbbf24' : '#9ca3af',
+                        }}>
+                          {rel.attitude === 'allied' ? '●' :
+                           rel.attitude === 'friendly' ? '○' :
+                           rel.attitude === 'rival' ? '◆' :
+                           rel.attitude === 'hostile' ? '◇' :
+                           rel.attitude === 'complicated' ? '◐' : '○'}
+                        </span>
+                        <span>{CHARACTER_NAMES[rel.targetId] || rel.targetId}</span>
+                        <span style={{ fontSize: 10, opacity: 0.5 }}>— {rel.attitude}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </>

@@ -1,0 +1,67 @@
+{
+  "sol-city": {
+    "voiceId": "EXAVITQu4vr4xnSDxMaL",
+    "name": "Mira Vale",
+    "description": "Polished, measured, slight condescension. Professional bureaucrat who believes in the system.",
+    "gender": "female",
+    "ageRange": "mid-30s",
+    "suggestedVoice": "Sarah - Young adult woman with confident and warm, mature quality and a reassuring, professional tone. Perfect for the polished bureaucrat."
+  },
+  "sol-refinery": {
+    "voiceId": "cjVigY5qzO86Huf0OWal",
+    "name": "Rex Calder",
+    "description": "Gruff, working-class, direct. No-nonsense foreman who has seen it all.",
+    "gender": "male",
+    "ageRange": "late-40s",
+    "suggestedVoice": "Eric - Smooth tenor pitch from a man in his 40s, classy. Good for the gruff but experienced foreman."
+  },
+  "aurum-fab": {
+    "voiceId": "XrExE9yKIg1WjnnlVkGX",
+    "name": "Dr. Elin Kade",
+    "description": "Clinical, precise, emotionally detached. Scientist first, human second.",
+    "gender": "female",
+    "ageRange": "early-40s",
+    "suggestedVoice": "Matilda - Professional woman with pleasing alto pitch, upbeat but can be modulated for clinical detachment."
+  },
+  "greenfields": {
+    "voiceId": "Xb7hH8MSUJpSbSDYk0k2",
+    "name": "Sana Whit",
+    "description": "Warm, earthy, quietly fierce. Farmer who fights with patience and resolve.",
+    "gender": "female",
+    "ageRange": "mid-40s",
+    "suggestedVoice": "Alice - Clear and engaging, friendly woman with British accent. Warm and professional fits the earthy farmer."
+  },
+  "ceres-pp": {
+    "voiceId": "onwK4e9ZLuTAKqWW03F9",
+    "name": "Ivo Renn",
+    "description": "Dry, calculating, subtle menace. Every word is deliberate.",
+    "gender": "male",
+    "ageRange": "early-50s",
+    "suggestedVoice": "Daniel - Strong British voice perfect for professional broadcast. Formal and deliberate, perfect for calculating menace."
+  },
+  "freeport": {
+    "voiceId": "FGY2WhTYpPnrIDTdsKH5",
+    "name": "Kalla Rook",
+    "description": "Street-smart, charming, hint of mischief. The friendly merchant who knows everything.",
+    "gender": "female",
+    "ageRange": "late-30s",
+    "suggestedVoice": "Laura - Young adult female with sunny enthusiasm and quirky attitude. Sassy fits the street-smart merchant."
+  },
+  "drydock": {
+    "voiceId": "nPczCjzI2devNBz1zQrb",
+    "name": "Chief Harlan",
+    "description": "Blue-collar, loyal, weathered. Union man through and through.",
+    "gender": "male",
+    "ageRange": "mid-50s",
+    "suggestedVoice": "Brian - Middle-aged man with resonant and comforting tone. Perfect for the weathered union man."
+  },
+  "hidden-cove": {
+    "voiceId": "N2lVS1w4EtoT3dr4eOWO",
+    "name": "Vex Marrow",
+    "description": "Dangerous charm, playful threat. Every smile has teeth.",
+    "gender": "male",
+    "ageRange": "early-40s",
+    "suggestedVoice": "Callum - Deceptively gravelly, yet unsettling edge. Perfect for dangerous charm with playful threat."
+  }
+}
+

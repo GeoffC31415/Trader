@@ -3,6 +3,7 @@ import type { StationType } from '../types/economy_types';
 import type { ShipWeapon, WeaponKind } from './combat_types';
 import type { Mission, MissionArc, NarrativeContext } from './mission_types';
 import type { ShipKind } from '../constants/ship_kinds';
+import type { CharacterMemory, DialogueLine } from './character_types';
 
 export type StationPersona = {
   id: string;
@@ -10,15 +11,17 @@ export type StationPersona = {
   title: string;
   vibe: string; // a short descriptor for tone/mood
   avatarPrompt: string; // prompt text for image generator
-  lines: string[]; // general lines
-  tips: string[]; // station- and system-related trading tips
-  // Optional rep-tiered dialogue pools; fallback to base if empty
+  lines: string[]; // general lines (legacy)
+  tips: string[]; // station- and system-related trading tips (legacy)
+  // Optional rep-tiered dialogue pools; fallback to base if empty (legacy)
   lines_low?: string[];
   lines_mid?: string[];
   lines_high?: string[];
   tips_low?: string[];
   tips_mid?: string[];
   tips_high?: string[];
+  // New conditional dialogue system
+  dialogue?: DialogueLine[];
 };
 
 export type Station = {
@@ -33,6 +36,8 @@ export type Station = {
   // Mission choice consequences (Phase 5)
   isHostile?: boolean; // Station refuses docking, spawns defenders
   isClosed?: boolean; // Station is permanently closed
+  // Character memory - tracks player interactions for dialogue reactivity
+  characterMemory?: CharacterMemory;
 };
 
 export type Planet = {
