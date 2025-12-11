@@ -239,9 +239,12 @@ function selectFromCandidates(
     !memory.recentDialogueIds.includes(l.id)
   );
   
-  // Pick randomly from non-recent, or all if all are recent
+  // Pick deterministically from non-recent, or all if all are recent
+  // Use a simple hash of candidate IDs for deterministic selection
   const pool = notRecent.length > 0 ? notRecent : topPriority;
-  const index = Math.floor(Math.random() * pool.length);
+  // Create deterministic index based on IDs and memory state
+  const seed = pool.reduce((acc, line) => acc + line.id.charCodeAt(0), memory.recentDialogueIds.length);
+  const index = seed % pool.length;
   return pool[index];
 }
 

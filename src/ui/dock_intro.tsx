@@ -52,10 +52,26 @@ export function DockIntro() {
   const contracts = useGameStore(s => s.contracts || []);
   const ship = useGameStore(s => s.ship);
   const dismiss = useGameStore(s => s.dismissDockIntro);
-  const station = useMemo(() => stations.find(s => s.id === stationId), [stations, stationId]);
+  // Stabilize station reference - only recalculate when stationId changes
+  const station = useMemo(() => {
+    if (!stationId) return undefined;
+    return stations.find(s => s.id === stationId);
+  }, [stationId, stations.length]); // Only depend on stationId and array length, not the array itself
   const persona = station?.persona;
   const [scanlineOffset, setScanlineOffset] = useState(0);
   const [glitchActive, setGlitchActive] = useState(false);
+  
+  // Track when we first docked to prevent dialogue re-selection
+  const dockTimeRef = useRef<number | null>(null);
+  
+  // Reset dock time when station changes
+  useEffect(() => {
+    if (stationId) {
+      dockTimeRef.current = Date.now() / 1000;
+    } else {
+      dockTimeRef.current = null;
+    }
+  }, [stationId]);
   
   // Get mission arc state for dialogue context
   const missionArcs = useGameStore(s => s.missionArcs);
@@ -68,9 +84,32 @@ export function DockIntro() {
     [missionArcs]
   );
   
-  // Build dialogue context and select lines
-  const dialogueLinesBase = useMemo((): { greeting: DialogueResult | null; contextual: DialogueResult | null } => {
-    if (!station || !persona) return { greeting: null, contextual: null };
+  // Select dialogue ONCE per dock session - use useState + useEffect instead of useMemo
+  // This prevents constant re-selection on every render
+  const [dialogueLinesBase, setDialogueLinesBase] = useState<{ greeting: DialogueResult | null; contextual: DialogueResult | null }>({ greeting: null, contextual: null });
+  const lastDockKeyRef = useRef<string | null>(null);
+  const hasSelectedForStationRef = useRef<string | null>(null);
+
+  // Select dialogue when docking (only runs once per dock session)
+  useEffect(() => {
+    // Reset if station changed
+    if (lastDockKeyRef.current !== stationId) {
+      hasSelectedForStationRef.current = null;
+      lastDockKeyRef.current = stationId ?? null;
+    }
+    
+    if (!station || !persona) {
+      setDialogueLinesBase({ greeting: null, contextual: null });
+      hasSelectedForStationRef.current = null;
+      return;
+    }
+    
+    // Only select if we haven't selected for this station yet
+    if (hasSelectedForStationRef.current === stationId) {
+      return; // Already selected for this dock session - don't re-select
+    }
+    
+    hasSelectedForStationRef.current = stationId ?? null;
     
     // Get conditional dialogue for this character
     const characterDialogue = getCharacterDialogue(station.id);
@@ -83,12 +122,18 @@ export function DockIntro() {
       const tips = tier === 'high' ? (persona.tips_high || []) : tier === 'mid' ? (persona.tips_mid || []) : (persona.tips_low || []);
       const fallback = [...(persona.lines || []), ...(persona.tips || [])];
       const pool = [...lines, ...tips, ...fallback];
-      if (pool.length === 0) return { greeting: null, contextual: null };
-      const randomLine = pool[Math.floor(Math.random() * pool.length)];
-      return { 
-        greeting: { line: { id: 'legacy', text: randomLine, category: 'greeting' } },
+      if (pool.length === 0) {
+        setDialogueLinesBase({ greeting: null, contextual: null });
+        return;
+      }
+      // Use deterministic selection based on dock time
+      const seed = Math.floor((dockTimeRef.current ?? Date.now() / 1000) * 1000) % pool.length;
+      const selectedLine = pool[seed];
+      setDialogueLinesBase({ 
+        greeting: { line: { id: 'legacy', text: selectedLine, category: 'greeting' } },
         contextual: null 
-      };
+      });
+      return;
     }
     
     // Build dialogue context
@@ -102,34 +147,74 @@ export function DockIntro() {
       completedArcs,
       activeArcs,
       worldState: {},
-      currentGameTime: Date.now() / 1000,
+      currentGameTime: dockTimeRef.current ?? Date.now() / 1000, // Use stable dock time
     };
     
-    return selectDialoguePair(characterDialogue, context);
-  }, [stationId, station?.reputation, completedArcs, activeArcs]);
+    const result = selectDialoguePair(characterDialogue, context);
+    setDialogueLinesBase(result);
+  }, [stationId]); // Only re-select when stationId changes (i.e., when docking at a new station)
 
-  // Resolve audio URLs asynchronously
+  // Resolve audio URLs asynchronously - only when dialogue actually changes
   const [dialogueLines, setDialogueLines] = useState<{ greeting: DialogueResult | null; contextual: DialogueResult | null }>(dialogueLinesBase);
+  const previousDialogueIdsRef = useRef<{ greeting: string | null; contextual: string | null }>({ greeting: null, contextual: null });
   
+  // Sync dialogueLines when dialogueLinesBase changes (but only if IDs actually changed)
   useEffect(() => {
     if (!station) {
       setDialogueLines({ greeting: null, contextual: null });
+      previousDialogueIdsRef.current = { greeting: null, contextual: null };
       return;
     }
     
-    // Resolve audio paths
+    // Only resolve if dialogue IDs actually changed
+    const greetingId = dialogueLinesBase.greeting?.line.id ?? null;
+    const contextualId = dialogueLinesBase.contextual?.line.id ?? null;
+    
+    const idsChanged = 
+      greetingId !== previousDialogueIdsRef.current.greeting ||
+      contextualId !== previousDialogueIdsRef.current.contextual;
+    
+    if (!idsChanged) {
+      // Dialogue hasn't changed, don't re-resolve
+      return;
+    }
+    
+    // Update ref immediately to prevent duplicate resolutions
+    previousDialogueIdsRef.current = { greeting: greetingId, contextual: contextualId };
+    
+    // Set base dialogue immediately (without audio) to prevent UI flicker
+    setDialogueLines(dialogueLinesBase);
+    
+    // Resolve audio paths asynchronously
     resolveDialoguePairAudio(dialogueLinesBase, station.id).then(resolved => {
-      setDialogueLines(resolved);
+      // Double-check IDs still match (in case dialogue changed during async operation)
+      const currentGreetingId = dialogueLinesBase.greeting?.line.id ?? null;
+      const currentContextualId = dialogueLinesBase.contextual?.line.id ?? null;
+      
+      if (currentGreetingId === greetingId && currentContextualId === contextualId) {
+        setDialogueLines(resolved);
+      }
     });
-  }, [dialogueLinesBase, station?.id]);
+  }, [dialogueLinesBase.greeting?.line.id, dialogueLinesBase.contextual?.line.id, station?.id]);
 
   // Audio playback refs
   const greetingAudioRef = useRef<HTMLAudioElement | null>(null);
   const contextualAudioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Track currently playing audio URL to prevent restarting
+  const playingGreetingUrlRef = useRef<string | null>(null);
+  
   // Play greeting audio when it changes
   useEffect(() => {
-    if (!dialogueLines.greeting?.audioUrl) return;
+    if (!dialogueLines.greeting?.audioUrl) {
+      playingGreetingUrlRef.current = null;
+      return;
+    }
+    
+    // Don't restart if already playing the same audio
+    if (playingGreetingUrlRef.current === dialogueLines.greeting.audioUrl) {
+      return;
+    }
     
     // Stop any existing audio
     if (greetingAudioRef.current) {
@@ -141,24 +226,38 @@ export function DockIntro() {
     const audio = new Audio(dialogueLines.greeting.audioUrl);
     audio.volume = 0.7; // Slightly quieter so it doesn't overpower UI sounds
     greetingAudioRef.current = audio;
+    playingGreetingUrlRef.current = dialogueLines.greeting.audioUrl;
     
     audio.play().catch(error => {
       // Silently fail if audio can't play (e.g., user hasn't interacted yet)
       console.debug('Could not play dialogue audio:', error);
+      playingGreetingUrlRef.current = null;
     });
     
-    // Cleanup on unmount or when audio changes
-    return () => {
-      if (greetingAudioRef.current) {
-        greetingAudioRef.current.pause();
-        greetingAudioRef.current = null;
-      }
-    };
+    // Don't cleanup on unmount - let audio continue playing even when dock intro is dismissed
+    // Audio will only stop when a new greeting audio URL is selected (handled at start of effect)
   }, [dialogueLines.greeting?.audioUrl]);
 
+  // Track currently playing contextual audio URL
+  const playingContextualUrlRef = useRef<string | null>(null);
+  const contextualTimeoutRef = useRef<number | null>(null);
+  
   // Play contextual audio when it changes (with slight delay after greeting)
   useEffect(() => {
-    if (!dialogueLines.contextual?.audioUrl) return;
+    if (!dialogueLines.contextual?.audioUrl) {
+      playingContextualUrlRef.current = null;
+      // Clear any pending timeout if contextual audio is removed
+      if (contextualTimeoutRef.current) {
+        clearTimeout(contextualTimeoutRef.current);
+        contextualTimeoutRef.current = null;
+      }
+      return;
+    }
+    
+    // Don't restart if already playing the same audio
+    if (playingContextualUrlRef.current === dialogueLines.contextual.audioUrl) {
+      return;
+    }
     
     // Stop any existing contextual audio
     if (contextualAudioRef.current) {
@@ -166,29 +265,38 @@ export function DockIntro() {
       contextualAudioRef.current = null;
     }
     
-    // Wait for greeting to finish (or 2 seconds, whichever is shorter)
-    // Use a reasonable delay - greeting audio is typically 2-4 seconds
-    const delay = greetingAudioRef.current && greetingAudioRef.current.duration > 0
-      ? Math.min(greetingAudioRef.current.duration * 1000 + 300, 3000) // Add 300ms buffer, max 3s
-      : 2000; // Default 2 second delay
+    // Clear any existing timeout (new dialogue selected)
+    if (contextualTimeoutRef.current) {
+      clearTimeout(contextualTimeoutRef.current);
+      contextualTimeoutRef.current = null;
+    }
     
-    const timeoutId = setTimeout(() => {
-      const audio = new Audio(dialogueLines.contextual!.audioUrl!);
+    // Capture the audio URL in the closure so it persists even if dialogueLines changes
+    const audioUrlToPlay = dialogueLines.contextual.audioUrl;
+    
+    // Wait for greeting to finish, then add 6 second gap
+    // Audio clips are ~5 seconds, so 6 second gap prevents overlap
+    const delay = greetingAudioRef.current && greetingAudioRef.current.duration > 0
+      ? greetingAudioRef.current.duration * 1000 + 6000 // Wait for greeting + 6 second gap
+      : 6000; // Default 6 second delay if no greeting audio
+    
+    // Store timeout in ref so it persists even if component unmounts
+    contextualTimeoutRef.current = setTimeout(() => {
+      // Use the captured URL, not the current dialogueLines (which might have changed)
+      const audio = new Audio(audioUrlToPlay);
       audio.volume = 0.7;
       contextualAudioRef.current = audio;
+      playingContextualUrlRef.current = audioUrlToPlay;
+      contextualTimeoutRef.current = null; // Clear ref after timeout fires
       
       audio.play().catch(error => {
         console.debug('Could not play contextual dialogue audio:', error);
+        playingContextualUrlRef.current = null;
       });
     }, delay);
     
-    return () => {
-      clearTimeout(timeoutId);
-      if (contextualAudioRef.current) {
-        contextualAudioRef.current.pause();
-        contextualAudioRef.current = null;
-      }
-    };
+    // Don't cleanup on unmount - let the timeout persist so audio plays even after dock intro is dismissed
+    // Only cleanup if the audio URL changes (handled at start of effect)
   }, [dialogueLines.contextual?.audioUrl]);
 
   // Preload manifest on mount
