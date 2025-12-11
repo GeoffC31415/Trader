@@ -1,0 +1,74 @@
+{
+  "generatedAt": "2025-12-11T23:18:30.428Z",
+  "totalFiles": 10,
+  "tracks": {
+    "ambient_exploring": {
+      "id": "ambient_exploring",
+      "category": "ambient",
+      "path": "audio/music/ambient/ambient_exploring.mp3",
+      "duration": 180
+    },
+    "ambient_combat": {
+      "id": "ambient_combat",
+      "category": "ambient",
+      "path": "audio/music/ambient/ambient_combat.mp3",
+      "duration": 120
+    },
+    "sol-city": {
+      "id": "sol-city",
+      "category": "station",
+      "stationId": "sol-city",
+      "path": "audio/music/stations/sol-city.mp3",
+      "duration": 120
+    },
+    "sol-refinery": {
+      "id": "sol-refinery",
+      "category": "station",
+      "stationId": "sol-refinery",
+      "path": "audio/music/stations/sol-refinery.mp3",
+      "duration": 120
+    },
+    "aurum-fab": {
+      "id": "aurum-fab",
+      "category": "station",
+      "stationId": "aurum-fab",
+      "path": "audio/music/stations/aurum-fab.mp3",
+      "duration": 120
+    },
+    "greenfields": {
+      "id": "greenfields",
+      "category": "station",
+      "stationId": "greenfields",
+      "path": "audio/music/stations/greenfields.mp3",
+      "duration": 120
+    },
+    "ceres-pp": {
+      "id": "ceres-pp",
+      "category": "station",
+      "stationId": "ceres-pp",
+      "path": "audio/music/stations/ceres-pp.mp3",
+      "duration": 120
+    },
+    "freeport": {
+      "id": "freeport",
+      "category": "station",
+      "stationId": "freeport",
+      "path": "audio/music/stations/freeport.mp3",
+      "duration": 120
+    },
+    "drydock": {
+      "id": "drydock",
+      "category": "station",
+      "stationId": "drydock",
+      "path": "audio/music/stations/drydock.mp3",
+      "duration": 120
+    },
+    "hidden-cove": {
+      "id": "hidden-cove",
+      "category": "station",
+      "stationId": "hidden-cove",
+      "path": "audio/music/stations/hidden-cove.mp3",
+      "duration": 120
+    }
+  }
+}

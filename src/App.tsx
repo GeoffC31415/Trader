@@ -1,4 +1,4 @@
-import { StrictMode, useState, Suspense } from 'react';
+import { StrictMode, useState, Suspense, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Stars, Environment } from '@react-three/drei';
 import * as THREE from 'three';
@@ -17,6 +17,7 @@ import { TutorialOverlay } from './ui/components/hud/TutorialOverlay';
 import { ObjectiveHUD } from './ui/components/hud/ObjectiveHUD';
 import { StarterShipSelector } from './ui/components/hud/StarterShipSelector';
 import { Notifications } from './ui/components/Notifications';
+import { useMusicController, initializeMusicOnInteraction } from './shared/audio/use_music';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal' | 'traders'>('market');
@@ -48,6 +49,24 @@ export function App() {
     : undefined;
   
   const activeEscorts = npcTraders.filter(n => n.isEscort && activeContract && n.escortingContract === activeContract.id);
+  
+  // Initialize music system (call hook to manage music based on game state)
+  useMusicController();
+  
+  // Initialize music on first user interaction
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      initializeMusicOnInteraction();
+    };
+    
+    document.addEventListener('click', handleFirstInteraction, { once: true });
+    document.addEventListener('keydown', handleFirstInteraction, { once: true });
+    
+    return () => {
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+  }, []);
   
   return (
     <StrictMode>

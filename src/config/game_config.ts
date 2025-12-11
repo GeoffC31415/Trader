@@ -75,6 +75,11 @@ export type GameConfig = {
     baseSpeed: number; // Base NPC speed
     tradeQuantity: number; // Quantity NPCs trade per trip (3)
   };
+  
+  audio: {
+    musicEnabled: boolean; // Whether music is enabled (true)
+    musicVolume: number; // Music volume 0-1 (0.7)
+  };
 };
 
 /**
@@ -185,6 +190,11 @@ export const defaultConfig: GameConfig = {
     baseSpeed: 8,
     tradeQuantity: 3,
   },
+  
+  audio: {
+    musicEnabled: true,
+    musicVolume: 0.7,
+  },
 };
 
 /**
@@ -245,5 +255,12 @@ export function getCombatConfig() {
  */
 export function getNpcConfig() {
   return gameConfig.npc;
+}
+
+/**
+ * Get audio config (convenience accessor)
+ */
+export function getAudioConfig() {
+  return gameConfig.audio;
 }
 
