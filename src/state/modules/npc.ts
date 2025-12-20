@@ -192,7 +192,75 @@ function updateMissionEscort(
 }
 
 /**
+ * Find the best route to stabilize low-stock commodities
+ * Prioritizes commodities that are critically low at any station
+ */
+function findStabilizingRoute(
+  currentStation: Station,
+  stations: Station[],
+  stationStockDelta: Record<string, Record<string, number>>
+): { toStation: Station; commodityId: string } | null {
+  type RouteCandidate = {
+    toStation: Station;
+    fromStation: Station;
+    commodityId: string;
+    urgency: number; // Lower ratio = more urgent
+    surplus: number; // How much surplus the source has
+  };
+
+  const candidates: RouteCandidate[] = [];
+
+  // Find all stations with low stock commodities
+  for (const destStation of stations) {
+    if (destStation.id === currentStation.id) continue;
+
+    for (const [commodityId, item] of Object.entries(destStation.inventory)) {
+      if (item.canBuy === false) continue; // Station doesn't buy this
+      
+      const currentStock = (item.stock || 0) + (stationStockDelta[destStation.id]?.[commodityId] || 0);
+      const targetStock = item.stock || 50;
+      const ratio = currentStock / Math.max(1, targetStock);
+      
+      // Only consider if stock is below 60% (getting low)
+      if (ratio >= 0.6) continue;
+
+      // Check if current station can supply this commodity
+      const srcItem = currentStation.inventory[commodityId];
+      if (!srcItem || srcItem.canSell === false) continue;
+      
+      const srcStock = (srcItem.stock || 0) + (stationStockDelta[currentStation.id]?.[commodityId] || 0);
+      const srcTarget = srcItem.stock || 50;
+      const srcRatio = srcStock / Math.max(1, srcTarget);
+      
+      // Only supply if source has surplus (>80% stock)
+      if (srcRatio <= 0.8) continue;
+      
+      candidates.push({
+        toStation: destStation,
+        fromStation: currentStation,
+        commodityId,
+        urgency: ratio, // Lower is more urgent
+        surplus: srcStock - srcTarget * 0.5, // How much we can spare
+      });
+    }
+  }
+
+  if (candidates.length === 0) return null;
+
+  // Sort by urgency (lowest stock ratio first), then by surplus
+  candidates.sort((a, b) => {
+    const urgencyDiff = a.urgency - b.urgency;
+    if (Math.abs(urgencyDiff) > 0.1) return urgencyDiff;
+    return b.surplus - a.surplus; // Prefer higher surplus
+  });
+
+  const best = candidates[0];
+  return { toStation: best.toStation, commodityId: best.commodityId };
+}
+
+/**
  * Update regular trading NPC (follows trade routes)
+ * NPCs dynamically choose routes to stabilize low-stock commodities
  */
 function updateRegularTrader(
   npc: NpcTrader,
@@ -242,7 +310,7 @@ function updateRegularTrader(
     break;
   }
 
-  // Arrived at end of path -> deliver and reverse route
+  // Arrived at end of path -> deliver and pick new route
   if (cursor >= (path?.length || 0)) {
     // NPCs trade 20-50 units (noticeable impact on market)
     const deliver = 20 + Math.floor(Math.random() * 31); // 20-50 range
@@ -257,10 +325,9 @@ function updateRegularTrader(
         dstInv.canBuy !== false
       ) {
         // Check source stock: don't drain below 20% of target stock
-        // Target stock is typically 50 (normal) or 200 (cheap/boosted)
         const currentStock = (srcInv.stock || 0) + (stationStockDelta[src.id]?.[npc.commodityId] || 0);
-        const targetStock = srcInv.stock || 50; // Use current stock as proxy for target
-        const minStock = Math.max(10, Math.floor(targetStock * 0.2)); // At least 20% of target, min 10
+        const targetStock = srcInv.stock || 50;
+        const minStock = Math.max(10, Math.floor(targetStock * 0.2));
         
         // Only trade if source has enough stock
         if (currentStock >= minStock + deliver) {
@@ -273,7 +340,26 @@ function updateRegularTrader(
         }
       }
     }
-    // Reverse route; plan curved path back
+    
+    // Try to find a route that helps stabilize low-stock commodities
+    const stations = Object.values(stationById);
+    const stabilizingRoute = findStabilizingRoute(dest, stations, stationStockDelta);
+    
+    if (stabilizingRoute) {
+      // Found a route to help a low-stock station
+      const newPath = planNpcPath(dest, stabilizingRoute.toStation, dest.position);
+      return {
+        ...npc,
+        position: [dest.position[0], dest.position[1], dest.position[2]],
+        fromId: dest.id,
+        toId: stabilizingRoute.toStation.id,
+        commodityId: stabilizingRoute.commodityId,
+        path: newPath,
+        pathCursor: 1,
+      };
+    }
+    
+    // No urgent routes found, just reverse the current route
     const backPath = planNpcPath(dest, src, dest.position);
     return {
       ...npc,

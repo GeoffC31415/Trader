@@ -129,7 +129,8 @@ const rulesByType: Record<StationType, StationPriceRules> = {
   city: {
     cheap: ['consumer', 'food'].flatMap(() => []),
     expensive: ['refined_fuel', 'batteries', 'medical_supplies', 'pharmaceuticals', 'luxury_goods'],
-    stockBoost: { water: 300, grain: 200, textiles: 150 },
+    // Large cities like Sol City have huge water/food reserves but consume rapidly
+    stockBoost: { water: 600, grain: 400, meat: 200, textiles: 200, medical_supplies: 100 },
   },
   trading_post: {
     cheap: [],

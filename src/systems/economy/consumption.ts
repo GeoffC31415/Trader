@@ -14,12 +14,13 @@ import type { StationConsumption } from '../../domain/types/economy_types';
  */
 export const stationConsumption: Record<StationType, StationConsumption[]> = {
   city: [
-    { commodityId: 'water', ratePerMinute: 2.0, criticalThreshold: 30 },
-    { commodityId: 'grain', ratePerMinute: 1.5, criticalThreshold: 25 },
-    { commodityId: 'meat', ratePerMinute: 0.8, criticalThreshold: 15 },
-    { commodityId: 'textiles', ratePerMinute: 1.2, criticalThreshold: 20 },
-    { commodityId: 'medical_supplies', ratePerMinute: 0.5, criticalThreshold: 10 },
-    { commodityId: 'pharmaceuticals', ratePerMinute: 0.3, criticalThreshold: 8 },
+    // Cities (especially Sol City) consume water rapidly - large population
+    { commodityId: 'water', ratePerMinute: 5.0, criticalThreshold: 80 },
+    { commodityId: 'grain', ratePerMinute: 2.5, criticalThreshold: 50 },
+    { commodityId: 'meat', ratePerMinute: 1.5, criticalThreshold: 30 },
+    { commodityId: 'textiles', ratePerMinute: 1.8, criticalThreshold: 35 },
+    { commodityId: 'medical_supplies', ratePerMinute: 0.8, criticalThreshold: 15 },
+    { commodityId: 'pharmaceuticals', ratePerMinute: 0.5, criticalThreshold: 12 },
   ],
   fabricator: [
     { commodityId: 'iron_ore', ratePerMinute: 1.5, criticalThreshold: 20 },
