@@ -63,6 +63,7 @@ import {
   upgradeShip,
 } from './modules/economy';
 import { updateStationConsumption } from './modules/economy_consumption';
+import { updateStationProduction } from './modules/economy_production';
 import { recordPriceHistory, mergePriceHistory } from './modules/price_history';
 import { updateCargoFreshness } from './modules/cargo_freshness';
 import {
@@ -165,6 +166,9 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       // 2a. Economy - station consumption (dynamic supply/demand)
       stations = updateStationConsumption(stations, dt);
+      
+      // 2b. Economy - station production (producers generate goods)
+      stations = updateStationProduction(stations, dt);
 
       // Phase 3: gentle trust decay toward 0 over time
       let relationships = state.relationships;

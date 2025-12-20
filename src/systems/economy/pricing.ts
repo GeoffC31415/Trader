@@ -6,6 +6,7 @@ import { getEconomyConfig } from '../../config/game_config';
 import { processRecipes, type ProcessRecipe } from './recipes';
 import { ensureFeaturedInitialized, getFeaturedMultiplier } from './featured';
 import { isPerishable } from './commodity_tiers';
+import { generateCommodities } from './commodities';
 import type { MarketEvent } from '../../domain/types/world_types';
 import { getEventPriceMultiplier } from './market_events';
 
@@ -232,6 +233,34 @@ function applyStockCurve(category: Commodity['category'], buy: number, sell: num
   const m = Math.max(config.minStockMultiplier, Math.min(config.maxStockMultiplier, 1 + k * (1 - ratio)));
   const buyM = Math.max(config.minBuyStockMultiplier, Math.min(config.maxBuyStockMultiplier, m));
   return { buy: Math.round(buy * buyM), sell: Math.round(sell * m) };
+}
+
+/**
+ * Recalculate prices for a commodity based on current stock levels
+ * Used after trading to immediately reflect price changes
+ * 
+ * @param stationType - The station type
+ * @param commodityId - The commodity to recalculate
+ * @param currentBuy - Current buy price (base, before stock adjustment)
+ * @param currentSell - Current sell price (base, before stock adjustment)
+ * @param stock - Current stock level
+ * @param targetStock - Target/baseline stock level
+ * @returns Updated buy and sell prices
+ */
+export function recalculatePriceForStock(
+  stationType: StationType,
+  commodityId: string,
+  baseBuy: number,
+  baseSell: number,
+  stock: number,
+  targetStock: number
+): { buy: number; sell: number } {
+  // Get commodity category for stock curve
+  const commodities = generateCommodities();
+  const commodity = commodities.find(c => c.id === commodityId);
+  const category = commodity?.category || 'raw';
+  
+  return applyStockCurve(category, baseBuy, baseSell, stock, targetStock);
 }
 
 function getCraftFloorFor(category: Commodity['category']): number {

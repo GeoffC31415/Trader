@@ -5,8 +5,9 @@
  */
 
 import { distance } from '../../shared/math/vec3';
-import { gatedCommodities, ensureSpread, getPriceBiasForStation } from '../../systems/economy/pricing';
+import { gatedCommodities, ensureSpread, getPriceBiasForStation, recalculatePriceForStock, getTargetStock } from '../../systems/economy/pricing';
 import { processRecipes, findRecipeForStation } from '../../systems/economy/recipes';
+import { getEventPriceMultiplier } from '../../systems/economy/market_events';
 import { shipCaps } from '../../domain/constants/ship_constants';
 import { applyReputationWithPropagation } from '../../systems/reputation/faction_system';
 import { getEconomyConfig } from '../../config/game_config';
@@ -339,11 +340,26 @@ export function buyCommodity(
   }
 
   const cargo = { ...ship.cargo, [commodityId]: prevQty + playerBuying };
+  
+  // Calculate new stock and recalculate prices
+  const newStock = Math.max(0, (item.stock || 0) - quantity);
+  const targetStock = getTargetStock(station.type, commodityId);
+  const newPrices = recalculatePriceForStock(
+    station.type,
+    commodityId,
+    item.buy,
+    item.sell,
+    newStock,
+    targetStock
+  );
+  
   const reduced = {
     ...station.inventory,
     [commodityId]: {
       ...item,
-      stock: Math.max(0, (item.stock || 0) - quantity),
+      stock: newStock,
+      buy: newPrices.buy,
+      sell: newPrices.sell,
     },
   };
 
@@ -453,7 +469,25 @@ export function sellCommodity(
   const cargo = { ...ship.cargo, [commodityId]: have - fromPlayer };
 
   let nextInv = { ...station.inventory } as StationInventory;
-  nextInv[commodityId] = { ...item, stock: (item.stock || 0) + qty };
+  const newStock = (item.stock || 0) + qty;
+  const targetStock = getTargetStock(station.type, commodityId);
+  
+  // Recalculate prices based on new stock level (immediate feedback to player)
+  const newPrices = recalculatePriceForStock(
+    station.type,
+    commodityId,
+    item.buy,
+    item.sell,
+    newStock,
+    targetStock
+  );
+  
+  nextInv[commodityId] = { 
+    ...item, 
+    stock: newStock,
+    buy: newPrices.buy,
+    sell: newPrices.sell,
+  };
 
   // Auto-processing at refineries
   if (station.type === 'refinery') {
