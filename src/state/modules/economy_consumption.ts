@@ -6,10 +6,14 @@
 
 import type { Station } from '../../domain/types/world_types';
 import type { StationInventory } from '../../domain/types/economy_types';
-import { getConsumptionForStation, getShortageMultiplier } from '../../systems/economy/consumption';
+import { getConsumptionForStation } from '../../systems/economy/consumption';
+import { recalculatePriceForStock, getTargetStock } from '../../systems/economy/pricing';
 
 /**
  * Update station stock based on consumption rates
+ * 
+ * Uses recalculatePriceForStock to calculate prices from BASE values,
+ * preventing any price compounding over time.
  * 
  * @param stations - Current stations
  * @param dt - Delta time in seconds
@@ -37,27 +41,24 @@ export function updateStationConsumption(stations: Station[], dt: number): Stati
       const newStock = Math.max(0, currentStock - consumed);
       
       if (newStock !== currentStock) {
-        // Apply shortage multiplier to sell price when stock is critically low
-        const shortageMult = getShortageMultiplier(newStock, cons.criticalThreshold);
-        const adjustedSell = Math.round(item.sell * shortageMult);
+        // Recalculate prices from BASE values to prevent compounding
+        const targetStock = getTargetStock(station.type, cons.commodityId);
+        const newPrices = recalculatePriceForStock(
+          station.type,
+          cons.commodityId,
+          item.buy,
+          item.sell,
+          newStock,
+          targetStock
+        );
         
         inv[cons.commodityId] = {
           ...item,
           stock: newStock,
-          sell: adjustedSell,
+          buy: newPrices.buy,
+          sell: newPrices.sell,
         };
         hasChanges = true;
-      } else {
-        // Even if stock didn't change, recalculate price multiplier in case stock is already low
-        const shortageMult = getShortageMultiplier(currentStock, cons.criticalThreshold);
-        const adjustedSell = Math.round(item.sell * shortageMult);
-        if (adjustedSell !== item.sell) {
-          inv[cons.commodityId] = {
-            ...item,
-            sell: adjustedSell,
-          };
-          hasChanges = true;
-        }
       }
     }
     

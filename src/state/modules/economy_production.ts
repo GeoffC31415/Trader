@@ -7,13 +7,17 @@
 import type { Station } from '../../domain/types/world_types';
 import type { StationInventory } from '../../domain/types/economy_types';
 import { getProductionForStation } from '../../systems/economy/production';
+import { recalculatePriceForStock, getTargetStock } from '../../systems/economy/pricing';
 
 /**
  * Update station stock based on production rates
  * 
+ * Uses recalculatePriceForStock to calculate prices from BASE values,
+ * preventing any price compounding over time.
+ * 
  * @param stations - Current stations
  * @param dt - Delta time in seconds
- * @returns Updated stations with increased stock
+ * @returns Updated stations with increased stock and adjusted prices
  */
 export function updateStationProduction(stations: Station[], dt: number): Station[] {
   const dtMinutes = dt / 60; // Convert seconds to minutes
@@ -39,9 +43,22 @@ export function updateStationProduction(stations: Station[], dt: number): Statio
       const newStock = Math.min(prod.maxStock, currentStock + produced);
       
       if (newStock !== currentStock) {
+        // Recalculate prices from BASE values to prevent compounding
+        const targetStock = getTargetStock(station.type, prod.commodityId);
+        const newPrices = recalculatePriceForStock(
+          station.type,
+          prod.commodityId,
+          item.buy,
+          item.sell,
+          newStock,
+          targetStock
+        );
+        
         inv[prod.commodityId] = {
           ...item,
           stock: newStock,
+          buy: newPrices.buy,
+          sell: newPrices.sell,
         };
         hasChanges = true;
       }

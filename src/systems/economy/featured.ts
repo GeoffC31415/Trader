@@ -49,4 +49,39 @@ export function getFeaturedMultiplier(stationId: string | undefined, commodityId
   return entry.multiplier;
 }
 
+/**
+ * Get all active featured arbitrage opportunities
+ * Returns array of opportunities with station ID, commodity ID, multiplier, and time remaining
+ */
+export type FeaturedOpportunity = {
+  stationId: string;
+  commodityId: string;
+  multiplier: number;
+  expiresAt: number;
+  remainingMs: number;
+};
+
+export function getActiveFeaturedOpportunities(): FeaturedOpportunity[] {
+  if (!featuredMap) return [];
+  
+  const now = Date.now();
+  const opportunities: FeaturedOpportunity[] = [];
+  
+  for (const [key, entry] of featuredMap) {
+    if (entry.expiresAt <= now) continue;
+    
+    const [stationId, commodityId] = key.split(':');
+    opportunities.push({
+      stationId,
+      commodityId,
+      multiplier: entry.multiplier,
+      expiresAt: entry.expiresAt,
+      remainingMs: entry.expiresAt - now,
+    });
+  }
+  
+  // Sort by multiplier descending (best deals first)
+  return opportunities.sort((a, b) => b.multiplier - a.multiplier);
+}
+
 

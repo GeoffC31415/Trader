@@ -239,10 +239,14 @@ function applyStockCurve(category: Commodity['category'], buy: number, sell: num
  * Recalculate prices for a commodity based on current stock levels
  * Used after trading to immediately reflect price changes
  * 
+ * IMPORTANT: This function calculates prices from commodity BASE values to avoid
+ * compounding multipliers. It applies station type modifiers, affinity, and then
+ * stock curve - all from scratch based on the new stock level.
+ * 
  * @param stationType - The station type
  * @param commodityId - The commodity to recalculate
- * @param currentBuy - Current buy price (base, before stock adjustment)
- * @param currentSell - Current sell price (base, before stock adjustment)
+ * @param _currentBuy - (deprecated, unused) Current buy price
+ * @param _currentSell - (deprecated, unused) Current sell price  
  * @param stock - Current stock level
  * @param targetStock - Target/baseline stock level
  * @returns Updated buy and sell prices
@@ -250,17 +254,61 @@ function applyStockCurve(category: Commodity['category'], buy: number, sell: num
 export function recalculatePriceForStock(
   stationType: StationType,
   commodityId: string,
-  baseBuy: number,
-  baseSell: number,
+  _currentBuy: number,
+  _currentSell: number,
   stock: number,
   targetStock: number
 ): { buy: number; sell: number } {
-  // Get commodity category for stock curve
+  // Get commodity base prices - ALWAYS calculate from base to avoid compounding
   const commodities = generateCommodities();
   const commodity = commodities.find(c => c.id === commodityId);
-  const category = commodity?.category || 'raw';
+  if (!commodity) {
+    // Fallback: return current prices unchanged if commodity not found
+    return { buy: _currentBuy, sell: _currentSell };
+  }
   
-  return applyStockCurve(category, baseBuy, baseSell, stock, targetStock);
+  const rules = rulesByType[stationType];
+  if (!rules) {
+    return { buy: commodity.baseBuy, sell: commodity.baseSell };
+  }
+  
+  // Apply station type modifiers (cheap/expensive)
+  const cheap = rules.cheap.includes(commodityId);
+  const expensive = rules.expensive.includes(commodityId);
+  const buyMultiplier = cheap ? 0.45 : expensive ? 1.75 : 1.0;
+  const sellMultiplier = cheap ? 0.55 : expensive ? 1.9 : 1.0;
+  
+  let baseBuy = Math.round(commodity.baseBuy * buyMultiplier);
+  let baseSell = Math.round(commodity.baseSell * sellMultiplier);
+  
+  // Apply affinity
+  const config = getEconomyConfig();
+  const aff = config.affinity[stationType]?.[commodity.category];
+  if (aff) {
+    baseBuy = Math.round(baseBuy * aff.buy);
+    baseSell = Math.round(baseSell * aff.sell);
+  }
+  
+  // Ensure minimum spread
+  const adjusted = ensureSpread({
+    buy: baseBuy,
+    sell: baseSell,
+    minPercent: config.minSpreadPercent,
+    minAbsolute: config.minSpreadAbsolute,
+  });
+  
+  // Apply stock curve (this is the only dynamic multiplier based on current stock)
+  const result = applyStockCurve(commodity.category, adjusted.buy, adjusted.sell, stock, targetStock);
+  
+  // Safety cap: prices should never exceed 10x base (prevents any edge case runaway)
+  const MAX_MULTIPLIER = 10;
+  const maxBuy = commodity.baseBuy * MAX_MULTIPLIER;
+  const maxSell = commodity.baseSell * MAX_MULTIPLIER;
+  
+  return {
+    buy: Math.min(result.buy, maxBuy),
+    sell: Math.min(result.sell, maxSell),
+  };
 }
 
 function getCraftFloorFor(category: Commodity['category']): number {

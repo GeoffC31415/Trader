@@ -374,12 +374,17 @@ function updateRegularTrader(
   return { ...npc, position, path, pathCursor: cursor };
 }
 
+import { recalculatePriceForStock, getTargetStock } from '../../systems/economy/pricing';
+
 /**
  * Apply stock deltas to stations
  * 
+ * Recalculates prices from BASE values when stock changes,
+ * preventing any price compounding over time.
+ * 
  * @param stations - Current stations
  * @param stationStockDelta - Stock changes by station and commodity
- * @returns Updated stations with new stock levels
+ * @returns Updated stations with new stock levels and adjusted prices
  */
 export function applyStockDeltas(
   stations: Station[],
@@ -397,8 +402,26 @@ export function applyStockDeltas(
     for (const cid of Object.keys(delta)) {
       const item = inv[cid];
       if (!item) continue;
+      
       const nextStock = Math.max(0, (item.stock || 0) + delta[cid]);
-      inv[cid] = { ...item, stock: nextStock };
+      
+      // Recalculate prices from BASE values to prevent compounding
+      const targetStock = getTargetStock(s.type, cid);
+      const newPrices = recalculatePriceForStock(
+        s.type,
+        cid,
+        item.buy,
+        item.sell,
+        nextStock,
+        targetStock
+      );
+      
+      inv[cid] = { 
+        ...item, 
+        stock: nextStock,
+        buy: newPrices.buy,
+        sell: newPrices.sell,
+      };
     }
 
     return { ...s, inventory: inv };

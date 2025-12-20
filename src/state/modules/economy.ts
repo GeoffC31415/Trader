@@ -196,8 +196,14 @@ export function getSuggestedRoutes(
   return suggestions.sort(sorter).slice(0, limit);
 }
 
+// Maximum price multiplier cap (10x base price) to prevent runaway inflation
+const MAX_PRICE_MULTIPLIER = 10;
+
 /**
  * Jitter station prices randomly
+ * 
+ * Prices are jittered around the commodity's base price with modifiers.
+ * This prevents price drift/compounding by anchoring to base values.
  * 
  * @param stations - Current stations
  * @param dt - Delta time (affects jitter probability)
@@ -226,17 +232,32 @@ export function jitterPrices(stations: Station[], dt: number, activeEvents?: any
       if (!item) continue;
 
       const commodity = commodityById[k];
-      const category = commodity?.category || 'consumer';
+      if (!commodity) continue;
+      
+      const category = commodity.category;
 
       // Apply market event multipliers
       const eventMult = activeEvents && activeEvents.length > 0
         ? getEventPriceMultiplier(activeEvents, st.id, k, category)
         : 1.0;
 
+      // Calculate jitter factors (small random variation ±10%)
       const factorBuy = 1 + (Math.random() * 2 - 1) * config.jitterFactor;
       const factorSell = 1 + (Math.random() * 2 - 1) * config.jitterFactor;
-      const nextBuy = Math.max(1, Math.round(item.buy * factorBuy));
-      let nextSell = Math.max(1, Math.round(item.sell * factorSell * eventMult));
+      
+      // Apply jitter to current prices
+      let nextBuy = Math.round(item.buy * factorBuy);
+      let nextSell = Math.round(item.sell * factorSell * eventMult);
+      
+      // Cap prices to prevent runaway inflation (max 10x base price)
+      const maxBuy = commodity.baseBuy * MAX_PRICE_MULTIPLIER;
+      const maxSell = commodity.baseSell * MAX_PRICE_MULTIPLIER;
+      const minPrice = 1;
+      
+      nextBuy = Math.max(minPrice, Math.min(maxBuy, nextBuy));
+      nextSell = Math.max(minPrice, Math.min(maxSell, nextSell));
+      
+      // Ensure minimum spread
       const adjusted = ensureSpread({
         buy: nextBuy,
         sell: nextSell,
