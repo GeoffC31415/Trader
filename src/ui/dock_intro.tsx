@@ -3,6 +3,8 @@ import { useGameStore } from '../state';
 import { ReputationBadge } from './components/reputation_badge';
 import { getReputationTier, getTierDisplay, getTierPerks } from '../state/helpers/reputation_helpers';
 import { processRecipes } from '../systems/economy/recipes';
+import { generateCommodities } from '../systems/economy/commodities';
+import { getTargetStock, getStockPriceEffect, getPriceBiasForStation } from '../systems/economy/pricing';
 import type { StationType } from '../domain/types/economy_types';
 import { getPlayerRelationshipTier, RELATIONSHIP_TIER_DISPLAY, createEmptyMemory } from '../domain/types/character_types';
 import { selectDialoguePair, resolveDialoguePairAudio } from '../systems/dialogue/dialogue_selector';
@@ -338,19 +340,65 @@ export function DockIntro() {
   const tierDisplay = useMemo(() => getTierDisplay(repTier), [repTier]);
   const tierPerks = useMemo(() => getTierPerks(stationRep), [stationRep]);
 
-  // Market preview data
-  const marketData = useMemo(() => {
-    if (!station) return [];
-    const items = Object.entries(station.inventory)
-      .filter(([_, p]) => p.canSell !== false || p.canBuy !== false)
-      .slice(0, 6)
-      .map(([id, p]) => ({
-        id,
-        name: id.replace(/_/g, ' '),
-        buyPrice: p.buy,
-        sellPrice: p.sell,
-      }));
-    return items;
+  // Market opportunities: most in-demand and most surplus commodities
+  const marketOpportunities = useMemo(() => {
+    if (!station) return { inDemand: [], surplus: [] };
+    
+    const commodities = generateCommodities();
+    const inventory = station.inventory;
+    
+    // Calculate opportunity scores for each commodity
+    const opportunities = commodities.map(commodity => {
+      const item = inventory[commodity.id];
+      if (!item) return null;
+      
+      // Price ratio compared to base prices (higher = station pays more)
+      const sellPriceRatio = item.sell / commodity.baseSell;
+      const buyPriceRatio = item.buy / commodity.baseBuy;
+      
+      // Get stock effect for visual indicator
+      const targetStock = getTargetStock(station.type, commodity.id);
+      const stockEffect = getStockPriceEffect(item.stock || 50, targetStock);
+      
+      // Price bias at this station
+      const bias = getPriceBiasForStation(station.type, commodity.id);
+      
+      return {
+        id: commodity.id,
+        name: commodity.name,
+        category: commodity.category,
+        buyPrice: item.buy,
+        sellPrice: item.sell,
+        baseBuy: commodity.baseBuy,
+        baseSell: commodity.baseSell,
+        stock: item.stock || 50,
+        targetStock,
+        sellPriceRatio,
+        buyPriceRatio,
+        stockEffect,
+        bias,
+        canBuy: item.canBuy !== false,
+        canSell: item.canSell !== false,
+        // Demand score: higher when station pays well for a commodity (good for player to sell)
+        demandScore: item.canBuy !== false ? sellPriceRatio * (bias === 'expensive' ? 1.3 : bias === 'cheap' ? 0.7 : 1.0) : 0,
+        // Surplus score: higher when station sells cheap (good for player to buy)
+        surplusScore: item.canSell !== false ? (1 / buyPriceRatio) * (bias === 'cheap' ? 1.3 : bias === 'expensive' ? 0.7 : 1.0) : 0,
+      };
+    }).filter(Boolean) as NonNullable<typeof opportunities[0]>[];
+    
+    // Sort by demand (station wants to buy = player can sell)
+    const inDemand = opportunities
+      .filter(o => o.canBuy && o.demandScore > 0)
+      .sort((a, b) => b.demandScore - a.demandScore)
+      .slice(0, 4);
+    
+    // Sort by surplus (station wants to sell = player can buy cheap)
+    const surplus = opportunities
+      .filter(o => o.canSell && o.surplusScore > 0)
+      .sort((a, b) => b.surplusScore - a.surplusScore)
+      .slice(0, 4);
+    
+    return { inDemand, surplus };
   }, [station]);
 
   // Contracts at this station
@@ -845,59 +893,180 @@ export function DockIntro() {
             </div>
           )}
 
-          {/* Market Preview */}
+          {/* Market Opportunities - In Demand & Surplus */}
           <div className="data-panel" style={{ flex: 1, padding: 20, overflow: 'hidden' }}>
             <div style={{
               fontSize: 12,
               fontFamily: 'monospace',
               letterSpacing: '0.1em',
               color: colors.secondary,
-              marginBottom: 12,
+              marginBottom: 16,
               textTransform: 'uppercase',
               borderBottom: `1px solid ${colors.primary}40`,
               paddingBottom: 8,
             }}>
-              ◢ Market Data Feed
+              ◢ Market Opportunities
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+              {/* In Demand - Station wants to buy (player can sell here) */}
+              <div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 12,
+                  padding: '8px 12px',
+                  background: 'linear-gradient(90deg, #10b98130, transparent)',
+                  borderLeft: '3px solid #10b981',
+                  borderRadius: '0 4px 4px 0',
+                }}>
+                  <span style={{ fontSize: 18 }}>📈</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#10b981' }}>HIGH DEMAND</div>
+                    <div style={{ fontSize: 10, opacity: 0.7 }}>Sell here for premium prices</div>
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {marketOpportunities.inDemand.length === 0 ? (
+                    <div style={{ fontSize: 12, opacity: 0.5, fontStyle: 'italic', padding: 8 }}>
+                      No high-demand commodities
+                    </div>
+                  ) : (
+                    marketOpportunities.inDemand.map((item, idx) => {
+                      const priceChange = Math.round((item.sellPriceRatio - 1) * 100);
+                      return (
+                        <div key={item.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 12px',
+                          background: `linear-gradient(135deg, #10b98115, #10b98105)`,
+                          border: '1px solid #10b98140',
+                          borderRadius: 6,
+                          animation: `slideIn ${0.3 + idx * 0.08}s ease-out`,
+                        }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>
+                              {item.name}
+                            </div>
+                            <div style={{ fontSize: 10, opacity: 0.6, textTransform: 'uppercase' }}>
+                              {item.category}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ 
+                              fontSize: 15, 
+                              fontWeight: 700, 
+                              color: '#10b981',
+                              fontFamily: 'monospace',
+                            }}>
+                              ${item.sellPrice}
+                            </div>
+                            {priceChange !== 0 && (
+                              <div style={{
+                                fontSize: 10,
+                                color: priceChange > 0 ? '#10b981' : '#f59e0b',
+                                fontFamily: 'monospace',
+                              }}>
+                                {priceChange > 0 ? `+${priceChange}%` : `${priceChange}%`} vs avg
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* Surplus - Station selling cheap (player can buy here) */}
+              <div>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  marginBottom: 12,
+                  padding: '8px 12px',
+                  background: 'linear-gradient(90deg, #3b82f630, transparent)',
+                  borderLeft: '3px solid #3b82f6',
+                  borderRadius: '0 4px 4px 0',
+                }}>
+                  <span style={{ fontSize: 18 }}>📦</span>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#3b82f6' }}>SURPLUS STOCK</div>
+                    <div style={{ fontSize: 10, opacity: 0.7 }}>Buy here at discount prices</div>
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {marketOpportunities.surplus.length === 0 ? (
+                    <div style={{ fontSize: 12, opacity: 0.5, fontStyle: 'italic', padding: 8 }}>
+                      No surplus commodities
+                    </div>
+                  ) : (
+                    marketOpportunities.surplus.map((item, idx) => {
+                      const priceChange = Math.round((1 - item.buyPriceRatio) * 100);
+                      return (
+                        <div key={item.id} style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 12px',
+                          background: `linear-gradient(135deg, #3b82f615, #3b82f605)`,
+                          border: '1px solid #3b82f640',
+                          borderRadius: 6,
+                          animation: `slideIn ${0.3 + idx * 0.08}s ease-out`,
+                        }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>
+                              {item.name}
+                            </div>
+                            <div style={{ fontSize: 10, opacity: 0.6, textTransform: 'uppercase' }}>
+                              {item.category}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ 
+                              fontSize: 15, 
+                              fontWeight: 700, 
+                              color: '#3b82f6',
+                              fontFamily: 'monospace',
+                            }}>
+                              ${item.buyPrice}
+                            </div>
+                            {priceChange !== 0 && (
+                              <div style={{
+                                fontSize: 10,
+                                color: priceChange > 0 ? '#10b981' : '#f59e0b',
+                                fontFamily: 'monospace',
+                              }}>
+                                {priceChange > 0 ? `${priceChange}% off` : `+${Math.abs(priceChange)}%`}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
             </div>
             
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr auto auto',
-              gap: '8px 16px',
-              fontSize: 13,
+              marginTop: 16,
+              padding: 10,
+              background: `${colors.primary}10`,
+              border: `1px solid ${colors.primary}30`,
+              borderRadius: 4,
+              fontSize: 11,
+              textAlign: 'center',
+              color: colors.secondary,
               fontFamily: 'monospace',
             }}>
-              <div style={{ fontWeight: 700, color: colors.secondary, fontSize: 11 }}>COMMODITY</div>
-              <div style={{ fontWeight: 700, color: colors.secondary, fontSize: 11 }}>BUY</div>
-              <div style={{ fontWeight: 700, color: colors.secondary, fontSize: 11 }}>SELL</div>
-              
-              {marketData.map((item, idx) => (
-                <div key={item.id} style={{
-                  display: 'contents',
-                  animation: `slideIn ${0.3 + idx * 0.1}s ease-out`,
-                }}>
-                  <div style={{ textTransform: 'capitalize', opacity: 0.9 }}>{item.name}</div>
-                  <div style={{ color: '#10b981', textAlign: 'right' }}>${item.buyPrice}</div>
-                  <div style={{ color: '#ef4444', textAlign: 'right' }}>${item.sellPrice}</div>
-                </div>
-              ))}
+              💡 FULL MARKET DATA AVAILABLE IN STATION TERMINAL
             </div>
-            
-            {marketData.length > 0 && (
-              <div style={{
-                marginTop: 12,
-                padding: 8,
-                background: `${colors.primary}10`,
-                border: `1px solid ${colors.primary}30`,
-                borderRadius: 4,
-                fontSize: 11,
-                textAlign: 'center',
-                color: colors.secondary,
-                fontFamily: 'monospace',
-              }}>
-                ⚠ FULL INVENTORY AVAILABLE IN STATION TERMINAL
-              </div>
-            )}
           </div>
         </div>
 
