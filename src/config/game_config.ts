@@ -93,19 +93,23 @@ export const defaultConfig: GameConfig = {
     jitterFactor: 0.1,
     minSpreadPercent: 0.08,
     minSpreadAbsolute: 3,
-    distanceNorm: 120,
-    maxDistancePremium: 0.4,
+    // Distance norm scaled to actual world distances (stations span ~200-1800 units)
+    distanceNorm: 1500,
+    // Max premium of 2.5 allows up to 3.5x sell price on longest routes
+    maxDistancePremium: 2.5,
+    // k values define max premium per category (quadratic: premium = k * (dist/norm)²)
+    // Example: machinery at 1500 units = 2.5 * 1.0² = 250% premium = 3.5x sell price
     kDistByCategory: {
-      tech: 0.35,
-      medical: 0.35,
-      luxury: 0.35,
-      industrial: 0.25,
-      energy: 0.25,
-      fuel: 0.25,
-      consumer: 0.2,
-      food: 0.2,
-      gas: 0.18,
-      raw: 0.18,
+      tech: 3.0,        // Microchips, nanomaterials - highest tier, 4x on long hauls
+      industrial: 2.5,  // Machinery, alloys - user requested ~3x for long routes
+      energy: 2.5,      // Batteries - also ~3x per user feedback
+      medical: 2.5,     // Pharmaceuticals reward distance
+      luxury: 2.0,      // Luxury goods have good margins already
+      fuel: 1.8,        // Refined fuel - mid-tier
+      consumer: 1.5,    // Textiles etc - moderate bonus
+      food: 1.2,        // Food - smaller distance bonus
+      gas: 1.0,         // Gases - base premium
+      raw: 0.8,         // Raw materials - smallest premium (bulky, cheap)
     },
     kStock: 0.5,
     minStockMultiplier: 0.85,
@@ -151,17 +155,20 @@ export const defaultConfig: GameConfig = {
         luxury: { buy: 1.08, sell: 1.12 },
       },
     },
+    // Fabrication profitability floors by output category
+    // These add to (input_cost * ratio) to ensure crafting is profitable
+    // Higher values for hard-to-produce items at end of production chains
     craftFloorMargin: {
-      industrial: 30,
-      tech: 80,
-      medical: 100,
-      luxury: 100,
-      energy: 40,
-      consumer: 20,
-      food: 15,
-      fuel: 25,
-      gas: 15,
-      raw: 15,
+      tech: 300,        // Microchips, nanomaterials - multi-step, high value
+      industrial: 150,  // Machinery, alloys - important tier 2 goods
+      medical: 200,     // Pharmaceuticals - valuable end product
+      luxury: 150,      // Luxury goods - crafted from multiple inputs
+      energy: 100,      // Batteries - tier 2
+      fuel: 50,         // Refined fuel - tier 1
+      consumer: 40,     // Textiles, etc - tier 1
+      food: 25,         // Meat processing - simple
+      gas: 25,          // Oxygen from water - simple
+      raw: 20,          // Minimal for raw (rarely crafted)
     },
     featured: {
       count: 3,

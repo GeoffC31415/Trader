@@ -1,20 +1,22 @@
 export const economy_constants = {
-	// Distance-based premium
+	// Distance-based premium (QUADRATIC: premium = k * (distance/norm)^2)
+	// Short routes = tiny profit, long routes = big profit (up to 3-4x)
+	// World scale: short routes ~200 units, long routes ~1500-1800 units
 	k_dist_by_category: {
-		tech: 0.35,
-		medical: 0.35,
-		luxury: 0.35,
-		industrial: 0.25,
-		energy: 0.25,
-		fuel: 0.25,
-		consumer: 0.2,
-		food: 0.2,
-		gas: 0.18,
-		raw: 0.18,
+		tech: 3.0,        // Microchips, nanomaterials - highest tier, 4x on long hauls
+		industrial: 2.5,  // Machinery, alloys - ~3x for long routes
+		energy: 2.5,      // Batteries - also ~3x per user feedback
+		medical: 2.5,     // Pharmaceuticals reward distance
+		luxury: 2.0,      // Luxury goods have good margins already
+		fuel: 1.8,        // Refined fuel - mid-tier
+		consumer: 1.5,    // Textiles etc - moderate bonus
+		food: 1.2,        // Food - smaller distance bonus
+		gas: 1.0,         // Gases - base premium
+		raw: 0.8,         // Raw materials - smallest premium (bulky, cheap)
 	},
-	max_distance_premium: 0.4,
-	// Normalize distances by this scale (in world units)
-	distance_norm: 120,
+	max_distance_premium: 2.5,
+	// Normalize distances by this scale (matches actual world: stations span ~200-1800 units)
+	distance_norm: 1500,
 
 	// Stock-driven scarcity curve
 	k_stock: 0.5,
@@ -66,17 +68,19 @@ export const economy_constants = {
 	} as Record<string, Record<string, { buy: number; sell: number }>>, // loose typing for simplicity
 
 	// Fabrication profitability floors by output category
+	// These add to (input_cost * ratio) to ensure crafting is profitable
+	// Higher values for hard-to-produce items at end of production chains
 	craft_floor_margin: {
-		industrial: 30,
-		tech: 80,
-		medical: 100,
-		luxury: 100,
-		energy: 40,
-		consumer: 20,
-		food: 15,
-		fuel: 25,
-		gas: 15,
-		raw: 15,
+		tech: 300,        // Microchips, nanomaterials - multi-step, high value
+		industrial: 150,  // Machinery, alloys - important tier 2 goods
+		medical: 200,     // Pharmaceuticals - valuable end product
+		luxury: 150,      // Luxury goods - crafted from multiple inputs
+		energy: 100,      // Batteries - tier 2
+		fuel: 50,         // Refined fuel - tier 1
+		consumer: 40,     // Textiles, etc - tier 1
+		food: 25,         // Meat processing - simple
+		gas: 25,          // Oxygen from water - simple
+		raw: 20,          // Minimal for raw (rarely crafted)
 	},
 
 	// Featured arbitrage seeding

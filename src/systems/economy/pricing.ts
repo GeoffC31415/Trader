@@ -144,7 +144,9 @@ function distancePremiumFor(category: Commodity['category'], distance: number): 
   const config = getEconomyConfig();
   const norm = config.distanceNorm;
   const k = config.kDistByCategory[category] || 0.2;
-  const premium = k * Math.max(0, Math.min(1, distance / Math.max(1, norm)));
+  // Use squared distance for quadratic scaling: short routes = small profit, long routes = big profit
+  const normalizedDist = Math.max(0, Math.min(1, distance / Math.max(1, norm)));
+  const premium = k * (normalizedDist * normalizedDist);
   return Math.min(config.maxDistancePremium, premium);
 }
 
@@ -242,7 +244,9 @@ export function priceForStation(type: StationType, commodities: Commodity[], her
         if (finalSell < minSell) finalSell = minSell;
       }
     }
-    const baseFloor = Math.round(c.baseSell * (1 + 0.1 + distPremium));
+    // Base floor ensures minimum profitability even on short routes
+    // 20% base margin + distance premium ensures trades are always worth making
+    const baseFloor = Math.round(c.baseSell * (1 + 0.2 + distPremium));
     if (finalSell < baseFloor) finalSell = baseFloor;
     inv[c.id] = { buy: withStock.buy, sell: finalSell, stock, canBuy, canSell: true };
   }

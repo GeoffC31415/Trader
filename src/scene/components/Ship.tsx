@@ -32,6 +32,9 @@ export function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boole
       {ship.kind === 'freighter' && (
         <FreighterModel power={power} hasRig={hasRig} />
       )}
+      {ship.kind === 'heavy_freighter' && (
+        <FreighterModel power={power} hasRig={hasRig} />
+      )}
       {ship.kind === 'clipper' && (
         <ClipperModel power={power} hasRig={hasRig} />
       )}
@@ -39,6 +42,9 @@ export function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boole
         <ClipperModel power={power} hasRig={hasRig} />
       )}
       {ship.kind === 'miner' && (
+        <MinerModel power={power} />
+      )}
+      {ship.kind === 'industrial_miner' && (
         <MinerModel power={power} />
       )}
       {hasNav && (
