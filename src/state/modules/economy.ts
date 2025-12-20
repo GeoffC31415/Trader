@@ -293,6 +293,11 @@ export function buyCommodity(
 
   const item = station.inventory[commodityId];
   if (!item || item.canSell === false) return null;
+  
+  // Can't buy if station has no stock or not enough stock
+  const availableStock = Math.floor(item.stock || 0);
+  if (availableStock <= 0) return null;
+  if (quantity > availableStock) return null; // Can't buy more than available
 
   const rep = station.reputation || 0;
   const unitBuyBase = applyReputationToBuyPrice(item.buy, rep);
