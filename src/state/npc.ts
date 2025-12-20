@@ -18,6 +18,20 @@ function speedForCommodity(commodityId: string): number {
   return minSpeed + inv * (maxSpeed - minSpeed);
 }
 
+function cargoCapacityForCommodity(commodityId: string): number {
+  const c = commodityById[commodityId];
+  if (!c) return 35; // Default middle of 20-50 range
+  // Cheap goods = larger loads, expensive goods = smaller loads
+  const values = commodities.map(c => c.baseBuy);
+  const minCost = values.reduce((m, v) => Math.min(m, v), Number.POSITIVE_INFINITY);
+  const maxCost = values.reduce((m, v) => Math.max(m, v), 0);
+  const t = (c.baseBuy - minCost) / Math.max(1e-6, (maxCost - minCost));
+  const inv = 1 - t; // Inverted: cheap goods (low baseBuy) get high capacity
+  const minCapacity = 20;
+  const maxCapacity = 50;
+  return Math.round(minCapacity + inv * (maxCapacity - minCapacity));
+}
+
 type DirectRoute = {
   id: string;
   fromId: string;
@@ -62,20 +76,22 @@ export function spawnNpcTraders(stations: Station[], count: number): NpcTrader[]
     const r = routes[i];
     const from = byId[r.fromId];
     const speed = speedForCommodity(r.commodityId);
+    const cargoCapacity = cargoCapacityForCommodity(r.commodityId);
     const jitter: [number, number, number] = [ (Math.random()-0.5)*0.8*SCALE, (Math.random()-0.5)*0.4*SCALE, (Math.random()-0.5)*0.8*SCALE ];
     const position: [number, number, number] = [ from.position[0] + jitter[0], from.position[1] + jitter[1], from.position[2] + jitter[2] ];
     const to = byId[r.toId];
     const path = planNpcPath(from, to, position);
-    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed, path, pathCursor: 1, hp: 80, maxHp: 80, isHostile: false });
+    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed, cargoCapacity, path, pathCursor: 1, hp: 80, maxHp: 80, isHostile: false });
   }
   while (pick.length < count && routes.length > 0) {
     const r = routes[Math.floor(Math.random() * routes.length)];
     const from = byId[r.fromId];
     const speed = speedForCommodity(r.commodityId);
+    const cargoCapacity = cargoCapacityForCommodity(r.commodityId);
     const position: [number, number, number] = [from.position[0], from.position[1], from.position[2]];
     const to = byId[r.toId];
     const path = planNpcPath(from, to, position);
-    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed, path, pathCursor: 1, hp: 80, maxHp: 80, isHostile: false });
+    pick.push({ id: `${r.id}#${pick.length}`, commodityId: r.commodityId, fromId: r.fromId, toId: r.toId, position, speed, cargoCapacity, path, pathCursor: 1, hp: 80, maxHp: 80, isHostile: false });
   }
   return pick;
 }

@@ -30,4 +30,10 @@ export type ProcessRecipe = {
   inputPerOutput: number;
 };
 
+export type StationConsumption = {
+  commodityId: string;
+  ratePerMinute: number;  // units consumed per minute
+  criticalThreshold: number;  // stock level that triggers price spike
+};
+
 

@@ -6,6 +6,8 @@ import { stationTypeColors } from '../../utils/station_theme';
 import { getPriceBiasForStation, gatedCommodities } from '../../../systems/economy/pricing';
 import { commodityById } from '../../../state/world';
 import { getAdjustedPrices } from '../../utils/price_display';
+import { getCommodityTier, getTierLabel, getTierColor, isPerishable } from '../../../systems/economy/commodity_tiers';
+import { getSpoilageTimeSeconds, formatSpoilageTime } from '../../../state/modules/cargo_freshness';
 // UIIcon not needed in this component
 
 interface CommodityGridProps {
@@ -48,6 +50,28 @@ export function CommodityGrid({
           padding-bottom: 8px;
           border-bottom: 1px solid ${colors.primary}30;
         }
+        .tier-badge {
+          display: inline-block;
+          padding: 2px 6px;
+          font-size: 9px;
+          font-weight: 700;
+          border-radius: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-left: 6px;
+        }
+        .freshness-bar {
+          width: 100%;
+          height: 3px;
+          background: rgba(0, 0, 0, 0.3);
+          border-radius: 2px;
+          overflow: hidden;
+          margin-top: 4px;
+        }
+        .freshness-fill {
+          height: 100%;
+          transition: width 0.3s ease, background 0.3s ease;
+        }
       `}</style>
       <div className="commodity-grid">
         <div className="commodity-grid-header"></div>
@@ -81,14 +105,66 @@ export function CommodityGrid({
                 )}
               </div>
               <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
-                {id.replace(/_/g, ' ')}
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+                  <span>{id.replace(/_/g, ' ')}</span>
+                  {(() => {
+                    const tier = getCommodityTier(id);
+                    const tierColor = getTierColor(tier);
+                    return (
+                      <span 
+                        className="tier-badge"
+                        style={{
+                          backgroundColor: `${tierColor}20`,
+                          color: tierColor,
+                          border: `1px solid ${tierColor}40`,
+                        }}
+                      >
+                        {getTierLabel(tier)}
+                      </span>
+                    );
+                  })()}
+                </div>
+                {isPerishable(id) && (ship.cargo[id] || 0) > 0 && (() => {
+                  const freshness = ship.cargoFreshness?.[id] ?? 1.0;
+                  const freshnessPercent = Math.round(freshness * 100);
+                  // Color coding: green >80%, amber 20-80%, red <20%, dark red at 0%
+                  const freshnessColor = freshness > 0.8 ? '#10b981' 
+                    : freshness > 0.2 ? '#f59e0b' 
+                    : freshness > 0 ? '#ef4444' 
+                    : '#7f1d1d'; // Dark red for worthless (0%)
+                  return (
+                    <div style={{ width: '100%', marginTop: 6 }}>
+                      <div className="freshness-bar">
+                        <div 
+                          className="freshness-fill"
+                          style={{
+                            width: `${freshnessPercent}%`,
+                            background: `linear-gradient(90deg, ${freshnessColor}, ${freshnessColor}80)`,
+                          }}
+                        />
+                      </div>
+                      <div style={{ fontSize: 9, color: freshnessColor, marginTop: 2, opacity: 0.8 }}>
+                        {freshnessPercent > 0 ? `${freshnessPercent}% fresh` : 'WORTHLESS'}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
               <div style={{ color }}>
-                <span style={{ color: '#10b981' }}>${adjBuy}</span>
-                <span style={{ opacity: 0.5 }}> / </span>
-                <span style={{ color: '#ef4444' }}>${adjSell}</span>
+                <div>
+                  <span style={{ color: '#10b981' }}>${adjBuy}</span>
+                  <span style={{ opacity: 0.5 }}> / </span>
+                  <span style={{ color: '#ef4444' }}>${adjSell}</span>
+                </div>
+                {isPerishable(id) && p.canSell !== false && (
+                  <div style={{ fontSize: 9, color: '#f59e0b', marginTop: 4, opacity: 0.8 }}>
+                    ⏱ Spoils in {formatSpoilageTime(getSpoilageTimeSeconds())}
+                  </div>
+                )}
               </div>
-              <div style={{ fontWeight: 700, color: colors.secondary }}>{ship.cargo[id] || 0}</div>
+              <div style={{ fontWeight: 700, color: colors.secondary }}>
+                {ship.cargo[id] || 0}
+              </div>
               <div style={{ display: 'flex', gap: 6 }}>
                 <button
                   onClick={() => onBuy(id, qty)}

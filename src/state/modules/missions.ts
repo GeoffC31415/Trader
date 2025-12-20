@@ -17,6 +17,7 @@ import {
   CONTRACT_MIN_BONUS,
   MISSION_REP_REQUIREMENTS,
 } from '../../domain/constants/contract_constants';
+import { getConsumptionForStation } from '../../systems/economy/consumption';
 import { shipCaps } from '../../domain/constants/ship_constants';
 import { NPC_BASE_HP } from '../../domain/constants/weapon_constants';
 import { applyReputationWithPropagation } from '../../systems/reputation/faction_system';
@@ -337,26 +338,60 @@ export function generateContracts(
       prioritizePerDistance: true,
     }).filter(r => r.toId === st.id);
 
-    // Choose up to 5 missions per station with increasing rep gates
-    const picks = suggestions.slice(0, 10);
+    // Check for station shortages (demand-based contracts)
+    const consumption = getConsumptionForStation(st.type);
+    const shortageRoutes: typeof suggestions = [];
+    const normalRoutes: typeof suggestions = [];
+    
+    for (const route of suggestions) {
+      const item = st.inventory[route.inputId];
+      if (!item) {
+        normalRoutes.push(route);
+        continue;
+      }
+      
+      // Check if this commodity is consumed by this station
+      const consConfig = consumption.find(c => c.commodityId === route.inputId);
+      if (consConfig) {
+        // Define shortage as stock < 30% of critical threshold (or < 30% of typical stock)
+        const currentStock = item.stock || 0;
+        const targetStock = consConfig.criticalThreshold * 3; // Rough estimate of normal stock
+        const shortageThreshold = targetStock * 0.3;
+        
+        if (currentStock < shortageThreshold) {
+          shortageRoutes.push(route);
+        } else {
+          normalRoutes.push(route);
+        }
+      } else {
+        normalRoutes.push(route);
+      }
+    }
+    
+    // Prioritize shortage routes first, then normal routes
+    const picks = [...shortageRoutes, ...normalRoutes].slice(0, 10);
     const perStation: Contract[] = [];
 
     for (let i = 0; i < Math.min(CONTRACTS_PER_STATION, picks.length); i++) {
       const r = picks[i];
+      const isShortage = i < shortageRoutes.length;
       const units = Math.max(
         CONTRACT_MIN_UNITS,
         Math.min(CONTRACT_MAX_UNITS, r.maxUnits)
       );
-      const tag: Contract['tag'] =
-        i === 0
-          ? 'standard'
-          : i === 1
-          ? 'bulk'
-          : i === 2
-          ? 'rush'
-          : i === 3
-          ? 'fabrication'
-          : 'emergency';
+      
+      // Shortage contracts get "emergency" or "rush" tags, better payouts, shorter expiration
+      const tag: Contract['tag'] = isShortage
+        ? (i === 0 ? 'emergency' : 'rush')
+        : i === 0
+        ? 'standard'
+        : i === 1
+        ? 'bulk'
+        : i === 2
+        ? 'rush'
+        : i === 3
+        ? 'fabrication'
+        : 'emergency';
       const requiredRep = MISSION_REP_REQUIREMENTS[i];
 
       // Apply reputation bonus to contract multipliers
@@ -386,8 +421,10 @@ export function generateContracts(
       const baseProfit = sellRevenue - buyCost;
 
       // Add bonus to ensure minimum profit margin on total investment
+      // Shortage contracts get +20-50% bonus payout
       const minProfitMargin = CONTRACT_PROFIT_MARGINS[tag];
-      const desiredProfit = buyCost * minProfitMargin;
+      const shortageBonus = isShortage ? 1.35 : 1.0; // 35% bonus for shortages
+      const desiredProfit = buyCost * minProfitMargin * shortageBonus;
       const rewardBonus = Math.max(
         CONTRACT_MIN_BONUS,
         Math.round(Math.max(0, desiredProfit - baseProfit) + buyCost * 0.15)
@@ -405,7 +442,9 @@ export function generateContracts(
         status: 'offered',
         expiresAt:
           Date.now() +
-          (tag === 'rush'
+          (isShortage
+            ? CONTRACT_EXPIRATION_TIMES.rush // Shortage contracts have shorter expiration
+            : tag === 'rush'
             ? CONTRACT_EXPIRATION_TIMES.rush
             : CONTRACT_EXPIRATION_TIMES.default),
         offeredById,

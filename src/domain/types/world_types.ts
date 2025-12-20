@@ -82,6 +82,8 @@ export type Ship = {
   maxHp: number;
   energy: number;
   maxEnergy: number;
+  // Perishable goods freshness (1.0 = fresh, 0.5 = minimum, never goes below 0.5)
+  cargoFreshness?: Record<Commodity['id'], number>;
 };
 
 export type NpcTrader = {
@@ -339,6 +341,11 @@ export type GameState = {
   notifications?: Notification[];
   addNotification: (notif: Omit<Notification, 'id' | 'createdAt'>) => void;
   dismissNotification: (id: string) => void;
+  // Price history tracking
+  priceHistory?: Record<string, Record<string, PriceSnapshot[]>>; // stationId -> commodityId -> snapshots
+  lastPriceSnapshotTime?: number; // timestamp of last snapshot
+  // Market events
+  marketEvents?: MarketEvent[]; // active market events affecting prices
 };
 
 export type Notification = {
@@ -347,6 +354,26 @@ export type Notification = {
   message: string;
   duration?: number; // milliseconds, undefined = manual dismiss only
   createdAt: number;
+};
+
+export type PriceSnapshot = {
+  time: number; // timestamp in ms
+  buy: number;
+  sell: number;
+};
+
+export type MarketEvent = {
+  id: string;
+  title: string;
+  description: string;
+  effects: Array<{
+    stationId?: string; // specific station ID or undefined for all stations
+    commodityId?: string; // specific commodity ID
+    commodityCategory?: string; // category filter (e.g., 'food', 'tech')
+    priceMultiplier: number; // 0.5 = 50% off, 2.0 = double price
+  }>;
+  startedAt: number; // timestamp in ms
+  duration: number; // duration in ms
 };
 
 

@@ -62,6 +62,14 @@ import {
   processCommodity,
   upgradeShip,
 } from './modules/economy';
+import { updateStationConsumption } from './modules/economy_consumption';
+import { recordPriceHistory, mergePriceHistory } from './modules/price_history';
+import { updateCargoFreshness } from './modules/cargo_freshness';
+import {
+  generateMarketEvent,
+  shouldSpawnEvent,
+  getActiveEvents,
+} from '../systems/economy/market_events';
 import {
   updateMissionsInTick,
   generateContracts as generateContractsModule,
@@ -143,9 +151,20 @@ export const useGameStore = create<GameState>((set, get) => ({
     set(state => {
       // 1. Physics - update ship movement
       let ship = updatePhysics(state.ship, dt);
+      
+      // 1a. Cargo freshness - decay perishable goods
+      ship = updateCargoFreshness(ship, dt);
 
-      // 2. Economy - jitter prices
-      let stations = jitterPrices(state.stations, dt);
+      // 2. Economy - jitter prices (with market event multipliers)
+      // Get active events first (before they're updated)
+      const currentTimeForEvents = Date.now();
+      const activeEventsForJitter = state.marketEvents
+        ? getActiveEvents(state.marketEvents, currentTimeForEvents)
+        : [];
+      let stations = jitterPrices(state.stations, dt, activeEventsForJitter);
+
+      // 2a. Economy - station consumption (dynamic supply/demand)
+      stations = updateStationConsumption(stations, dt);
 
       // Phase 3: gentle trust decay toward 0 over time
       let relationships = state.relationships;
@@ -227,6 +246,35 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (missionResult.ship) ship = missionResult.ship;
       if (missionResult.stations) stations = missionResult.stations;
 
+      // 7. Market Events - spawn rare high-impact events
+      const currentTime = Date.now();
+      let marketEvents = state.marketEvents || [];
+      // Remove expired events
+      marketEvents = getActiveEvents(marketEvents, currentTime);
+      // Spawn new event if needed (rare: 1 per 5-10 min)
+      const lastEventTime = marketEvents.length > 0
+        ? Math.max(...marketEvents.map(e => e.startedAt))
+        : undefined;
+      if (shouldSpawnEvent(lastEventTime, currentTime)) {
+        const newEvent = generateMarketEvent(stations);
+        if (newEvent) {
+          marketEvents = [...marketEvents, newEvent];
+          // Notify player of new event
+          const addNotification = get().addNotification;
+          addNotification({
+            type: 'info',
+            message: `${newEvent.title}: ${newEvent.description}`,
+            duration: 8000,
+          });
+        }
+      }
+
+      // 8. Price History - record price snapshots every 30 seconds
+      const snapshotResult = recordPriceHistory(stations, currentTime, state.lastPriceSnapshotTime);
+      const updatedPriceHistory = snapshotResult.priceHistory
+        ? mergePriceHistory(state.priceHistory || {}, snapshotResult.priceHistory)
+        : state.priceHistory;
+
       return {
         ship,
         stations,
@@ -239,6 +287,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         stealthStates: missionResult.stealthStates,
         escortStates: missionResult.escortStates,
         relationships,
+        marketEvents,
+        priceHistory: updatedPriceHistory,
+        lastPriceSnapshotTime: snapshotResult.lastSnapshotTime,
       } as Partial<GameState> as GameState;
     }),
 

@@ -244,7 +244,8 @@ function updateRegularTrader(
 
   // Arrived at end of path -> deliver and reverse route
   if (cursor >= (path?.length || 0)) {
-    const deliver = 3;
+    // NPCs trade 20-50 units (noticeable impact on market)
+    const deliver = 20 + Math.floor(Math.random() * 31); // 20-50 range
     // Only process commodity delivery if NPC is carrying a commodity
     if (npc.commodityId) {
       const srcInv = src.inventory[npc.commodityId];
@@ -255,12 +256,21 @@ function updateRegularTrader(
         dstInv &&
         dstInv.canBuy !== false
       ) {
-        stationStockDelta[src.id] = stationStockDelta[src.id] || {};
-        stationStockDelta[src.id][npc.commodityId] =
-          (stationStockDelta[src.id][npc.commodityId] || 0) - deliver;
-        stationStockDelta[dest.id] = stationStockDelta[dest.id] || {};
-        stationStockDelta[dest.id][npc.commodityId] =
-          (stationStockDelta[dest.id][npc.commodityId] || 0) + deliver;
+        // Check source stock: don't drain below 20% of target stock
+        // Target stock is typically 50 (normal) or 200 (cheap/boosted)
+        const currentStock = (srcInv.stock || 0) + (stationStockDelta[src.id]?.[npc.commodityId] || 0);
+        const targetStock = srcInv.stock || 50; // Use current stock as proxy for target
+        const minStock = Math.max(10, Math.floor(targetStock * 0.2)); // At least 20% of target, min 10
+        
+        // Only trade if source has enough stock
+        if (currentStock >= minStock + deliver) {
+          stationStockDelta[src.id] = stationStockDelta[src.id] || {};
+          stationStockDelta[src.id][npc.commodityId] =
+            (stationStockDelta[src.id][npc.commodityId] || 0) - deliver;
+          stationStockDelta[dest.id] = stationStockDelta[dest.id] || {};
+          stationStockDelta[dest.id][npc.commodityId] =
+            (stationStockDelta[dest.id][npc.commodityId] || 0) + deliver;
+        }
       }
     }
     // Reverse route; plan curved path back

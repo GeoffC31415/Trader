@@ -5,6 +5,7 @@ import { economy_constants } from './constants';
 import { getEconomyConfig } from '../../config/game_config';
 import { processRecipes, type ProcessRecipe } from './recipes';
 import { ensureFeaturedInitialized, getFeaturedMultiplier } from './featured';
+import { isPerishable } from './commodity_tiers';
 
 export const gatedCommodities = ['luxury_goods', 'pharmaceuticals', 'microchips', 'nanomaterials'] as const;
 export type GatedCommodity = typeof gatedCommodities[number];
@@ -172,7 +173,7 @@ function getCraftFloorFor(category: Commodity['category']): number {
   return config.craftFloorMargin[category] || 20;
 }
 
-export function priceForStation(type: StationType, commodities: Commodity[], here?: [number, number, number], stationsMeta?: StationMeta[], stationId?: string): StationInventory {
+export function priceForStation(type: StationType, commodities: Commodity[], here?: [number, number, number], stationsMeta?: StationMeta[], stationId?: string, activeEvents?: MarketEvent[]): StationInventory {
   ensureFeaturedInitialized(stationsMeta);
   const rules = rulesByType[type];
   const config = getEconomyConfig();
@@ -198,8 +199,14 @@ export function priceForStation(type: StationType, commodities: Commodity[], her
     const d = nearestProducerDistance(c.id, here, stationsMeta);
     const distPremium = distancePremiumFor(c.category, d);
     const featuredM = getFeaturedMultiplier(stationId, c.id);
-    let sellExtra = Math.round(adjusted.sell * (1 + distPremium));
-    sellExtra = Math.round(sellExtra * featuredM);
+    // Apply market event multipliers (optional - only if provided)
+    const eventMult = (activeEvents && activeEvents.length > 0)
+      ? getEventPriceMultiplier(activeEvents, stationId || '', c.id, c.category)
+      : 1.0;
+    // Perishable goods have 50% higher sell prices (compensates for spoilage risk)
+    const perishableBonus = isPerishable(c.id) ? 1.5 : 1.0;
+    let sellExtra = Math.round(adjusted.sell * (1 + distPremium) * perishableBonus);
+    sellExtra = Math.round(sellExtra * featuredM * eventMult);
     const isGlobalOutput = allRecipeOutputs.has(c.id);
     const sellWithPremium = Math.round(
       (isGlobalOutput && !outputSet.has(c.id)) ? Math.max(sellExtra, adjusted.sell) : Math.max(adjusted.sell, sellExtra * 0.95)
@@ -246,7 +253,8 @@ export function priceForStation(type: StationType, commodities: Commodity[], her
     }
     // Base floor ensures minimum profitability even on short routes
     // 20% base margin + distance premium ensures trades are always worth making
-    const baseFloor = Math.round(c.baseSell * (1 + 0.2 + distPremium));
+    // Perishable goods have 50% higher floor (compensates for spoilage risk)
+    const baseFloor = Math.round(c.baseSell * (1 + 0.2 + distPremium) * perishableBonus);
     if (finalSell < baseFloor) finalSell = baseFloor;
     inv[c.id] = { buy: withStock.buy, sell: finalSell, stock, canBuy, canSell: true };
   }

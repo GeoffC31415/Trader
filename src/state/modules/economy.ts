@@ -10,6 +10,9 @@ import { processRecipes, findRecipeForStation } from '../../systems/economy/reci
 import { shipCaps } from '../../domain/constants/ship_constants';
 import { applyReputationWithPropagation } from '../../systems/reputation/faction_system';
 import { getEconomyConfig } from '../../config/game_config';
+import { generateCommodities } from '../../systems/economy/commodities';
+import { getFreshnessMultiplier } from './cargo_freshness';
+import { isPerishable } from '../../systems/economy/commodity_tiers';
 import { 
   applyReputationToBuyPrice, 
   applyReputationToSellPrice,
@@ -82,7 +85,9 @@ export function getSuggestedRoutes(
         const maxUnits = Math.max(0, Math.min(stock, cargoCapacity));
         if (maxUnits <= 0) continue;
 
-        const estProfit = margin * maxUnits;
+        // Perishable goods routes are 50% more profitable (compensates for spoilage risk)
+        const perishableBonus = isPerishable(id) ? 1.5 : 1.0;
+        const estProfit = margin * maxUnits * perishableBonus;
         const profitPerDistance = d > 0 ? estProfit / d : estProfit;
 
         suggestions.push({
@@ -141,7 +146,9 @@ export function getSuggestedRoutes(
           const d1 = distance(s.position, p.position);
           const d2 = distance(p.position, dSt.position);
           const tripDist = d1 + d2;
-          const estProfit = unitMargin * maxOutputs;
+          // Perishable goods routes are 50% more profitable (compensates for spoilage risk)
+          const perishableBonus = isPerishable(r.outputId) ? 1.5 : 1.0;
+          const estProfit = unitMargin * maxOutputs * perishableBonus;
           const profitPerDistance = tripDist > 0 ? estProfit / tripDist : estProfit;
 
           suggestions.push({
@@ -193,15 +200,19 @@ export function getSuggestedRoutes(
  * 
  * @param stations - Current stations
  * @param dt - Delta time (affects jitter probability)
+ * @param activeEvents - Active market events affecting prices
  * @returns Updated stations with jittered prices
  */
-export function jitterPrices(stations: Station[], dt: number): Station[] {
+export function jitterPrices(stations: Station[], dt: number, activeEvents?: any[]): Station[] {
   const config = getEconomyConfig();
   const jitterChance = Math.min(1, dt * config.jitterChancePerSecond);
   
   if (Math.random() >= jitterChance) {
     return stations; // No jitter this frame
   }
+
+  const commodities = generateCommodities();
+  const commodityById = Object.fromEntries(commodities.map(c => [c.id, c]));
 
   return stations.map(st => {
     const inv = { ...st.inventory } as StationInventory;
@@ -213,10 +224,18 @@ export function jitterPrices(stations: Station[], dt: number): Station[] {
       const item = inv[k];
       if (!item) continue;
 
+      const commodity = commodityById[k];
+      const category = commodity?.category || 'consumer';
+
+      // Apply market event multipliers
+      const eventMult = activeEvents && activeEvents.length > 0
+        ? getEventPriceMultiplier(activeEvents, st.id, k, category)
+        : 1.0;
+
       const factorBuy = 1 + (Math.random() * 2 - 1) * config.jitterFactor;
       const factorSell = 1 + (Math.random() * 2 - 1) * config.jitterFactor;
       const nextBuy = Math.max(1, Math.round(item.buy * factorBuy));
-      const nextSell = Math.max(1, Math.round(item.sell * factorSell));
+      let nextSell = Math.max(1, Math.round(item.sell * factorSell * eventMult));
       const adjusted = ensureSpread({
         buy: nextBuy,
         sell: nextSell,
@@ -426,7 +445,10 @@ export function sellCommodity(
 
   const qty = quantity;
   const rep = station.reputation || 0;
-  const unitSellPrice = applyReputationToSellPrice(item.sell, rep);
+  // Apply freshness multiplier for perishable goods
+  const freshnessMult = getFreshnessMultiplier(ship.cargoFreshness, commodityId);
+  const unitSellPriceBase = applyReputationToSellPrice(item.sell, rep);
+  const unitSellPrice = Math.round(unitSellPriceBase * freshnessMult);
   const revenue = unitSellPrice * qty;
   const cargo = { ...ship.cargo, [commodityId]: have - fromPlayer };
 
