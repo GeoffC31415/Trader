@@ -370,3 +370,11 @@ export function getCharacterDialogue(stationId: string): DialogueLine[] {
 export function getTotalDialogueCount(): number {
   return Object.values(CHARACTER_DIALOGUE).reduce((sum, lines) => sum + lines.length, 0);
 }
+
+
+
+
+
+
+
+

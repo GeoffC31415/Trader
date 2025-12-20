@@ -202,3 +202,11 @@ export function createEmptyMemory(): CharacterMemory {
     recentDialogueIds: [],
   };
 }
+
+
+
+
+
+
+
+
