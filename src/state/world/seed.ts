@@ -202,10 +202,27 @@ const baseStations: Station[] = [
   } },
 ];
 
+/**
+ * Randomize stock levels for initial station inventory
+ * Stock varies between 30% and 150% of target, creating immediate trading opportunities
+ */
+function randomizeStock(inv: StationInventory): StationInventory {
+  const result: StationInventory = {};
+  for (const [commodityId, item] of Object.entries(inv)) {
+    const targetStock = item.stock || 50;
+    // Random between 30% and 150% of target stock
+    const randomFactor = 0.3 + Math.random() * 1.2;
+    const randomizedStock = Math.round(targetStock * randomFactor);
+    result[commodityId] = { ...item, stock: randomizedStock };
+  }
+  return result;
+}
+
 export const stations: Station[] = baseStations.map((base) => {
   const meta = baseStations.map(s => ({ id: s.id, type: s.type, position: s.position }));
   const inv = priceForStation(base.type, commodities, base.position, meta, base.id);
-  return { ...base, inventory: inv, reputation: 0 } as Station;
+  const randomizedInv = randomizeStock(inv);
+  return { ...base, inventory: randomizedInv, reputation: 0 } as Station;
 });
 
 export const belts: AsteroidBelt[] = [
