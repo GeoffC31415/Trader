@@ -3,7 +3,7 @@ import type { StationType } from '../../../domain/types/economy_types';
 import type { StationInventory } from '../../../domain/types/economy_types';
 import type { Ship } from '../../../domain/types/world_types';
 import { stationTypeColors } from '../../utils/station_theme';
-import { getPriceBiasForStation, gatedCommodities } from '../../../systems/economy/pricing';
+import { getPriceBiasForStation, gatedCommodities, getStockPriceEffect, getTargetStock } from '../../../systems/economy/pricing';
 import { commodityById } from '../../../state/world';
 import { getAdjustedPrices } from '../../utils/price_display';
 import { getCommodityTier, getTierLabel, getTierColor, isPerishable } from '../../../systems/economy/commodity_tiers';
@@ -37,8 +37,8 @@ export function CommodityGrid({
       <style>{`
         .commodity-grid {
           display: grid;
-          grid-template-columns: auto 2fr 1fr 0.7fr 2fr;
-          gap: 12px 16px;
+          grid-template-columns: auto 2fr 1fr 1fr 0.7fr 2fr;
+          gap: 12px 12px;
           font-family: monospace;
           font-size: 13px;
         }
@@ -72,11 +72,33 @@ export function CommodityGrid({
           height: 100%;
           transition: width 0.3s ease, background 0.3s ease;
         }
+        .stock-bar {
+          width: 100%;
+          height: 4px;
+          background: rgba(0, 0, 0, 0.4);
+          border-radius: 2px;
+          overflow: hidden;
+          margin-top: 4px;
+        }
+        .stock-fill {
+          height: 100%;
+          transition: width 0.3s ease, background 0.3s ease;
+        }
+        .stock-effect-badge {
+          display: inline-block;
+          padding: 2px 5px;
+          font-size: 9px;
+          font-weight: 700;
+          border-radius: 3px;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+        }
       `}</style>
       <div className="commodity-grid">
         <div className="commodity-grid-header"></div>
         <div className="commodity-grid-header">COMMODITY</div>
         <div className="commodity-grid-header">PRICE (BUY / SELL)</div>
+        <div className="commodity-grid-header">STOCK</div>
         <div className="commodity-grid-header">HELD</div>
         <div className="commodity-grid-header">ACTIONS</div>
         
@@ -162,6 +184,50 @@ export function CommodityGrid({
                   </div>
                 )}
               </div>
+              {/* Stock column with price effect */}
+              {(() => {
+                const currentStock = Math.round(p.stock || 0);
+                const targetStock = getTargetStock(station.type, id);
+                const stockEffect = getStockPriceEffect(currentStock, targetStock);
+                const stockPercent = Math.min(150, Math.max(0, (currentStock / targetStock) * 100));
+                // Color the bar based on stock level
+                const barColor = stockPercent > 100 ? '#3b82f6' // blue for surplus
+                  : stockPercent > 50 ? '#10b981' // green for healthy
+                  : stockPercent > 20 ? '#f59e0b' // amber for low
+                  : '#ef4444'; // red for critical
+                
+                return (
+                  <div style={{ minWidth: 70 }}>
+                    <div style={{ fontWeight: 600, fontSize: 12 }}>
+                      {currentStock}
+                      <span style={{ opacity: 0.5, fontSize: 10 }}> / {targetStock}</span>
+                    </div>
+                    <div className="stock-bar">
+                      <div 
+                        className="stock-fill"
+                        style={{
+                          width: `${Math.min(100, stockPercent)}%`,
+                          background: `linear-gradient(90deg, ${barColor}, ${barColor}80)`,
+                        }}
+                      />
+                    </div>
+                    {stockEffect.label && (
+                      <span 
+                        className="stock-effect-badge"
+                        style={{
+                          backgroundColor: `${stockEffect.color}20`,
+                          color: stockEffect.color,
+                          border: `1px solid ${stockEffect.color}40`,
+                          marginTop: 4,
+                          display: 'inline-block',
+                        }}
+                      >
+                        {stockEffect.label}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
               <div style={{ fontWeight: 700, color: colors.secondary }}>
                 {ship.cargo[id] || 0}
               </div>

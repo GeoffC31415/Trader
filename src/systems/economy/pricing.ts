@@ -6,6 +6,8 @@ import { getEconomyConfig } from '../../config/game_config';
 import { processRecipes, type ProcessRecipe } from './recipes';
 import { ensureFeaturedInitialized, getFeaturedMultiplier } from './featured';
 import { isPerishable } from './commodity_tiers';
+import type { MarketEvent } from '../../domain/types/world_types';
+import { getEventPriceMultiplier } from './market_events';
 
 export const gatedCommodities = ['luxury_goods', 'pharmaceuticals', 'microchips', 'nanomaterials'] as const;
 export type GatedCommodity = typeof gatedCommodities[number];
@@ -44,6 +46,69 @@ type StationPriceRules = {
   expensive: string[];
   stockBoost?: Partial<Record<string, number>>;
 };
+
+export type StockPriceEffect = {
+  sellMultiplier: number;  // Multiplier applied to sell price (e.g., 1.15 = +15%)
+  buyMultiplier: number;   // Multiplier applied to buy price
+  percentChange: number;   // Percentage change displayed to player (e.g., +15 or -10)
+  label: string;           // Human-readable label (e.g., "LOW STOCK +15%")
+  color: string;           // Color for display
+};
+
+/**
+ * Calculate the price effect from stock levels
+ * @param stock - Current stock level
+ * @param target - Target/baseline stock level
+ * @returns Price effect information for display
+ */
+export function getStockPriceEffect(stock: number, target: number): StockPriceEffect {
+  if (target <= 0) {
+    return { sellMultiplier: 1, buyMultiplier: 1, percentChange: 0, label: '', color: '#9ca3af' };
+  }
+  
+  const config = getEconomyConfig();
+  const ratio = Math.max(0, Math.min(2, stock / target));
+  const k = config.kStock;
+  const m = Math.max(config.minStockMultiplier, Math.min(config.maxStockMultiplier, 1 + k * (1 - ratio)));
+  const buyM = Math.max(config.minBuyStockMultiplier, Math.min(config.maxBuyStockMultiplier, m));
+  
+  const percentChange = Math.round((m - 1) * 100);
+  
+  let label = '';
+  let color = '#9ca3af'; // neutral gray
+  
+  if (percentChange >= 15) {
+    label = `LOW STOCK +${percentChange}%`;
+    color = '#10b981'; // green - good for selling
+  } else if (percentChange >= 5) {
+    label = `LOW +${percentChange}%`;
+    color = '#22c55e'; // lighter green
+  } else if (percentChange <= -10) {
+    label = `SURPLUS ${percentChange}%`;
+    color = '#ef4444'; // red - bad for selling
+  } else if (percentChange <= -5) {
+    label = `HIGH ${percentChange}%`;
+    color = '#f59e0b'; // amber
+  } else if (percentChange !== 0) {
+    label = percentChange > 0 ? `+${percentChange}%` : `${percentChange}%`;
+    color = percentChange > 0 ? '#9ca3af' : '#9ca3af';
+  }
+  
+  return { sellMultiplier: m, buyMultiplier: buyM, percentChange, label, color };
+}
+
+/**
+ * Get the target/baseline stock level for a commodity at a station type
+ * @param stationType - The station type
+ * @param commodityId - The commodity ID
+ * @returns Target stock level
+ */
+export function getTargetStock(stationType: StationType, commodityId: string): number {
+  const rules = rulesByType[stationType];
+  if (!rules) return 50;
+  const cheap = rules.cheap.includes(commodityId);
+  return (rules.stockBoost && (rules.stockBoost as any)[commodityId]) || (cheap ? 200 : 50);
+}
 
 const rulesByType: Record<StationType, StationPriceRules> = {
   refinery: {
