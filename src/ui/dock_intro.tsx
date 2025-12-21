@@ -306,9 +306,16 @@ export function DockIntro() {
     preloadManifest();
   }, []);
   
-  // Legacy single line for backwards compatibility
-  const line = dialogueLines.greeting?.line.text;
-  const contextualLine = dialogueLines.contextual?.line.text;
+  // Strip ElevenLabs v3 emotion tags from displayed text
+  // Tags like [warmly], [pauses], [laughs] are for audio synthesis only
+  const stripEmotionTags = (text: string | undefined): string | undefined => {
+    if (!text) return text;
+    return text.replace(/\[[^\]]+\]\s*/g, '').trim();
+  };
+  
+  // Legacy single line for backwards compatibility (with emotion tags stripped for display)
+  const line = stripEmotionTags(dialogueLines.greeting?.line.text);
+  const contextualLine = stripEmotionTags(dialogueLines.contextual?.line.text);
   
   // Player relationship tier with this character
   const relationshipTier = useMemo(() => 

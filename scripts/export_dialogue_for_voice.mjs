@@ -155,18 +155,38 @@ function parseDialogueBlock(blockContent) {
 }
 
 /**
+ * Detect ElevenLabs v3 emotion tags in text
+ * Tags look like: [excited], [sigh], [pauses], [warmly], etc.
+ */
+function extractEmotionTags(text) {
+  const tagPattern = /\[([^\]]+)\]/g;
+  const tags = [];
+  let match;
+  while ((match = tagPattern.exec(text)) !== null) {
+    tags.push(match[1]);
+  }
+  return tags;
+}
+
+/**
  * Export to JSON format
  */
 function exportToJSON(dialogueData, outputPath) {
   const exportData = {
     generatedAt: new Date().toISOString(),
     totalLines: 0,
+    linesWithEmotionTags: 0,
+    emotionTagsUsed: [],
     characters: [],
   };
+  
+  const allTags = new Set();
   
   for (const [stationId, lines] of Object.entries(dialogueData)) {
     const voiceDir = VOICE_DIRECTIONS[stationId];
     if (!voiceDir) continue;
+    
+    let characterEmotionTagCount = 0;
     
     const characterData = {
       stationId,
@@ -175,21 +195,35 @@ function exportToJSON(dialogueData, outputPath) {
       gender: voiceDir.gender,
       ageRange: voiceDir.age,
       lineCount: lines.length,
-      lines: lines.map(line => ({
-        id: line.id,
-        text: line.text,
-        category: line.category,
-        voiceTone: line.voiceTone,
-        suggestedFilename: `${stationId}/${line.id}.mp3`,
-      })),
+      lines: lines.map(line => {
+        const emotionTags = extractEmotionTags(line.text);
+        if (emotionTags.length > 0) {
+          exportData.linesWithEmotionTags++;
+          characterEmotionTagCount++;
+          emotionTags.forEach(tag => allTags.add(tag));
+        }
+        return {
+          id: line.id,
+          text: line.text,
+          category: line.category,
+          voiceTone: line.voiceTone,
+          emotionTags: emotionTags.length > 0 ? emotionTags : undefined,
+          suggestedFilename: `${stationId}/${line.id}.mp3`,
+        };
+      }),
+      linesWithEmotionTags: characterEmotionTagCount,
     };
     
     exportData.characters.push(characterData);
     exportData.totalLines += lines.length;
   }
   
+  exportData.emotionTagsUsed = Array.from(allTags).sort();
+  
   fs.writeFileSync(outputPath, JSON.stringify(exportData, null, 2));
   console.log(`✅ Exported ${exportData.totalLines} lines to ${outputPath}`);
+  console.log(`   📣 ${exportData.linesWithEmotionTags} lines have ElevenLabs v3 emotion tags`);
+  console.log(`   🎭 Tags used: ${exportData.emotionTagsUsed.slice(0, 10).join(', ')}${exportData.emotionTagsUsed.length > 10 ? '...' : ''}`);
 }
 
 /**
@@ -310,6 +344,7 @@ function main() {
 }
 
 main();
+
 
 
 

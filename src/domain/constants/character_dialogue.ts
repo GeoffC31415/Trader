@@ -52,6 +52,29 @@ export const CHARACTER_DIALOGUE: Record<string, DialogueLine[]> = {
     // Memory callbacks
     { id: 'mira_memory_bigtrader', text: "Your trading volume has been impressive. Sol City appreciates substantial commerce partners.", category: 'memory', conditions: { requiresAction: 'big_trader' }, voiceTone: 'warm' },
     { id: 'mira_memory_missions', text: "Your mission record speaks well of you. We have additional opportunities for capable operators.", category: 'memory', conditions: { requiresAction: 'mission_hero' }, voiceTone: 'warm' },
+    
+    // Additional greetings for variety
+    { id: 'mira_greet_stranger_2', text: "[flatly] Another trader. Dock processing is on the left. [pauses] Try not to clutter the approach lanes.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'cold' },
+    { id: 'mira_greet_stranger_3', text: "[tersely] State your business. Sol City maintains strict docking protocols for unregistered vessels.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'cold' },
+    { id: 'mira_greet_stranger_4', text: "[formally] Sol City Administration welcomes you. Compliance with local ordinances is mandatory.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'neutral' },
+    { id: 'mira_greet_acquaint_2', text: "[pleasantly] Back so soon? [pauses] Efficiency. I approve.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'neutral' },
+    { id: 'mira_greet_acquaint_3', text: "[warmly] I remember you. Your paperwork was actually in order last time. That's... refreshing.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'mira_greet_acquaint_4', text: "[approvingly] Ah, a returning customer. The system works best with familiar faces.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'neutral' },
+    { id: 'mira_greet_trusted_2', text: "[warmly] There you are! [chuckles] I was just reviewing your excellent transaction history.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'mira_greet_trusted_3', text: "[pleased] A pleasure, as always. Your punctuality sets an example others should follow.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'mira_greet_allied_2', text: "[cheerfully] My favorite trader! [warmly] The council speaks highly of your contributions.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    { id: 'mira_greet_allied_3', text: "[delighted] Finally! I've been hoping you'd stop by. [confidently] I have something special to discuss.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    
+    // Additional farewells
+    { id: 'mira_farewell_neutral_2', text: "[formally] Your departure is logged. [pauses] Fly within regulations.", category: 'farewell', voiceTone: 'neutral' },
+    { id: 'mira_farewell_neutral_3', text: "[flatly] The docking bay will be cleared for your exit. Safe travels, trader.", category: 'farewell', voiceTone: 'neutral' },
+    { id: 'mira_farewell_trusted_2', text: "[warmly] Until we meet again. [softly] Do take care out there.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    { id: 'mira_farewell_trusted_3', text: "[cheerfully] Safe skies, friend. [pauses] Sol City looks forward to your return.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    
+    // Additional tips
+    { id: 'mira_tip_timing', text: "[thoughtfully] Market cycles matter. [pauses] Early morning runs to Ceres often catch favorable spreads.", category: 'tip', conditions: { minRep: 30 }, voiceTone: 'neutral' },
+    { id: 'mira_tip_electronics', text: "[confidentially] Between us, electronics shortages are expected. [pauses] Smart traders stock up now.", category: 'tip', conditions: { minRep: 40 }, voiceTone: 'neutral' },
+    { id: 'mira_tip_connections', text: "[warmly] Your reputation opens doors. [pauses] Premium contracts are available at my discretion.", category: 'tip', conditions: { minRep: 50 }, voiceTone: 'warm' },
   ],
 
   // ============================================================================
@@ -96,6 +119,29 @@ export const CHARACTER_DIALOGUE: Record<string, DialogueLine[]> = {
     
     // Memory callbacks  
     { id: 'rex_memory_frequent', text: "You've been good to this station. Regular business matters more than people think.", category: 'memory', conditions: { requiresAction: 'frequent_visitor' }, voiceTone: 'warm' },
+    
+    // Additional greetings for variety
+    { id: 'rex_greet_stranger_2', text: "[gruffly] Yeah, what do you need? [pauses] Pumps are over there. Mind the pressure gauges.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'cold' },
+    { id: 'rex_greet_stranger_3', text: "[tiredly] Another one. [sigh] Look, just read the signs and don't touch anything labeled 'danger.'", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'neutral' },
+    { id: 'rex_greet_stranger_4', text: "[curtly] You're blocking a work lane. [pauses] State your business or move along.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'cold' },
+    { id: 'rex_greet_acquaint_2', text: "[warmly] Hey, I recognize you! [chuckles] Engine's still running smooth, I hope?", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'rex_greet_acquaint_3', text: "[pleasantly] You again! [pauses] Good. I like pilots who know where to get quality fuel.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'neutral' },
+    { id: 'rex_greet_acquaint_4', text: "[nodding] Regular customer, right? [warmly] Stick around, we got fresh refined coming off the line.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'rex_greet_trusted_2', text: "[happily] Well look who it is! [laughs] The crew was just talking about you yesterday.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'rex_greet_trusted_3', text: "[warmly] There's a face I'm always glad to see. [pauses] How've the routes been treating you?", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'rex_greet_allied_2', text: "[excited] Hey, everyone! [loudly] Our favorite pilot's back! [chuckles] Grab a seat, tell us stories.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    { id: 'rex_greet_allied_3', text: "[warmly] Family's here! [happily] I got that part you needed. Saved it special, just for you.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    
+    // Additional farewells
+    { id: 'rex_farewell_neutral_2', text: "[casually] Keep those engines clean. [pauses] And watch out for debris near the belt.", category: 'farewell', voiceTone: 'neutral' },
+    { id: 'rex_farewell_neutral_3', text: "[warmly] Safe flying, spacer. [pauses] Come back when you need a real refuel.", category: 'farewell', voiceTone: 'warm' },
+    { id: 'rex_farewell_trusted_2', text: "[warmly] Take care of yourself out there. [sigh] The void doesn't give second chances.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    { id: 'rex_farewell_trusted_3', text: "[cheerfully] Fly safe, friend! [laughs] And bring back good stories next time!", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    
+    // Additional tips
+    { id: 'rex_tip_timing', text: "[thoughtfully] Early cycle runs get better prices. [pauses] Corps haven't woken up to adjust margins yet.", category: 'tip', conditions: { minRep: 20 }, voiceTone: 'neutral' },
+    { id: 'rex_tip_stockpile', text: "[confidentially] Between you and me? [whispers] Stock up now. Prices are about to shift.", category: 'tip', conditions: { minRep: 40 }, voiceTone: 'neutral' },
+    { id: 'rex_tip_routes', text: "[warmly] The Greenfields run is quiet this week. [pauses] Good margins, fewer complications.", category: 'tip', conditions: { minRep: 30 }, voiceTone: 'warm' },
   ],
 
   // ============================================================================
@@ -137,6 +183,29 @@ export const CHARACTER_DIALOGUE: Record<string, DialogueLine[]> = {
     
     // Memory callbacks
     { id: 'kade_memory_bigtrader', text: "Volume analysis indicates significant transaction history. High-value partners receive priority.", category: 'memory', conditions: { requiresAction: 'big_trader' }, voiceTone: 'warm' },
+    
+    // Additional greetings for variety
+    { id: 'kade_greet_stranger_2', text: "[flatly] Unregistered vessel. [pauses] Processing queue position: low priority. Wait time: variable.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'cold' },
+    { id: 'kade_greet_stranger_3', text: "[coldly] New user detected. [pauses] Fabrication access requires established transaction history.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'cold' },
+    { id: 'kade_greet_stranger_4', text: "[mechanically] Welcome to Aurum Fabrication. [pauses] Please state your specifications clearly.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'neutral' },
+    { id: 'kade_greet_acquaint_2', text: "[approvingly] Return customer. Efficiency rating: acceptable. [pauses] How may we process your request?", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'neutral' },
+    { id: 'kade_greet_acquaint_3', text: "[neutrally] Your transaction patterns suggest reliability. [pauses] That correlates with priority access.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'neutral' },
+    { id: 'kade_greet_acquaint_4', text: "[pleasantly] Ah. A familiar signature. [pauses] Your previous orders were processed without deviation.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'kade_greet_trusted_2', text: "[warmly] Optimal timing. [pauses] I was just reviewing partnership candidates. Your metrics excel.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'kade_greet_trusted_3', text: "[pleased] Your arrival is... welcome. [pauses] Reliability deserves recognition.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'kade_greet_allied_2', text: "[warmly] Excellent. Priority partner detected. [pleasantly] All fabrication queues are available to you.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    { id: 'kade_greet_allied_3', text: "[pleased] Your pattern recognition is... impressive. [pauses] We should discuss strategic collaboration.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    
+    // Additional farewells
+    { id: 'kade_farewell_neutral_2', text: "[flatly] Departure acknowledged. [pauses] Optimal return windows are calculated weekly.", category: 'farewell', voiceTone: 'neutral' },
+    { id: 'kade_farewell_neutral_3', text: "[mechanically] Transaction logged. [pauses] Performance metrics will influence future allocations.", category: 'farewell', voiceTone: 'neutral' },
+    { id: 'kade_farewell_trusted_2', text: "[warmly] Your partnership is valued. [pauses] Return at your earliest operational convenience.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    { id: 'kade_farewell_trusted_3', text: "[pleasantly] Efficiency begets efficiency. [pauses] I anticipate our next correlation.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    
+    // Additional tips
+    { id: 'kade_tip_timing', text: "[thoughtfully] Fabrication demand peaks correlate with shipyard activity. [pauses] Predictable arbitrage.", category: 'tip', conditions: { minRep: 25 }, voiceTone: 'neutral' },
+    { id: 'kade_tip_stockpile', text: "[confidentially] Component shortage imminent. [pauses] Rational actors would stock rare materials now.", category: 'tip', conditions: { minRep: 40 }, voiceTone: 'neutral' },
+    { id: 'kade_tip_margins', text: "[approvingly] Your margin optimization suggests analytical capability. [pauses] Consider multi-hop fabrication.", category: 'tip', conditions: { minRep: 50 }, voiceTone: 'warm' },
   ],
 
   // ============================================================================
@@ -181,6 +250,29 @@ export const CHARACTER_DIALOGUE: Record<string, DialogueLine[]> = {
     
     // Memory callbacks
     { id: 'sana_memory_frequent', text: "You've been good to us. Steady trade keeps this place alive. Thank you.", category: 'memory', conditions: { requiresAction: 'frequent_visitor' }, voiceTone: 'warm' },
+    
+    // Additional greetings for variety
+    { id: 'sana_greet_stranger_2', text: "[warmly] New face around here! [pauses] Come on in. We don't stand on ceremony at Greenfields.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'warm' },
+    { id: 'sana_greet_stranger_3', text: "[gently] You look like you've traveled far. [pauses] Rest a while. The harvest can wait.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'warm' },
+    { id: 'sana_greet_stranger_4', text: "[cheerfully] Welcome, spacer! [pauses] Fresh produce, fair prices, and honest dealings. That's us.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'warm' },
+    { id: 'sana_greet_acquaint_2', text: "[happily] Oh, it's you! [chuckles] I was just thinking about that last haul you made.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'sana_greet_acquaint_3', text: "[warmly] Look who's back! [pauses] The orchards missed you. Well, I did anyway.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'sana_greet_acquaint_4', text: "[pleasantly] There's a familiar ship in my docking bay! [pauses] Good timing. Harvest just came in.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'sana_greet_trusted_2', text: "[delighted] Well bless my roots! [laughs] One of my favorite traders just docked!", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'sana_greet_trusted_3', text: "[warmly] Perfect timing! [excited] I've been saving something special for trusted friends.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'sana_greet_allied_2', text: "[joyfully] There's my favorite spacer! [laughs] Get over here and tell me everything!", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    { id: 'sana_greet_allied_3', text: "[warmly] Family's home! [excitedly] The kids have been asking when you'd visit again.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    
+    // Additional farewells
+    { id: 'sana_farewell_neutral_2', text: "[warmly] Fly safe out there. [pauses] And don't forget to eat something fresh once in a while.", category: 'farewell', voiceTone: 'warm' },
+    { id: 'sana_farewell_neutral_3', text: "[gently] Clear skies, friend. [pauses] May your cargo holds always be full.", category: 'farewell', voiceTone: 'warm' },
+    { id: 'sana_farewell_trusted_2', text: "[warmly] Take care of yourself, hear? [sigh] The void can be lonely without friends.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    { id: 'sana_farewell_trusted_3', text: "[affectionately] Safe travels, dear friend. [pauses] Greenfields will be here when you return.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    
+    // Additional tips
+    { id: 'sana_tip_seasons', text: "[thoughtfully] Harvest cycles affect everything. [pauses] Smart traders learn to read the seasons.", category: 'tip', conditions: { minRep: 25 }, voiceTone: 'neutral' },
+    { id: 'sana_tip_bulk', text: "[confidentially] Bulk orders get better rates from me. [whispers] Especially for friends.", category: 'tip', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    { id: 'sana_tip_fresh', text: "[warmly] Fresh produce commands premium in the city. [pauses] Move fast and charge what it's worth.", category: 'tip', conditions: { minRep: 30 }, voiceTone: 'warm' },
   ],
 
   // ============================================================================
@@ -223,6 +315,29 @@ export const CHARACTER_DIALOGUE: Record<string, DialogueLine[]> = {
     
     // Memory callbacks
     { id: 'ivo_memory_bigtrader', text: "Your transaction volume makes you interesting. Interesting people get opportunities.", category: 'memory', conditions: { requiresAction: 'big_trader' }, voiceTone: 'warm' },
+    
+    // Additional greetings for variety
+    { id: 'ivo_greet_stranger_2', text: "[coldly] Another pilot seeking power. [pauses] How... predictable. State your requirements.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'cold' },
+    { id: 'ivo_greet_stranger_3', text: "[flatly] Unregistered vessel. [pauses] Fuel surcharges apply to unknown quantities.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'cold' },
+    { id: 'ivo_greet_stranger_4', text: "[menacingly] You're in my grid now, pilot. [pauses] Behave accordingly.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'threatening' },
+    { id: 'ivo_greet_acquaint_2', text: "[neutrally] You again. [pauses] Your consumption patterns suggest... ambition. Interesting.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'neutral' },
+    { id: 'ivo_greet_acquaint_3', text: "[dryly] I keep detailed records, you know. [pauses] Yours show potential. Or risk. Time will tell.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'neutral' },
+    { id: 'ivo_greet_acquaint_4', text: "[calculatingly] Return customer. [pauses] Loyalty to Ceres Power has its rewards.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'neutral' },
+    { id: 'ivo_greet_trusted_2', text: "[pleasantly] There you are. [pauses] I was just considering which assets deserve... cultivation.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'ivo_greet_trusted_3', text: "[warmly] A reliable partner returns. [pauses] The grid always remembers those who serve it well.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'ivo_greet_allied_2', text: "[genuinely pleased] Excellent. [pauses] My most valuable asset has arrived. Let us discuss opportunities.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    { id: 'ivo_greet_allied_3', text: "[warmly] Finally, someone worth talking to. [pauses] The others bore me. You... intrigue me.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    
+    // Additional farewells
+    { id: 'ivo_farewell_neutral_2', text: "[flatly] The grid never sleeps. [pauses] Neither should your vigilance.", category: 'farewell', voiceTone: 'neutral' },
+    { id: 'ivo_farewell_neutral_3', text: "[coldly] Power is currency. [pauses] Remember where the currency comes from.", category: 'farewell', voiceTone: 'cold' },
+    { id: 'ivo_farewell_trusted_2', text: "[warmly] Return soon. [pauses] Valuable partners are a rare commodity.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    { id: 'ivo_farewell_trusted_3', text: "[pleasantly] Safe travels, friend. [pauses] And remember: information flows both ways.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    
+    // Additional tips
+    { id: 'ivo_tip_scarcity', text: "[calculatingly] Scarcity drives value. [pauses] Those who control supply... control everything.", category: 'tip', conditions: { minRep: 30 }, voiceTone: 'neutral' },
+    { id: 'ivo_tip_timing', text: "[confidentially] Market volatility is predictable. [whispers] If you know where to look.", category: 'tip', conditions: { minRep: 45 }, voiceTone: 'neutral' },
+    { id: 'ivo_tip_leverage', text: "[warmly] Leverage comes in many forms. [pauses] Credits, information, connections. Collect them all.", category: 'tip', conditions: { minRep: 55 }, voiceTone: 'warm' },
   ],
 
   // ============================================================================
@@ -266,6 +381,29 @@ export const CHARACTER_DIALOGUE: Record<string, DialogueLine[]> = {
     
     // Memory callbacks
     { id: 'kalla_memory_frequent', text: "You're practically furniture here now. That's a compliment, by the way.", category: 'memory', conditions: { requiresAction: 'frequent_visitor' }, voiceTone: 'amused' },
+    
+    // Additional greetings for variety
+    { id: 'kalla_greet_stranger_2', text: "[cheerfully] Ooh, fresh blood! [laughs] Don't worry, that's a good thing around here.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'warm' },
+    { id: 'kalla_greet_stranger_3', text: "[playfully] Well well well! [pauses] Someone new in my favorite docking bay. Let's talk deals.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'warm' },
+    { id: 'kalla_greet_stranger_4', text: "[warmly] Hey there, spacer! [excitedly] Freeport's open for business. What brings you to our little slice of chaos?", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'warm' },
+    { id: 'kalla_greet_acquaint_2', text: "[happily] Look who remembered where the good deals are! [laughs] Smart pilot.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'kalla_greet_acquaint_3', text: "[delighted] You're back! [excitedly] I've got rumors, I've got cargo, I've got stories. Pick your poison.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'kalla_greet_acquaint_4', text: "[teasingly] Miss me already? [laughs] I knew you'd be back. They always come back.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'amused' },
+    { id: 'kalla_greet_trusted_2', text: "[excitedly] There's my favorite troublemaker! [laughs] I've got something special brewing.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'kalla_greet_trusted_3', text: "[warmly] Perfect timing! [whispers] I just got intel that's worth its weight in fuel cells.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'kalla_greet_allied_2', text: "[joyfully] Get over here, you beautiful disaster! [laughs] We've got scheming to do!", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    { id: 'kalla_greet_allied_3', text: "[warmly] Best pilot in the system just walked through my door! [excitedly] The universe is smiling today!", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    
+    // Additional farewells
+    { id: 'kalla_farewell_neutral_2', text: "[cheerfully] Don't be a stranger! [pauses] Strangers miss out on the best deals.", category: 'farewell', voiceTone: 'warm' },
+    { id: 'kalla_farewell_neutral_3', text: "[playfully] Fly crooked and prosper! [laughs] That's the Freeport motto.", category: 'farewell', voiceTone: 'amused' },
+    { id: 'kalla_farewell_trusted_2', text: "[warmly] Watch your back out there. [softly] Some of us actually worry about you.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    { id: 'kalla_farewell_trusted_3', text: "[affectionately] Safe skies, partner. [pauses] Hurry back. It's boring without you.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    
+    // Additional tips
+    { id: 'kalla_tip_info', text: "[confidentially] Information is the real currency. [whispers] I trade in both. Remember that.", category: 'tip', conditions: { minRep: 25 }, voiceTone: 'neutral' },
+    { id: 'kalla_tip_flexibility', text: "[thoughtfully] Best traders stay flexible. [pauses] Never fall in love with your cargo.", category: 'tip', conditions: { minRep: 35 }, voiceTone: 'neutral' },
+    { id: 'kalla_tip_connections', text: "[warmly] Your network is your net worth. [pauses] Good thing you know me, right?", category: 'tip', conditions: { minRep: 50 }, voiceTone: 'warm' },
   ],
 
   // ============================================================================
@@ -311,6 +449,29 @@ export const CHARACTER_DIALOGUE: Record<string, DialogueLine[]> = {
     
     // Memory callbacks
     { id: 'harlan_memory_missions', text: "You've done good work for us. The crew respects that. I respect that.", category: 'memory', conditions: { requiresAction: 'mission_hero' }, voiceTone: 'warm' },
+    
+    // Additional greetings for variety
+    { id: 'harlan_greet_stranger_2', text: "[gruffly] New ship, huh? [pauses] We'll check your reactor seals. Standard procedure.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'neutral' },
+    { id: 'harlan_greet_stranger_3', text: "[tiredly] Another customer. [sigh] Bay three's open. Mind the welding sparks.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'neutral' },
+    { id: 'harlan_greet_stranger_4', text: "[professionally] Drydock Shipyard, Chief Harlan speaking. [pauses] What's your ship need?", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'neutral' },
+    { id: 'harlan_greet_acquaint_2', text: "[warmly] Hey, I remember this hull! [pauses] How's she handling since the last work?", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'harlan_greet_acquaint_3', text: "[pleasantly] Good to see you again. [pauses] The crew's been asking about that engine mod.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'harlan_greet_acquaint_4', text: "[nodding] Regular customer, right? [warmly] Regulars get the best work. That's how we do things.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'harlan_greet_trusted_2', text: "[happily] Well look who it is! [laughs] The crew's gonna be thrilled. You're famous around here.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'harlan_greet_trusted_3', text: "[warmly] There's a ship I'm always glad to see dock. [pauses] How've the lanes been treating you?", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'harlan_greet_allied_2', text: "[joyfully] Family's here! [laughs] Clear bay one! We got a VIP coming through!", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    { id: 'harlan_greet_allied_3', text: "[warmly] There's my favorite pilot! [pauses] I saved a welding crew just for you.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    
+    // Additional farewells
+    { id: 'harlan_farewell_neutral_2', text: "[warmly] Take care of that ship. [pauses] We put good work into her.", category: 'farewell', voiceTone: 'warm' },
+    { id: 'harlan_farewell_neutral_3', text: "[professionally] Safe travels, pilot. [pauses] Bring her back if you need anything adjusted.", category: 'farewell', voiceTone: 'neutral' },
+    { id: 'harlan_farewell_trusted_2', text: "[warmly] Watch yourself out there. [sigh] The void doesn't care about good intentions.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    { id: 'harlan_farewell_trusted_3', text: "[affectionately] Fly safe, friend. [pauses] The whole crew's rooting for you.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    
+    // Additional tips
+    { id: 'harlan_tip_maintenance', text: "[thoughtfully] Regular maintenance beats emergency repairs. [pauses] Your wallet will thank you.", category: 'tip', conditions: { minRep: 20 }, voiceTone: 'neutral' },
+    { id: 'harlan_tip_timing', text: "[confidentially] Visit during shift changes. [whispers] Crews are fresh and work is faster.", category: 'tip', conditions: { minRep: 35 }, voiceTone: 'neutral' },
+    { id: 'harlan_tip_upgrades', text: "[warmly] Best upgrades aren't the flashiest. [pauses] Reliability saves lives out there.", category: 'tip', conditions: { minRep: 45 }, voiceTone: 'warm' },
   ],
 
   // ============================================================================
@@ -354,6 +515,29 @@ export const CHARACTER_DIALOGUE: Record<string, DialogueLine[]> = {
     
     // Memory callbacks
     { id: 'vex_memory_bigtrader', text: "You've moved serious volume through here. That buys you a certain... consideration.", category: 'memory', conditions: { requiresAction: 'big_trader' }, voiceTone: 'warm' },
+    
+    // Additional greetings for variety
+    { id: 'vex_greet_stranger_2', text: "[menacingly] Look what the void dragged in. [pauses] New toy for the Cove. [laughs] Don't break easy.", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'threatening' },
+    { id: 'vex_greet_stranger_3', text: "[playfully] Another stray pilot! [pauses] Sol City kick you out, or did you come here on purpose?", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'amused' },
+    { id: 'vex_greet_stranger_4', text: "[teasingly] Fresh face in pirate waters. [chuckles] Either very brave or very lost. Which is it?", category: 'greeting', conditions: { maxRep: 9 }, voiceTone: 'amused' },
+    { id: 'vex_greet_acquaint_2', text: "[approvingly] You survived! [laughs] That makes you smarter than most. Or luckier.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'amused' },
+    { id: 'vex_greet_acquaint_3', text: "[playfully] Back for more, are we? [pauses] I like that. Persistence is a pirate virtue.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'warm' },
+    { id: 'vex_greet_acquaint_4', text: "[interested] You again. [pauses] Starting to think you might be useful. Don't disappoint me.", category: 'greeting', conditions: { minRep: 10, maxRep: 29 }, voiceTone: 'neutral' },
+    { id: 'vex_greet_trusted_2', text: "[warmly] Now there's someone worth talking to. [pauses] The rest of these pilots bore me.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'vex_greet_trusted_3', text: "[delighted] My favorite rogue! [laughs] I've got schemes that need your particular talents.", category: 'greeting', conditions: { minRep: 50, maxRep: 69 }, voiceTone: 'warm' },
+    { id: 'vex_greet_allied_2', text: "[excitedly] The terror of the trade lanes returns! [laughs] Sol City's having nightmares about you.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    { id: 'vex_greet_allied_3', text: "[warmly] There's my right hand! [pauses] Get in here. We've got an empire to build.", category: 'greeting', conditions: { minRep: 70 }, voiceTone: 'warm' },
+    
+    // Additional farewells
+    { id: 'vex_farewell_neutral_2', text: "[ominously] Watch the shadows, spacer. [pauses] They watch back.", category: 'farewell', voiceTone: 'threatening' },
+    { id: 'vex_farewell_neutral_3', text: "[playfully] Fly dangerous. [laughs] That's how legends are made.", category: 'farewell', voiceTone: 'amused' },
+    { id: 'vex_farewell_trusted_2', text: "[warmly] Keep the void wild, partner. [pauses] That's where we thrive.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    { id: 'vex_farewell_trusted_3', text: "[affectionately] Stay dangerous, friend. [pauses] The Cove is always here for you.", category: 'farewell', conditions: { minRep: 40 }, voiceTone: 'warm' },
+    
+    // Additional tips
+    { id: 'vex_tip_shadows', text: "[conspiratorially] Best deals happen in the dark. [whispers] Learn to love the shadows.", category: 'tip', conditions: { minRep: 25 }, voiceTone: 'amused' },
+    { id: 'vex_tip_fear', text: "[menacingly] Fear is a weapon. [pauses] Use it, and your margins improve dramatically.", category: 'tip', conditions: { minRep: 40 }, voiceTone: 'threatening' },
+    { id: 'vex_tip_loyalty', text: "[warmly] Loyalty to the Cove pays dividends. [pauses] We protect our own. Always.", category: 'tip', conditions: { minRep: 55 }, voiceTone: 'warm' },
   ],
 };
 

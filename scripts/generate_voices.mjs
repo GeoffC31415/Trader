@@ -164,6 +164,23 @@ function loadData() {
 }
 
 /**
+ * ElevenLabs v3 Audio Tags for emotional expression
+ * Reference: https://elevenlabs.io/blog/eleven-v3-audio-tags-expressing-emotional-context-in-speech
+ * 
+ * Common tags:
+ * - Emotional states: [excited], [nervous], [frustrated], [sorrowful], [calm]
+ * - Reactions: [sigh], [laughs], [gulps], [gasps], [whispers]
+ * - Cognitive beats: [pauses], [hesitates], [stammers], [resigned tone]
+ * - Tone cues: [cheerfully], [flatly], [deadpan], [playfully]
+ * 
+ * These tags are embedded in the text and processed by the v3 model.
+ */
+
+// Model selection - eleven_turbo_v2_5 supports audio tags and is cost-effective
+// For full v3 features, use 'eleven_v3' when available on your account
+const ELEVENLABS_MODEL = 'eleven_v3';
+
+/**
  * Generate audio for a single line
  */
 async function generateAudio(text, voiceId, outputPath, retries = 3) {
@@ -183,10 +200,12 @@ async function generateAudio(text, voiceId, outputPath, retries = 3) {
           },
           body: JSON.stringify({
             text: text,
-            model_id: 'eleven_monolingual_v1',
+            model_id: ELEVENLABS_MODEL,
             voice_settings: {
               stability: 0.5,
               similarity_boost: 0.75,
+              style: 0.3, // Enable some style variation for emotional tags
+              use_speaker_boost: true,
             },
           }),
         }
@@ -246,6 +265,95 @@ function generateManifest(dialogueData, outputDir) {
   const manifestPath = path.join(outputDir, 'manifest.json');
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   console.log(`\n✅ Generated manifest.json with ${manifest.totalFiles} files`);
+}
+
+/**
+ * Preview mode - show what would be generated without making API calls
+ */
+function previewGeneration(options = {}) {
+  const { dialogueData, voiceConfig } = loadData();
+  
+  const outputDir = path.join(__dirname, '..', 'public', 'audio', 'dialogue');
+  const force = options.force || false;
+  const characterFilter = options.character || null;
+  
+  // Filter characters if specified
+  const charactersToProcess = characterFilter
+    ? dialogueData.characters.filter(c => c.stationId === characterFilter)
+    : dialogueData.characters;
+  
+  if (characterFilter && charactersToProcess.length === 0) {
+    console.error(`❌ Error: Character "${characterFilter}" not found in dialogue export`);
+    process.exit(1);
+  }
+  
+  console.log('\n📋 PREVIEW MODE - No audio will be generated\n');
+  console.log('═'.repeat(80));
+  console.log(`Model: ${ELEVENLABS_MODEL} (supports v3 audio tags)`);
+  console.log('═'.repeat(80));
+  
+  let totalNew = 0;
+  let totalExisting = 0;
+  let totalWithTags = 0;
+  
+  for (const character of charactersToProcess) {
+    const stationId = character.stationId;
+    const voiceId = voiceConfig[stationId]?.voiceId;
+    const voiceName = voiceConfig[stationId]?.suggestedVoice?.split(' - ')[0] || 'Unknown';
+    
+    console.log(`\n${'─'.repeat(80)}`);
+    console.log(`📢 ${character.characterName} (${stationId})`);
+    console.log(`   Voice: ${voiceName} (${voiceId ? voiceId.substring(0, 8) + '...' : 'NOT CONFIGURED'})`);
+    console.log(`${'─'.repeat(80)}`);
+    
+    if (!voiceId) {
+      console.log('   ⚠️  SKIPPED - No voice ID configured\n');
+      continue;
+    }
+    
+    const newLines = [];
+    const existingLines = [];
+    
+    for (const line of character.lines) {
+      const outputPath = path.join(outputDir, stationId, `${line.id}.mp3`);
+      const exists = fs.existsSync(outputPath);
+      const hasEmotionTags = /\[[^\]]+\]/.test(line.text);
+      
+      if (exists && !force) {
+        existingLines.push(line);
+        totalExisting++;
+      } else {
+        newLines.push({ ...line, hasEmotionTags });
+        totalNew++;
+        if (hasEmotionTags) totalWithTags++;
+      }
+    }
+    
+    if (newLines.length > 0) {
+      console.log(`\n   🆕 NEW LINES TO GENERATE (${newLines.length}):\n`);
+      for (const line of newLines) {
+        const tagIndicator = line.hasEmotionTags ? '🎭' : '  ';
+        console.log(`   ${tagIndicator} [${line.category}] ${line.id}`);
+        console.log(`      "${line.text}"`);
+        console.log('');
+      }
+    }
+    
+    if (existingLines.length > 0) {
+      console.log(`   ✅ EXISTING (${existingLines.length} files, use --force to regenerate)`);
+    }
+  }
+  
+  console.log('\n' + '═'.repeat(80));
+  console.log('📊 SUMMARY');
+  console.log('═'.repeat(80));
+  console.log(`   New files to generate: ${totalNew}`);
+  console.log(`   Lines with emotion tags: ${totalWithTags} 🎭`);
+  console.log(`   Existing files (skipped): ${totalExisting}`);
+  console.log(`   Total lines in export: ${dialogueData.totalLines}`);
+  console.log('═'.repeat(80));
+  console.log('\n💡 To generate audio, run without --preview flag');
+  console.log('   node scripts/generate_voices.mjs [--force] [--character <id>]\n');
 }
 
 /**
@@ -311,7 +419,7 @@ async function generateVoices(options = {}) {
     return;
   }
   
-  console.log(`\n🎤 Generating ${filesToGenerate.length} audio file(s)...`);
+  console.log(`\n🎤 Generating ${filesToGenerate.length} audio file(s) using ${ELEVENLABS_MODEL}...`);
   if (existingFiles > 0) {
     console.log(`   (Skipping ${existingFiles} existing file(s))`);
   }
@@ -324,9 +432,11 @@ async function generateVoices(options = {}) {
   for (let i = 0; i < filesToGenerate.length; i++) {
     const file = filesToGenerate[i];
     const progress = `[${i + 1}/${filesToGenerate.length}]`;
+    const hasEmotionTags = /\[[^\]]+\]/.test(file.text);
+    const tagIndicator = hasEmotionTags ? '🎭 ' : '';
     
     try {
-      process.stdout.write(`${progress} Generating ${file.stationId}/${file.lineId}... `);
+      process.stdout.write(`${progress} ${tagIndicator}Generating ${file.stationId}/${file.lineId}... `);
       await generateAudio(file.text, file.voiceId, file.outputPath);
       console.log('✅');
       successCount++;
@@ -369,19 +479,36 @@ Usage: node scripts/generate_voices.mjs [options]
 
 Options:
   --list-voices          List all available voices from your ElevenLabs account
+  --preview              Preview what would be generated without making API calls
   --force                Regenerate all files, even if they already exist
-  --character <id>      Generate only for specific character (e.g., sol-city)
+  --character <id>       Generate only for specific character (e.g., sol-city)
   --help                 Show this help message
+
+Model: ${ELEVENLABS_MODEL} (supports v3 audio tags)
+
+ElevenLabs v3 Audio Tags (embedded in text):
+  - Emotional states: [excited], [nervous], [frustrated], [sorrowful], [calm]
+  - Reactions: [sigh], [laughs], [gulps], [gasps], [whispers]
+  - Cognitive beats: [pauses], [hesitates], [stammers], [resigned tone]
+  - Tone cues: [cheerfully], [flatly], [deadpan], [playfully], [warmly]
 
 Examples:
   node scripts/generate_voices.mjs --list-voices
+  node scripts/generate_voices.mjs --preview
+  node scripts/generate_voices.mjs --preview --force
   node scripts/generate_voices.mjs
   node scripts/generate_voices.mjs --force
   node scripts/generate_voices.mjs --character sol-city
 
+Workflow:
+  1. Run: node scripts/export_dialogue_for_voice.mjs
+  2. Run: node scripts/generate_voices.mjs --preview  (review what will be generated)
+  3. Run: node scripts/generate_voices.mjs           (generate audio files)
+
 Prerequisites:
   - ELEVENLABS_API_KEY in .env file or environment variable
   - voice_config.json with voice IDs mapped to characters
+  - dialogue_export.json (run export_dialogue_for_voice.mjs first)
 `);
     process.exit(0);
   }
@@ -399,6 +526,12 @@ Prerequisites:
   const characterIndex = args.indexOf('--character');
   if (characterIndex !== -1 && args[characterIndex + 1]) {
     options.character = args[characterIndex + 1];
+  }
+  
+  // Preview mode - no API calls
+  if (args.includes('--preview')) {
+    previewGeneration(options);
+    return;
   }
   
   generateVoices(options).catch(error => {

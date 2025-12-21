@@ -1,6 +1,52 @@
 {
-  "generatedAt": "2025-12-11T22:25:49.212Z",
-  "totalLines": 195,
+  "generatedAt": "2025-12-21T11:41:35.947Z",
+  "totalLines": 331,
+  "linesWithEmotionTags": 136,
+  "emotionTagsUsed": [
+    "affectionately",
+    "approvingly",
+    "calculatingly",
+    "casually",
+    "cheerfully",
+    "chuckles",
+    "coldly",
+    "confidentially",
+    "confidently",
+    "conspiratorially",
+    "curtly",
+    "delighted",
+    "dryly",
+    "excited",
+    "excitedly",
+    "flatly",
+    "formally",
+    "gently",
+    "genuinely pleased",
+    "gruffly",
+    "happily",
+    "interested",
+    "joyfully",
+    "laughs",
+    "loudly",
+    "mechanically",
+    "menacingly",
+    "neutrally",
+    "nodding",
+    "ominously",
+    "pauses",
+    "playfully",
+    "pleasantly",
+    "pleased",
+    "professionally",
+    "sigh",
+    "softly",
+    "teasingly",
+    "tersely",
+    "thoughtfully",
+    "tiredly",
+    "warmly",
+    "whispers"
+  ],
   "characters": [
     {
       "stationId": "sol-city",
@@ -8,7 +54,7 @@
       "voiceDirection": "Polished, measured, slight condescension. Professional bureaucrat who believes in the system.",
       "gender": "female",
       "ageRange": "mid-30s",
-      "lineCount": 26,
+      "lineCount": 43,
       "lines": [
         {
           "id": "mira_greet_stranger",
@@ -191,8 +237,190 @@
           "category": "memory",
           "voiceTone": "neutral",
           "suggestedFilename": "sol-city/mira_memory_missions.mp3"
+        },
+        {
+          "id": "mira_greet_stranger_2",
+          "text": "[flatly] Another trader. Dock processing is on the left. [pauses] Try not to clutter the approach lanes.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "flatly",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-city/mira_greet_stranger_2.mp3"
+        },
+        {
+          "id": "mira_greet_stranger_3",
+          "text": "[tersely] State your business. Sol City maintains strict docking protocols for unregistered vessels.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "tersely"
+          ],
+          "suggestedFilename": "sol-city/mira_greet_stranger_3.mp3"
+        },
+        {
+          "id": "mira_greet_stranger_4",
+          "text": "[formally] Sol City Administration welcomes you. Compliance with local ordinances is mandatory.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "formally"
+          ],
+          "suggestedFilename": "sol-city/mira_greet_stranger_4.mp3"
+        },
+        {
+          "id": "mira_greet_acquaint_2",
+          "text": "[pleasantly] Back so soon? [pauses] Efficiency. I approve.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "pleasantly",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-city/mira_greet_acquaint_2.mp3"
+        },
+        {
+          "id": "mira_greet_acquaint_3",
+          "text": "[warmly] I remember you. Your paperwork was actually in order last time. That's... refreshing.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly"
+          ],
+          "suggestedFilename": "sol-city/mira_greet_acquaint_3.mp3"
+        },
+        {
+          "id": "mira_greet_acquaint_4",
+          "text": "[approvingly] Ah, a returning customer. The system works best with familiar faces.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "approvingly"
+          ],
+          "suggestedFilename": "sol-city/mira_greet_acquaint_4.mp3"
+        },
+        {
+          "id": "mira_greet_trusted_2",
+          "text": "[warmly] There you are! [chuckles] I was just reviewing your excellent transaction history.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "chuckles"
+          ],
+          "suggestedFilename": "sol-city/mira_greet_trusted_2.mp3"
+        },
+        {
+          "id": "mira_greet_trusted_3",
+          "text": "[pleased] A pleasure, as always. Your punctuality sets an example others should follow.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "pleased"
+          ],
+          "suggestedFilename": "sol-city/mira_greet_trusted_3.mp3"
+        },
+        {
+          "id": "mira_greet_allied_2",
+          "text": "[cheerfully] My favorite trader! [warmly] The council speaks highly of your contributions.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "cheerfully",
+            "warmly"
+          ],
+          "suggestedFilename": "sol-city/mira_greet_allied_2.mp3"
+        },
+        {
+          "id": "mira_greet_allied_3",
+          "text": "[delighted] Finally! I've been hoping you'd stop by. [confidently] I have something special to discuss.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "delighted",
+            "confidently"
+          ],
+          "suggestedFilename": "sol-city/mira_greet_allied_3.mp3"
+        },
+        {
+          "id": "mira_farewell_neutral_2",
+          "text": "[formally] Your departure is logged. [pauses] Fly within regulations.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "formally",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-city/mira_farewell_neutral_2.mp3"
+        },
+        {
+          "id": "mira_farewell_neutral_3",
+          "text": "[flatly] The docking bay will be cleared for your exit. Safe travels, trader.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "flatly"
+          ],
+          "suggestedFilename": "sol-city/mira_farewell_neutral_3.mp3"
+        },
+        {
+          "id": "mira_farewell_trusted_2",
+          "text": "[warmly] Until we meet again. [softly] Do take care out there.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "softly"
+          ],
+          "suggestedFilename": "sol-city/mira_farewell_trusted_2.mp3"
+        },
+        {
+          "id": "mira_farewell_trusted_3",
+          "text": "[cheerfully] Safe skies, friend. [pauses] Sol City looks forward to your return.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "cheerfully",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-city/mira_farewell_trusted_3.mp3"
+        },
+        {
+          "id": "mira_tip_timing",
+          "text": "[thoughtfully] Market cycles matter. [pauses] Early morning runs to Ceres often catch favorable spreads.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "thoughtfully",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-city/mira_tip_timing.mp3"
+        },
+        {
+          "id": "mira_tip_electronics",
+          "text": "[confidentially] Between us, electronics shortages are expected. [pauses] Smart traders stock up now.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "confidentially",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-city/mira_tip_electronics.mp3"
+        },
+        {
+          "id": "mira_tip_connections",
+          "text": "[warmly] Your reputation opens doors. [pauses] Premium contracts are available at my discretion.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-city/mira_tip_connections.mp3"
         }
-      ]
+      ],
+      "linesWithEmotionTags": 17
     },
     {
       "stationId": "sol-refinery",
@@ -200,7 +428,7 @@
       "voiceDirection": "Gruff, working-class, direct. No-nonsense foreman who has seen it all.",
       "gender": "male",
       "ageRange": "late-40s",
-      "lineCount": 25,
+      "lineCount": 42,
       "lines": [
         {
           "id": "rex_greet_stranger",
@@ -376,8 +604,197 @@
           "category": "memory",
           "voiceTone": "neutral",
           "suggestedFilename": "sol-refinery/rex_memory_frequent.mp3"
+        },
+        {
+          "id": "rex_greet_stranger_2",
+          "text": "[gruffly] Yeah, what do you need? [pauses] Pumps are over there. Mind the pressure gauges.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "gruffly",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-refinery/rex_greet_stranger_2.mp3"
+        },
+        {
+          "id": "rex_greet_stranger_3",
+          "text": "[tiredly] Another one. [sigh] Look, just read the signs and don't touch anything labeled 'danger.'",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "tiredly",
+            "sigh"
+          ],
+          "suggestedFilename": "sol-refinery/rex_greet_stranger_3.mp3"
+        },
+        {
+          "id": "rex_greet_stranger_4",
+          "text": "[curtly] You're blocking a work lane. [pauses] State your business or move along.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "curtly",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-refinery/rex_greet_stranger_4.mp3"
+        },
+        {
+          "id": "rex_greet_acquaint_2",
+          "text": "[warmly] Hey, I recognize you! [chuckles] Engine's still running smooth, I hope?",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "chuckles"
+          ],
+          "suggestedFilename": "sol-refinery/rex_greet_acquaint_2.mp3"
+        },
+        {
+          "id": "rex_greet_acquaint_3",
+          "text": "[pleasantly] You again! [pauses] Good. I like pilots who know where to get quality fuel.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "pleasantly",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-refinery/rex_greet_acquaint_3.mp3"
+        },
+        {
+          "id": "rex_greet_acquaint_4",
+          "text": "[nodding] Regular customer, right? [warmly] Stick around, we got fresh refined coming off the line.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "nodding",
+            "warmly"
+          ],
+          "suggestedFilename": "sol-refinery/rex_greet_acquaint_4.mp3"
+        },
+        {
+          "id": "rex_greet_trusted_2",
+          "text": "[happily] Well look who it is! [laughs] The crew was just talking about you yesterday.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "happily",
+            "laughs"
+          ],
+          "suggestedFilename": "sol-refinery/rex_greet_trusted_2.mp3"
+        },
+        {
+          "id": "rex_greet_trusted_3",
+          "text": "[warmly] There's a face I'm always glad to see. [pauses] How've the routes been treating you?",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-refinery/rex_greet_trusted_3.mp3"
+        },
+        {
+          "id": "rex_greet_allied_2",
+          "text": "[excited] Hey, everyone! [loudly] Our favorite pilot's back! [chuckles] Grab a seat, tell us stories.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "excited",
+            "loudly",
+            "chuckles"
+          ],
+          "suggestedFilename": "sol-refinery/rex_greet_allied_2.mp3"
+        },
+        {
+          "id": "rex_greet_allied_3",
+          "text": "[warmly] Family's here! [happily] I got that part you needed. Saved it special, just for you.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "happily"
+          ],
+          "suggestedFilename": "sol-refinery/rex_greet_allied_3.mp3"
+        },
+        {
+          "id": "rex_farewell_neutral_2",
+          "text": "[casually] Keep those engines clean. [pauses] And watch out for debris near the belt.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "casually",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-refinery/rex_farewell_neutral_2.mp3"
+        },
+        {
+          "id": "rex_farewell_neutral_3",
+          "text": "[warmly] Safe flying, spacer. [pauses] Come back when you need a real refuel.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-refinery/rex_farewell_neutral_3.mp3"
+        },
+        {
+          "id": "rex_farewell_trusted_2",
+          "text": "[warmly] Take care of yourself out there. [sigh] The void doesn't give second chances.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "sigh"
+          ],
+          "suggestedFilename": "sol-refinery/rex_farewell_trusted_2.mp3"
+        },
+        {
+          "id": "rex_farewell_trusted_3",
+          "text": "[cheerfully] Fly safe, friend! [laughs] And bring back good stories next time!",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "cheerfully",
+            "laughs"
+          ],
+          "suggestedFilename": "sol-refinery/rex_farewell_trusted_3.mp3"
+        },
+        {
+          "id": "rex_tip_timing",
+          "text": "[thoughtfully] Early cycle runs get better prices. [pauses] Corps haven't woken up to adjust margins yet.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "thoughtfully",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-refinery/rex_tip_timing.mp3"
+        },
+        {
+          "id": "rex_tip_stockpile",
+          "text": "[confidentially] Between you and me? [whispers] Stock up now. Prices are about to shift.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "confidentially",
+            "whispers"
+          ],
+          "suggestedFilename": "sol-refinery/rex_tip_stockpile.mp3"
+        },
+        {
+          "id": "rex_tip_routes",
+          "text": "[warmly] The Greenfields run is quiet this week. [pauses] Good margins, fewer complications.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "sol-refinery/rex_tip_routes.mp3"
         }
-      ]
+      ],
+      "linesWithEmotionTags": 17
     },
     {
       "stationId": "aurum-fab",
@@ -385,7 +802,7 @@
       "voiceDirection": "Clinical, precise, emotionally detached. Scientist first, human second.",
       "gender": "female",
       "ageRange": "early-40s",
-      "lineCount": 22,
+      "lineCount": 39,
       "lines": [
         {
           "id": "kade_greet_stranger",
@@ -540,8 +957,196 @@
           "category": "memory",
           "voiceTone": "neutral",
           "suggestedFilename": "aurum-fab/kade_memory_bigtrader.mp3"
+        },
+        {
+          "id": "kade_greet_stranger_2",
+          "text": "[flatly] Unregistered vessel. [pauses] Processing queue position: low priority. Wait time: variable.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "flatly",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_greet_stranger_2.mp3"
+        },
+        {
+          "id": "kade_greet_stranger_3",
+          "text": "[coldly] New user detected. [pauses] Fabrication access requires established transaction history.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "coldly",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_greet_stranger_3.mp3"
+        },
+        {
+          "id": "kade_greet_stranger_4",
+          "text": "[mechanically] Welcome to Aurum Fabrication. [pauses] Please state your specifications clearly.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "mechanically",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_greet_stranger_4.mp3"
+        },
+        {
+          "id": "kade_greet_acquaint_2",
+          "text": "[approvingly] Return customer. Efficiency rating: acceptable. [pauses] How may we process your request?",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "approvingly",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_greet_acquaint_2.mp3"
+        },
+        {
+          "id": "kade_greet_acquaint_3",
+          "text": "[neutrally] Your transaction patterns suggest reliability. [pauses] That correlates with priority access.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "neutrally",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_greet_acquaint_3.mp3"
+        },
+        {
+          "id": "kade_greet_acquaint_4",
+          "text": "[pleasantly] Ah. A familiar signature. [pauses] Your previous orders were processed without deviation.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "pleasantly",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_greet_acquaint_4.mp3"
+        },
+        {
+          "id": "kade_greet_trusted_2",
+          "text": "[warmly] Optimal timing. [pauses] I was just reviewing partnership candidates. Your metrics excel.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_greet_trusted_2.mp3"
+        },
+        {
+          "id": "kade_greet_trusted_3",
+          "text": "[pleased] Your arrival is... welcome. [pauses] Reliability deserves recognition.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "pleased",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_greet_trusted_3.mp3"
+        },
+        {
+          "id": "kade_greet_allied_2",
+          "text": "[warmly] Excellent. Priority partner detected. [pleasantly] All fabrication queues are available to you.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pleasantly"
+          ],
+          "suggestedFilename": "aurum-fab/kade_greet_allied_2.mp3"
+        },
+        {
+          "id": "kade_greet_allied_3",
+          "text": "[pleased] Your pattern recognition is... impressive. [pauses] We should discuss strategic collaboration.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "pleased",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_greet_allied_3.mp3"
+        },
+        {
+          "id": "kade_farewell_neutral_2",
+          "text": "[flatly] Departure acknowledged. [pauses] Optimal return windows are calculated weekly.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "flatly",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_farewell_neutral_2.mp3"
+        },
+        {
+          "id": "kade_farewell_neutral_3",
+          "text": "[mechanically] Transaction logged. [pauses] Performance metrics will influence future allocations.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "mechanically",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_farewell_neutral_3.mp3"
+        },
+        {
+          "id": "kade_farewell_trusted_2",
+          "text": "[warmly] Your partnership is valued. [pauses] Return at your earliest operational convenience.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_farewell_trusted_2.mp3"
+        },
+        {
+          "id": "kade_farewell_trusted_3",
+          "text": "[pleasantly] Efficiency begets efficiency. [pauses] I anticipate our next correlation.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "pleasantly",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_farewell_trusted_3.mp3"
+        },
+        {
+          "id": "kade_tip_timing",
+          "text": "[thoughtfully] Fabrication demand peaks correlate with shipyard activity. [pauses] Predictable arbitrage.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "thoughtfully",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_tip_timing.mp3"
+        },
+        {
+          "id": "kade_tip_stockpile",
+          "text": "[confidentially] Component shortage imminent. [pauses] Rational actors would stock rare materials now.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "confidentially",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_tip_stockpile.mp3"
+        },
+        {
+          "id": "kade_tip_margins",
+          "text": "[approvingly] Your margin optimization suggests analytical capability. [pauses] Consider multi-hop fabrication.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "approvingly",
+            "pauses"
+          ],
+          "suggestedFilename": "aurum-fab/kade_tip_margins.mp3"
         }
-      ]
+      ],
+      "linesWithEmotionTags": 17
     },
     {
       "stationId": "greenfields",
@@ -549,7 +1154,7 @@
       "voiceDirection": "Warm, earthy, quietly fierce. Farmer who fights with patience and resolve.",
       "gender": "female",
       "ageRange": "mid-40s",
-      "lineCount": 25,
+      "lineCount": 42,
       "lines": [
         {
           "id": "sana_greet_stranger",
@@ -725,8 +1330,196 @@
           "category": "memory",
           "voiceTone": "neutral",
           "suggestedFilename": "greenfields/sana_memory_frequent.mp3"
+        },
+        {
+          "id": "sana_greet_stranger_2",
+          "text": "[warmly] New face around here! [pauses] Come on in. We don't stand on ceremony at Greenfields.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "greenfields/sana_greet_stranger_2.mp3"
+        },
+        {
+          "id": "sana_greet_stranger_3",
+          "text": "[gently] You look like you've traveled far. [pauses] Rest a while. The harvest can wait.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "gently",
+            "pauses"
+          ],
+          "suggestedFilename": "greenfields/sana_greet_stranger_3.mp3"
+        },
+        {
+          "id": "sana_greet_stranger_4",
+          "text": "[cheerfully] Welcome, spacer! [pauses] Fresh produce, fair prices, and honest dealings. That's us.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "cheerfully",
+            "pauses"
+          ],
+          "suggestedFilename": "greenfields/sana_greet_stranger_4.mp3"
+        },
+        {
+          "id": "sana_greet_acquaint_2",
+          "text": "[happily] Oh, it's you! [chuckles] I was just thinking about that last haul you made.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "happily",
+            "chuckles"
+          ],
+          "suggestedFilename": "greenfields/sana_greet_acquaint_2.mp3"
+        },
+        {
+          "id": "sana_greet_acquaint_3",
+          "text": "[warmly] Look who's back! [pauses] The orchards missed you. Well, I did anyway.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "greenfields/sana_greet_acquaint_3.mp3"
+        },
+        {
+          "id": "sana_greet_acquaint_4",
+          "text": "[pleasantly] There's a familiar ship in my docking bay! [pauses] Good timing. Harvest just came in.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "pleasantly",
+            "pauses"
+          ],
+          "suggestedFilename": "greenfields/sana_greet_acquaint_4.mp3"
+        },
+        {
+          "id": "sana_greet_trusted_2",
+          "text": "[delighted] Well bless my roots! [laughs] One of my favorite traders just docked!",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "delighted",
+            "laughs"
+          ],
+          "suggestedFilename": "greenfields/sana_greet_trusted_2.mp3"
+        },
+        {
+          "id": "sana_greet_trusted_3",
+          "text": "[warmly] Perfect timing! [excited] I've been saving something special for trusted friends.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "excited"
+          ],
+          "suggestedFilename": "greenfields/sana_greet_trusted_3.mp3"
+        },
+        {
+          "id": "sana_greet_allied_2",
+          "text": "[joyfully] There's my favorite spacer! [laughs] Get over here and tell me everything!",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "joyfully",
+            "laughs"
+          ],
+          "suggestedFilename": "greenfields/sana_greet_allied_2.mp3"
+        },
+        {
+          "id": "sana_greet_allied_3",
+          "text": "[warmly] Family's home! [excitedly] The kids have been asking when you'd visit again.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "excitedly"
+          ],
+          "suggestedFilename": "greenfields/sana_greet_allied_3.mp3"
+        },
+        {
+          "id": "sana_farewell_neutral_2",
+          "text": "[warmly] Fly safe out there. [pauses] And don't forget to eat something fresh once in a while.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "greenfields/sana_farewell_neutral_2.mp3"
+        },
+        {
+          "id": "sana_farewell_neutral_3",
+          "text": "[gently] Clear skies, friend. [pauses] May your cargo holds always be full.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "gently",
+            "pauses"
+          ],
+          "suggestedFilename": "greenfields/sana_farewell_neutral_3.mp3"
+        },
+        {
+          "id": "sana_farewell_trusted_2",
+          "text": "[warmly] Take care of yourself, hear? [sigh] The void can be lonely without friends.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "sigh"
+          ],
+          "suggestedFilename": "greenfields/sana_farewell_trusted_2.mp3"
+        },
+        {
+          "id": "sana_farewell_trusted_3",
+          "text": "[affectionately] Safe travels, dear friend. [pauses] Greenfields will be here when you return.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "affectionately",
+            "pauses"
+          ],
+          "suggestedFilename": "greenfields/sana_farewell_trusted_3.mp3"
+        },
+        {
+          "id": "sana_tip_seasons",
+          "text": "[thoughtfully] Harvest cycles affect everything. [pauses] Smart traders learn to read the seasons.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "thoughtfully",
+            "pauses"
+          ],
+          "suggestedFilename": "greenfields/sana_tip_seasons.mp3"
+        },
+        {
+          "id": "sana_tip_bulk",
+          "text": "[confidentially] Bulk orders get better rates from me. [whispers] Especially for friends.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "confidentially",
+            "whispers"
+          ],
+          "suggestedFilename": "greenfields/sana_tip_bulk.mp3"
+        },
+        {
+          "id": "sana_tip_fresh",
+          "text": "[warmly] Fresh produce commands premium in the city. [pauses] Move fast and charge what it's worth.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "greenfields/sana_tip_fresh.mp3"
         }
-      ]
+      ],
+      "linesWithEmotionTags": 17
     },
     {
       "stationId": "ceres-pp",
@@ -734,7 +1527,7 @@
       "voiceDirection": "Dry, calculating, subtle menace. Every word is deliberate.",
       "gender": "male",
       "ageRange": "early-50s",
-      "lineCount": 23,
+      "lineCount": 40,
       "lines": [
         {
           "id": "ivo_greet_stranger",
@@ -896,8 +1689,196 @@
           "category": "memory",
           "voiceTone": "neutral",
           "suggestedFilename": "ceres-pp/ivo_memory_bigtrader.mp3"
+        },
+        {
+          "id": "ivo_greet_stranger_2",
+          "text": "[coldly] Another pilot seeking power. [pauses] How... predictable. State your requirements.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "coldly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_greet_stranger_2.mp3"
+        },
+        {
+          "id": "ivo_greet_stranger_3",
+          "text": "[flatly] Unregistered vessel. [pauses] Fuel surcharges apply to unknown quantities.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "flatly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_greet_stranger_3.mp3"
+        },
+        {
+          "id": "ivo_greet_stranger_4",
+          "text": "[menacingly] You're in my grid now, pilot. [pauses] Behave accordingly.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "menacingly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_greet_stranger_4.mp3"
+        },
+        {
+          "id": "ivo_greet_acquaint_2",
+          "text": "[neutrally] You again. [pauses] Your consumption patterns suggest... ambition. Interesting.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "neutrally",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_greet_acquaint_2.mp3"
+        },
+        {
+          "id": "ivo_greet_acquaint_3",
+          "text": "[dryly] I keep detailed records, you know. [pauses] Yours show potential. Or risk. Time will tell.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "dryly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_greet_acquaint_3.mp3"
+        },
+        {
+          "id": "ivo_greet_acquaint_4",
+          "text": "[calculatingly] Return customer. [pauses] Loyalty to Ceres Power has its rewards.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "calculatingly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_greet_acquaint_4.mp3"
+        },
+        {
+          "id": "ivo_greet_trusted_2",
+          "text": "[pleasantly] There you are. [pauses] I was just considering which assets deserve... cultivation.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "pleasantly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_greet_trusted_2.mp3"
+        },
+        {
+          "id": "ivo_greet_trusted_3",
+          "text": "[warmly] A reliable partner returns. [pauses] The grid always remembers those who serve it well.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_greet_trusted_3.mp3"
+        },
+        {
+          "id": "ivo_greet_allied_2",
+          "text": "[genuinely pleased] Excellent. [pauses] My most valuable asset has arrived. Let us discuss opportunities.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "genuinely pleased",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_greet_allied_2.mp3"
+        },
+        {
+          "id": "ivo_greet_allied_3",
+          "text": "[warmly] Finally, someone worth talking to. [pauses] The others bore me. You... intrigue me.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_greet_allied_3.mp3"
+        },
+        {
+          "id": "ivo_farewell_neutral_2",
+          "text": "[flatly] The grid never sleeps. [pauses] Neither should your vigilance.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "flatly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_farewell_neutral_2.mp3"
+        },
+        {
+          "id": "ivo_farewell_neutral_3",
+          "text": "[coldly] Power is currency. [pauses] Remember where the currency comes from.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "coldly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_farewell_neutral_3.mp3"
+        },
+        {
+          "id": "ivo_farewell_trusted_2",
+          "text": "[warmly] Return soon. [pauses] Valuable partners are a rare commodity.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_farewell_trusted_2.mp3"
+        },
+        {
+          "id": "ivo_farewell_trusted_3",
+          "text": "[pleasantly] Safe travels, friend. [pauses] And remember: information flows both ways.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "pleasantly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_farewell_trusted_3.mp3"
+        },
+        {
+          "id": "ivo_tip_scarcity",
+          "text": "[calculatingly] Scarcity drives value. [pauses] Those who control supply... control everything.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "calculatingly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_tip_scarcity.mp3"
+        },
+        {
+          "id": "ivo_tip_timing",
+          "text": "[confidentially] Market volatility is predictable. [whispers] If you know where to look.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "confidentially",
+            "whispers"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_tip_timing.mp3"
+        },
+        {
+          "id": "ivo_tip_leverage",
+          "text": "[warmly] Leverage comes in many forms. [pauses] Credits, information, connections. Collect them all.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "ceres-pp/ivo_tip_leverage.mp3"
         }
-      ]
+      ],
+      "linesWithEmotionTags": 17
     },
     {
       "stationId": "freeport",
@@ -905,7 +1886,7 @@
       "voiceDirection": "Street-smart, charming, hint of mischief. The friendly merchant who knows everything.",
       "gender": "female",
       "ageRange": "late-30s",
-      "lineCount": 24,
+      "lineCount": 41,
       "lines": [
         {
           "id": "kalla_greet_stranger",
@@ -1074,8 +2055,196 @@
           "category": "memory",
           "voiceTone": "neutral",
           "suggestedFilename": "freeport/kalla_memory_frequent.mp3"
+        },
+        {
+          "id": "kalla_greet_stranger_2",
+          "text": "[cheerfully] Ooh, fresh blood! [laughs] Don't worry, that's a good thing around here.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "cheerfully",
+            "laughs"
+          ],
+          "suggestedFilename": "freeport/kalla_greet_stranger_2.mp3"
+        },
+        {
+          "id": "kalla_greet_stranger_3",
+          "text": "[playfully] Well well well! [pauses] Someone new in my favorite docking bay. Let's talk deals.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "playfully",
+            "pauses"
+          ],
+          "suggestedFilename": "freeport/kalla_greet_stranger_3.mp3"
+        },
+        {
+          "id": "kalla_greet_stranger_4",
+          "text": "[warmly] Hey there, spacer! [excitedly] Freeport's open for business. What brings you to our little slice of chaos?",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "excitedly"
+          ],
+          "suggestedFilename": "freeport/kalla_greet_stranger_4.mp3"
+        },
+        {
+          "id": "kalla_greet_acquaint_2",
+          "text": "[happily] Look who remembered where the good deals are! [laughs] Smart pilot.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "happily",
+            "laughs"
+          ],
+          "suggestedFilename": "freeport/kalla_greet_acquaint_2.mp3"
+        },
+        {
+          "id": "kalla_greet_acquaint_3",
+          "text": "[delighted] You're back! [excitedly] I've got rumors, I've got cargo, I've got stories. Pick your poison.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "delighted",
+            "excitedly"
+          ],
+          "suggestedFilename": "freeport/kalla_greet_acquaint_3.mp3"
+        },
+        {
+          "id": "kalla_greet_acquaint_4",
+          "text": "[teasingly] Miss me already? [laughs] I knew you'd be back. They always come back.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "teasingly",
+            "laughs"
+          ],
+          "suggestedFilename": "freeport/kalla_greet_acquaint_4.mp3"
+        },
+        {
+          "id": "kalla_greet_trusted_2",
+          "text": "[excitedly] There's my favorite troublemaker! [laughs] I've got something special brewing.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "excitedly",
+            "laughs"
+          ],
+          "suggestedFilename": "freeport/kalla_greet_trusted_2.mp3"
+        },
+        {
+          "id": "kalla_greet_trusted_3",
+          "text": "[warmly] Perfect timing! [whispers] I just got intel that's worth its weight in fuel cells.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "whispers"
+          ],
+          "suggestedFilename": "freeport/kalla_greet_trusted_3.mp3"
+        },
+        {
+          "id": "kalla_greet_allied_2",
+          "text": "[joyfully] Get over here, you beautiful disaster! [laughs] We've got scheming to do!",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "joyfully",
+            "laughs"
+          ],
+          "suggestedFilename": "freeport/kalla_greet_allied_2.mp3"
+        },
+        {
+          "id": "kalla_greet_allied_3",
+          "text": "[warmly] Best pilot in the system just walked through my door! [excitedly] The universe is smiling today!",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "excitedly"
+          ],
+          "suggestedFilename": "freeport/kalla_greet_allied_3.mp3"
+        },
+        {
+          "id": "kalla_farewell_neutral_2",
+          "text": "[cheerfully] Don't be a stranger! [pauses] Strangers miss out on the best deals.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "cheerfully",
+            "pauses"
+          ],
+          "suggestedFilename": "freeport/kalla_farewell_neutral_2.mp3"
+        },
+        {
+          "id": "kalla_farewell_neutral_3",
+          "text": "[playfully] Fly crooked and prosper! [laughs] That's the Freeport motto.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "playfully",
+            "laughs"
+          ],
+          "suggestedFilename": "freeport/kalla_farewell_neutral_3.mp3"
+        },
+        {
+          "id": "kalla_farewell_trusted_2",
+          "text": "[warmly] Watch your back out there. [softly] Some of us actually worry about you.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "softly"
+          ],
+          "suggestedFilename": "freeport/kalla_farewell_trusted_2.mp3"
+        },
+        {
+          "id": "kalla_farewell_trusted_3",
+          "text": "[affectionately] Safe skies, partner. [pauses] Hurry back. It's boring without you.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "affectionately",
+            "pauses"
+          ],
+          "suggestedFilename": "freeport/kalla_farewell_trusted_3.mp3"
+        },
+        {
+          "id": "kalla_tip_info",
+          "text": "[confidentially] Information is the real currency. [whispers] I trade in both. Remember that.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "confidentially",
+            "whispers"
+          ],
+          "suggestedFilename": "freeport/kalla_tip_info.mp3"
+        },
+        {
+          "id": "kalla_tip_flexibility",
+          "text": "[thoughtfully] Best traders stay flexible. [pauses] Never fall in love with your cargo.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "thoughtfully",
+            "pauses"
+          ],
+          "suggestedFilename": "freeport/kalla_tip_flexibility.mp3"
+        },
+        {
+          "id": "kalla_tip_connections",
+          "text": "[warmly] Your network is your net worth. [pauses] Good thing you know me, right?",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "freeport/kalla_tip_connections.mp3"
         }
-      ]
+      ],
+      "linesWithEmotionTags": 17
     },
     {
       "stationId": "drydock",
@@ -1083,7 +2252,7 @@
       "voiceDirection": "Blue-collar, loyal, weathered. Union man through and through.",
       "gender": "male",
       "ageRange": "mid-50s",
-      "lineCount": 26,
+      "lineCount": 43,
       "lines": [
         {
           "id": "harlan_greet_stranger",
@@ -1266,8 +2435,196 @@
           "category": "memory",
           "voiceTone": "neutral",
           "suggestedFilename": "drydock/harlan_memory_missions.mp3"
+        },
+        {
+          "id": "harlan_greet_stranger_2",
+          "text": "[gruffly] New ship, huh? [pauses] We'll check your reactor seals. Standard procedure.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "gruffly",
+            "pauses"
+          ],
+          "suggestedFilename": "drydock/harlan_greet_stranger_2.mp3"
+        },
+        {
+          "id": "harlan_greet_stranger_3",
+          "text": "[tiredly] Another customer. [sigh] Bay three's open. Mind the welding sparks.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "tiredly",
+            "sigh"
+          ],
+          "suggestedFilename": "drydock/harlan_greet_stranger_3.mp3"
+        },
+        {
+          "id": "harlan_greet_stranger_4",
+          "text": "[professionally] Drydock Shipyard, Chief Harlan speaking. [pauses] What's your ship need?",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "professionally",
+            "pauses"
+          ],
+          "suggestedFilename": "drydock/harlan_greet_stranger_4.mp3"
+        },
+        {
+          "id": "harlan_greet_acquaint_2",
+          "text": "[warmly] Hey, I remember this hull! [pauses] How's she handling since the last work?",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "drydock/harlan_greet_acquaint_2.mp3"
+        },
+        {
+          "id": "harlan_greet_acquaint_3",
+          "text": "[pleasantly] Good to see you again. [pauses] The crew's been asking about that engine mod.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "pleasantly",
+            "pauses"
+          ],
+          "suggestedFilename": "drydock/harlan_greet_acquaint_3.mp3"
+        },
+        {
+          "id": "harlan_greet_acquaint_4",
+          "text": "[nodding] Regular customer, right? [warmly] Regulars get the best work. That's how we do things.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "nodding",
+            "warmly"
+          ],
+          "suggestedFilename": "drydock/harlan_greet_acquaint_4.mp3"
+        },
+        {
+          "id": "harlan_greet_trusted_2",
+          "text": "[happily] Well look who it is! [laughs] The crew's gonna be thrilled. You're famous around here.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "happily",
+            "laughs"
+          ],
+          "suggestedFilename": "drydock/harlan_greet_trusted_2.mp3"
+        },
+        {
+          "id": "harlan_greet_trusted_3",
+          "text": "[warmly] There's a ship I'm always glad to see dock. [pauses] How've the lanes been treating you?",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "drydock/harlan_greet_trusted_3.mp3"
+        },
+        {
+          "id": "harlan_greet_allied_2",
+          "text": "[joyfully] Family's here! [laughs] Clear bay one! We got a VIP coming through!",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "joyfully",
+            "laughs"
+          ],
+          "suggestedFilename": "drydock/harlan_greet_allied_2.mp3"
+        },
+        {
+          "id": "harlan_greet_allied_3",
+          "text": "[warmly] There's my favorite pilot! [pauses] I saved a welding crew just for you.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "drydock/harlan_greet_allied_3.mp3"
+        },
+        {
+          "id": "harlan_farewell_neutral_2",
+          "text": "[warmly] Take care of that ship. [pauses] We put good work into her.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "drydock/harlan_farewell_neutral_2.mp3"
+        },
+        {
+          "id": "harlan_farewell_neutral_3",
+          "text": "[professionally] Safe travels, pilot. [pauses] Bring her back if you need anything adjusted.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "professionally",
+            "pauses"
+          ],
+          "suggestedFilename": "drydock/harlan_farewell_neutral_3.mp3"
+        },
+        {
+          "id": "harlan_farewell_trusted_2",
+          "text": "[warmly] Watch yourself out there. [sigh] The void doesn't care about good intentions.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "sigh"
+          ],
+          "suggestedFilename": "drydock/harlan_farewell_trusted_2.mp3"
+        },
+        {
+          "id": "harlan_farewell_trusted_3",
+          "text": "[affectionately] Fly safe, friend. [pauses] The whole crew's rooting for you.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "affectionately",
+            "pauses"
+          ],
+          "suggestedFilename": "drydock/harlan_farewell_trusted_3.mp3"
+        },
+        {
+          "id": "harlan_tip_maintenance",
+          "text": "[thoughtfully] Regular maintenance beats emergency repairs. [pauses] Your wallet will thank you.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "thoughtfully",
+            "pauses"
+          ],
+          "suggestedFilename": "drydock/harlan_tip_maintenance.mp3"
+        },
+        {
+          "id": "harlan_tip_timing",
+          "text": "[confidentially] Visit during shift changes. [whispers] Crews are fresh and work is faster.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "confidentially",
+            "whispers"
+          ],
+          "suggestedFilename": "drydock/harlan_tip_timing.mp3"
+        },
+        {
+          "id": "harlan_tip_upgrades",
+          "text": "[warmly] Best upgrades aren't the flashiest. [pauses] Reliability saves lives out there.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "drydock/harlan_tip_upgrades.mp3"
         }
-      ]
+      ],
+      "linesWithEmotionTags": 17
     },
     {
       "stationId": "hidden-cove",
@@ -1275,7 +2632,7 @@
       "voiceDirection": "Dangerous charm, playful threat. Every smile has teeth.",
       "gender": "male",
       "ageRange": "early-40s",
-      "lineCount": 24,
+      "lineCount": 41,
       "lines": [
         {
           "id": "vex_greet_stranger",
@@ -1444,8 +2801,197 @@
           "category": "memory",
           "voiceTone": "neutral",
           "suggestedFilename": "hidden-cove/vex_memory_bigtrader.mp3"
+        },
+        {
+          "id": "vex_greet_stranger_2",
+          "text": "[menacingly] Look what the void dragged in. [pauses] New toy for the Cove. [laughs] Don't break easy.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "menacingly",
+            "pauses",
+            "laughs"
+          ],
+          "suggestedFilename": "hidden-cove/vex_greet_stranger_2.mp3"
+        },
+        {
+          "id": "vex_greet_stranger_3",
+          "text": "[playfully] Another stray pilot! [pauses] Sol City kick you out, or did you come here on purpose?",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "playfully",
+            "pauses"
+          ],
+          "suggestedFilename": "hidden-cove/vex_greet_stranger_3.mp3"
+        },
+        {
+          "id": "vex_greet_stranger_4",
+          "text": "[teasingly] Fresh face in pirate waters. [chuckles] Either very brave or very lost. Which is it?",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "teasingly",
+            "chuckles"
+          ],
+          "suggestedFilename": "hidden-cove/vex_greet_stranger_4.mp3"
+        },
+        {
+          "id": "vex_greet_acquaint_2",
+          "text": "[approvingly] You survived! [laughs] That makes you smarter than most. Or luckier.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "approvingly",
+            "laughs"
+          ],
+          "suggestedFilename": "hidden-cove/vex_greet_acquaint_2.mp3"
+        },
+        {
+          "id": "vex_greet_acquaint_3",
+          "text": "[playfully] Back for more, are we? [pauses] I like that. Persistence is a pirate virtue.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "playfully",
+            "pauses"
+          ],
+          "suggestedFilename": "hidden-cove/vex_greet_acquaint_3.mp3"
+        },
+        {
+          "id": "vex_greet_acquaint_4",
+          "text": "[interested] You again. [pauses] Starting to think you might be useful. Don't disappoint me.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "interested",
+            "pauses"
+          ],
+          "suggestedFilename": "hidden-cove/vex_greet_acquaint_4.mp3"
+        },
+        {
+          "id": "vex_greet_trusted_2",
+          "text": "[warmly] Now there's someone worth talking to. [pauses] The rest of these pilots bore me.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "hidden-cove/vex_greet_trusted_2.mp3"
+        },
+        {
+          "id": "vex_greet_trusted_3",
+          "text": "[delighted] My favorite rogue! [laughs] I've got schemes that need your particular talents.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "delighted",
+            "laughs"
+          ],
+          "suggestedFilename": "hidden-cove/vex_greet_trusted_3.mp3"
+        },
+        {
+          "id": "vex_greet_allied_2",
+          "text": "[excitedly] The terror of the trade lanes returns! [laughs] Sol City's having nightmares about you.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "excitedly",
+            "laughs"
+          ],
+          "suggestedFilename": "hidden-cove/vex_greet_allied_2.mp3"
+        },
+        {
+          "id": "vex_greet_allied_3",
+          "text": "[warmly] There's my right hand! [pauses] Get in here. We've got an empire to build.",
+          "category": "greeting",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "hidden-cove/vex_greet_allied_3.mp3"
+        },
+        {
+          "id": "vex_farewell_neutral_2",
+          "text": "[ominously] Watch the shadows, spacer. [pauses] They watch back.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "ominously",
+            "pauses"
+          ],
+          "suggestedFilename": "hidden-cove/vex_farewell_neutral_2.mp3"
+        },
+        {
+          "id": "vex_farewell_neutral_3",
+          "text": "[playfully] Fly dangerous. [laughs] That's how legends are made.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "playfully",
+            "laughs"
+          ],
+          "suggestedFilename": "hidden-cove/vex_farewell_neutral_3.mp3"
+        },
+        {
+          "id": "vex_farewell_trusted_2",
+          "text": "[warmly] Keep the void wild, partner. [pauses] That's where we thrive.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "hidden-cove/vex_farewell_trusted_2.mp3"
+        },
+        {
+          "id": "vex_farewell_trusted_3",
+          "text": "[affectionately] Stay dangerous, friend. [pauses] The Cove is always here for you.",
+          "category": "farewell",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "affectionately",
+            "pauses"
+          ],
+          "suggestedFilename": "hidden-cove/vex_farewell_trusted_3.mp3"
+        },
+        {
+          "id": "vex_tip_shadows",
+          "text": "[conspiratorially] Best deals happen in the dark. [whispers] Learn to love the shadows.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "conspiratorially",
+            "whispers"
+          ],
+          "suggestedFilename": "hidden-cove/vex_tip_shadows.mp3"
+        },
+        {
+          "id": "vex_tip_fear",
+          "text": "[menacingly] Fear is a weapon. [pauses] Use it, and your margins improve dramatically.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "menacingly",
+            "pauses"
+          ],
+          "suggestedFilename": "hidden-cove/vex_tip_fear.mp3"
+        },
+        {
+          "id": "vex_tip_loyalty",
+          "text": "[warmly] Loyalty to the Cove pays dividends. [pauses] We protect our own. Always.",
+          "category": "tip",
+          "voiceTone": "neutral",
+          "emotionTags": [
+            "warmly",
+            "pauses"
+          ],
+          "suggestedFilename": "hidden-cove/vex_tip_loyalty.mp3"
         }
-      ]
+      ],
+      "linesWithEmotionTags": 17
     }
   ]
 }
