@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import type { Station } from '../../../domain/types/world_types';
 import type { Ship } from '../../../domain/types/world_types';
 import type { StationInventory } from '../../../domain/types/economy_types';
@@ -10,6 +10,7 @@ import { CommodityGrid } from '../shared/CommodityGrid';
 import { SciFiButton } from '../shared/SciFiButton';
 import { ShipyardSection } from './ShipyardSection';
 import { UIIcon } from '../ui_icon';
+import { gatedCommodities } from '../../../systems/economy/pricing';
 
 interface HallSectionProps {
   station: Station;
@@ -38,6 +39,29 @@ export function HallSection({
 }: HallSectionProps) {
   const colors = stationTypeColors[station.type];
   const [qty, setQty] = useState<number>(1);
+  
+  // Helper to check if commodity is gated
+  const isGated = (id: string) => (gatedCommodities as readonly string[]).includes(id);
+  
+  // Sell all cargo items that can be sold at this station
+  const handleSellAll = useCallback(() => {
+    const inventory = station.inventory;
+    
+    for (const [commodityId, amount] of Object.entries(ship.cargo)) {
+      if (amount <= 0) continue;
+      
+      // Check if this commodity can be sold at this station
+      const stationItem = inventory[commodityId];
+      if (!stationItem) continue;
+      if (stationItem.canBuy === false) continue;
+      
+      // Check gating (navigation array requirement)
+      if (!hasNav && isGated(commodityId)) continue;
+      
+      // Sell all of this commodity
+      onSell(commodityId, amount);
+    }
+  }, [station.inventory, ship.cargo, hasNav, onSell]);
   
   return (
     <div className="scrollable-content">
@@ -124,6 +148,7 @@ export function HallSection({
             hasNav={hasNav}
             onBuy={onBuy}
             onSell={onSell}
+            onSellAll={handleSellAll}
           />
         </SciFiPanel>
       )}
