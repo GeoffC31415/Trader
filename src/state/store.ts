@@ -393,6 +393,42 @@ export const useGameStore = create<GameState>((set, get) => ({
       return { dockIntroVisibleId: undefined } as Partial<GameState> as GameState;
     }),
 
+  // Record dialogue shown to prevent repetition
+  recordDialogueShown: (stationId: string, lineIds: string[]) =>
+    set(state => {
+      if (lineIds.length === 0) return state;
+      
+      const station = state.stations.find(s => s.id === stationId);
+      if (!station) return state;
+      
+      // Get current memory or create empty
+      const currentMemory = (station as any).characterMemory ?? {
+        visitCount: 0,
+        firstVisitTime: null,
+        lastVisitTime: null,
+        totalTradeVolume: 0,
+        missionsCompleted: [],
+        knownActions: [],
+        recentDialogueIds: [],
+        lastGreetingId: null,
+      };
+      
+      // Add new line IDs to recent list, keeping last 15 to ensure variety
+      const recentDialogueIds = [
+        ...lineIds,
+        ...currentMemory.recentDialogueIds.filter((id: string) => !lineIds.includes(id)),
+      ].slice(0, 15);
+      
+      // Update the station with new memory
+      const updatedStations = state.stations.map(s => 
+        s.id === stationId 
+          ? { ...s, characterMemory: { ...currentMemory, recentDialogueIds } }
+          : s
+      );
+      
+      return { stations: updatedStations } as Partial<GameState> as GameState;
+    }),
+
   undock: () =>
     set(state => {
       if (!state.hasChosenStarter) return state;

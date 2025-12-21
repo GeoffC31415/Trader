@@ -216,6 +216,7 @@ export function matchesConditions(line: DialogueLine, context: DialogueContext):
 
 /**
  * Select best line from candidates, considering priority and recent history
+ * Uses randomization to provide variety in dialogue
  */
 function selectFromCandidates(
   candidates: DialogueLine[], 
@@ -239,12 +240,9 @@ function selectFromCandidates(
     !memory.recentDialogueIds.includes(l.id)
   );
   
-  // Pick deterministically from non-recent, or all if all are recent
-  // Use a simple hash of candidate IDs for deterministic selection
+  // Pick randomly from non-recent, or all if all are recent
   const pool = notRecent.length > 0 ? notRecent : topPriority;
-  // Create deterministic index based on IDs and memory state
-  const seed = pool.reduce((acc, line) => acc + line.id.charCodeAt(0), memory.recentDialogueIds.length);
-  const index = seed % pool.length;
+  const index = Math.floor(Math.random() * pool.length);
   return pool[index];
 }
 

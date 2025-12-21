@@ -154,6 +154,14 @@ export function DockIntro() {
     
     const result = selectDialoguePair(characterDialogue, context);
     setDialogueLinesBase(result);
+    
+    // Record shown dialogue to prevent repetition on future visits
+    const shownLineIds: string[] = [];
+    if (result.greeting?.line.id) shownLineIds.push(result.greeting.line.id);
+    if (result.contextual?.line.id) shownLineIds.push(result.contextual.line.id);
+    if (shownLineIds.length > 0) {
+      useGameStore.getState().recordDialogueShown(station.id, shownLineIds);
+    }
   }, [stationId]); // Only re-select when stationId changes (i.e., when docking at a new station)
 
   // Resolve audio URLs asynchronously - only when dialogue actually changes
