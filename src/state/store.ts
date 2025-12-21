@@ -323,9 +323,21 @@ export const useGameStore = create<GameState>((set, get) => ({
     set(state => {
       if (!state.hasChosenStarter) return state;
       if (state.ship.dockedStationId) return state;
-      const near = state.stations.find(
+      
+      // Find all stations within docking range
+      const stationsInRange = state.stations.filter(
         s => distance(s.position, state.ship.position) < DOCKING_RANGE_WORLD
       );
+      
+      if (stationsInRange.length === 0) return state;
+      
+      // Find the nearest station
+      const near = stationsInRange.reduce((closest, current) => {
+        const closestDist = distance(closest.position, state.ship.position);
+        const currentDist = distance(current.position, state.ship.position);
+        return currentDist < closestDist ? current : closest;
+      });
+      
       if (!near) return state;
 
       // Check if station is hostile or closed

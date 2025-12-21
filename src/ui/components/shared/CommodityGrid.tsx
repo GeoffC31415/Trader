@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useMemo } from 'react';
 import type { StationType } from '../../../domain/types/economy_types';
 import type { StationInventory } from '../../../domain/types/economy_types';
 import type { Ship } from '../../../domain/types/world_types';
@@ -18,6 +18,7 @@ interface CommodityGridProps {
   hasNav: boolean;
   onBuy: (id: string, qty: number) => void;
   onSell: (id: string, qty: number) => void;
+  onSellAll?: () => void;
 }
 
 export function CommodityGrid({
@@ -28,9 +29,32 @@ export function CommodityGrid({
   hasNav,
   onBuy,
   onSell,
+  onSellAll,
 }: CommodityGridProps) {
   const colors = stationTypeColors[station.type];
   const isGated = (id: string) => (gatedCommodities as readonly string[]).includes(id);
+  
+  // Split items into cargo (items player has) and other items
+  const { cargoItems, otherItems } = useMemo(() => {
+    const inCargo: Array<[string, StationInventory[string]]> = [];
+    const notInCargo: Array<[string, StationInventory[string]]> = [];
+    
+    for (const item of items) {
+      const [id] = item;
+      if ((ship.cargo[id] || 0) > 0) {
+        inCargo.push(item);
+      } else {
+        notInCargo.push(item);
+      }
+    }
+    
+    return { cargoItems: inCargo, otherItems: notInCargo };
+  }, [items, ship.cargo]);
+  
+  // Check if there's anything to sell
+  const hasCargoToSell = cargoItems.some(([id, p]) => 
+    p.canBuy !== false && (hasNav || !isGated(id))
+  );
   
   return (
     <>
@@ -93,6 +117,44 @@ export function CommodityGrid({
           text-transform: uppercase;
           letter-spacing: 0.02em;
         }
+        .cargo-section-header {
+          grid-column: 1 / -1;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 12px;
+          margin: 8px 0 4px 0;
+          background: linear-gradient(90deg, ${colors.primary}20, transparent);
+          border-left: 3px solid ${colors.primary};
+          border-radius: 0 6px 6px 0;
+        }
+        .cargo-section-title {
+          font-weight: 700;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: ${colors.secondary};
+        }
+        .sell-all-btn {
+          padding: 4px 12px;
+          font-size: 10px;
+          font-weight: 700;
+          font-family: monospace;
+          background: linear-gradient(135deg, #ef444440, #ef444420);
+          border: 1px solid #ef4444;
+          border-radius: 6px;
+          color: #fca5a5;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .sell-all-btn:hover:not(:disabled) {
+          background: linear-gradient(135deg, #ef444460, #ef444440);
+          box-shadow: 0 0 8px #ef444440;
+        }
+        .sell-all-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
       `}</style>
       <div className="commodity-grid">
         <div className="commodity-grid-header"></div>
@@ -102,7 +164,24 @@ export function CommodityGrid({
         <div className="commodity-grid-header">HELD</div>
         <div className="commodity-grid-header">ACTIONS</div>
         
-        {items.map(([id, p]) => {
+        {/* Cargo section - items player has */}
+        {cargoItems.length > 0 && (
+          <div className="cargo-section-header">
+            <span className="cargo-section-title">📦 In Your Cargo ({cargoItems.length})</span>
+            {onSellAll && (
+              <button 
+                className="sell-all-btn"
+                onClick={onSellAll}
+                disabled={!hasCargoToSell}
+                title="Sell all cargo items at this station"
+              >
+                💰 SELL ALL
+              </button>
+            )}
+          </div>
+        )}
+        
+        {cargoItems.map(([id, p]) => {
           const bias = getPriceBiasForStation(station.type, id);
           const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
           const rep = station.reputation || 0;
@@ -171,6 +250,167 @@ export function CommodityGrid({
                     </div>
                   );
                 })()}
+              </div>
+              <div style={{ color }}>
+                <div>
+                  <span style={{ color: '#10b981' }}>${adjBuy}</span>
+                  <span style={{ opacity: 0.5 }}> / </span>
+                  <span style={{ color: '#ef4444' }}>${adjSell}</span>
+                </div>
+                {isPerishable(id) && p.canSell !== false && (
+                  <div style={{ fontSize: 9, color: '#f59e0b', marginTop: 4, opacity: 0.8 }}>
+                    ⏱ Spoils in {formatSpoilageTime(getSpoilageTimeSeconds())}
+                  </div>
+                )}
+              </div>
+              {/* Stock column with price effect */}
+              {(() => {
+                const currentStock = Math.round(p.stock || 0);
+                const targetStock = getTargetStock(station.type, id);
+                const stockEffect = getStockPriceEffect(currentStock, targetStock);
+                const stockPercent = Math.min(150, Math.max(0, (currentStock / targetStock) * 100));
+                // Color the bar based on stock level
+                const barColor = stockPercent > 100 ? '#3b82f6' // blue for surplus
+                  : stockPercent > 50 ? '#10b981' // green for healthy
+                  : stockPercent > 20 ? '#f59e0b' // amber for low
+                  : '#ef4444'; // red for critical
+                
+                return (
+                  <div style={{ minWidth: 70 }}>
+                    <div style={{ fontWeight: 600, fontSize: 12 }}>
+                      {currentStock}
+                      <span style={{ opacity: 0.5, fontSize: 10 }}> / {targetStock}</span>
+                    </div>
+                    <div className="stock-bar">
+                      <div 
+                        className="stock-fill"
+                        style={{
+                          width: `${Math.min(100, stockPercent)}%`,
+                          background: `linear-gradient(90deg, ${barColor}, ${barColor}80)`,
+                        }}
+                      />
+                    </div>
+                    {stockEffect.label && (
+                      <span 
+                        className="stock-effect-badge"
+                        style={{
+                          backgroundColor: `${stockEffect.color}20`,
+                          color: stockEffect.color,
+                          border: `1px solid ${stockEffect.color}40`,
+                          marginTop: 4,
+                          display: 'inline-block',
+                        }}
+                      >
+                        {stockEffect.label}
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
+              <div style={{ fontWeight: 700, color: colors.secondary }}>
+                {ship.cargo[id] || 0}
+              </div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  onClick={() => onBuy(id, qty)}
+                  disabled={p.canSell === false || (!hasNav && isGated(id))}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: 10,
+                    background: `linear-gradient(135deg, ${colors.primary}30, ${colors.primary}20)`,
+                    border: `1px solid ${colors.primary}`,
+                    borderRadius: 6,
+                    color: '#e5e7eb',
+                    cursor: p.canSell === false || (!hasNav && isGated(id)) ? 'not-allowed' : 'pointer',
+                    fontWeight: 600,
+                    fontFamily: 'monospace',
+                    opacity: p.canSell === false || (!hasNav && isGated(id)) ? 0.4 : 1,
+                  }}
+                >
+                  BUY {qty}
+                </button>
+                <button
+                  onClick={() => onSell(id, qty)}
+                  disabled={p.canBuy === false || (!hasNav && isGated(id))}
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: 10,
+                    background: `linear-gradient(135deg, ${colors.primary}30, ${colors.primary}20)`,
+                    border: `1px solid ${colors.primary}`,
+                    borderRadius: 6,
+                    color: '#e5e7eb',
+                    cursor: p.canBuy === false || (!hasNav && isGated(id)) ? 'not-allowed' : 'pointer',
+                    fontWeight: 600,
+                    fontFamily: 'monospace',
+                    opacity: p.canBuy === false || (!hasNav && isGated(id)) ? 0.4 : 1,
+                  }}
+                >
+                  SELL {qty}
+                </button>
+              </div>
+              {((p.canSell === false || p.canBuy === false) || (!hasNav && isGated(id))) && (
+                <div style={{ gridColumn: '1 / -1', fontSize: 10, opacity: 0.6, marginTop: -4, fontFamily: 'monospace' }}>
+                  {p.canSell === false && p.canBuy === false && '⚠ NOT TRADED HERE'}
+                  {p.canSell === false && p.canBuy !== false && '⚠ NOT SOLD HERE'}
+                  {p.canBuy === false && p.canSell !== false && '⚠ NOT BOUGHT HERE'}
+                  {!hasNav && isGated(id) && ' | REQUIRES NAVIGATION ARRAY'}
+                </div>
+              )}
+            </Fragment>
+          );
+        })}
+        
+        {/* Other available commodities section */}
+        {otherItems.length > 0 && (
+          <div className="cargo-section-header" style={{ marginTop: cargoItems.length > 0 ? 16 : 8 }}>
+            <span className="cargo-section-title">🏪 Available ({otherItems.length})</span>
+          </div>
+        )}
+        
+        {otherItems.map(([id, p]) => {
+          const bias = getPriceBiasForStation(station.type, id);
+          const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
+          const rep = station.reputation || 0;
+          const { adjBuy, adjSell } = getAdjustedPrices({ buy: p.buy, sell: p.sell }, rep);
+          const commodity = commodityById[id];
+          
+          return (
+            <Fragment key={id}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {commodity?.icon && (
+                  <img 
+                    src={commodity.icon} 
+                    alt={commodity.name}
+                    style={{ 
+                      width: 32, 
+                      height: 32, 
+                      objectFit: 'contain',
+                      filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))'
+                    }}
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                )}
+              </div>
+              <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+                  <span>{id.replace(/_/g, ' ')}</span>
+                  {(() => {
+                    const tier = getCommodityTier(id);
+                    const tierColor = getTierColor(tier);
+                    return (
+                      <span 
+                        className="tier-badge"
+                        style={{
+                          backgroundColor: `${tierColor}20`,
+                          color: tierColor,
+                          border: `1px solid ${tierColor}40`,
+                        }}
+                      >
+                        {getTierLabel(tier)}
+                      </span>
+                    );
+                  })()}
+                </div>
               </div>
               <div style={{ color }}>
                 <div>
