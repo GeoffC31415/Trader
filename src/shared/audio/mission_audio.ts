@@ -148,6 +148,12 @@ export async function getKeyMomentAudio(missionId: string, triggerId: string): P
   return `/${triggerFile.path}`;
 }
 
+// Small gap between sequential audio files (ms) for natural pacing
+const SEQUENCE_GAP_MS = 150;
+
+// Preloaded audio for smoother playback
+let preloadedAudio: HTMLAudioElement | null = null;
+
 /**
  * Stop any currently playing audio
  */
@@ -157,34 +163,44 @@ export function stopMissionAudio(): void {
     currentAudioElement.currentTime = 0;
     currentAudioElement = null;
   }
+  if (preloadedAudio) {
+    preloadedAudio = null;
+  }
   audioQueue = [];
   isPlaying = false;
   onQueueComplete = null;
 }
 
 /**
- * Play a single audio file
+ * Preload an audio file for faster playback
  */
-export async function playMissionAudio(
+function preloadAudio(audioPath: string): HTMLAudioElement {
+  const audio = new Audio(audioPath);
+  audio.preload = 'auto';
+  return audio;
+}
+
+/**
+ * Play a single audio file (internal, doesn't clear queue)
+ */
+async function playSingleAudio(
   audioPath: string,
-  volume: number = 0.8
+  volume: number = 0.8,
+  audioElement?: HTMLAudioElement
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    stopMissionAudio();
-
-    const audio = new Audio(audioPath);
+    // Use preloaded audio if provided, otherwise create new
+    const audio = audioElement || new Audio(audioPath);
     audio.volume = volume;
     currentAudioElement = audio;
     isPlaying = true;
 
     audio.onended = () => {
-      isPlaying = false;
       currentAudioElement = null;
       resolve();
     };
 
     audio.onerror = () => {
-      isPlaying = false;
       currentAudioElement = null;
       reject(new Error(`Failed to play audio: ${audioPath}`));
     };
@@ -194,7 +210,25 @@ export async function playMissionAudio(
 }
 
 /**
+ * Play a single audio file (public API - stops any current playback)
+ */
+export async function playMissionAudio(
+  audioPath: string,
+  volume: number = 0.8
+): Promise<void> {
+  stopMissionAudio();
+  isPlaying = true;
+  await playSingleAudio(audioPath, volume);
+  isPlaying = false;
+}
+
+/**
  * Play a sequence of audio files with optional callback on completion
+ * 
+ * Features:
+ * - Preloads next file while current is playing
+ * - Small gap between files for natural pacing
+ * - Continues on error
  */
 export async function playAudioSequence(
   audioPaths: string[],
@@ -209,6 +243,7 @@ export async function playAudioSequence(
   stopMissionAudio();
   audioQueue = [...audioPaths];
   onQueueComplete = onComplete || null;
+  isPlaying = true;
 
   await playNextInQueue(volume);
 }
@@ -216,18 +251,38 @@ export async function playAudioSequence(
 async function playNextInQueue(volume: number): Promise<void> {
   if (audioQueue.length === 0) {
     isPlaying = false;
+    preloadedAudio = null;
     onQueueComplete?.();
     onQueueComplete = null;
     return;
   }
 
-  const nextPath = audioQueue.shift()!;
+  const currentPath = audioQueue.shift()!;
+  
+  // Determine which audio element to use
+  // If we preloaded this file, use the preloaded element
+  const usePreloaded = preloadedAudio && preloadedAudio.src.includes(currentPath.split('/').pop()!);
+  const audioToPlay = usePreloaded ? preloadedAudio : undefined;
+  
+  // Preload the NEXT file while playing current
+  preloadedAudio = null;
+  if (audioQueue.length > 0) {
+    preloadedAudio = preloadAudio(audioQueue[0]);
+  }
   
   try {
-    await playMissionAudio(nextPath, volume);
+    await playSingleAudio(currentPath, volume, audioToPlay || undefined);
+    
+    // Small gap between files for natural pacing
+    if (audioQueue.length > 0) {
+      await new Promise(resolve => setTimeout(resolve, SEQUENCE_GAP_MS));
+    }
+    
     await playNextInQueue(volume);
   } catch (error) {
     console.warn('Audio playback error, continuing queue:', error);
+    // Small gap even on error to prevent rapid-fire attempts
+    await new Promise(resolve => setTimeout(resolve, 100));
     await playNextInQueue(volume);
   }
 }

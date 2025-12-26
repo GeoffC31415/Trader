@@ -79,6 +79,7 @@ export type GameConfig = {
   audio: {
     musicEnabled: boolean; // Whether music is enabled (true)
     musicVolume: number; // Music volume 0-1 (0.7)
+    dialogueVolume: number; // Dialogue/voice volume 0-1 (0.8)
   };
 };
 
@@ -201,6 +202,7 @@ export const defaultConfig: GameConfig = {
   audio: {
     musicEnabled: true,
     musicVolume: 0.35,
+    dialogueVolume: 0.8,
   },
 };
 

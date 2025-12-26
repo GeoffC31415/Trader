@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react';
 import type { Station } from '../../../domain/types/world_types';
 import type { Mission, MissionArc } from '../../../domain/types/mission_types';
 import { stationTypeColors } from '../../utils/station_theme';
@@ -8,6 +9,8 @@ import { getFactionForStation, FACTIONS } from '../../../domain/constants/factio
 import { getFactionReputation, getFactionStanding, getFactionStandingDisplay } from '../../../systems/reputation/faction_system';
 import { ReputationBadge } from '../reputation_badge';
 import type { Station as StationType } from '../../../domain/types/world_types';
+import * as missionAudio from '../../../shared/audio/mission_audio';
+import { gameConfig } from '../../../config/game_config';
 
 interface MissionsSectionProps {
   station: Station;
@@ -43,6 +46,33 @@ export function MissionsSection({
   onSetChoiceDialog,
 }: MissionsSectionProps) {
   const colors = stationTypeColors[station.type];
+  const [playingIntro, setPlayingIntro] = useState<string | null>(null);
+  const [playedIntros, setPlayedIntros] = useState<Set<string>>(new Set());
+  
+  const playIntro = useCallback(async (missionId: string) => {
+    if (playingIntro) {
+      missionAudio.stopMissionAudio();
+      setPlayingIntro(null);
+      return;
+    }
+    
+    setPlayingIntro(missionId);
+    try {
+      const introPaths = await missionAudio.getMissionIntroAudio(missionId);
+      if (introPaths.length > 0) {
+        const volume = gameConfig.audio?.dialogueVolume ?? 0.8;
+        await missionAudio.playAudioSequence(introPaths, volume, () => {
+          setPlayingIntro(null);
+          setPlayedIntros(prev => new Set(prev).add(missionId));
+        });
+      } else {
+        setPlayingIntro(null);
+      }
+    } catch (error) {
+      console.warn('Failed to play mission intro:', error);
+      setPlayingIntro(null);
+    }
+  }, [playingIntro]);
   
   return (
     <div className="scrollable-content">
@@ -129,20 +159,35 @@ export function MissionsSection({
                         </div>
                       )}
                     </div>
-                    <SciFiButton
-                      stationType={station.type}
-                      onClick={() => {
-                        if (mission.type === 'choice') {
-                          onSetChoiceDialog(mission);
-                        } else {
-                          onAcceptMission(mission.id);
-                        }
-                      }}
-                      disabled={!reqRepOk}
-                      style={{ padding: '10px 24px', fontSize: 14, fontWeight: 700 }}
-                    >
-                      {mission.type === 'choice' ? 'CHOOSE PATH' : 'ACCEPT MISSION'}
-                    </SciFiButton>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <SciFiButton
+                        stationType={station.type}
+                        onClick={() => playIntro(mission.id)}
+                        style={{ 
+                          padding: '10px 16px', 
+                          fontSize: 12, 
+                          fontWeight: 600,
+                          opacity: playedIntros.has(mission.id) ? 0.7 : 1,
+                        }}
+                      >
+                        {playingIntro === mission.id ? '⏹ STOP' : playedIntros.has(mission.id) ? '🔊 REPLAY' : '🔊 LISTEN'}
+                      </SciFiButton>
+                      <SciFiButton
+                        stationType={station.type}
+                        onClick={() => {
+                          if (playingIntro) missionAudio.stopMissionAudio();
+                          if (mission.type === 'choice') {
+                            onSetChoiceDialog(mission);
+                          } else {
+                            onAcceptMission(mission.id);
+                          }
+                        }}
+                        disabled={!reqRepOk}
+                        style={{ padding: '10px 24px', fontSize: 14, fontWeight: 700 }}
+                      >
+                        {mission.type === 'choice' ? 'CHOOSE PATH' : 'ACCEPT MISSION'}
+                      </SciFiButton>
+                    </div>
                   </div>
                 </div>
               );

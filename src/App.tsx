@@ -18,6 +18,7 @@ import { ObjectiveHUD } from './ui/components/hud/ObjectiveHUD';
 import { StarterShipSelector } from './ui/components/hud/StarterShipSelector';
 import { Notifications } from './ui/components/Notifications';
 import { useMusicController, initializeMusicOnInteraction } from './shared/audio/use_music';
+import { useMissionAudioController, preloadMissionAudio } from './shared/audio/use_mission_audio';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal' | 'traders'>('market');
@@ -53,10 +54,14 @@ export function App() {
   // Initialize music system (call hook to manage music based on game state)
   useMusicController();
   
-  // Initialize music on first user interaction
+  // Initialize mission audio controller (handles completion audio)
+  useMissionAudioController();
+  
+  // Initialize audio systems on first user interaction
   useEffect(() => {
     const handleFirstInteraction = () => {
       initializeMusicOnInteraction();
+      preloadMissionAudio();
     };
     
     document.addEventListener('click', handleFirstInteraction, { once: true });

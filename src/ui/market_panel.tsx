@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useGameStore } from '../state';
 import { processRecipes } from '../systems/economy/recipes';
 import { CONTRACT_REFRESH_INTERVAL } from '../domain/constants/contract_constants';
@@ -15,6 +15,7 @@ import { MissionsSection } from './components/market/MissionsSection';
 import { ContractsSection } from './components/market/ContractsSection';
 import { SciFiButton } from './components/shared/SciFiButton';
 import { PANEL_MAX_HEIGHT_OFFSET } from './constants/layout_constants';
+import { playMissionAcceptAudio } from '../shared/audio/use_mission_audio';
 
 export function MarketPanel() {
   const ship = useGameStore(s => s.ship);
@@ -37,9 +38,15 @@ export function MarketPanel() {
   // Mission arc system
   const missions = useGameStore(s => s.missions);
   const missionArcs = useGameStore(s => s.missionArcs);
-  const acceptMission = useGameStore(s => s.acceptMission);
+  const acceptMissionAction = useGameStore(s => s.acceptMission);
   const abandonMission = useGameStore(s => s.abandonMission);
   const makeMissionChoice = useGameStore(s => s.makeMissionChoice);
+  
+  // Wrapper to play audio when accepting mission
+  const acceptMission = useCallback((missionId: string) => {
+    acceptMissionAction(missionId);
+    playMissionAcceptAudio(missionId).catch(console.warn);
+  }, [acceptMissionAction]);
   
   // Auto-refresh contracts on mount and at regular intervals
   useEffect(() => {
