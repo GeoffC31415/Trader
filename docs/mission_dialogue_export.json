@@ -1,0 +1,1636 @@
+{
+  "generatedAt": "2025-12-26T18:50:50.416Z",
+  "description": "Mission dialogue export for ElevenLabs voice generation",
+  "totalLines": 135,
+  "emotionTagsUsed": [
+    "alarmed",
+    "angrily",
+    "approvingly",
+    "bitterly",
+    "businesslike",
+    "calmly",
+    "casually",
+    "chuckles",
+    "clinically",
+    "concerned",
+    "conspiratorially",
+    "darkening",
+    "darkly",
+    "determined",
+    "determinedly",
+    "directly",
+    "disappointed",
+    "drinks",
+    "earnestly",
+    "emotionally",
+    "encouraging",
+    "encouragingly",
+    "excited",
+    "excitedly",
+    "exhausted",
+    "firmly",
+    "flatly",
+    "formally",
+    "frustrated",
+    "gathering herself",
+    "grateful",
+    "gratefully",
+    "grimly",
+    "grins",
+    "gruffly",
+    "hardening",
+    "heavily",
+    "hopefully",
+    "intensely",
+    "introducing",
+    "joyfully",
+    "laughing",
+    "laughs",
+    "laughs through tears",
+    "lighter",
+    "looking outside",
+    "overcome",
+    "overwhelmed",
+    "pauses",
+    "playfully",
+    "pleased",
+    "precisely",
+    "professionally",
+    "proudly",
+    "quietly",
+    "raising a glass",
+    "relieved",
+    "resolutely",
+    "satisfied",
+    "seriously",
+    "shrugs",
+    "sighs",
+    "sincerely",
+    "smiles",
+    "softly",
+    "sound of cheering",
+    "spreading papers",
+    "steeling herself",
+    "steeling himself",
+    "studies readout",
+    "suspiciously",
+    "tensely",
+    "testing",
+    "thoughtfully",
+    "trails off",
+    "triumphantly",
+    "urgently",
+    "voice breaking",
+    "voice breaks",
+    "voice hardens",
+    "warmly",
+    "warning",
+    "winks"
+  ],
+  "missions": [
+    {
+      "missionId": "greenfields_stage_1",
+      "title": "Breaking the Chain",
+      "characterName": "Sana Whit",
+      "stationId": "greenfields",
+      "voiceDirection": "Warm, earthy, quietly fierce. Farmer who fights with patience and resolve.",
+      "gender": "female",
+      "ageRange": "mid-40s",
+      "lineCount": 13,
+      "lines": [
+        {
+          "id": "green_s1_intro_1",
+          "text": "[warmly] I remember my first years in this system. Working alongside Elin Kade at Titan Research, believing technology would solve everything.",
+          "phase": "introduction",
+          "voiceTone": "warmly",
+          "emotionTags": [
+            "warmly"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_intro_1.mp3"
+        },
+        {
+          "id": "green_s1_intro_2",
+          "text": "[pauses] Then Lab 7 happened. Friends died because a decimal point was wrong. I learned that day—some problems can't be automated away.",
+          "phase": "introduction",
+          "voiceTone": "somber",
+          "emotionTags": [
+            "pauses"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_intro_2.mp3"
+        },
+        {
+          "id": "green_s1_intro_3",
+          "text": "[determined] That's why I'm here, growing real food with real hands. Simple. Honest. But Sol City wants to complicate everything.",
+          "phase": "introduction",
+          "voiceTone": "determined",
+          "emotionTags": [
+            "determined"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_intro_3.mp3"
+        },
+        {
+          "id": "green_s1_intro_4",
+          "text": "[frustrated] Mira Vale—she was an inspector here once. Young, ambitious, convinced regulations protect people. Maybe they do, sometimes.",
+          "phase": "introduction",
+          "voiceTone": "frustrated",
+          "emotionTags": [
+            "frustrated"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_intro_4.mp3"
+        },
+        {
+          "id": "green_s1_intro_5",
+          "text": "[conspiratorially] But right now, her regulations are strangling us. I need luxury goods for a... private arrangement. Off the books.",
+          "phase": "introduction",
+          "voiceTone": "conspiratorially",
+          "emotionTags": [
+            "conspiratorially"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_intro_5.mp3"
+        },
+        {
+          "id": "green_s1_intro_6",
+          "text": "[urgently] Ten units. Don't fly near Sol City—their inspectors will confiscate anything that doesn't have proper stamps. Can you do this?",
+          "phase": "introduction",
+          "voiceTone": "urgently",
+          "emotionTags": [
+            "urgently"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_intro_6.mp3"
+        },
+        {
+          "id": "green_s1_accept",
+          "text": "[grateful] Thank you. The cooperative won't forget this. Now fly careful—and fly smart.",
+          "phase": "acceptance",
+          "voiceTone": "grateful",
+          "emotionTags": [
+            "grateful"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_accept.mp3"
+        },
+        {
+          "id": "green_s1_warning",
+          "text": "[alarmed] Warning! Sol City patrol detected. Change course immediately or they'll scan your cargo!",
+          "phase": "key_moment",
+          "voiceTone": "alarmed",
+          "emotionTags": [
+            "alarmed"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_warning.mp3"
+        },
+        {
+          "id": "green_s1_halfway",
+          "text": "[encouraging] You're doing great. Just a little further. The workers are already preparing the distribution lists.",
+          "phase": "key_moment",
+          "voiceTone": "encouraging",
+          "emotionTags": [
+            "encouraging"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_halfway.mp3"
+        },
+        {
+          "id": "green_s1_complete_1",
+          "text": "[joyfully] You made it! [laughs] Look at these goods—Sol City thought they could starve us into compliance.",
+          "phase": "completion_success",
+          "voiceTone": "joyfully",
+          "emotionTags": [
+            "joyfully",
+            "laughs"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_complete_1.mp3"
+        },
+        {
+          "id": "green_s1_complete_2",
+          "text": "[warmly] My grandmother grew vegetables on a generation ship. She always said: 'Feed people, and you give them hope.'",
+          "phase": "completion_success",
+          "voiceTone": "warmly",
+          "emotionTags": [
+            "warmly"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_complete_2.mp3"
+        },
+        {
+          "id": "green_s1_complete_3",
+          "text": "[seriously] This is just the beginning. Next time... we're going to need you for something bigger. Something that can't be undone.",
+          "phase": "completion_success",
+          "voiceTone": "seriously",
+          "emotionTags": [
+            "seriously"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_complete_3.mp3"
+        },
+        {
+          "id": "green_s1_fail_1",
+          "text": "[disappointed] Sol City got the cargo. [sighs] I expected too much, too soon. We'll find another way.",
+          "phase": "completion_failure",
+          "voiceTone": "disappointed",
+          "emotionTags": [
+            "disappointed",
+            "sighs"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_1/green_s1_fail_1.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 13
+    },
+    {
+      "missionId": "greenfields_stage_2",
+      "title": "The Census - Greenfields Side",
+      "characterName": "Sana Whit",
+      "stationId": "greenfields",
+      "voiceDirection": "Warm, earthy, quietly fierce. Farmer who fights with patience and resolve.",
+      "gender": "female",
+      "ageRange": "mid-40s",
+      "lineCount": 10,
+      "lines": [
+        {
+          "id": "green_s2_intro_1",
+          "text": "[intensely] Sol City has been conducting 'agricultural inspections.' What they're really doing is building a case against us.",
+          "phase": "introduction",
+          "voiceTone": "intensely",
+          "emotionTags": [
+            "intensely"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_2/green_s2_intro_1.mp3"
+        },
+        {
+          "id": "green_s2_intro_2",
+          "text": "[bitterly] Mira Vale and I worked together once, briefly. I thought we understood each other. But she filed a regulatory report that nearly destroyed us.",
+          "phase": "introduction",
+          "voiceTone": "bitterly",
+          "emotionTags": [
+            "bitterly"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_2/green_s2_intro_2.mp3"
+        },
+        {
+          "id": "green_s2_intro_3",
+          "text": "[pauses] She sees rules. I see families. We stopped being friends that day.",
+          "phase": "introduction",
+          "voiceTone": "somber",
+          "emotionTags": [
+            "pauses"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_2/green_s2_intro_3.mp3"
+        },
+        {
+          "id": "green_s2_intro_4",
+          "text": "[urgently] There are data chips in Sol City that contain the real inspection logs. The ones showing their inspectors planted evidence.",
+          "phase": "introduction",
+          "voiceTone": "urgently",
+          "emotionTags": [
+            "urgently"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_2/green_s2_intro_4.mp3"
+        },
+        {
+          "id": "green_s2_intro_5",
+          "text": "[quietly] If you get those chips to me, we expose the corruption. If you take them to Mira instead... [pauses] well, you'd be helping her finish what she started.",
+          "phase": "introduction",
+          "voiceTone": "quietly",
+          "emotionTags": [
+            "quietly",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_2/green_s2_intro_5.mp3"
+        },
+        {
+          "id": "green_s2_intro_6",
+          "text": "[earnestly] This is the moment, pilot. Which future do you want to build?",
+          "phase": "introduction",
+          "voiceTone": "earnestly",
+          "emotionTags": [
+            "earnestly"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_2/green_s2_intro_6.mp3"
+        },
+        {
+          "id": "green_s2_accept",
+          "text": "[hopefully] Whatever you decide... remember that farmers fed this system for generations. We deserve respect, not regulation.",
+          "phase": "acceptance",
+          "voiceTone": "hopefully",
+          "emotionTags": [
+            "hopefully"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_2/green_s2_accept.mp3"
+        },
+        {
+          "id": "green_s2_complete_greenfields_1",
+          "text": "[overwhelmed] These logs... I knew they were lying, but seeing the proof... [voice breaks] My husband Marcus always believed we'd be vindicated.",
+          "phase": "completion_success",
+          "voiceTone": "emotional",
+          "emotionTags": [
+            "overwhelmed",
+            "voice breaks"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_2/green_s2_complete_greenfields_1.mp3"
+        },
+        {
+          "id": "green_s2_complete_greenfields_2",
+          "text": "[determined] Sol City is going to raise prices on us. Make things harder. But they can't bury the truth anymore.",
+          "phase": "completion_success",
+          "voiceTone": "determined",
+          "emotionTags": [
+            "determined"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_2/green_s2_complete_greenfields_2.mp3"
+        },
+        {
+          "id": "green_s2_complete_greenfields_3",
+          "text": "[warmly] You chose our side. That means something. Greenfields will remember.",
+          "phase": "completion_success",
+          "voiceTone": "warmly",
+          "emotionTags": [
+            "warmly"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_2/green_s2_complete_greenfields_3.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 10
+    },
+    {
+      "missionId": "greenfields_stage_2_sol",
+      "title": "The Census - Sol City Side",
+      "characterName": "Mira Vale",
+      "stationId": "sol-city",
+      "voiceDirection": "Polished, measured, slight condescension. Professional bureaucrat who believes in the system.",
+      "gender": "female",
+      "ageRange": "mid-30s",
+      "lineCount": 10,
+      "lines": [
+        {
+          "id": "sol_s2_intro_1",
+          "text": "[professionally] I was eleven years old during the Freeport Riots. My father worked seventy-two hours straight to restore order.",
+          "phase": "introduction",
+          "voiceTone": "professionally",
+          "emotionTags": [
+            "professionally"
+          ],
+          "suggestedFilename": "missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_1.mp3"
+        },
+        {
+          "id": "sol_s2_intro_2",
+          "text": "[pauses] I hid in a cargo container while people died outside. Screaming. Fire. Chaos. All because supply chains broke down.",
+          "phase": "introduction",
+          "voiceTone": "haunted",
+          "emotionTags": [
+            "pauses"
+          ],
+          "suggestedFilename": "missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_2.mp3"
+        },
+        {
+          "id": "sol_s2_intro_3",
+          "text": "[firmly] That's why I believe in regulation. Not because I enjoy paperwork—because I've seen what happens without it.",
+          "phase": "introduction",
+          "voiceTone": "firmly",
+          "emotionTags": [
+            "firmly"
+          ],
+          "suggestedFilename": "missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_3.mp3"
+        },
+        {
+          "id": "sol_s2_intro_4",
+          "text": "[concerned] Sana Whit is running unregistered grow operations. Modified seeds. Undocumented compounds. One contaminated crop could sicken thousands.",
+          "phase": "introduction",
+          "voiceTone": "concerned",
+          "emotionTags": [
+            "concerned"
+          ],
+          "suggestedFilename": "missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_4.mp3"
+        },
+        {
+          "id": "sol_s2_intro_5",
+          "text": "[directly] I need you to report what you find there. Unregistered operations. Violations. The truth.",
+          "phase": "introduction",
+          "voiceTone": "directly",
+          "emotionTags": [
+            "directly"
+          ],
+          "suggestedFilename": "missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_5.mp3"
+        },
+        {
+          "id": "sol_s2_intro_6",
+          "text": "[quietly] Sana and I worked together once. I filed a report on minor violations. She saw it as betrayal. [pauses] I saw it as doing my job.",
+          "phase": "introduction",
+          "voiceTone": "quietly",
+          "emotionTags": [
+            "quietly",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_6.mp3"
+        },
+        {
+          "id": "sol_s2_accept",
+          "text": "[formally] Your cooperation is noted. Sol City values traders who understand that order protects everyone.",
+          "phase": "acceptance",
+          "voiceTone": "formally",
+          "emotionTags": [
+            "formally"
+          ],
+          "suggestedFilename": "missions/sol-city/greenfields_stage_2_sol/sol_s2_accept.mp3"
+        },
+        {
+          "id": "sol_s2_complete_1",
+          "text": "[satisfied] Documentation received. Violations confirmed. [pauses] This isn't about punishment—it's about accountability.",
+          "phase": "completion_success",
+          "voiceTone": "satisfied",
+          "emotionTags": [
+            "satisfied",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/sol-city/greenfields_stage_2_sol/sol_s2_complete_1.mp3"
+        },
+        {
+          "id": "sol_s2_complete_2",
+          "text": "[softly] I know Sana thinks I'm the enemy. Maybe to her, I am. But someone has to maintain standards.",
+          "phase": "completion_success",
+          "voiceTone": "softly",
+          "emotionTags": [
+            "softly"
+          ],
+          "suggestedFilename": "missions/sol-city/greenfields_stage_2_sol/sol_s2_complete_2.mp3"
+        },
+        {
+          "id": "sol_s2_complete_3",
+          "text": "[professionally] You've proven yourself a friend to Sol City. Future opportunities will reflect that. Thank you.",
+          "phase": "completion_success",
+          "voiceTone": "professionally",
+          "emotionTags": [
+            "professionally"
+          ],
+          "suggestedFilename": "missions/sol-city/greenfields_stage_2_sol/sol_s2_complete_3.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 10
+    },
+    {
+      "missionId": "greenfields_stage_3",
+      "title": "Supply Cut",
+      "characterName": "Sana Whit",
+      "stationId": "greenfields",
+      "voiceDirection": "Warm, earthy, quietly fierce. Farmer who fights with patience and resolve.",
+      "gender": "female",
+      "ageRange": "mid-40s",
+      "lineCount": 13,
+      "lines": [
+        {
+          "id": "green_s3_intro_1",
+          "text": "[heavily] Harvest season. Should be a celebration. Instead, I'm asking you to destroy ships.",
+          "phase": "introduction",
+          "voiceTone": "heavily",
+          "emotionTags": [
+            "heavily"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_intro_1.mp3"
+        },
+        {
+          "id": "green_s3_intro_2",
+          "text": "[bitterly] Sol City is intercepting our grain convoys. 'Quality inspections,' they call it. Legalized theft is what it is.",
+          "phase": "introduction",
+          "voiceTone": "bitterly",
+          "emotionTags": [
+            "bitterly"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_intro_2.mp3"
+        },
+        {
+          "id": "green_s3_intro_3",
+          "text": "[pauses] I knew the pilots on those convoys once. Shared meals. Shared dreams. [voice hardens] Then they sold out to Sol City security contracts.",
+          "phase": "introduction",
+          "voiceTone": "hardening",
+          "emotionTags": [
+            "pauses",
+            "voice hardens"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_intro_3.mp3"
+        },
+        {
+          "id": "green_s3_intro_4",
+          "text": "[intensely] Three convoys are heading to Sol City right now. If they arrive, Mira Vale uses that grain to prove she controls our food supply.",
+          "phase": "introduction",
+          "voiceTone": "intensely",
+          "emotionTags": [
+            "intensely"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_intro_4.mp3"
+        },
+        {
+          "id": "green_s3_intro_5",
+          "text": "[quietly] Destroy them. Let Sol City feel what scarcity means. [pauses] Maybe then they'll negotiate in good faith.",
+          "phase": "introduction",
+          "voiceTone": "quietly",
+          "emotionTags": [
+            "quietly",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_intro_5.mp3"
+        },
+        {
+          "id": "green_s3_intro_6",
+          "text": "[steeling herself] This is economic warfare. The kind that echoes through ledgers and stomachs. Are you ready to cross this line?",
+          "phase": "introduction",
+          "voiceTone": "steeling",
+          "emotionTags": [
+            "steeling herself"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_intro_6.mp3"
+        },
+        {
+          "id": "green_s3_accept",
+          "text": "[grimly] Then go. And may whatever gods you believe in forgive us both.",
+          "phase": "acceptance",
+          "voiceTone": "grimly",
+          "emotionTags": [
+            "grimly"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_accept.mp3"
+        },
+        {
+          "id": "green_s3_convoy_1",
+          "text": "[quietly] First convoy down. [pauses] I hope they had escape pods. I hope... [trails off]",
+          "phase": "key_moment",
+          "voiceTone": "conflicted",
+          "emotionTags": [
+            "quietly",
+            "pauses",
+            "trails off"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_convoy_1.mp3"
+        },
+        {
+          "id": "green_s3_convoy_2",
+          "text": "[hardening] Sol City will call this terrorism. We call it survival. History decides who was right.",
+          "phase": "key_moment",
+          "voiceTone": "hardening",
+          "emotionTags": [
+            "hardening"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_convoy_2.mp3"
+        },
+        {
+          "id": "green_s3_complete_1",
+          "text": "[exhausted] It's done. Grain prices in Sol City will spike within the hour. Mira Vale will be scrambling.",
+          "phase": "completion_success",
+          "voiceTone": "exhausted",
+          "emotionTags": [
+            "exhausted"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_complete_1.mp3"
+        },
+        {
+          "id": "green_s3_complete_2",
+          "text": "[quietly] Some nights I still dream about Lab 7. The screaming. The chemical smell. [pauses] Now I'll dream about grain convoys too.",
+          "phase": "completion_success",
+          "voiceTone": "haunted",
+          "emotionTags": [
+            "quietly",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_complete_2.mp3"
+        },
+        {
+          "id": "green_s3_complete_3",
+          "text": "[resolutely] But freedom isn't free. My grandmother knew that. Crossed half the galaxy in a tin can to find somewhere to grow things in peace.",
+          "phase": "completion_success",
+          "voiceTone": "resolutely",
+          "emotionTags": [
+            "resolutely"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_complete_3.mp3"
+        },
+        {
+          "id": "green_s3_complete_4",
+          "text": "[warmly] One more step. The final delivery. After that... Greenfields stands alone. Independent. The way it should be.",
+          "phase": "completion_success",
+          "voiceTone": "warmly",
+          "emotionTags": [
+            "warmly"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_3/green_s3_complete_4.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 13
+    },
+    {
+      "missionId": "sol_city_stage_3",
+      "title": "Agricultural Compliance Escort",
+      "characterName": "Mira Vale",
+      "stationId": "sol-city",
+      "voiceDirection": "Polished, measured, slight condescension. Professional bureaucrat who believes in the system.",
+      "gender": "female",
+      "ageRange": "mid-30s",
+      "lineCount": 12,
+      "lines": [
+        {
+          "id": "sol_s3_intro_1",
+          "text": "[tensely] We have evidence of agricultural violations at Greenfields. Unregistered grow operations. Unauthorized seed modifications.",
+          "phase": "introduction",
+          "voiceTone": "tensely",
+          "emotionTags": [
+            "tensely"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_intro_1.mp3"
+        },
+        {
+          "id": "sol_s3_intro_2",
+          "text": "[seriously] This isn't about control. One contaminated crop could sicken thousands. These regulations exist for a reason.",
+          "phase": "introduction",
+          "voiceTone": "seriously",
+          "emotionTags": [
+            "seriously"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_intro_2.mp3"
+        },
+        {
+          "id": "sol_s3_intro_3",
+          "text": "[introducing] Inspector Chavez has been doing this for twenty-three years. She's never needed an armed escort before.",
+          "phase": "introduction",
+          "voiceTone": "concerned",
+          "emotionTags": [
+            "introducing"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_intro_3.mp3"
+        },
+        {
+          "id": "sol_s3_intro_4",
+          "text": "[grimly] Intelligence suggests Sana Whit has hired Hidden Cove pirates to prevent this inspection. Vex Marrow's people. Dangerous.",
+          "phase": "introduction",
+          "voiceTone": "grimly",
+          "emotionTags": [
+            "grimly"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_intro_4.mp3"
+        },
+        {
+          "id": "sol_s3_intro_5",
+          "text": "[pauses] I was stationed at Greenfields once. Young inspector. Sana was kind to me then. [voice hardens] Before she decided the rules didn't apply to farmers.",
+          "phase": "introduction",
+          "voiceTone": "hardening",
+          "emotionTags": [
+            "pauses",
+            "voice hardens"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_intro_5.mp3"
+        },
+        {
+          "id": "sol_s3_intro_6",
+          "text": "[firmly] Protect Inspector Chavez. Get her to Greenfields. Let her do her job. That's all I ask.",
+          "phase": "introduction",
+          "voiceTone": "firmly",
+          "emotionTags": [
+            "firmly"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_intro_6.mp3"
+        },
+        {
+          "id": "sol_s3_accept",
+          "text": "[formally] Sol City is grateful. Inspector Chavez's shuttle will launch momentarily. Protect her with your life if necessary.",
+          "phase": "acceptance",
+          "voiceTone": "formally",
+          "emotionTags": [
+            "formally"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_accept.mp3"
+        },
+        {
+          "id": "sol_s3_pirates",
+          "text": "[alarmed] Pirate contacts on scope! Hidden Cove signatures. Protect the inspector!",
+          "phase": "key_moment",
+          "voiceTone": "alarmed",
+          "emotionTags": [
+            "alarmed"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_pirates.mp3"
+        },
+        {
+          "id": "sol_s3_wave",
+          "text": "[relieved] Wave repelled. [pauses] More incoming. They really don't want this inspection to happen.",
+          "phase": "key_moment",
+          "voiceTone": "relieved",
+          "emotionTags": [
+            "relieved",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_wave.mp3"
+        },
+        {
+          "id": "sol_s3_complete_1",
+          "text": "[relieved] Inspector Chavez has arrived safely. The inspection is proceeding. You've done well.",
+          "phase": "completion_success",
+          "voiceTone": "relieved",
+          "emotionTags": [
+            "relieved"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_complete_1.mp3"
+        },
+        {
+          "id": "sol_s3_complete_2",
+          "text": "[quietly] Sana will hate me more now. [pauses] But I didn't create the rules. I just enforce them.",
+          "phase": "completion_success",
+          "voiceTone": "quietly",
+          "emotionTags": [
+            "quietly",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_complete_2.mp3"
+        },
+        {
+          "id": "sol_s3_complete_3",
+          "text": "[professionally] One final task remains. Enforcement contracts must be distributed. Greenfields will comply... or face consequences.",
+          "phase": "completion_success",
+          "voiceTone": "professionally",
+          "emotionTags": [
+            "professionally"
+          ],
+          "suggestedFilename": "missions/sol-city/sol_city_stage_3/sol_s3_complete_3.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 12
+    },
+    {
+      "missionId": "greenfields_stage_4",
+      "title": "New Markets - Independence Finale",
+      "characterName": "Sana Whit",
+      "stationId": "greenfields",
+      "voiceDirection": "Warm, earthy, quietly fierce. Farmer who fights with patience and resolve.",
+      "gender": "female",
+      "ageRange": "mid-40s",
+      "lineCount": 13,
+      "lines": [
+        {
+          "id": "green_s4_intro_1",
+          "text": "[emotionally] Come in. Sit. [pauses] The kitchen smells like fresh bread. My grandmother's recipe. Same one she baked on the generation ship.",
+          "phase": "introduction",
+          "voiceTone": "emotionally",
+          "emotionTags": [
+            "emotionally",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_intro_1.mp3"
+        },
+        {
+          "id": "green_s4_intro_2",
+          "text": "[spreading papers] This contract... it's not just paper. It's everything we've fought for. Kalla Rook at Freeport is buying direct.",
+          "phase": "introduction",
+          "voiceTone": "hopeful",
+          "emotionTags": [
+            "spreading papers"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_intro_2.mp3"
+        },
+        {
+          "id": "green_s4_intro_3",
+          "text": "[voice breaking] No Sol City inspectors. No middleman tariffs. No compliance fees bleeding us dry quarter after quarter.",
+          "phase": "introduction",
+          "voiceTone": "emotional",
+          "emotionTags": [
+            "voice breaking"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_intro_3.mp3"
+        },
+        {
+          "id": "green_s4_intro_4",
+          "text": "[looking outside] See them? Workers loading crates by hand. Singing old work songs from Earth. [smiles] Nobody remembers where the songs come from anymore.",
+          "phase": "introduction",
+          "voiceTone": "nostalgic",
+          "emotionTags": [
+            "looking outside",
+            "smiles"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_intro_4.mp3"
+        },
+        {
+          "id": "green_s4_intro_5",
+          "text": "[firmly] Thirty units of food. Grain and meat—the harvest of free farmers going to free traders.",
+          "phase": "introduction",
+          "voiceTone": "firmly",
+          "emotionTags": [
+            "firmly"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_intro_5.mp3"
+        },
+        {
+          "id": "green_s4_intro_6",
+          "text": "[intensely] This is our shot. One chance to prove we can stand on our own. Get this cargo to Freeport, and we rewrite the rules.",
+          "phase": "introduction",
+          "voiceTone": "intensely",
+          "emotionTags": [
+            "intensely"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_intro_6.mp3"
+        },
+        {
+          "id": "green_s4_intro_7",
+          "text": "[quietly] My husband Marcus is sick. [pauses] He might not see what we're building. But he'll know it happened. That matters.",
+          "phase": "introduction",
+          "voiceTone": "quietly",
+          "emotionTags": [
+            "quietly",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_intro_7.mp3"
+        },
+        {
+          "id": "green_s4_accept",
+          "text": "[gathering herself] The agricultural revolution begins now. Fly safe. Fly proud. And thank you... for everything.",
+          "phase": "acceptance",
+          "voiceTone": "gathering strength",
+          "emotionTags": [
+            "gathering herself"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_accept.mp3"
+        },
+        {
+          "id": "green_s4_complete_1",
+          "text": "[overcome] You did it. [laughs through tears] Kalla just confirmed—the cargo arrived. The contract is signed. We're independent!",
+          "phase": "completion_success",
+          "voiceTone": "overcome",
+          "emotionTags": [
+            "overcome",
+            "laughs through tears"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_complete_1.mp3"
+        },
+        {
+          "id": "green_s4_complete_2",
+          "text": "[laughing] Listen to them! [sound of cheering] The whole station is celebrating. Haven't heard that sound in... I don't know how long.",
+          "phase": "completion_success",
+          "voiceTone": "joyful",
+          "emotionTags": [
+            "laughing",
+            "sound of cheering"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_complete_2.mp3"
+        },
+        {
+          "id": "green_s4_complete_3",
+          "text": "[warmly] My old colleague Elin would call this 'suboptimal resource allocation.' [chuckles] I call it freedom.",
+          "phase": "completion_success",
+          "voiceTone": "warmly",
+          "emotionTags": [
+            "warmly",
+            "chuckles"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_complete_3.mp3"
+        },
+        {
+          "id": "green_s4_complete_4",
+          "text": "[sincerely] You changed history today. Greenfields will never forget the pilot who believed in us when nobody else did.",
+          "phase": "completion_success",
+          "voiceTone": "sincerely",
+          "emotionTags": [
+            "sincerely"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_complete_4.mp3"
+        },
+        {
+          "id": "green_s4_complete_5",
+          "text": "[raising a glass] To the harvest. To independence. To everyone who said it couldn't be done. [drinks] Now let's show the system what farmers can build.",
+          "phase": "completion_success",
+          "voiceTone": "triumphant",
+          "emotionTags": [
+            "raising a glass",
+            "drinks"
+          ],
+          "suggestedFilename": "missions/greenfields/greenfields_stage_4/green_s4_complete_5.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 13
+    },
+    {
+      "missionId": "fabrication_wars_aurum_stage_1",
+      "title": "Patent Wars - Aurum Path",
+      "characterName": "Dr. Elin Kade",
+      "stationId": "aurum-fab",
+      "voiceDirection": "Clinical, precise, emotionally detached. Scientist first, human second.",
+      "gender": "female",
+      "ageRange": "early-40s",
+      "lineCount": 11,
+      "lines": [
+        {
+          "id": "fab_aurum_s1_intro_1",
+          "text": "[clinically] I spent eight years at Titan Research. My partner was brilliant—intuitive, passionate, everything I'm not.",
+          "phase": "introduction",
+          "voiceTone": "clinically",
+          "emotionTags": [
+            "clinically"
+          ],
+          "suggestedFilename": "missions/aurum-fab/fabrication_wars_aurum_stage_1/fab_aurum_s1_intro_1.mp3"
+        },
+        {
+          "id": "fab_aurum_s1_intro_2",
+          "text": "[pauses] Then Lab 7 happened. A decimal point. One small human error. Three people died. Including my mentor.",
+          "phase": "introduction",
+          "voiceTone": "controlled",
+          "emotionTags": [
+            "pauses"
+          ],
+          "suggestedFilename": "missions/aurum-fab/fabrication_wars_aurum_stage_1/fab_aurum_s1_intro_2.mp3"
+        },
+        {
+          "id": "fab_aurum_s1_intro_3",
+          "text": "[flatly] My partner fled technology entirely. I... went the other direction. If humans make errors, design systems where errors can't happen.",
+          "phase": "introduction",
+          "voiceTone": "flatly",
+          "emotionTags": [
+            "flatly"
+          ],
+          "suggestedFilename": "missions/aurum-fab/fabrication_wars_aurum_stage_1/fab_aurum_s1_intro_3.mp3"
+        },
+        {
+          "id": "fab_aurum_s1_intro_4",
+          "text": "[businesslike] Chief Harlan at Drydock represents everything I oppose. Artisanal fabrication. 'Craftsmanship.' Three hundred workers doing what machines could do better.",
+          "phase": "introduction",
+          "voiceTone": "businesslike",
+          "emotionTags": [
+            "businesslike"
+          ],
+          "suggestedFilename": "missions/aurum-fab/fabrication_wars_aurum_stage_1/fab_aurum_s1_intro_4.mp3"
+        },
+        {
+          "id": "fab_aurum_s1_intro_5",
+          "text": "[precisely] He has schematics I need. Alloy formulas. Intellectual property that would accelerate our automation by months.",
+          "phase": "introduction",
+          "voiceTone": "precisely",
+          "emotionTags": [
+            "precisely"
+          ],
+          "suggestedFilename": "missions/aurum-fab/fabrication_wars_aurum_stage_1/fab_aurum_s1_intro_5.mp3"
+        },
+        {
+          "id": "fab_aurum_s1_intro_6",
+          "text": "[directly] Dock at Drydock. Access their systems. Download the data. Return here. [pauses] Can you operate with precision?",
+          "phase": "introduction",
+          "voiceTone": "directly",
+          "emotionTags": [
+            "directly",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/aurum-fab/fabrication_wars_aurum_stage_1/fab_aurum_s1_intro_6.mp3"
+        },
+        {
+          "id": "fab_aurum_s1_accept",
+          "text": "[approvingly] Efficiency begets efficiency. Your reliability metrics will be updated accordingly. Proceed.",
+          "phase": "acceptance",
+          "voiceTone": "approvingly",
+          "emotionTags": [
+            "approvingly"
+          ],
+          "suggestedFilename": "missions/aurum-fab/fabrication_wars_aurum_stage_1/fab_aurum_s1_accept.mp3"
+        },
+        {
+          "id": "fab_aurum_s1_download",
+          "text": "[calmly] Data transfer in progress. Maintain your position. Interruptions create... complications.",
+          "phase": "key_moment",
+          "voiceTone": "calmly",
+          "emotionTags": [
+            "calmly"
+          ],
+          "suggestedFilename": "missions/aurum-fab/fabrication_wars_aurum_stage_1/fab_aurum_s1_download.mp3"
+        },
+        {
+          "id": "fab_aurum_s1_complete_1",
+          "text": "[pleased] Data received. Analyzing now. [pauses] These formulas will save approximately four hundred labor-hours per cycle.",
+          "phase": "completion_success",
+          "voiceTone": "pleased",
+          "emotionTags": [
+            "pleased",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/aurum-fab/fabrication_wars_aurum_stage_1/fab_aurum_s1_complete_1.mp3"
+        },
+        {
+          "id": "fab_aurum_s1_complete_2",
+          "text": "[quietly] Chief Harlan will consider this theft. He doesn't understand that information wants to be optimized, not hoarded.",
+          "phase": "completion_success",
+          "voiceTone": "quietly",
+          "emotionTags": [
+            "quietly"
+          ],
+          "suggestedFilename": "missions/aurum-fab/fabrication_wars_aurum_stage_1/fab_aurum_s1_complete_2.mp3"
+        },
+        {
+          "id": "fab_aurum_s1_complete_3",
+          "text": "[businesslike] Your partnership value has increased significantly. Expect priority allocation on future transactions.",
+          "phase": "completion_success",
+          "voiceTone": "businesslike",
+          "emotionTags": [
+            "businesslike"
+          ],
+          "suggestedFilename": "missions/aurum-fab/fabrication_wars_aurum_stage_1/fab_aurum_s1_complete_3.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 11
+    },
+    {
+      "missionId": "fabrication_wars_drydock_stage_1",
+      "title": "Patent Wars - Drydock Path",
+      "characterName": "Chief Harlan",
+      "stationId": "drydock",
+      "voiceDirection": "Blue-collar, loyal, weathered. Union man through and through.",
+      "gender": "male",
+      "ageRange": "mid-50s",
+      "lineCount": 10,
+      "lines": [
+        {
+          "id": "fab_dry_s1_intro_1",
+          "text": "[gruffly] My father died on this floor. Shot by company security during the Shipyard Strikes. I was twenty-two.",
+          "phase": "introduction",
+          "voiceTone": "gruffly",
+          "emotionTags": [
+            "gruffly"
+          ],
+          "suggestedFilename": "missions/drydock/fabrication_wars_drydock_stage_1/fab_dry_s1_intro_1.mp3"
+        },
+        {
+          "id": "fab_dry_s1_intro_2",
+          "text": "[heavily] Watched him fall. Watched him bleed. [pauses] The strike succeeded. Workers got their demands. Dad became a martyr.",
+          "phase": "introduction",
+          "voiceTone": "heavily",
+          "emotionTags": [
+            "heavily",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/drydock/fabrication_wars_drydock_stage_1/fab_dry_s1_intro_2.mp3"
+        },
+        {
+          "id": "fab_dry_s1_intro_3",
+          "text": "[steeling himself] That's why I do what I do. Three hundred workers here. Three hundred families. They're not 'labor costs.' They're people.",
+          "phase": "introduction",
+          "voiceTone": "steeling",
+          "emotionTags": [
+            "steeling himself"
+          ],
+          "suggestedFilename": "missions/drydock/fabrication_wars_drydock_stage_1/fab_dry_s1_intro_3.mp3"
+        },
+        {
+          "id": "fab_dry_s1_intro_4",
+          "text": "[frustrated] Dr. Kade at Aurum Fab thinks automation is progress. She looks at my floor and sees inefficiency. I look at it and see lives.",
+          "phase": "introduction",
+          "voiceTone": "frustrated",
+          "emotionTags": [
+            "frustrated"
+          ],
+          "suggestedFilename": "missions/drydock/fabrication_wars_drydock_stage_1/fab_dry_s1_intro_4.mp3"
+        },
+        {
+          "id": "fab_dry_s1_intro_5",
+          "text": "[conspiratorially] We've developed fake schematics. Wrong enough to send her research in circles for months. I need you to plant them.",
+          "phase": "introduction",
+          "voiceTone": "conspiratorially",
+          "emotionTags": [
+            "conspiratorially"
+          ],
+          "suggestedFilename": "missions/drydock/fabrication_wars_drydock_stage_1/fab_dry_s1_intro_5.mp3"
+        },
+        {
+          "id": "fab_dry_s1_intro_6",
+          "text": "[directly] Dock at Aurum Fab. Upload the data chip. Let Kade waste her precious efficiency chasing ghosts. Can you do this for us?",
+          "phase": "introduction",
+          "voiceTone": "directly",
+          "emotionTags": [
+            "directly"
+          ],
+          "suggestedFilename": "missions/drydock/fabrication_wars_drydock_stage_1/fab_dry_s1_intro_6.mp3"
+        },
+        {
+          "id": "fab_dry_s1_accept",
+          "text": "[warmly] Union thanks you. Workers thank you. [chuckles] And I personally owe you a drink when this is done.",
+          "phase": "acceptance",
+          "voiceTone": "warmly",
+          "emotionTags": [
+            "warmly",
+            "chuckles"
+          ],
+          "suggestedFilename": "missions/drydock/fabrication_wars_drydock_stage_1/fab_dry_s1_accept.mp3"
+        },
+        {
+          "id": "fab_dry_s1_complete_1",
+          "text": "[laughs] Kade's probably running those schematics through her precious algorithms right now. [grins] Let her optimize nonsense.",
+          "phase": "completion_success",
+          "voiceTone": "amused",
+          "emotionTags": [
+            "laughs",
+            "grins"
+          ],
+          "suggestedFilename": "missions/drydock/fabrication_wars_drydock_stage_1/fab_dry_s1_complete_1.mp3"
+        },
+        {
+          "id": "fab_dry_s1_complete_2",
+          "text": "[seriously] This buys us time. Time to prove that quality beats efficiency. Time to show Ceres who they should trust.",
+          "phase": "completion_success",
+          "voiceTone": "seriously",
+          "emotionTags": [
+            "seriously"
+          ],
+          "suggestedFilename": "missions/drydock/fabrication_wars_drydock_stage_1/fab_dry_s1_complete_2.mp3"
+        },
+        {
+          "id": "fab_dry_s1_complete_3",
+          "text": "[warmly] You're one of us now. The crew's already talking about you. That's rare. That means something.",
+          "phase": "completion_success",
+          "voiceTone": "warmly",
+          "emotionTags": [
+            "warmly"
+          ],
+          "suggestedFilename": "missions/drydock/fabrication_wars_drydock_stage_1/fab_dry_s1_complete_3.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 10
+    },
+    {
+      "missionId": "energy_monopoly_stage_1",
+      "title": "The Audit Trail",
+      "characterName": "Rex Calder",
+      "stationId": "sol-refinery",
+      "voiceDirection": "Gruff, working-class, direct. No-nonsense foreman who has seen it all.",
+      "gender": "male",
+      "ageRange": "late-40s",
+      "lineCount": 11,
+      "lines": [
+        {
+          "id": "energy_s1_intro_1",
+          "text": "[gruffly] Twenty-six years I've worked these pipes. My grandfather helped build them. Dad ran them before me.",
+          "phase": "introduction",
+          "voiceTone": "gruffly",
+          "emotionTags": [
+            "gruffly"
+          ],
+          "suggestedFilename": "missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_1.mp3"
+        },
+        {
+          "id": "energy_s1_intro_2",
+          "text": "[bitterly] Twelve years ago, my brother Marcus died right here. Pressure seal failure. Could have been prevented if the company hadn't cut corners.",
+          "phase": "introduction",
+          "voiceTone": "bitterly",
+          "emotionTags": [
+            "bitterly"
+          ],
+          "suggestedFilename": "missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_2.mp3"
+        },
+        {
+          "id": "energy_s1_intro_3",
+          "text": "[angrily] Spent three years fighting for accountability. Won a settlement. Nobody went to jail. Company paid a fine worth one day's profits.",
+          "phase": "introduction",
+          "voiceTone": "angrily",
+          "emotionTags": [
+            "angrily"
+          ],
+          "suggestedFilename": "missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_3.mp3"
+        },
+        {
+          "id": "energy_s1_intro_4",
+          "text": "[suspiciously] Now I see the same patterns at Ceres Power Plant. Ivo Renn is manipulating fuel prices. I can't prove it. Yet.",
+          "phase": "introduction",
+          "voiceTone": "suspiciously",
+          "emotionTags": [
+            "suspiciously"
+          ],
+          "suggestedFilename": "missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_4.mp3"
+        },
+        {
+          "id": "energy_s1_intro_5",
+          "text": "[conspiratorially] I need you to dock at Ceres. Install this monitoring device. Thirty seconds, undetected. Then get out.",
+          "phase": "introduction",
+          "voiceTone": "conspiratorially",
+          "emotionTags": [
+            "conspiratorially"
+          ],
+          "suggestedFilename": "missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_5.mp3"
+        },
+        {
+          "id": "energy_s1_intro_6",
+          "text": "[determinedly] If Renn is doing what I think he's doing, this device will prove it. Workers across the system are getting squeezed by his 'market fluctuations.'",
+          "phase": "introduction",
+          "voiceTone": "determinedly",
+          "emotionTags": [
+            "determinedly"
+          ],
+          "suggestedFilename": "missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_6.mp3"
+        },
+        {
+          "id": "energy_s1_accept",
+          "text": "[gratefully] Good. My grandfather believed in free markets. Said they regulate themselves. [darkly] Time to prove whether that's still true.",
+          "phase": "acceptance",
+          "voiceTone": "gratefully",
+          "emotionTags": [
+            "gratefully",
+            "darkly"
+          ],
+          "suggestedFilename": "missions/sol-refinery/energy_monopoly_stage_1/energy_s1_accept.mp3"
+        },
+        {
+          "id": "energy_s1_installing",
+          "text": "[tensely] Installing now. Keep your head down. Renn's people are everywhere. Don't give them a reason to look closer.",
+          "phase": "key_moment",
+          "voiceTone": "tensely",
+          "emotionTags": [
+            "tensely"
+          ],
+          "suggestedFilename": "missions/sol-refinery/energy_monopoly_stage_1/energy_s1_installing.mp3"
+        },
+        {
+          "id": "energy_s1_complete_1",
+          "text": "[relieved] Device is active. Already picking up data. [studies readout] Holy... look at these transaction patterns.",
+          "phase": "completion_success",
+          "voiceTone": "relieved",
+          "emotionTags": [
+            "relieved",
+            "studies readout"
+          ],
+          "suggestedFilename": "missions/sol-refinery/energy_monopoly_stage_1/energy_s1_complete_1.mp3"
+        },
+        {
+          "id": "energy_s1_complete_2",
+          "text": "[angrily] Renn is buying fuel at market rates, then restricting supply to jack up prices. Forty percent increase in six months. People are going under.",
+          "phase": "completion_success",
+          "voiceTone": "angrily",
+          "emotionTags": [
+            "angrily"
+          ],
+          "suggestedFilename": "missions/sol-refinery/energy_monopoly_stage_1/energy_s1_complete_2.mp3"
+        },
+        {
+          "id": "energy_s1_complete_3",
+          "text": "[determinedly] Now we have proof. Question is: what do we do with it? This could change everything... or get us both killed.",
+          "phase": "completion_success",
+          "voiceTone": "determinedly",
+          "emotionTags": [
+            "determinedly"
+          ],
+          "suggestedFilename": "missions/sol-refinery/energy_monopoly_stage_1/energy_s1_complete_3.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 11
+    },
+    {
+      "missionId": "pirate_accords_stage_1",
+      "title": "Diplomatic Pouch",
+      "characterName": "Kalla Rook",
+      "stationId": "freeport",
+      "voiceDirection": "Street-smart, charming, hint of mischief. The friendly merchant who knows everything.",
+      "gender": "female",
+      "ageRange": "late-30s",
+      "lineCount": 10,
+      "lines": [
+        {
+          "id": "pirate_s1_intro_1",
+          "text": "[casually] Used to work intelligence, you know. Eight years gathering secrets for people who didn't deserve them.",
+          "phase": "introduction",
+          "voiceTone": "casually",
+          "emotionTags": [
+            "casually"
+          ],
+          "suggestedFilename": "missions/freeport/pirate_accords_stage_1/pirate_s1_intro_1.mp3"
+        },
+        {
+          "id": "pirate_s1_intro_2",
+          "text": "[darkly] Found corruption at the top. Filed a report. Got framed for the crime I exposed. Eighteen months in detention.",
+          "phase": "introduction",
+          "voiceTone": "darkly",
+          "emotionTags": [
+            "darkly"
+          ],
+          "suggestedFilename": "missions/freeport/pirate_accords_stage_1/pirate_s1_intro_2.mp3"
+        },
+        {
+          "id": "pirate_s1_intro_3",
+          "text": "[lighter] Escaped during a 'transport malfunction.' [winks] Now I run Freeport. Neutral ground. Everyone's welcome if they can pay.",
+          "phase": "introduction",
+          "voiceTone": "lighter",
+          "emotionTags": [
+            "lighter",
+            "winks"
+          ],
+          "suggestedFilename": "missions/freeport/pirate_accords_stage_1/pirate_s1_intro_3.mp3"
+        },
+        {
+          "id": "pirate_s1_intro_4",
+          "text": "[seriously] Here's the thing: Sol City and Hidden Cove have been at each other's throats for years. Bad for business. Worse for people caught in the middle.",
+          "phase": "introduction",
+          "voiceTone": "seriously",
+          "emotionTags": [
+            "seriously"
+          ],
+          "suggestedFilename": "missions/freeport/pirate_accords_stage_1/pirate_s1_intro_4.mp3"
+        },
+        {
+          "id": "pirate_s1_intro_5",
+          "text": "[hopefully] I've drafted a peace proposal. Vex Marrow at Hidden Cove has agreed to read it. But someone needs to deliver it.",
+          "phase": "introduction",
+          "voiceTone": "hopefully",
+          "emotionTags": [
+            "hopefully"
+          ],
+          "suggestedFilename": "missions/freeport/pirate_accords_stage_1/pirate_s1_intro_5.mp3"
+        },
+        {
+          "id": "pirate_s1_intro_6",
+          "text": "[warning] Thirty percent chance of pirate ambush en route. Not everyone in Vex's organization wants peace. [shrugs] Still interested?",
+          "phase": "introduction",
+          "voiceTone": "warning",
+          "emotionTags": [
+            "warning",
+            "shrugs"
+          ],
+          "suggestedFilename": "missions/freeport/pirate_accords_stage_1/pirate_s1_intro_6.mp3"
+        },
+        {
+          "id": "pirate_s1_accept",
+          "text": "[pleased] Brave pilot! Information is the real currency, and right now, this message is worth more than cargo. Fly fast.",
+          "phase": "acceptance",
+          "voiceTone": "pleased",
+          "emotionTags": [
+            "pleased"
+          ],
+          "suggestedFilename": "missions/freeport/pirate_accords_stage_1/pirate_s1_accept.mp3"
+        },
+        {
+          "id": "pirate_s1_complete_1",
+          "text": "[excited] Vex received the proposal! [laughs] I honestly didn't think you'd make it. No offense.",
+          "phase": "completion_success",
+          "voiceTone": "excited",
+          "emotionTags": [
+            "excited",
+            "laughs"
+          ],
+          "suggestedFilename": "missions/freeport/pirate_accords_stage_1/pirate_s1_complete_1.mp3"
+        },
+        {
+          "id": "pirate_s1_complete_2",
+          "text": "[thoughtfully] Now comes the hard part. Both sides have to choose: keep fighting, or try something new.",
+          "phase": "completion_success",
+          "voiceTone": "thoughtfully",
+          "emotionTags": [
+            "thoughtfully"
+          ],
+          "suggestedFilename": "missions/freeport/pirate_accords_stage_1/pirate_s1_complete_2.mp3"
+        },
+        {
+          "id": "pirate_s1_complete_3",
+          "text": "[earnestly] Thank you for carrying hope across the void. That sounds dramatic. [chuckles] But it's true.",
+          "phase": "completion_success",
+          "voiceTone": "earnestly",
+          "emotionTags": [
+            "earnestly",
+            "chuckles"
+          ],
+          "suggestedFilename": "missions/freeport/pirate_accords_stage_1/pirate_s1_complete_3.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 10
+    },
+    {
+      "missionId": "pirate_accords_stage_2_vex",
+      "title": "Choose Your Side - Vex Introduction",
+      "characterName": "Vex Marrow",
+      "stationId": "hidden-cove",
+      "voiceDirection": "Dangerous charm, playful threat. Every smile has teeth.",
+      "gender": "male",
+      "ageRange": "early-40s",
+      "lineCount": 10,
+      "lines": [
+        {
+          "id": "vex_s2_intro_1",
+          "text": "[playfully] Lieutenant Vincent Markov. That was my name once. Decorated three times for valor. I believed in the law.",
+          "phase": "introduction",
+          "voiceTone": "playfully",
+          "emotionTags": [
+            "playfully"
+          ],
+          "suggestedFilename": "missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_1.mp3"
+        },
+        {
+          "id": "vex_s2_intro_2",
+          "text": "[darkening] Then I found out my commanding officer was running protection rackets with the pirates I was hunting. Classic.",
+          "phase": "introduction",
+          "voiceTone": "darkening",
+          "emotionTags": [
+            "darkening"
+          ],
+          "suggestedFilename": "missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_2.mp3"
+        },
+        {
+          "id": "vex_s2_intro_3",
+          "text": "[bitterly] I refused to participate. Got framed. Sentenced to twenty years. [laughs] Never arrived at the prison.",
+          "phase": "introduction",
+          "voiceTone": "bitterly",
+          "emotionTags": [
+            "bitterly",
+            "laughs"
+          ],
+          "suggestedFilename": "missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_3.mp3"
+        },
+        {
+          "id": "vex_s2_intro_4",
+          "text": "[seriously] The pirates who intercepted my transport offered me a choice: die as a lawman, or live as something else.",
+          "phase": "introduction",
+          "voiceTone": "seriously",
+          "emotionTags": [
+            "seriously"
+          ],
+          "suggestedFilename": "missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_4.mp3"
+        },
+        {
+          "id": "vex_s2_intro_5",
+          "text": "[firmly] I chose to live. Built Hidden Cove into what it is. We're not criminals—we're the honest alternative to a corrupt system.",
+          "phase": "introduction",
+          "voiceTone": "firmly",
+          "emotionTags": [
+            "firmly"
+          ],
+          "suggestedFilename": "missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_5.mp3"
+        },
+        {
+          "id": "vex_s2_intro_6",
+          "text": "[testing] Now Kalla wants peace talks. [pauses] Question is: are you here to help us negotiate... or to help Sol City finish what they started?",
+          "phase": "introduction",
+          "voiceTone": "testing",
+          "emotionTags": [
+            "testing",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_6.mp3"
+        },
+        {
+          "id": "vex_s2_accept",
+          "text": "[approvingly] Interesting choice, pilot. Choose your path carefully. Not everyone survives the crossroads.",
+          "phase": "acceptance",
+          "voiceTone": "approvingly",
+          "emotionTags": [
+            "approvingly"
+          ],
+          "suggestedFilename": "missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_accept.mp3"
+        },
+        {
+          "id": "vex_s2_complete_pirate_1",
+          "text": "[triumphantly] You chose freedom! Sol City's defenses are crumbling. The boot is off our neck!",
+          "phase": "completion_success",
+          "voiceTone": "triumphantly",
+          "emotionTags": [
+            "triumphantly"
+          ],
+          "suggestedFilename": "missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_complete_pirate_1.mp3"
+        },
+        {
+          "id": "vex_s2_complete_pirate_2",
+          "text": "[seriously] I still have my patrol badge, you know. Look at it sometimes. Wonder about the man I was.",
+          "phase": "completion_success",
+          "voiceTone": "seriously",
+          "emotionTags": [
+            "seriously"
+          ],
+          "suggestedFilename": "missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_complete_pirate_2.mp3"
+        },
+        {
+          "id": "vex_s2_complete_pirate_3",
+          "text": "[resolutely] That man believed in justice. [pauses] So do I. Just a different kind. Welcome to the family.",
+          "phase": "completion_success",
+          "voiceTone": "resolutely",
+          "emotionTags": [
+            "resolutely",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_complete_pirate_3.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 10
+    },
+    {
+      "missionId": "union_crisis_stage_1",
+      "title": "Organize the Stations",
+      "characterName": "Chief Harlan",
+      "stationId": "drydock",
+      "voiceDirection": "Blue-collar, loyal, weathered. Union man through and through.",
+      "gender": "male",
+      "ageRange": "mid-50s",
+      "lineCount": 12,
+      "lines": [
+        {
+          "id": "union_s1_intro_1",
+          "text": "[heavily] I'm fifty-three years old. Half my life on this floor. Started when I was twenty, sweeping debris.",
+          "phase": "introduction",
+          "voiceTone": "heavily",
+          "emotionTags": [
+            "heavily"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_intro_1.mp3"
+        },
+        {
+          "id": "union_s1_intro_2",
+          "text": "[pauses] After my father was killed, I could have become a firebrand. Led riots. Burned things down. Instead, I learned every job in this yard.",
+          "phase": "introduction",
+          "voiceTone": "reflective",
+          "emotionTags": [
+            "pauses"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_intro_2.mp3"
+        },
+        {
+          "id": "union_s1_intro_3",
+          "text": "[proudly] Now I can do any job here better than anyone. That's why workers follow me. Not because of speeches. Because I'm one of them.",
+          "phase": "introduction",
+          "voiceTone": "proudly",
+          "emotionTags": [
+            "proudly"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_intro_3.mp3"
+        },
+        {
+          "id": "union_s1_intro_4",
+          "text": "[urgently] We're organizing across stations. Biggest union push in thirty years. But we need help spreading the word.",
+          "phase": "introduction",
+          "voiceTone": "urgently",
+          "emotionTags": [
+            "urgently"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_intro_4.mp3"
+        },
+        {
+          "id": "union_s1_intro_5",
+          "text": "[determinedly] Five stations. Fifteen minutes. Deliver these pamphlets. Rex at the Refinery is already with us. Sana at Greenfields. Now we need everyone else.",
+          "phase": "introduction",
+          "voiceTone": "determinedly",
+          "emotionTags": [
+            "determinedly"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_intro_5.mp3"
+        },
+        {
+          "id": "union_s1_intro_6",
+          "text": "[quietly] Doctor says I've got respiratory damage. Decades of shipyard particulates. [pauses] Haven't told my family yet. But I need to finish what my father started first.",
+          "phase": "introduction",
+          "voiceTone": "quietly",
+          "emotionTags": [
+            "quietly",
+            "pauses"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_intro_6.mp3"
+        },
+        {
+          "id": "union_s1_accept",
+          "text": "[warmly] Workers built this system. Time we got paid like we matter. Go. And thank you for standing with us.",
+          "phase": "acceptance",
+          "voiceTone": "warmly",
+          "emotionTags": [
+            "warmly"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_accept.mp3"
+        },
+        {
+          "id": "union_s1_delivery",
+          "text": "[encouragingly] First station reached! Workers are reading the pamphlets. The conversation is starting. Keep moving!",
+          "phase": "key_moment",
+          "voiceTone": "encouragingly",
+          "emotionTags": [
+            "encouragingly"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_delivery.mp3"
+        },
+        {
+          "id": "union_s1_momentum",
+          "text": "[excitedly] Three stations! Rex just commed—the refinery workers are talking strike. We have momentum!",
+          "phase": "key_moment",
+          "voiceTone": "excitedly",
+          "emotionTags": [
+            "excitedly"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_momentum.mp3"
+        },
+        {
+          "id": "union_s1_complete_1",
+          "text": "[joyfully] All stations reached! [laughs] Every station in the system is talking about workers' rights. Corporate types are nervous.",
+          "phase": "completion_success",
+          "voiceTone": "joyfully",
+          "emotionTags": [
+            "joyfully",
+            "laughs"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_complete_1.mp3"
+        },
+        {
+          "id": "union_s1_complete_2",
+          "text": "[seriously] My father would be proud. He died believing workers could stand together. [voice breaks] Took thirty years, but we're doing it.",
+          "phase": "completion_success",
+          "voiceTone": "emotionally",
+          "emotionTags": [
+            "seriously",
+            "voice breaks"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_complete_2.mp3"
+        },
+        {
+          "id": "union_s1_complete_3",
+          "text": "[determinedly] Next step: the strike. Or breaking it. Dr. Kade is already offering bounties for strikebreakers. Time to choose your side.",
+          "phase": "completion_success",
+          "voiceTone": "determinedly",
+          "emotionTags": [
+            "determinedly"
+          ],
+          "suggestedFilename": "missions/drydock/union_crisis_stage_1/union_s1_complete_3.mp3"
+        }
+      ],
+      "linesWithEmotionTags": 12
+    }
+  ]
+}
