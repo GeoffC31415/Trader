@@ -19,6 +19,7 @@ import { StarterShipSelector } from './ui/components/hud/StarterShipSelector';
 import { Notifications } from './ui/components/Notifications';
 import { useMusicController, initializeMusicOnInteraction } from './shared/audio/use_music';
 import { useMissionAudioController, preloadMissionAudio } from './shared/audio/use_mission_audio';
+import { TargetArrows } from './ui/components/target_arrows';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal' | 'traders'>('market');
@@ -109,6 +110,7 @@ export function App() {
         <Celebration />
         <MissionCelebration />
         <Notifications />
+        <TargetArrows />
         
         {!hasChosenStarter && (
           <StarterShipSelector

@@ -1,5 +1,9 @@
 # Trader - Space Trading Game
 
+## Key points - CRUCIAL
+The user codes in windows, while using WSL to run `npm run dev` for testing.
+Don't attempt to run WSL commands yourself. Instead, pause and ask the user to run it and give the outcome.
+
 ## Project Overview
 Systems-driven 3D space trading game with dynamic economy. Buy low, sell high, fabricate goods, upgrade ships, and optimize routes across a procedurally generated star system.
 

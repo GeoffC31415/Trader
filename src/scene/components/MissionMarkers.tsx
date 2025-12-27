@@ -3,7 +3,27 @@
 import { useGameStore } from '../../state';
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+
+// Check if a combat mission has pending (not yet spawned) targets
+function getPendingTargetCount(mission: any, missionNpcs: any[]): number {
+  if (mission.type !== 'combat') return 0;
+  
+  const destroyObjective = mission.objectives.find((o: any) => o.type === 'destroy');
+  if (!destroyObjective) return 0;
+  
+  const totalRequired = destroyObjective.quantity || 0;
+  const currentlySpawned = missionNpcs.filter(n => n.missionId === mission.id && n.hp > 0).length;
+  const alreadyDestroyed = destroyObjective.current || 0;
+  
+  // If we have fewer spawned than expected (and not all destroyed), show as pending
+  const expectedActive = totalRequired - alreadyDestroyed;
+  if (currentlySpawned < expectedActive && currentlySpawned === 0) {
+    return expectedActive;
+  }
+  
+  return 0;
+}
 
 export function MissionMarkers() {
   const missions = useGameStore(s => s.missions);
@@ -18,11 +38,36 @@ export function MissionMarkers() {
   });
   
   // Get active missions
-  const activeMissions = missions.filter(m => m.status === 'active');
-  if (activeMissions.length === 0) return null;
+  const activeMissions = useMemo(() => 
+    missions.filter(m => m.status === 'active'),
+    [missions]
+  );
   
   // Find mission NPCs (targets)
-  const missionNpcs = npcTraders.filter(npc => npc.isMissionTarget);
+  const missionNpcs = useMemo(() => 
+    npcTraders.filter(npc => npc.isMissionTarget),
+    [npcTraders]
+  );
+  
+  // Check for pending (en route) targets
+  const pendingTargetInfo = useMemo(() => {
+    for (const mission of activeMissions) {
+      if (mission.type === 'combat') {
+        const pendingCount = getPendingTargetCount(mission, missionNpcs);
+        if (pendingCount > 0) {
+          return {
+            missionId: mission.id,
+            count: pendingCount,
+            missionTitle: mission.title,
+          };
+        }
+      }
+    }
+    return null;
+  }, [activeMissions, missionNpcs]);
+  
+  // Early return AFTER all hooks
+  if (activeMissions.length === 0) return null;
   
   // Find target stations for delivery missions
   const targetStationIds = new Set<string>();
@@ -41,6 +86,8 @@ export function MissionMarkers() {
     <>
       {/* NPC Target Markers */}
       {missionNpcs.map(npc => {
+        if (npc.hp <= 0) return null; // Don't show markers for destroyed NPCs
+        
         const scale = 1 + Math.sin(pulse) * 0.3;
         const opacity = 0.7 + Math.sin(pulse) * 0.3;
         
@@ -50,15 +97,31 @@ export function MissionMarkers() {
         const dz = npc.position[2] - ship.position[2];
         const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
         
+        // Determine if target is "en route" (far away, still approaching)
+        const isEnRoute = dist > 800;
+        const markerColor = isEnRoute ? '#ffcc44' : '#ff4444';
+        
+        // HP bar calculation
+        const hpPercent = npc.maxHp > 0 ? (npc.hp / npc.maxHp) * 100 : 100;
+        const hpColor = hpPercent > 60 ? '#44cc88' : hpPercent > 30 ? '#ffcc44' : '#ff4444';
+        
         return (
           <group key={npc.id} position={npc.position}>
-            {/* Red ring marker above NPC */}
+            {/* Ring marker above NPC */}
             <mesh position={[0, 50, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <ringGeometry args={[18, 22, 32]} />
-              <meshBasicMaterial color="#ff4444" transparent opacity={opacity} />
+              <meshBasicMaterial color={markerColor} transparent opacity={opacity} />
             </mesh>
             
-            {/* Distance label */}
+            {/* Inner ring for active targets */}
+            {!isEnRoute && (
+              <mesh position={[0, 50, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[10, 14, 32]} />
+                <meshBasicMaterial color="#ff6666" transparent opacity={opacity * 0.6} />
+              </mesh>
+            )}
+            
+            {/* Distance and status label */}
             <Html
               position={[0, 60, 0]}
               center
@@ -69,7 +132,7 @@ export function MissionMarkers() {
               }}
             >
               <div style={{
-                background: 'rgba(255, 68, 68, 0.9)',
+                background: `${markerColor}ee`,
                 color: '#fff',
                 padding: '4px 8px',
                 borderRadius: 4,
@@ -78,13 +141,66 @@ export function MissionMarkers() {
                 fontFamily: 'monospace',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
                 whiteSpace: 'nowrap',
+                minWidth: 80,
+                textAlign: 'center',
               }}>
-                🎯 TARGET {dist > 100 ? `${Math.floor(dist)}` : dist.toFixed(0)}
+                <div style={{ marginBottom: 2 }}>
+                  🎯 {isEnRoute ? 'EN ROUTE' : 'TARGET'}
+                </div>
+                <div style={{ fontSize: 10, opacity: 0.9 }}>
+                  {dist > 100 ? `${Math.floor(dist)}m` : `${dist.toFixed(0)}m`}
+                </div>
+                {/* HP Bar */}
+                <div style={{
+                  marginTop: 3,
+                  height: 3,
+                  background: 'rgba(0,0,0,0.3)',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${hpPercent}%`,
+                    background: hpColor,
+                    borderRadius: 2,
+                  }} />
+                </div>
               </div>
             </Html>
           </group>
         );
       })}
+      
+      {/* Pending Target Indicator - when targets haven't spawned yet */}
+      {pendingTargetInfo && missionNpcs.filter(n => n.missionId === pendingTargetInfo.missionId && n.hp > 0).length === 0 && (
+        <Html
+          position={[ship.position[0], ship.position[1] + 100, ship.position[2]]}
+          center
+          style={{
+            pointerEvents: 'none',
+            userSelect: 'none',
+          }}
+        >
+          <div style={{
+            background: 'rgba(255, 200, 68, 0.9)',
+            color: '#000',
+            padding: '8px 12px',
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 'bold',
+            fontFamily: 'monospace',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.4)',
+            whiteSpace: 'nowrap',
+            textAlign: 'center',
+            animation: 'pulse 2s ease-in-out infinite',
+          }}>
+            <div style={{ marginBottom: 2 }}>⏳ TARGETS EN ROUTE</div>
+            <div style={{ fontSize: 10, opacity: 0.8 }}>
+              {pendingTargetInfo.count} convoy{pendingTargetInfo.count > 1 ? 's' : ''} approaching
+            </div>
+          </div>
+        </Html>
+      )}
       
       {/* Station Target Markers */}
       {Array.from(targetStationIds).map(stationId => {

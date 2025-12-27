@@ -31,7 +31,7 @@ export function createSellAction(
   return (commodityId: string, quantity: number) => {
     const state = getState();
     
-    // Find active contract for this commodity
+    // Find active contract for this commodity AT THIS DESTINATION (for contract completion)
     const activeContract = (state.contracts || []).find(
       c =>
         c.status === 'accepted' &&
@@ -39,9 +39,16 @@ export function createSellAction(
         c.commodityId === commodityId
     );
     
-    // Get escort ships for this contract
+    // Find ALL contracts with this commodity to get escorts (allows selling escort cargo
+    // even when not at the contract destination - e.g., for missions or early selling)
+    const commodityContracts = (state.contracts || []).filter(
+      c => c.status === 'accepted' && c.commodityId === commodityId
+    );
+    const commodityContractIds = new Set(commodityContracts.map(c => c.id));
+    
+    // Get escort ships carrying this commodity (from any matching contract)
     const escorts = state.npcTraders.filter(
-      n => n.isEscort && activeContract && n.escortingContract === activeContract.id
+      n => n.isEscort && n.escortingContract && commodityContractIds.has(n.escortingContract)
     );
 
     // Delegate to economy module for core selling logic

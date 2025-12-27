@@ -14,8 +14,41 @@ export function Minimap() {
   const stations = useGameStore(s => s.stations);
   const belts = useGameStore(s => s.belts);
   const ship = useGameStore(s => s.ship);
+  const npcTraders = useGameStore(s => s.npcTraders);
+  const missions = useGameStore(s => s.missions);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  
+  // Check if player has Navigation Array for enhanced minimap features
+  const hasNavArray = ship.hasNavigationArray;
+  
+  // Get mission target NPCs for minimap display
+  const missionTargets = useMemo(() => {
+    const activeCombatMissions = missions.filter(m => m.status === 'active' && m.type === 'combat');
+    if (activeCombatMissions.length === 0) return [];
+    
+    return npcTraders.filter(npc => npc.isMissionTarget && npc.hp > 0);
+  }, [missions, npcTraders]);
+  
+  // Check if there are pending targets (not yet spawned)
+  const pendingTargetCount = useMemo(() => {
+    const activeCombatMissions = missions.filter(m => m.status === 'active' && m.type === 'combat');
+    if (activeCombatMissions.length === 0) return 0;
+    
+    for (const mission of activeCombatMissions) {
+      const destroyObjective = mission.objectives.find(o => o.type === 'destroy');
+      if (!destroyObjective) continue;
+      
+      const totalRequired = destroyObjective.quantity || 0;
+      const currentlySpawned = npcTraders.filter(n => n.missionId === mission.id && n.hp > 0).length;
+      const alreadyDestroyed = destroyObjective.current || 0;
+      
+      if (currentlySpawned === 0 && alreadyDestroyed < totalRequired) {
+        return totalRequired - alreadyDestroyed;
+      }
+    }
+    return 0;
+  }, [missions, npcTraders]);
 
   // Determine world bounds once based on static bodies for scaling
   const bounds = useMemo(() => {
@@ -97,6 +130,65 @@ export function Minimap() {
       ctx.fillStyle = s.type === 'shipyard' ? '#34d399' : '#7dd3fc';
       ctx.fillRect(p2.x - 2, p2.y - 2, 4, 4);
     }
+    
+    // Mission targets (only when player has Navigation Array)
+    if (hasNavArray && missionTargets.length > 0) {
+      for (const target of missionTargets) {
+        const p2 = projectTo2D(target.position, worldCenter, scale);
+        
+        // Calculate distance to determine if "en route"
+        const dx = target.position[0] - ship.position[0];
+        const dz = target.position[2] - ship.position[2];
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        const isEnRoute = dist > 800;
+        
+        // Draw target icon
+        ctx.save();
+        
+        // Pulsing effect using time
+        const pulseTime = Date.now() / 500;
+        const pulseScale = 1 + Math.sin(pulseTime) * 0.2;
+        
+        // Draw outer ring (pulsing)
+        ctx.beginPath();
+        ctx.strokeStyle = isEnRoute ? 'rgba(255, 200, 68, 0.8)' : 'rgba(255, 68, 68, 0.9)';
+        ctx.lineWidth = 1.5;
+        ctx.arc(p2.x, p2.y, 5 * pulseScale, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Draw inner dot
+        ctx.beginPath();
+        ctx.fillStyle = isEnRoute ? '#ffcc44' : '#ff4444';
+        ctx.arc(p2.x, p2.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw crosshair lines for active targets
+        if (!isEnRoute) {
+          ctx.strokeStyle = 'rgba(255, 68, 68, 0.6)';
+          ctx.lineWidth = 1;
+          // Horizontal
+          ctx.beginPath();
+          ctx.moveTo(p2.x - 8, p2.y);
+          ctx.lineTo(p2.x - 4, p2.y);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(p2.x + 4, p2.y);
+          ctx.lineTo(p2.x + 8, p2.y);
+          ctx.stroke();
+          // Vertical
+          ctx.beginPath();
+          ctx.moveTo(p2.x, p2.y - 8);
+          ctx.lineTo(p2.x, p2.y - 4);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(p2.x, p2.y + 4);
+          ctx.lineTo(p2.x, p2.y + 8);
+          ctx.stroke();
+        }
+        
+        ctx.restore();
+      }
+    }
 
     // ship
     {
@@ -126,7 +218,32 @@ export function Minimap() {
     ctx.fillStyle = 'rgba(229,231,235,0.8)';
     ctx.font = '16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
     ctx.fillText('System Map', padding, cssSize.h - 10);
-  }, [planets, stations, belts, ship.position, ship.velocity, bounds]);
+    
+    // Mission target legend (when showing targets)
+    if (hasNavArray && (missionTargets.length > 0 || pendingTargetCount > 0)) {
+      ctx.font = '11px ui-sans-serif, system-ui';
+      
+      if (missionTargets.length > 0) {
+        // Draw target indicator legend
+        ctx.fillStyle = '#ff4444';
+        ctx.beginPath();
+        ctx.arc(padding + 8, cssSize.h - 30, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 68, 68, 0.9)';
+        ctx.fillText(`${missionTargets.length} Target${missionTargets.length > 1 ? 's' : ''}`, padding + 16, cssSize.h - 26);
+      }
+      
+      if (pendingTargetCount > 0 && missionTargets.length === 0) {
+        // Show "en route" indicator when no targets visible yet
+        ctx.fillStyle = '#ffcc44';
+        ctx.beginPath();
+        ctx.arc(padding + 8, cssSize.h - 30, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255, 200, 68, 0.9)';
+        ctx.fillText(`${pendingTargetCount} En Route`, padding + 16, cssSize.h - 26);
+      }
+    }
+  }, [planets, stations, belts, ship.position, ship.velocity, bounds, hasNavArray, missionTargets, pendingTargetCount]);
 
   return (
     <div className="minimap">

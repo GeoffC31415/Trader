@@ -362,14 +362,18 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (state.ship.hasUnionMembership) playerUpgrades.push('union');
       if (state.ship.hasMarketIntel) playerUpgrades.push('intel');
 
+      // Update arc statuses based on current reputation/upgrades
+      // This unlocks story arcs when requirements are met
+      const updatedArcs = updateArcStatuses(state.missionArcs, playerReputation, playerUpgrades);
+
       const activeMissions = state.missions.filter(m => m.status === 'active');
       const newMissions = generateMissionsForStation(
         near.id,
         playerReputation,
         playerUpgrades,
-        state.missionArcs,
+        updatedArcs, // Use updated arcs for mission generation
         activeMissions,
-        state.missionArcs.filter(a => a.status === 'completed').map(a => a.id)
+        updatedArcs.filter(a => a.status === 'completed').map(a => a.id)
       );
 
       // Merge with existing missions (don't duplicate)
@@ -385,6 +389,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         } as Ship,
         dockIntroVisibleId: near.id,
         missions: updatedMissions,
+        missionArcs: updatedArcs, // Include updated arcs in state
       };
 
       if (state.tutorialActive) {

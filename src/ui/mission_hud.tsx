@@ -27,7 +27,10 @@ function StealthIndicator() {
     
     for (const mission of activeMissions) {
       for (const obj of mission.objectives) {
-        if (obj.type === 'avoid_detection' && !obj.completed && obj.target) {
+        // avoid_detection objectives start as completed=true (meaning "not yet detected")
+        // They stay completed=true until detection triggers, at which point mission fails
+        // So we check for completed=true to show the stealth UI while still avoiding detection
+        if (obj.type === 'avoid_detection' && obj.completed && obj.target) {
           const station = stations.find(s => s.id === obj.target);
           if (!station) continue;
           
