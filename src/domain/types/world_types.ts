@@ -255,6 +255,12 @@ export type GameState = {
   missions: Mission[]; // all missions (offered, active, completed, failed)
   // Mission state tracking (Phase 4)
   stealthStates: Map<string, { stationId: string; suspicionLevel: number; detected: boolean }>;
+  // Mission install device state (for hold-to-install objectives)
+  missionInstallState?: {
+    missionId: string;
+    objectiveId: string;
+    startTime: number; // timestamp in ms
+  };
   escortStates: Map<string, {
     missionId: string;
     escortNpcId: string;
@@ -358,6 +364,7 @@ export type GameState = {
   debugSetHp: (hp: number) => void;
   debugSetEnergy: (energy: number) => void;
   debugToggleUpgrade: (upgrade: 'canMine' | 'hasNavigationArray' | 'hasUnionMembership' | 'hasMarketIntel') => void;
+  debugSetMissionArcStage: (arcId: string, stage: number, status?: 'locked' | 'available' | 'in_progress' | 'completed') => void;
 };
 
 export type Notification = {

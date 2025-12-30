@@ -28,7 +28,7 @@ import { applyMissionRewards, advanceMissionArc, canAcceptMission, getMissionTim
 import { spawnMissionNPCs } from '../../systems/combat/ai_combat';
 import { generateMissionsForStation, updateArcStatuses } from '../../systems/missions/mission_generator';
 import { updateMissionObjectives, checkMissionCompletion, checkMissionFailure, type MissionEvent } from '../../systems/missions/mission_validator';
-import { getActiveEscortMissions, updateEscortState, generatePirateWave, addSpawnedPirateIds, cleanupEscortState, createEscortNpc, createEscortState } from '../../systems/missions/escort_system';
+import { getActiveEscortMissions, updateEscortState, generatePirateWave, addSpawnedPirateIds, cleanupEscortState, createEscortNpc, createEscortState, ESCORT_HP } from '../../systems/missions/escort_system';
 import { processStealthChecks, applyDetectionConsequences, clearMissionStealthStates } from '../../systems/missions/stealth_system';
 import { applyChoicePermanentEffects } from '../../systems/missions/choice_system';
 import { planNpcPath } from '../npc';
@@ -211,95 +211,118 @@ export function updateMissionsInTick(
   const currentTime = Date.now() / 1000;
 
   for (const mission of escortMissions) {
-    const escortState = updatedEscortStates.get(mission.id);
-    if (!escortState) continue;
-
-    const escortNpc = updatedNpcTraders.find(n => n.id === escortState.escortNpcId);
-    const destinationStation = stations.find(
-      s => s.id === escortState.destinationStationId
-    );
-
-    const updateResult = updateEscortState(
-      escortState,
-      escortNpc,
-      destinationStation,
-      currentTime,
-      dt
-    );
-
-    updatedEscortStates.set(mission.id, updateResult.updatedState);
-
-    // Handle escort destroyed
-    if (updateResult.escortDestroyed) {
-      console.log(`💥 Escort destroyed! Mission failed: ${mission.title}`);
-      updatedMissions = updatedMissions.map(m =>
-        m.id === mission.id ? { ...m, status: 'failed' as const } : m
-      );
-      updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
-      continue;
-    }
-
-    // Handle escort reached destination
-    if (updateResult.hasReached) {
-      console.log(`✅ Escort reached destination safely!`);
-      const missionEvent: MissionEvent = {
-        type: 'escort_reached_destination',
-        npcId: escortState.escortNpcId,
-      };
-
-      const updatedMission = updateMissionObjectives(mission, missionEvent);
-      updatedMissions = updatedMissions.map(m =>
-        m.id === mission.id ? updatedMission : m
-      );
-
-      // Check if mission is complete
-      if (checkMissionCompletion(updatedMission)) {
-        updatedMissions = updatedMissions.map(m =>
-          m.id === mission.id ? { ...m, status: 'completed' as const } : m
-        );
-
-        // Apply rewards
-        const rewardUpdates = applyMissionRewards(
-          { ...state, stations, ship } as GameState,
-          updatedMission
-        );
-        if (rewardUpdates.ship) ship = rewardUpdates.ship;
-        if (rewardUpdates.stations) stations = rewardUpdates.stations;
-
-        // Advance arc
-        const arc = updatedArcs.find(a => a.id === mission.arcId);
-        if (arc) {
-          const updatedArc = advanceMissionArc(arc, mission.id);
-          updatedArcs = updatedArcs.map(a =>
-            a.id === mission.arcId ? updatedArc : a
-          );
-        }
-
-        updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
-        console.log(`✅ Mission completed: ${updatedMission.title}!`);
+    // Find all escort states for this mission (supports multiple escorts per mission)
+    const missionEscortStates: Array<{ key: string; state: any }> = [];
+    for (const [key, state] of updatedEscortStates.entries()) {
+      if (key === mission.id || key.startsWith(`${mission.id}:`)) {
+        missionEscortStates.push({ key, state });
       }
     }
 
-    // Spawn pirate waves
-    if (updateResult.shouldSpawnNewWave && escortNpc) {
-      console.log(
-        `🏴‍☠️ Pirate wave ${updateResult.updatedState.waveCount} spawning!`
-      );
-      const pirates = generatePirateWave(
-        mission.id,
-        updateResult.updatedState.waveCount,
-        escortNpc.position as [number, number, number],
-        currentTime
+    if (missionEscortStates.length === 0) continue;
+
+    // Process each escort separately
+    for (const { key: escortStateKey, state: escortState } of missionEscortStates) {
+      const escortNpc = updatedNpcTraders.find(n => n.id === escortState.escortNpcId);
+      const destinationStation = stations.find(
+        s => s.id === escortState.destinationStationId
       );
 
-      updatedNpcTraders.push(...pirates);
+      if (!escortNpc || !destinationStation) continue;
 
-      // Track spawned pirate IDs
-      const pirateIds = pirates.map(p => p.id);
-      updatedEscortStates.set(
-        mission.id,
-        addSpawnedPirateIds(updateResult.updatedState, pirateIds)
+      const updateResult = updateEscortState(
+        escortState,
+        escortNpc,
+        destinationStation,
+        currentTime,
+        dt
       );
+
+      updatedEscortStates.set(escortStateKey, updateResult.updatedState);
+
+      // Handle escort destroyed
+      if (updateResult.escortDestroyed) {
+        console.log(`💥 Escort ${escortState.escortNpcId} destroyed!`);
+        // Check if all escorts are destroyed (mission fails if any escort dies)
+        const allEscortsDestroyed = missionEscortStates.every(({ state: s }) => {
+          const npc = updatedNpcTraders.find(n => n.id === s.escortNpcId);
+          return !npc || npc.hp <= 0;
+        });
+        
+        if (allEscortsDestroyed) {
+          console.log(`💥 All escorts destroyed! Mission failed: ${mission.title}`);
+          updatedMissions = updatedMissions.map(m =>
+            m.id === mission.id ? { ...m, status: 'failed' as const } : m
+          );
+          updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
+          break; // Exit escort loop, continue to next mission
+        }
+        continue; // This escort is destroyed, but others may still be alive
+      }
+
+      // Handle escort reached destination
+      if (updateResult.hasReached) {
+        console.log(`✅ Escort ${escortState.escortNpcId} reached destination safely!`);
+        const missionEvent: MissionEvent = {
+          type: 'escort_reached_destination',
+          npcId: escortState.escortNpcId,
+        };
+
+        const updatedMission = updateMissionObjectives(mission, missionEvent);
+        updatedMissions = updatedMissions.map(m =>
+          m.id === mission.id ? updatedMission : m
+        );
+
+        // Check if mission is complete (all escorts reached destinations)
+        if (checkMissionCompletion(updatedMission)) {
+          updatedMissions = updatedMissions.map(m =>
+            m.id === mission.id ? { ...m, status: 'completed' as const } : m
+          );
+
+          // Apply rewards
+          const rewardUpdates = applyMissionRewards(
+            { ...state, stations, ship } as GameState,
+            updatedMission
+          );
+          if (rewardUpdates.ship) ship = rewardUpdates.ship;
+          if (rewardUpdates.stations) stations = rewardUpdates.stations;
+
+          // Advance arc
+          const arc = updatedArcs.find(a => a.id === mission.arcId);
+          if (arc) {
+            const updatedArc = advanceMissionArc(arc, mission.id);
+            updatedArcs = updatedArcs.map(a =>
+              a.id === mission.arcId ? updatedArc : a
+            );
+          }
+
+          updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
+          console.log(`✅ Mission completed: ${updatedMission.title}!`);
+          break; // Exit escort loop, mission is complete
+        }
+      }
+
+      // Spawn pirate waves (only spawn waves for the first escort to avoid spam)
+      if (updateResult.shouldSpawnNewWave && escortNpc && escortStateKey === missionEscortStates[0].key) {
+        console.log(
+          `🏴‍☠️ Pirate wave ${updateResult.updatedState.waveCount} spawning!`
+        );
+        const pirates = generatePirateWave(
+          mission.id,
+          updateResult.updatedState.waveCount,
+          escortNpc.position as [number, number, number],
+          currentTime
+        );
+
+        updatedNpcTraders.push(...pirates);
+
+        // Track spawned pirate IDs for this escort state
+        const pirateIds = pirates.map(p => p.id);
+        updatedEscortStates.set(
+          escortStateKey,
+          addSpawnedPirateIds(updateResult.updatedState, pirateIds)
+        );
+      }
     }
   }
 
@@ -701,43 +724,70 @@ export function acceptMissionAction(
     }
   }
 
-  // Spawn escort NPC for escort/defend missions
+  // Spawn escort NPCs for escort/defend missions
   if (mission.type === 'escort') {
-    const defendObjective = mission.objectives.find(obj => obj.type === 'defend');
-    if (defendObjective && defendObjective.target) {
-      const destinationStationId = defendObjective.target;
-      const destinationStation = stations.find(s => s.id === destinationStationId);
-      const startStation = stations.find(s => mission.availableAt.includes(s.id));
-
-      if (destinationStation && startStation) {
-        const currentTime = Date.now() / 1000;
-
-        const escortNpc = createEscortNpc(
-          mission.id,
-          startStation,
-          destinationStation,
-          currentTime
-        );
-
+    const escortObjectives = mission.objectives.filter(obj => obj.type === 'escort');
+    const startStation = stations.find(s => mission.availableAt.includes(s.id));
+    
+    if (startStation && escortObjectives.length > 0) {
+      const currentTime = Date.now() / 1000;
+      
+      // Spawn an escort NPC for each escort objective
+      for (const escortObjective of escortObjectives) {
+        if (!escortObjective.targetStation) continue;
+        
+        const destinationStationId = escortObjective.targetStation;
+        const destinationStation = stations.find(s => s.id === destinationStationId);
+        
+        if (!destinationStation) continue;
+        
+        // Create escort NPC with unique ID based on objective target
+        // The validator matches escort NPCs by objective.target, so use that for the ID
+        const escortId = escortObjective.target || `escort:${mission.id}:${escortObjective.id}`;
+        
+        const escortNpc: NpcTrader = {
+          id: escortId,
+          position: [...startStation.position] as [number, number, number],
+          velocity: [0, 0, 0],
+          path: [],
+          pathProgress: 0,
+          fromId: startStation.id,
+          toId: destinationStation.id,
+          cargoCapacity: 10,
+          lastTradeTime: currentTime,
+          
+          // Escort combat stats
+          hp: ESCORT_HP,
+          maxHp: ESCORT_HP,
+          isHostile: false,
+          isMissionTarget: false,
+          missionId: mission.id,
+          
+          // Mark as mission escort
+          isMissionEscort: true,
+        };
+        
         // Plan path for escort
         const path = planNpcPath(startStation, destinationStation, startStation.position);
         escortNpc.path = path;
         escortNpc.pathProgress = 0;
-
+        
         updatedNpcTraders = [...updatedNpcTraders, escortNpc];
-
-        // Create escort state tracking
+        
+        // Create escort state tracking for each escort
+        // Use a composite key: missionId:escortId to support multiple escorts per mission
+        const escortStateKey = `${mission.id}:${escortId}`;
         const escortState = createEscortState(
           mission.id,
-          escortNpc.id,
+          escortId,
           destinationStationId,
           currentTime
         );
-
+        
         updatedEscortStates = new Map(updatedEscortStates);
-        updatedEscortStates.set(mission.id, escortState);
-
-        console.log(`🛡️ Spawned escort NPC for ${mission.title}`);
+        updatedEscortStates.set(escortStateKey, escortState);
+        
+        console.log(`🛡️ Spawned escort NPC ${escortId} for ${mission.title} -> ${destinationStation.name}`);
       }
     }
   }

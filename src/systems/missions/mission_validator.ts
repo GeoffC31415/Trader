@@ -64,8 +64,18 @@ export function validateObjective(
       }
       break;
       
+    case 'escort':
+      // Escort objective - track if escort NPC reaches destination
+      if (event.type === 'escort_reached_destination' && event.npcId === objective.target) {
+        return {
+          completed: true,
+          current: 1,
+        };
+      }
+      break;
+      
     case 'defend':
-      // Escort missions - track if escort survives
+      // Defend missions - track if escort survives (legacy support)
       if (event.type === 'escort_reached_destination' && event.npcId === objective.target) {
         return {
           completed: true,

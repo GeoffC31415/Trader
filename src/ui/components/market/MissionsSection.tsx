@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Station } from '../../../domain/types/world_types';
 import type { Mission, MissionArc } from '../../../domain/types/mission_types';
 import { stationTypeColors } from '../../utils/station_theme';
@@ -11,6 +11,7 @@ import { ReputationBadge } from '../reputation_badge';
 import type { Station as StationType } from '../../../domain/types/world_types';
 import * as missionAudio from '../../../shared/audio/mission_audio';
 import { gameConfig } from '../../../config/game_config';
+import { useGameStore } from '../../../state';
 
 interface MissionsSectionProps {
   station: Station;
@@ -33,6 +34,8 @@ interface MissionsSectionProps {
   onSetChoiceDialog: (mission: Mission) => void;
   dockedStationId?: string;
   onCompleteObjective?: (missionId: string, objectiveId: string) => void;
+  onStartInstallDevice?: (missionId: string, objectiveId: string) => void;
+  onStopInstallDevice?: () => void;
 }
 
 export function MissionsSection({
@@ -48,10 +51,15 @@ export function MissionsSection({
   onSetChoiceDialog,
   dockedStationId,
   onCompleteObjective,
+  onStartInstallDevice,
+  onStopInstallDevice,
 }: MissionsSectionProps) {
   const colors = stationTypeColors[station.type];
   const [playingIntro, setPlayingIntro] = useState<string | null>(null);
   const [playedIntros, setPlayedIntros] = useState<Set<string>>(new Set());
+  const missionInstallState = useGameStore(s => s.missionInstallState);
+  const [installProgress, setInstallProgress] = useState(0);
+  const progressIntervalRef = useRef<number | null>(null);
   
   const playIntro = useCallback(async (missionId: string) => {
     if (playingIntro) {
@@ -77,6 +85,38 @@ export function MissionsSection({
       setPlayingIntro(null);
     }
   }, [playingIntro]);
+
+  // Update install progress when holding button
+  useEffect(() => {
+    if (missionInstallState && onStartInstallDevice && onStopInstallDevice) {
+      const updateProgress = () => {
+        const elapsed = (Date.now() - missionInstallState.startTime) / 1000;
+        const progress = Math.min(100, (elapsed / 30) * 100); // 30 seconds = 100%
+        setInstallProgress(progress);
+        
+        // Auto-fail if held for more than 35 seconds
+        if (elapsed > 35) {
+          onStopInstallDevice();
+        }
+      };
+
+      progressIntervalRef.current = window.setInterval(updateProgress, 100);
+      updateProgress();
+
+      return () => {
+        if (progressIntervalRef.current !== null) {
+          clearInterval(progressIntervalRef.current);
+          progressIntervalRef.current = null;
+        }
+      };
+    } else {
+      setInstallProgress(0);
+      if (progressIntervalRef.current !== null) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    }
+  }, [missionInstallState, onStartInstallDevice, onStopInstallDevice]);
   
   return (
     <div className="scrollable-content">
@@ -304,6 +344,18 @@ export function MissionsSection({
                                              dockedStationId === 'freeport' &&
                                              onCompleteObjective;
                       
+                      // Check if this is the install_device objective for Audit Trail mission
+                      const isInstallDevice = mission.id === 'energy_monopoly_stage_1' && 
+                                             obj.id === 'install_device' && 
+                                             !obj.completed &&
+                                             obj.type === 'wait' &&
+                                             dockedStationId === 'ceres-pp' &&
+                                             onStartInstallDevice &&
+                                             onStopInstallDevice;
+                      
+                      const isInstalling = missionInstallState?.missionId === mission.id && 
+                                          missionInstallState?.objectiveId === obj.id;
+                      
                       return (
                         <div key={obj.id} style={{ 
                           fontSize: 12, 
@@ -314,8 +366,9 @@ export function MissionsSection({
                           display: 'flex',
                           alignItems: 'center',
                           gap: 8,
+                          flexWrap: 'wrap',
                         }}>
-                          <span>
+                          <span style={{ flex: 1 }}>
                             {obj.completed ? '✓' : '○'} {obj.description}
                             {obj.quantity && obj.quantity > 1 && ` (${obj.current}/${obj.quantity})`}
                           </span>
@@ -332,6 +385,75 @@ export function MissionsSection({
                             >
                               PICK UP
                             </SciFiButton>
+                          )}
+                          {isInstallDevice && (
+                            <div style={{ 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              alignItems: 'flex-end',
+                              gap: 4,
+                              marginLeft: 'auto',
+                              minWidth: 200,
+                            }}>
+                              <SciFiButton
+                                stationType={station.type}
+                                onMouseDown={() => onStartInstallDevice(mission.id, obj.id)}
+                                onMouseUp={() => onStopInstallDevice()}
+                                onMouseLeave={() => {
+                                  if (isInstalling) {
+                                    onStopInstallDevice();
+                                  }
+                                }}
+                                onTouchStart={(e) => {
+                                  e.preventDefault();
+                                  onStartInstallDevice(mission.id, obj.id);
+                                }}
+                                onTouchEnd={(e) => {
+                                  e.preventDefault();
+                                  onStopInstallDevice();
+                                }}
+                                style={{ 
+                                  padding: '8px 16px', 
+                                  fontSize: 12, 
+                                  fontWeight: 700,
+                                  width: '100%',
+                                  position: 'relative',
+                                  overflow: 'hidden',
+                                  userSelect: 'none',
+                                  WebkitUserSelect: 'none',
+                                }}
+                              >
+                                {isInstalling ? (
+                                  <>
+                                    <span style={{ position: 'relative', zIndex: 1 }}>
+                                      INSTALLING... {Math.floor((installProgress / 100) * 30)}s
+                                    </span>
+                                    <div style={{
+                                      position: 'absolute',
+                                      top: 0,
+                                      left: 0,
+                                      height: '100%',
+                                      width: `${installProgress}%`,
+                                      background: installProgress >= 100 ? '#22c55e' : colors.secondary,
+                                      opacity: 0.3,
+                                      transition: 'width 0.1s linear',
+                                    }} />
+                                  </>
+                                ) : (
+                                  'HOLD TO INSTALL DEVICE'
+                                )}
+                              </SciFiButton>
+                              {isInstalling && (
+                                <div style={{ 
+                                  fontSize: 10, 
+                                  opacity: 0.7, 
+                                  fontFamily: 'monospace',
+                                  color: installProgress >= 100 ? '#22c55e' : colors.secondary,
+                                }}>
+                                  Hold for 30-35 seconds
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       );

@@ -107,6 +107,8 @@ async function crossfade(
 ): Promise<void> {
   if (!fadeIn) return;
 
+  console.log('[Music] Starting crossfade, target volume:', masterVolume);
+  
   // Start the new track at volume 0
   fadeIn.volume = 0;
   await fadeIn.play().catch(() => {
@@ -248,11 +250,15 @@ export async function stopAll(): Promise<void> {
  * Set master volume (0-1)
  */
 export function setVolume(volume: number): void {
+  console.log('[Music] setVolume called:', volume, 'previous:', masterVolume);
   masterVolume = Math.max(0, Math.min(1, volume));
   
   const active = getActiveElement();
   if (active) {
     active.volume = isMuted ? 0 : masterVolume;
+    console.log('[Music] Applied to active element');
+  } else {
+    console.log('[Music] No active element yet, will apply when music starts');
   }
 }
 

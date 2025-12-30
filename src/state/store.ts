@@ -365,7 +365,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       // Update arc statuses based on current reputation/upgrades
       // This unlocks story arcs when requirements are met
-      const updatedArcs = updateArcStatuses(state.missionArcs, playerReputation, playerUpgrades);
+      let updatedArcs = updateArcStatuses(state.missionArcs, playerReputation, playerUpgrades);
 
       const activeMissions = state.missions.filter(m => m.status === 'active');
       const newMissions = generateMissionsForStation(
@@ -380,17 +380,114 @@ export const useGameStore = create<GameState>((set, get) => ({
       // Merge with existing missions (don't duplicate)
       const existingMissionIds = new Set(state.missions.map(m => m.id));
       const missionsToAdd = newMissions.filter(m => !existingMissionIds.has(m.id));
-      const updatedMissions = [...state.missions, ...missionsToAdd];
+      let finalMissions = [...state.missions, ...missionsToAdd];
+
+      // Process station_docked event for active missions
+      const activeMissionsToProcess = finalMissions.filter(m => m.status === 'active');
+      const missionEvent: MissionEvent = {
+        type: 'station_docked',
+        stationId: near.id,
+      };
+
+      let missionCelebrationData: GameState['missionCelebrationData'] | undefined;
+      let updatedStations = state.stations;
+      let updatedShip = { ...state.ship, dockedStationId: near.id, velocity: [0, 0, 0] } as Ship;
+      let relationships = { ...(state.relationships || {}) };
+      let allyAssistTokens = [...(state.allyAssistTokens || [])];
+
+      for (const mission of activeMissionsToProcess) {
+        const updatedMission = updateMissionObjectives(mission, missionEvent);
+        finalMissions = finalMissions.map(m =>
+          m.id === mission.id ? updatedMission : m
+        );
+
+        // Check if mission is now complete
+        if (
+          checkMissionCompletion(updatedMission) &&
+          updatedMission.status === 'active'
+        ) {
+          // Mark mission as completed
+          finalMissions = finalMissions.map(m =>
+            m.id === mission.id ? { ...m, status: 'completed' as const } : m
+          );
+
+          // Apply rewards
+          const rewardUpdates = applyMissionRewards(
+            { ...state, stations: updatedStations, ship: updatedShip } as GameState,
+            updatedMission
+          );
+          if (rewardUpdates.ship) {
+            updatedShip = { ...updatedShip, ...rewardUpdates.ship } as Ship;
+          }
+          if (rewardUpdates.stations) {
+            updatedStations = rewardUpdates.stations;
+          }
+
+          // Advance mission arc
+          const arc = updatedArcs.find(a => a.id === updatedMission.arcId);
+          if (arc) {
+            const updatedArc = advanceMissionArc(arc, updatedMission.id);
+            updatedArcs = updatedArcs.map(a =>
+              a.id === updatedMission.arcId ? updatedArc : a
+            );
+          }
+
+          // Trigger mission celebration
+          const firstDeliver = updatedMission.objectives.find(o => o.type === 'deliver');
+          const narrativeContext = {
+            shipKind: state.ship.kind,
+            deliveredUnits: firstDeliver?.current || firstDeliver?.quantity,
+            commodityName: firstDeliver?.target,
+            routeStart: state.stations.find(s => s.id === state.ship.dockedStationId)?.name,
+            routeEnd: near.name,
+            enemiesDestroyed: 0,
+            stealthUsed: state.stealthStates.get(updatedMission.id)?.detected === false,
+            trustTiers: getTrustTiersSnapshot(state.relationships),
+          };
+          missionCelebrationData = {
+            missionId: updatedMission.id,
+            credits: updatedMission.rewards.credits,
+            reputationChanges: updatedMission.rewards.reputationChanges,
+            narrativeContext,
+          };
+
+          // Apply trust deltas and possibly grant assist token
+          const now = Date.now();
+          const deltas = computeTrustDeltas(updatedMission.id, narrativeContext);
+          for (const { by, delta } of deltas) {
+            const before = relationships[by];
+            const beforeTier = before?.tier ?? 0;
+            const after = setTrust(before, delta, now);
+            relationships[by] = after;
+            const crossedToSupporter = beforeTier < 1 && after.tier >= 1;
+            const eligible = canGrantToken(now, after, allyAssistTokens, by, 3, 60_000);
+            const prob = crossedToSupporter ? 1.0 : after.tier >= 1 ? 0.15 : 0;
+            if (eligible && prob > 0 && maybeProbabilityGrant(prob)) {
+              const preset = defaultAssistForStation(by);
+              const token = grantAssist(by, preset.type, preset.description, now);
+              allyAssistTokens.push(token);
+              relationships[by] = { ...after, lastAssistGrantedAt: now };
+              if (missionCelebrationData) {
+                missionCelebrationData.allyAssistUnlocked = { by, type: preset.type, description: preset.description };
+              }
+            }
+          }
+
+          console.log(`Mission completed: ${updatedMission.title}`);
+        }
+      }
 
       const next: Partial<GameState> = {
-        ship: {
-          ...state.ship,
-          dockedStationId: near.id,
-          velocity: [0, 0, 0],
-        } as Ship,
+        ship: updatedShip,
         dockIntroVisibleId: near.id,
-        missions: updatedMissions,
-        missionArcs: updatedArcs, // Include updated arcs in state
+        missions: finalMissions,
+        missionArcs: updatedArcs,
+        stations: updatedStations,
+        ...(missionCelebrationData ? { missionCelebrationData } : {}),
+        ...(Object.keys(relationships).length > 0 || allyAssistTokens.length > 0 ? {
+          relationships,
+          allyAssistTokens,
+        } : {}),
       };
 
       if (state.tutorialActive) {
@@ -1235,6 +1332,174 @@ export const useGameStore = create<GameState>((set, get) => ({
       } as Partial<GameState> as GameState;
     }),
 
+  startInstallDevice: (missionId, objectiveId) =>
+    set(state => {
+      const mission = state.missions.find(m => m.id === missionId);
+      if (!mission || mission.status !== 'active') return state;
+
+      const objective = mission.objectives.find(o => o.id === objectiveId);
+      if (!objective || objective.completed) return state;
+
+      return {
+        missionInstallState: {
+          missionId,
+          objectiveId,
+          startTime: Date.now(),
+        },
+      } as Partial<GameState> as GameState;
+    }),
+
+  stopInstallDevice: () =>
+    set(state => {
+      if (!state.missionInstallState) return state;
+
+      const { missionId, objectiveId, startTime } = state.missionInstallState;
+      const mission = state.missions.find(m => m.id === missionId);
+      if (!mission || mission.status !== 'active') {
+        return {
+          missionInstallState: undefined,
+        } as Partial<GameState> as GameState;
+      }
+
+      const objective = mission.objectives.find(o => o.id === objectiveId);
+      if (!objective || objective.completed) {
+        return {
+          missionInstallState: undefined,
+        } as Partial<GameState> as GameState;
+      }
+
+      const holdDuration = (Date.now() - startTime) / 1000; // duration in seconds
+      const MIN_HOLD_TIME = 30; // seconds
+      const MAX_HOLD_TIME = 35; // seconds
+
+      // Check if hold duration is within acceptable range
+      if (holdDuration >= MIN_HOLD_TIME && holdDuration <= MAX_HOLD_TIME) {
+        // Success! Complete the objective
+        const updatedObjectives = mission.objectives.map(obj =>
+          obj.id === objectiveId
+            ? { ...obj, completed: true, current: obj.quantity || 1 }
+            : obj
+        );
+
+        const updatedMission = {
+          ...mission,
+          objectives: updatedObjectives,
+        };
+
+        const updatedMissions = state.missions.map(m =>
+          m.id === missionId ? updatedMission : m
+        );
+
+        // Check if mission is now complete
+        if (checkMissionCompletion(updatedMission)) {
+          // Mark mission as completed
+          const finalMissions = updatedMissions.map(m =>
+            m.id === missionId ? { ...m, status: 'completed' as const } : m
+          );
+
+          // Apply rewards
+          const rewardUpdates = applyMissionRewards(state, updatedMission);
+
+          // Apply permanent effects
+          let effectUpdates: Partial<GameState> = {};
+          if (updatedMission.rewards.permanentEffects) {
+            effectUpdates = applyPermanentEffects(state, updatedMission.rewards.permanentEffects);
+          }
+
+          // Advance mission arc
+          const arc = state.missionArcs.find(a => a.id === updatedMission.arcId);
+          let updatedArcs = state.missionArcs;
+          if (arc) {
+            const updatedArc = advanceMissionArc(arc, updatedMission.id);
+            updatedArcs = state.missionArcs.map(a =>
+              a.id === updatedMission.arcId ? updatedArc : a
+            );
+          }
+
+          // Trigger mission celebration
+          const firstDeliver = updatedMission.objectives.find(o => o.type === 'deliver');
+          const narrativeContext = {
+            shipKind: state.ship.kind,
+            deliveredUnits: firstDeliver?.current || firstDeliver?.quantity,
+            commodityName: firstDeliver?.target,
+            routeStart: state.stations.find(s => s.id === state.ship.dockedStationId)?.name,
+            routeEnd: state.ship.dockedStationId ? state.stations.find(s => s.id === state.ship.dockedStationId)?.name : undefined,
+            enemiesDestroyed: 0,
+            stealthUsed: state.stealthStates.get(updatedMission.id)?.detected === false,
+            trustTiers: getTrustTiersSnapshot(state.relationships),
+          };
+          const missionCelebrationData: GameState['missionCelebrationData'] = {
+            missionId: updatedMission.id,
+            credits: updatedMission.rewards.credits,
+            reputationChanges: updatedMission.rewards.reputationChanges,
+            narrativeContext,
+          };
+
+          // Apply trust deltas and possibly grant assist token
+          const now = Date.now();
+          let relationships = { ...(state.relationships || {}) };
+          let allyAssistTokens = [...(state.allyAssistTokens || [])];
+          const deltas = computeTrustDeltas(updatedMission.id, narrativeContext);
+          for (const { by, delta } of deltas) {
+            const before = relationships[by];
+            const beforeTier = before?.tier ?? 0;
+            const after = setTrust(before, delta, now);
+            relationships[by] = after;
+            const crossedToSupporter = beforeTier < 1 && after.tier >= 1;
+            const eligible = canGrantToken(now, after, allyAssistTokens, by, 3, 60_000);
+            const prob = crossedToSupporter ? 1.0 : after.tier >= 1 ? 0.15 : 0;
+            if (eligible && prob > 0 && maybeProbabilityGrant(prob)) {
+              const preset = defaultAssistForStation(by);
+              const token = grantAssist(by, preset.type, preset.description, now);
+              allyAssistTokens.push(token);
+              relationships[by] = { ...after, lastAssistGrantedAt: now };
+              missionCelebrationData.allyAssistUnlocked = { by, type: preset.type, description: preset.description };
+            }
+          }
+
+          console.log(`Mission completed: ${updatedMission.title}`);
+
+          return {
+            missions: finalMissions,
+            missionArcs: updatedArcs,
+            missionCelebrationData,
+            relationships,
+            allyAssistTokens,
+            missionInstallState: undefined,
+            ...rewardUpdates,
+            ...effectUpdates,
+          } as Partial<GameState> as GameState;
+        }
+
+        return {
+          missions: updatedMissions,
+          missionInstallState: undefined,
+        } as Partial<GameState> as GameState;
+      } else {
+        // Failed! Hold duration was outside acceptable range
+        const failedMissions = state.missions.map(m =>
+          m.id === missionId ? { ...m, status: 'failed' as const } : m
+        );
+
+        const addNotification = get().addNotification;
+        const reason = holdDuration < MIN_HOLD_TIME 
+          ? 'Device installation interrupted (released too early)' 
+          : 'Device installation took too long (detected)';
+        addNotification({
+          type: 'error',
+          message: `Mission failed: ${reason}`,
+          duration: 5000,
+        });
+
+        console.log(`Mission failed: ${mission.title} - ${reason}`);
+
+        return {
+          missions: failedMissions,
+          missionInstallState: undefined,
+        } as Partial<GameState> as GameState;
+      }
+    }),
+
   // Notification actions
   addNotification: (notif) =>
     set(state => {
@@ -1346,6 +1611,23 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (!state.isTestMode) return state;
       return {
         ship: { ...state.ship, [upgrade]: !state.ship[upgrade] },
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugSetMissionArcStage: (arcId: string, stage: number, status?: 'locked' | 'available' | 'in_progress' | 'completed') =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      const clampedStage = Math.max(1, Math.min(4, stage));
+      return {
+        missionArcs: state.missionArcs.map(arc =>
+          arc.id === arcId
+            ? {
+                ...arc,
+                currentStage: clampedStage,
+                status: status ?? arc.status,
+              }
+            : arc
+        ),
       } as Partial<GameState> as GameState;
     }),
 }));

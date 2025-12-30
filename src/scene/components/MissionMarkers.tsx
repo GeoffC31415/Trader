@@ -49,6 +49,12 @@ export function MissionMarkers() {
     [npcTraders]
   );
   
+  // Find mission escort NPCs
+  const missionEscorts = useMemo(() => 
+    npcTraders.filter(npc => npc.isMissionEscort),
+    [npcTraders]
+  );
+  
   // Check for pending (en route) targets
   const pendingTargetInfo = useMemo(() => {
     for (const mission of activeMissions) {
@@ -108,14 +114,14 @@ export function MissionMarkers() {
         return (
           <group key={npc.id} position={npc.position}>
             {/* Ring marker above NPC */}
-            <mesh position={[0, 50, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <mesh position={[0, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <ringGeometry args={[18, 22, 32]} />
               <meshBasicMaterial color={markerColor} transparent opacity={opacity} />
             </mesh>
             
             {/* Inner ring for active targets */}
             {!isEnRoute && (
-              <mesh position={[0, 50, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <mesh position={[0, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
                 <ringGeometry args={[10, 14, 32]} />
                 <meshBasicMaterial color="#ff6666" transparent opacity={opacity * 0.6} />
               </mesh>
@@ -123,7 +129,7 @@ export function MissionMarkers() {
             
             {/* Distance and status label */}
             <Html
-              position={[0, 60, 0]}
+              position={[0, 8, 0]}
               center
               style={{
                 pointerEvents: 'none',
@@ -171,10 +177,94 @@ export function MissionMarkers() {
         );
       })}
       
+      {/* Escort NPC Markers */}
+      {missionEscorts.map(escort => {
+        if (escort.hp <= 0) return null; // Don't show markers for destroyed escorts
+        
+        const scale = 1 + Math.sin(pulse * 0.8) * 0.2;
+        const opacity = 0.7 + Math.sin(pulse * 0.8) * 0.2;
+        
+        // Calculate distance to player
+        const dx = escort.position[0] - ship.position[0];
+        const dy = escort.position[1] - ship.position[1];
+        const dz = escort.position[2] - ship.position[2];
+        const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        
+        // Teal color for friendly escorts
+        const markerColor = '#44ccaa';
+        
+        // HP bar calculation
+        const hpPercent = escort.maxHp > 0 ? (escort.hp / escort.maxHp) * 100 : 100;
+        const hpColor = hpPercent > 60 ? '#44cc88' : hpPercent > 30 ? '#ffcc44' : '#ff4444';
+        
+        return (
+          <group key={escort.id} position={escort.position}>
+            {/* Teal ring marker above escort */}
+            <mesh position={[0, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[18, 22, 32]} />
+              <meshBasicMaterial color={markerColor} transparent opacity={opacity} />
+            </mesh>
+            
+            {/* Inner ring for active escorts */}
+            <mesh position={[0, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[10, 14, 32]} />
+              <meshBasicMaterial color="#66ddbb" transparent opacity={opacity * 0.6} />
+            </mesh>
+            
+            {/* Distance and status label */}
+            <Html
+              position={[0, 8, 0]}
+              center
+              style={{
+                pointerEvents: 'none',
+                userSelect: 'none',
+                transform: `scale(${scale})`,
+              }}
+            >
+              <div style={{
+                background: `${markerColor}ee`,
+                color: '#fff',
+                padding: '4px 8px',
+                borderRadius: 4,
+                fontSize: 11,
+                fontWeight: 'bold',
+                fontFamily: 'monospace',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                whiteSpace: 'nowrap',
+                minWidth: 80,
+                textAlign: 'center',
+              }}>
+                <div style={{ marginBottom: 2 }}>
+                  🛡️ PROTECT
+                </div>
+                <div style={{ fontSize: 10, opacity: 0.9 }}>
+                  {dist > 100 ? `${Math.floor(dist)}m` : `${dist.toFixed(0)}m`}
+                </div>
+                {/* HP Bar */}
+                <div style={{
+                  marginTop: 3,
+                  height: 3,
+                  background: 'rgba(0,0,0,0.3)',
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${hpPercent}%`,
+                    background: hpColor,
+                    borderRadius: 2,
+                  }} />
+                </div>
+              </div>
+            </Html>
+          </group>
+        );
+      })}
+      
       {/* Pending Target Indicator - when targets haven't spawned yet */}
       {pendingTargetInfo && missionNpcs.filter(n => n.missionId === pendingTargetInfo.missionId && n.hp > 0).length === 0 && (
         <Html
-          position={[ship.position[0], ship.position[1] + 100, ship.position[2]]}
+          position={[ship.position[0], ship.position[1] + 15, ship.position[2]]}
           center
           style={{
             pointerEvents: 'none',

@@ -38,7 +38,7 @@ export const MISSION_ARCS: Record<string, Omit<MissionArc, 'status' | 'currentSt
     characters: ['ceres-pp', 'sol-refinery'],
     unlockRequirements: {
       reputation: {
-        'ceres-pp': 30,
+        'sol-refinery': 30,
       },
       upgrades: ['nav'], // Requires Navigation Array
     },
@@ -950,7 +950,7 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
           'Reputation loss at Sol Refinery',
         ],
         rewards: {
-          credits: 8000,
+          credits: 15000,
           reputationChanges: {
             'ceres-pp': 25,
             'sol-refinery': -25,

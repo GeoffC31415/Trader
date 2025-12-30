@@ -201,7 +201,7 @@ export const defaultConfig: GameConfig = {
   
   audio: {
     musicEnabled: true,
-    musicVolume: 0.35,
+    musicVolume: 0.2,
     dialogueVolume: 0.8,
   },
 };

@@ -30,6 +30,14 @@ export function Minimap() {
     return npcTraders.filter(npc => npc.isMissionTarget && npc.hp > 0);
   }, [missions, npcTraders]);
   
+  // Get mission escort NPCs for minimap display
+  const missionEscorts = useMemo(() => {
+    const activeEscortMissions = missions.filter(m => m.status === 'active' && m.type === 'escort');
+    if (activeEscortMissions.length === 0) return [];
+    
+    return npcTraders.filter(npc => npc.isMissionEscort && npc.hp > 0);
+  }, [missions, npcTraders]);
+  
   // Check if there are pending targets (not yet spawned)
   const pendingTargetCount = useMemo(() => {
     const activeCombatMissions = missions.filter(m => m.status === 'active' && m.type === 'combat');
@@ -189,6 +197,42 @@ export function Minimap() {
         ctx.restore();
       }
     }
+    
+    // Mission escorts (only when player has Navigation Array)
+    if (hasNavArray && missionEscorts.length > 0) {
+      for (const escort of missionEscorts) {
+        const p2 = projectTo2D(escort.position, worldCenter, scale);
+        
+        // Draw escort icon
+        ctx.save();
+        
+        // Pulsing effect using time
+        const pulseTime = Date.now() / 500;
+        const pulseScale = 1 + Math.sin(pulseTime) * 0.2;
+        
+        // Draw outer ring (pulsing) - teal color for friendly
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(68, 204, 170, 0.8)';
+        ctx.lineWidth = 1.5;
+        ctx.arc(p2.x, p2.y, 5 * pulseScale, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Draw inner dot - teal
+        ctx.beginPath();
+        ctx.fillStyle = '#44ccaa';
+        ctx.arc(p2.x, p2.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw shield-like indicator (small ring inside)
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(68, 204, 170, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.arc(p2.x, p2.y, 3.5, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.restore();
+      }
+    }
 
     // ship
     {
@@ -219,31 +263,44 @@ export function Minimap() {
     ctx.font = '16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
     ctx.fillText('System Map', padding, cssSize.h - 10);
     
-    // Mission target legend (when showing targets)
-    if (hasNavArray && (missionTargets.length > 0 || pendingTargetCount > 0)) {
+    // Mission target and escort legend (when showing targets/escorts)
+    if (hasNavArray && (missionTargets.length > 0 || pendingTargetCount > 0 || missionEscorts.length > 0)) {
       ctx.font = '11px ui-sans-serif, system-ui';
+      let legendY = cssSize.h - 30;
       
       if (missionTargets.length > 0) {
         // Draw target indicator legend
         ctx.fillStyle = '#ff4444';
         ctx.beginPath();
-        ctx.arc(padding + 8, cssSize.h - 30, 3, 0, Math.PI * 2);
+        ctx.arc(padding + 8, legendY, 3, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = 'rgba(255, 68, 68, 0.9)';
-        ctx.fillText(`${missionTargets.length} Target${missionTargets.length > 1 ? 's' : ''}`, padding + 16, cssSize.h - 26);
+        ctx.fillText(`${missionTargets.length} Target${missionTargets.length > 1 ? 's' : ''}`, padding + 16, legendY + 4);
+        legendY -= 18;
+      }
+      
+      if (missionEscorts.length > 0) {
+        // Draw escort indicator legend
+        ctx.fillStyle = '#44ccaa';
+        ctx.beginPath();
+        ctx.arc(padding + 8, legendY, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(68, 204, 170, 0.9)';
+        ctx.fillText(`${missionEscorts.length} Escort${missionEscorts.length > 1 ? 's' : ''}`, padding + 16, legendY + 4);
+        legendY -= 18;
       }
       
       if (pendingTargetCount > 0 && missionTargets.length === 0) {
         // Show "en route" indicator when no targets visible yet
         ctx.fillStyle = '#ffcc44';
         ctx.beginPath();
-        ctx.arc(padding + 8, cssSize.h - 30, 3, 0, Math.PI * 2);
+        ctx.arc(padding + 8, legendY, 3, 0, Math.PI * 2);
         ctx.fill();
         ctx.fillStyle = 'rgba(255, 200, 68, 0.9)';
-        ctx.fillText(`${pendingTargetCount} En Route`, padding + 16, cssSize.h - 26);
+        ctx.fillText(`${pendingTargetCount} En Route`, padding + 16, legendY + 4);
       }
     }
-  }, [planets, stations, belts, ship.position, ship.velocity, bounds, hasNavArray, missionTargets, pendingTargetCount]);
+  }, [planets, stations, belts, ship.position, ship.velocity, bounds, hasNavArray, missionTargets, missionEscorts, pendingTargetCount]);
 
   return (
     <div className="minimap">

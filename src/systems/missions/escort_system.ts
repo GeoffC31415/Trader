@@ -239,7 +239,7 @@ export function updateEscortState(
 export function getActiveEscortMissions(missions: Mission[]): Mission[] {
   return missions.filter(m => 
     m.status === 'active' && 
-    m.objectives.some(obj => obj.type === 'defend')
+    m.objectives.some(obj => obj.type === 'defend' || obj.type === 'escort')
   );
 }
 
@@ -286,13 +286,19 @@ export function getEscortHpPercentage(escortState: EscortMissionState): number {
 
 /**
  * Clean up escort mission state when mission ends
+ * Removes all escort states for a mission (supports multiple escorts per mission)
  */
 export function cleanupEscortState(
   escortStates: Map<string, EscortMissionState>,
   missionId: string
 ): Map<string, EscortMissionState> {
   const updated = new Map(escortStates);
-  updated.delete(missionId);
+  // Remove all escort states for this mission (both exact match and composite keys)
+  for (const key of updated.keys()) {
+    if (key === missionId || key.startsWith(`${missionId}:`)) {
+      updated.delete(key);
+    }
+  }
   return updated;
 }
 

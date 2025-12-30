@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useGameStore } from '../state';
 import { generateCommodities } from '../systems/economy/commodities';
+import { MISSION_ARCS } from '../domain/constants/mission_constants';
 
 const primaryColor = '#f59e0b'; // amber for debug
 const secondaryColor = '#fbbf24';
@@ -10,6 +11,7 @@ export function DebugPanel() {
   const isTestMode = useGameStore(s => s.isTestMode);
   const ship = useGameStore(s => s.ship);
   const stations = useGameStore(s => s.stations);
+  const missionArcs = useGameStore(s => s.missionArcs);
   
   // Debug actions
   const debugSetCredits = useGameStore(s => s.debugSetCredits);
@@ -22,6 +24,7 @@ export function DebugPanel() {
   const debugSetHp = useGameStore(s => s.debugSetHp);
   const debugSetEnergy = useGameStore(s => s.debugSetEnergy);
   const debugToggleUpgrade = useGameStore(s => s.debugToggleUpgrade);
+  const debugSetMissionArcStage = useGameStore(s => s.debugSetMissionArcStage);
 
   // Local state for inputs
   const [creditsInput, setCreditsInput] = useState(ship.credits.toString());
@@ -36,8 +39,12 @@ export function DebugPanel() {
   const [maxCargoInput, setMaxCargoInput] = useState(ship.maxCargo.toString());
   const [hpInput, setHpInput] = useState(ship.hp.toString());
   const [energyInput, setEnergyInput] = useState(ship.energy.toString());
+  const [selectedArcId, setSelectedArcId] = useState(missionArcs[0]?.id || 'greenfields_independence');
+  const [arcStageInput, setArcStageInput] = useState('1');
+  const [selectedArcStatus, setSelectedArcStatus] = useState<'locked' | 'available' | 'in_progress' | 'completed'>('available');
 
   const commodities = useMemo(() => generateCommodities(), []);
+  const arcOptions = useMemo(() => Object.values(MISSION_ARCS), []);
 
   if (!isTestMode) {
     return (
@@ -535,6 +542,86 @@ export function DebugPanel() {
                 <div className="debug-toggle-indicator">{ship.hasUnionMembership ? '✓' : ''}</div>
                 <span style={{ fontSize: 12 }}>Union Membership</span>
               </div>
+            </div>
+          </div>
+
+          {/* Mission Arc Section */}
+          <div className="debug-panel">
+            <div className="debug-section-header">Mission Arcs</div>
+            <div className="debug-row">
+              <select
+                className="debug-select"
+                value={selectedArcId}
+                onChange={e => setSelectedArcId(e.target.value)}
+              >
+                {arcOptions.map(arc => {
+                  const currentArc = missionArcs.find(a => a.id === arc.id);
+                  return (
+                    <option key={arc.id} value={arc.id}>
+                      {arc.name} (Stage {currentArc?.currentStage || 1}, {currentArc?.status || 'locked'})
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            <div className="debug-row">
+              <span className="debug-label">Stage:</span>
+              <input
+                type="number"
+                className="debug-input"
+                value={arcStageInput}
+                min={1}
+                max={4}
+                onChange={e => setArcStageInput(e.target.value)}
+                style={{ width: 60 }}
+              />
+              <select
+                className="debug-select"
+                value={selectedArcStatus}
+                onChange={e => setSelectedArcStatus(e.target.value as 'locked' | 'available' | 'in_progress' | 'completed')}
+                style={{ width: 120 }}
+              >
+                <option value="locked">Locked</option>
+                <option value="available">Available</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+              <button
+                className="debug-btn"
+                onClick={() => debugSetMissionArcStage(selectedArcId, parseInt(arcStageInput) || 1, selectedArcStatus)}
+              >
+                Set
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 8 }}>
+              {[1, 2, 3, 4].map(stage => (
+                <button
+                  key={stage}
+                  className="debug-btn"
+                  onClick={() => {
+                    setArcStageInput(stage.toString());
+                    debugSetMissionArcStage(selectedArcId, stage, 'in_progress');
+                  }}
+                  style={{ padding: '4px 10px' }}
+                >
+                  Stage {stage}
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop: 10, fontSize: 11, opacity: 0.7 }}>
+              {(() => {
+                const currentArc = missionArcs.find(a => a.id === selectedArcId);
+                const arcDef = arcOptions.find(a => a.id === selectedArcId);
+                if (!currentArc || !arcDef) return null;
+                return (
+                  <>
+                    <div style={{ marginBottom: 4, color: secondaryColor }}>{arcDef.name}</div>
+                    <div>Status: <span style={{ color: currentArc.status === 'completed' ? '#10b981' : currentArc.status === 'in_progress' ? '#3b82f6' : '#888' }}>{currentArc.status}</span></div>
+                    <div>Current Stage: {currentArc.currentStage}/4</div>
+                    <div>Completed Missions: {currentArc.completedMissions.length}</div>
+                  </>
+                );
+              })()}
             </div>
           </div>
 

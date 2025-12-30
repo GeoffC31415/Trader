@@ -348,6 +348,8 @@ export function MarketPanel() {
               onSetChoiceDialog={setChoiceMissionDialog}
               dockedStationId={ship.dockedStationId}
               onCompleteObjective={useGameStore.getState().completeMissionObjective}
+              onStartInstallDevice={useGameStore.getState().startInstallDevice}
+              onStopInstallDevice={useGameStore.getState().stopInstallDevice}
             />
             <ContractsSection
               station={station}
