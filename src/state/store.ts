@@ -296,6 +296,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         marketEvents,
         priceHistory: updatedPriceHistory,
         lastPriceSnapshotTime: snapshotResult.lastSnapshotTime,
+        ...(missionResult.missionCelebrationData ? { missionCelebrationData: missionResult.missionCelebrationData } : {}),
       } as Partial<GameState> as GameState;
     }),
 

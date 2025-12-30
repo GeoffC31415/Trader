@@ -86,6 +86,7 @@ export function updateMissionsInTick(
   let updatedEscortStates = state.escortStates;
   let ship = { ...state.ship };
   let stations = [...state.stations];
+  let missionCelebrationData: MissionTickResult['missionCelebrationData'] = undefined;
 
   const activeMissions = updatedMissions.filter(m => m.status === 'active');
 
@@ -133,6 +134,13 @@ export function updateMissionsInTick(
               a.id === mission.arcId ? updatedArc : a
             );
           }
+
+          // Set celebration data for success screen
+          missionCelebrationData = {
+            missionId: updatedMission.id,
+            credits: updatedMission.rewards.credits,
+            reputationChanges: updatedMission.rewards.reputationChanges,
+          };
 
           // Clean up mission states
           updatedStealthStates = clearMissionStealthStates(
@@ -303,6 +311,13 @@ export function updateMissionsInTick(
             );
           }
           
+          // Set celebration data for success screen
+          missionCelebrationData = {
+            missionId: updatedMissionWave.id,
+            credits: updatedMissionWave.rewards.credits,
+            reputationChanges: updatedMissionWave.rewards.reputationChanges,
+          };
+          
           updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
           console.log(`✅ All waves survived! Mission completed: ${updatedMissionWave.title}!`);
           break;
@@ -373,6 +388,13 @@ export function updateMissionsInTick(
             );
           }
 
+          // Set celebration data for success screen
+          missionCelebrationData = {
+            missionId: updatedMission.id,
+            credits: updatedMission.rewards.credits,
+            reputationChanges: updatedMission.rewards.reputationChanges,
+          };
+
           updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
           console.log(`✅ Mission completed: ${updatedMission.title}!`);
           break; // Exit escort loop, mission is complete
@@ -411,6 +433,7 @@ export function updateMissionsInTick(
     escortStates: updatedEscortStates,
     ship,
     stations,
+    missionCelebrationData,
   };
 }
 
