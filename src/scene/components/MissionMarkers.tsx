@@ -50,10 +50,24 @@ export function MissionMarkers() {
     [npcTraders]
   );
   
-  // Find mission escort NPCs
+  // Find mission escort NPCs (only those with incomplete objectives)
   const missionEscorts = useMemo(() => 
-    npcTraders.filter(npc => npc.isMissionEscort),
-    [npcTraders]
+    npcTraders.filter(npc => {
+      if (!npc.isMissionEscort) return false;
+      
+      // Check if this escort's objective is already completed
+      const mission = activeMissions.find(m => m.id === npc.missionId);
+      if (!mission) return false;
+      
+      // Find the escort objective for this NPC
+      const escortObjective = mission.objectives.find(
+        obj => (obj.type === 'escort' || obj.type === 'defend') && obj.target === npc.id
+      );
+      
+      // Only show marker if objective exists and is not completed
+      return escortObjective && !escortObjective.completed;
+    }),
+    [npcTraders, activeMissions]
   );
   
   // Check for pending (en route) targets

@@ -28,7 +28,7 @@ import { applyMissionRewards, advanceMissionArc, canAcceptMission, getMissionTim
 import { spawnMissionNPCs } from '../../systems/combat/ai_combat';
 import { generateMissionsForStation, updateArcStatuses } from '../../systems/missions/mission_generator';
 import { updateMissionObjectives, checkMissionCompletion, checkMissionFailure, type MissionEvent } from '../../systems/missions/mission_validator';
-import { getActiveEscortMissions, updateEscortState, generatePirateWave, addSpawnedPirateIds, cleanupEscortState, createEscortNpc, createEscortState, ESCORT_HP } from '../../systems/missions/escort_system';
+import { getActiveEscortMissions, updateEscortState, generatePirateWave, addSpawnedPirateIds, cleanupEscortState, createEscortNpc, createEscortState, checkWaveComplete, markWaveCompleted, ESCORT_HP } from '../../systems/missions/escort_system';
 import { processStealthChecks, applyDetectionConsequences, clearMissionStealthStates } from '../../systems/missions/stealth_system';
 import { applyChoicePermanentEffects } from '../../systems/missions/choice_system';
 import { planNpcPath } from '../npc';
@@ -260,6 +260,55 @@ export function updateMissionsInTick(
         continue; // This escort is destroyed, but others may still be alive
       }
 
+      // Check for wave completion (all pirates in current wave destroyed)
+      const currentEscortState = updatedEscortStates.get(escortStateKey) || updateResult.updatedState;
+      if (checkWaveComplete(currentEscortState, updatedNpcTraders)) {
+        const completedWaveNumber = currentEscortState.wavesCompleted + 1;
+        console.log(`✅ Wave ${completedWaveNumber} survived!`);
+        
+        // Update escort state to mark wave as completed
+        const markedState = markWaveCompleted(currentEscortState);
+        updatedEscortStates.set(escortStateKey, markedState);
+        
+        // Trigger wave_survived event to update defend objectives
+        const waveEvent: MissionEvent = {
+          type: 'wave_survived',
+          waveNumber: completedWaveNumber,
+        };
+        
+        const missionAfterWave = updatedMissions.find(m => m.id === mission.id) || mission;
+        const updatedMissionWave = updateMissionObjectives(missionAfterWave, waveEvent);
+        updatedMissions = updatedMissions.map(m =>
+          m.id === mission.id ? updatedMissionWave : m
+        );
+        
+        // Check if mission is now complete after wave survival
+        if (checkMissionCompletion(updatedMissionWave)) {
+          updatedMissions = updatedMissions.map(m =>
+            m.id === mission.id ? { ...m, status: 'completed' as const } : m
+          );
+          
+          const rewardUpdates = applyMissionRewards(
+            { ...state, stations, ship } as GameState,
+            updatedMissionWave
+          );
+          if (rewardUpdates.ship) ship = rewardUpdates.ship;
+          if (rewardUpdates.stations) stations = rewardUpdates.stations;
+          
+          const arc = updatedArcs.find(a => a.id === mission.arcId);
+          if (arc) {
+            const updatedArc = advanceMissionArc(arc, mission.id);
+            updatedArcs = updatedArcs.map(a =>
+              a.id === mission.arcId ? updatedArc : a
+            );
+          }
+          
+          updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
+          console.log(`✅ All waves survived! Mission completed: ${updatedMissionWave.title}!`);
+          break;
+        }
+      }
+
       // Handle escort reached destination
       if (updateResult.hasReached) {
         console.log(`✅ Escort ${escortState.escortNpcId} reached destination safely!`);
@@ -268,7 +317,8 @@ export function updateMissionsInTick(
           npcId: escortState.escortNpcId,
         };
 
-        const updatedMission = updateMissionObjectives(mission, missionEvent);
+        const missionAfterEscort = updatedMissions.find(m => m.id === mission.id) || mission;
+        const updatedMission = updateMissionObjectives(missionAfterEscort, missionEvent);
         updatedMissions = updatedMissions.map(m =>
           m.id === mission.id ? updatedMission : m
         );

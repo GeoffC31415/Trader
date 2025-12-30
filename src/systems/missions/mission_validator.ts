@@ -82,6 +82,14 @@ export function validateObjective(
           current: 1,
         };
       }
+      // Wave survival - increment current for each wave survived
+      if (event.type === 'wave_survived') {
+        const newCurrent = objective.current + 1;
+        return {
+          completed: newCurrent >= (objective.quantity || 1),
+          current: newCurrent,
+        };
+      }
       break;
       
     case 'wait':
@@ -201,6 +209,7 @@ export type MissionEvent =
   | { type: 'station_docked'; stationId: string }
   | { type: 'npc_destroyed'; npcId: string }
   | { type: 'escort_reached_destination'; npcId: string }
+  | { type: 'wave_survived'; waveNumber: number }
   | { type: 'time_elapsed'; duration: number }
   | { type: 'detection_triggered'; stationId: string };
 

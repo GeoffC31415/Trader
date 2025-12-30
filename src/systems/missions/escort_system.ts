@@ -49,8 +49,10 @@ export type EscortMissionState = {
   destinationStationId: string;
   lastWaveTime: number;
   waveCount: number;
+  wavesCompleted: number;
   hasReachedDestination: boolean;
   spawnedPirateIds: string[];
+  currentWavePirateIds: string[]; // Pirates in the current active wave
 };
 
 /**
@@ -68,10 +70,12 @@ export function createEscortState(
     escortHp: ESCORT_HP,
     escortMaxHp: ESCORT_HP,
     destinationStationId,
-    lastWaveTime: currentTime,
+    lastWaveTime: currentTime - WAVE_SPAWN_INTERVAL + 5, // Spawn first wave after 5 seconds
     waveCount: 0,
+    wavesCompleted: 0,
     hasReachedDestination: false,
     spawnedPirateIds: [],
+    currentWavePirateIds: [],
   };
 }
 
@@ -312,7 +316,7 @@ export function getMissionPirateIds(
 }
 
 /**
- * Add spawned pirate ID to escort state
+ * Add spawned pirate IDs to escort state (for a new wave)
  */
 export function addSpawnedPirateIds(
   state: EscortMissionState,
@@ -321,6 +325,36 @@ export function addSpawnedPirateIds(
   return {
     ...state,
     spawnedPirateIds: [...state.spawnedPirateIds, ...pirateIds],
+    currentWavePirateIds: pirateIds, // Track current wave separately
+  };
+}
+
+/**
+ * Check if current wave is complete (all pirates destroyed)
+ */
+export function checkWaveComplete(
+  state: EscortMissionState,
+  npcTraders: { id: string; hp: number }[]
+): boolean {
+  if (state.currentWavePirateIds.length === 0) return false;
+  
+  // Check if all pirates in the current wave are destroyed
+  return state.currentWavePirateIds.every(pirateId => {
+    const pirate = npcTraders.find(n => n.id === pirateId);
+    return !pirate || pirate.hp <= 0;
+  });
+}
+
+/**
+ * Mark current wave as completed
+ */
+export function markWaveCompleted(
+  state: EscortMissionState
+): EscortMissionState {
+  return {
+    ...state,
+    wavesCompleted: state.wavesCompleted + 1,
+    currentWavePirateIds: [], // Clear current wave
   };
 }
 
