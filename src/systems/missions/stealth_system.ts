@@ -11,7 +11,7 @@ import { SCALE } from '../../domain/constants/world_constants';
 /**
  * Detection radius around stations (in world units)
  */
-export const DETECTION_RADIUS = 5 * SCALE;
+export const DETECTION_RADIUS = 15 * SCALE;
 
 /**
  * Suspicion level required to trigger detection
@@ -26,7 +26,7 @@ export const SUSPICION_BUILD_RATE = 10;
 /**
  * Rate at which suspicion decays when outside detection zone (per second)
  */
-export const SUSPICION_DECAY_RATE = 20;
+export const SUSPICION_DECAY_RATE = 5;
 
 /**
  * Stealth state for tracking suspicion levels
