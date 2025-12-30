@@ -14,3 +14,7 @@ export const SHIP_STATUS_PANEL_MIN_WIDTH = 240; // Minimum width of status panel
 export const UI_OVERLAY_GAP = 8; // Gap between UI elements
 export const UI_OVERLAY_MARGIN_BOTTOM = 8; // Bottom margin for overlay sections
 
+// Stealth indicator positioning (below ship status panel)
+export const STEALTH_INDICATOR_TOP_WITH_NAV = 530; // Below ship status when minimap visible
+export const STEALTH_INDICATOR_TOP_WITHOUT_NAV = 200; // Below ship status when no minimap
+
