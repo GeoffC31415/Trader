@@ -82,8 +82,8 @@ export function updateMissionsInTick(
   let updatedMissions = [...state.missions];
   let updatedArcs = [...state.missionArcs];
   let updatedNpcTraders = [...state.npcTraders];
-  let updatedStealthStates = state.stealthStates;
-  let updatedEscortStates = state.escortStates;
+  let updatedStealthStates = new Map(state.stealthStates);
+  let updatedEscortStates = new Map(state.escortStates);
   let ship = { ...state.ship };
   let stations = [...state.stations];
   let missionCelebrationData: MissionTickResult['missionCelebrationData'] = undefined;
@@ -218,6 +218,11 @@ export function updateMissionsInTick(
   const escortMissions = getActiveEscortMissions(activeMissions);
   const currentTime = Date.now() / 1000;
 
+  // Debug: Log active escort missions and their states
+  if (escortMissions.length > 0) {
+    console.log(`🎯 Processing ${escortMissions.length} escort missions, escortStates size: ${updatedEscortStates.size}`);
+  }
+
   for (const mission of escortMissions) {
     // Find all escort states for this mission (supports multiple escorts per mission)
     const missionEscortStates: Array<{ key: string; state: any }> = [];
@@ -227,7 +232,10 @@ export function updateMissionsInTick(
       }
     }
 
-    if (missionEscortStates.length === 0) continue;
+    if (missionEscortStates.length === 0) {
+      console.log(`⚠️ No escort states found for mission ${mission.id}. Available keys:`, [...updatedEscortStates.keys()]);
+      continue;
+    }
 
     // Process each escort separately
     for (const { key: escortStateKey, state: escortState } of missionEscortStates) {
@@ -236,7 +244,11 @@ export function updateMissionsInTick(
         s => s.id === escortState.destinationStationId
       );
 
-      if (!escortNpc || !destinationStation) continue;
+      if (!escortNpc || !destinationStation) {
+        console.log(`⚠️ Missing escort data: escortNpc=${escortNpc?.id || 'NOT FOUND'} (looking for ${escortState.escortNpcId}), destination=${destinationStation?.id || 'NOT FOUND'}`);
+        console.log(`  Available NPC IDs with isMissionEscort:`, updatedNpcTraders.filter(n => n.isMissionEscort).map(n => n.id));
+        continue;
+      }
 
       // Check if this is a defend-in-place mission
       const isDefendInPlace = escortNpc.isDefendInPlace || false;
@@ -425,10 +437,20 @@ export function updateMissionsInTick(
         }
       }
 
-      // Spawn pirate waves (only spawn waves for the first escort to avoid spam)
-      if (updateResult.shouldSpawnNewWave && escortNpc && escortStateKey === missionEscortStates[0].key) {
+      // Spawn pirate waves - spawn near any escort that hasn't reached destination yet
+      // Find the first active (not-yet-arrived) escort to use for wave spawning
+      const activeEscortStates = missionEscortStates.filter(({ state: s }) => !s.hasReachedDestination);
+      const isFirstActiveEscort = activeEscortStates.length > 0 && escortStateKey === activeEscortStates[0].key;
+      
+      // Debug: log wave spawn conditions for the first active escort
+      if (isFirstActiveEscort) {
+        const timeSinceLastWave = currentTime - escortState.lastWaveTime;
+        console.log(`🔍 Wave check for ${escortNpc.id}: shouldSpawn=${updateResult.shouldSpawnNewWave}, hasReached=${updateResult.hasReached}, stateHasReached=${escortState.hasReachedDestination}, isDefendInPlace=${isDefendInPlace}, timeSinceWave=${timeSinceLastWave.toFixed(1)}s, waveCount=${updateResult.updatedState.waveCount}, activeEscorts=${activeEscortStates.length}`);
+      }
+      
+      if (updateResult.shouldSpawnNewWave && escortNpc && isFirstActiveEscort) {
         console.log(
-          `🏴‍☠️ Pirate wave ${updateResult.updatedState.waveCount} spawning!`
+          `🏴‍☠️ Pirate wave ${updateResult.updatedState.waveCount} spawning near ${escortNpc.id}!`
         );
         const pirates = generatePirateWave(
           mission.id,

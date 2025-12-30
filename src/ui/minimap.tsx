@@ -23,9 +23,16 @@ export function Minimap() {
   const hasNavArray = ship.hasNavigationArray;
   
   // Get mission target NPCs for minimap display
+  // Include targets from both combat missions and escort/defend missions
   const missionTargets = useMemo(() => {
-    const activeCombatMissions = missions.filter(m => m.status === 'active' && m.type === 'combat');
-    if (activeCombatMissions.length === 0) return [];
+    const activeMissionsWithTargets = missions.filter(m => 
+      m.status === 'active' && (
+        m.type === 'combat' || 
+        // Escort missions with defend objectives spawn hostile targets
+        (m.type === 'escort' && m.objectives.some(o => o.type === 'defend'))
+      )
+    );
+    if (activeMissionsWithTargets.length === 0) return [];
     
     return npcTraders.filter(npc => npc.isMissionTarget && npc.hp > 0);
   }, [missions, npcTraders]);
@@ -40,19 +47,35 @@ export function Minimap() {
   
   // Check if there are pending targets (not yet spawned)
   const pendingTargetCount = useMemo(() => {
-    const activeCombatMissions = missions.filter(m => m.status === 'active' && m.type === 'combat');
-    if (activeCombatMissions.length === 0) return 0;
+    const activeMissionsWithTargets = missions.filter(m => 
+      m.status === 'active' && (
+        m.type === 'combat' || 
+        (m.type === 'escort' && m.objectives.some(o => o.type === 'defend'))
+      )
+    );
+    if (activeMissionsWithTargets.length === 0) return 0;
     
-    for (const mission of activeCombatMissions) {
+    for (const mission of activeMissionsWithTargets) {
+      // Check for destroy objectives (combat missions)
       const destroyObjective = mission.objectives.find(o => o.type === 'destroy');
-      if (!destroyObjective) continue;
+      if (destroyObjective) {
+        const totalRequired = destroyObjective.quantity || 0;
+        const currentlySpawned = npcTraders.filter(n => n.missionId === mission.id && n.hp > 0).length;
+        const alreadyDestroyed = destroyObjective.current || 0;
+        
+        if (currentlySpawned === 0 && alreadyDestroyed < totalRequired) {
+          return totalRequired - alreadyDestroyed;
+        }
+      }
       
-      const totalRequired = destroyObjective.quantity || 0;
-      const currentlySpawned = npcTraders.filter(n => n.missionId === mission.id && n.hp > 0).length;
-      const alreadyDestroyed = destroyObjective.current || 0;
-      
-      if (currentlySpawned === 0 && alreadyDestroyed < totalRequired) {
-        return totalRequired - alreadyDestroyed;
+      // Check for defend objectives (escort/defend missions)
+      const defendObjectives = mission.objectives.filter(o => o.type === 'defend');
+      if (defendObjectives.length > 0) {
+        const currentlySpawned = npcTraders.filter(n => n.missionId === mission.id && n.isMissionTarget && n.hp > 0).length;
+        // If no targets spawned yet but mission has defend objectives, show as pending
+        if (currentlySpawned === 0 && !defendObjectives.every(o => o.completed)) {
+          return 1; // Show "incoming" indicator
+        }
       }
     }
     return 0;
