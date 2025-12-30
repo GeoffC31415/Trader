@@ -114,6 +114,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     maxEnergy: PLAYER_MAX_ENERGY,
   },
   hasChosenStarter: false,
+  isTestMode: false,
   tutorialActive: false,
   tutorialStep: 'dock_city',
   tradeLog: [],
@@ -607,6 +608,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           ship,
           stations,
           hasChosenStarter: true,
+          isTestMode: true,
           tutorialActive: false,
           tutorialStep: 'dock_city',
         } as Partial<GameState> as GameState;
@@ -1124,6 +1126,115 @@ export const useGameStore = create<GameState>((set, get) => ({
       } as Partial<GameState> as GameState;
     }),
 
+  completeMissionObjective: (missionId, objectiveId) =>
+    set(state => {
+      const mission = state.missions.find(m => m.id === missionId);
+      if (!mission || mission.status !== 'active') return state;
+
+      const objective = mission.objectives.find(o => o.id === objectiveId);
+      if (!objective || objective.completed) return state;
+
+      // Mark objective as completed
+      const updatedObjectives = mission.objectives.map(obj =>
+        obj.id === objectiveId
+          ? { ...obj, completed: true, current: obj.quantity || 1 }
+          : obj
+      );
+
+      const updatedMission = {
+        ...mission,
+        objectives: updatedObjectives,
+      };
+
+      const updatedMissions = state.missions.map(m =>
+        m.id === missionId ? updatedMission : m
+      );
+
+      // Check if mission is now complete
+      if (checkMissionCompletion(updatedMission)) {
+        // Mark mission as completed
+        const finalMissions = updatedMissions.map(m =>
+          m.id === missionId ? { ...m, status: 'completed' as const } : m
+        );
+
+        // Apply rewards
+        const rewardUpdates = applyMissionRewards(state, updatedMission);
+
+        // Apply permanent effects
+        let effectUpdates: Partial<GameState> = {};
+        if (updatedMission.rewards.permanentEffects) {
+          effectUpdates = applyPermanentEffects(state, updatedMission.rewards.permanentEffects);
+        }
+
+        // Advance mission arc
+        const arc = state.missionArcs.find(a => a.id === updatedMission.arcId);
+        let updatedArcs = state.missionArcs;
+        if (arc) {
+          const updatedArc = advanceMissionArc(arc, updatedMission.id);
+          updatedArcs = state.missionArcs.map(a =>
+            a.id === updatedMission.arcId ? updatedArc : a
+          );
+        }
+
+        // Trigger mission celebration
+        const firstDeliver = updatedMission.objectives.find(o => o.type === 'deliver');
+        const narrativeContext = {
+          shipKind: state.ship.kind,
+          deliveredUnits: firstDeliver?.current || firstDeliver?.quantity,
+          commodityName: firstDeliver?.target,
+          routeStart: state.stations.find(s => s.id === state.ship.dockedStationId)?.name,
+          routeEnd: state.ship.dockedStationId ? state.stations.find(s => s.id === state.ship.dockedStationId)?.name : undefined,
+          enemiesDestroyed: 0,
+          stealthUsed: state.stealthStates.get(updatedMission.id)?.detected === false,
+          trustTiers: getTrustTiersSnapshot(state.relationships),
+        };
+        const missionCelebrationData: GameState['missionCelebrationData'] = {
+          missionId: updatedMission.id,
+          credits: updatedMission.rewards.credits,
+          reputationChanges: updatedMission.rewards.reputationChanges,
+          narrativeContext,
+        };
+
+        // Apply trust deltas and possibly grant assist token
+        const now = Date.now();
+        let relationships = { ...(state.relationships || {}) };
+        let allyAssistTokens = [...(state.allyAssistTokens || [])];
+        const deltas = computeTrustDeltas(updatedMission.id, narrativeContext);
+        for (const { by, delta } of deltas) {
+          const before = relationships[by];
+          const beforeTier = before?.tier ?? 0;
+          const after = setTrust(before, delta, now);
+          relationships[by] = after;
+          const crossedToSupporter = beforeTier < 1 && after.tier >= 1;
+          const eligible = canGrantToken(now, after, allyAssistTokens, by, 3, 60_000);
+          const prob = crossedToSupporter ? 1.0 : after.tier >= 1 ? 0.15 : 0;
+          if (eligible && prob > 0 && maybeProbabilityGrant(prob)) {
+            const preset = defaultAssistForStation(by);
+            const token = grantAssist(by, preset.type, preset.description, now);
+            allyAssistTokens.push(token);
+            relationships[by] = { ...after, lastAssistGrantedAt: now };
+            missionCelebrationData.allyAssistUnlocked = { by, type: preset.type, description: preset.description };
+          }
+        }
+
+        console.log(`Mission completed: ${updatedMission.title}`);
+
+        return {
+          missions: finalMissions,
+          missionArcs: updatedArcs,
+          missionCelebrationData,
+          relationships,
+          allyAssistTokens,
+          ...rewardUpdates,
+          ...effectUpdates,
+        } as Partial<GameState> as GameState;
+      }
+
+      return {
+        missions: updatedMissions,
+      } as Partial<GameState> as GameState;
+    }),
+
   // Notification actions
   addNotification: (notif) =>
     set(state => {
@@ -1139,6 +1250,102 @@ export const useGameStore = create<GameState>((set, get) => ({
     set(state => {
       return {
         notifications: (state.notifications || []).filter(n => n.id !== id),
+      } as Partial<GameState> as GameState;
+    }),
+
+  // ============ DEBUG ACTIONS (only for test mode) ============
+  debugSetCredits: (credits: number) =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      return {
+        ship: { ...state.ship, credits: Math.max(0, credits) },
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugSetReputation: (stationId: string, rep: number) =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      const clampedRep = Math.max(0, Math.min(100, rep));
+      return {
+        stations: state.stations.map(s =>
+          s.id === stationId ? { ...s, reputation: clampedRep } : s
+        ),
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugSetAllReputation: (rep: number) =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      const clampedRep = Math.max(0, Math.min(100, rep));
+      return {
+        stations: state.stations.map(s => ({ ...s, reputation: clampedRep })),
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugAddCargo: (commodityId: string, quantity: number) =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      const currentCargo = { ...state.ship.cargo };
+      const currentQty = currentCargo[commodityId] || 0;
+      const newQty = Math.max(0, currentQty + quantity);
+      if (newQty === 0) {
+        delete currentCargo[commodityId];
+      } else {
+        currentCargo[commodityId] = newQty;
+      }
+      return {
+        ship: { ...state.ship, cargo: currentCargo },
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugClearCargo: () =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      return {
+        ship: { ...state.ship, cargo: {} },
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugSetShipStat: (stat: 'acc' | 'vmax' | 'drag', value: number) =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      return {
+        ship: {
+          ...state.ship,
+          stats: { ...state.ship.stats, [stat]: Math.max(0.1, value) },
+        },
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugSetMaxCargo: (maxCargo: number) =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      return {
+        ship: { ...state.ship, maxCargo: Math.max(10, maxCargo) },
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugSetHp: (hp: number) =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      return {
+        ship: { ...state.ship, hp: Math.max(0, Math.min(state.ship.maxHp, hp)) },
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugSetEnergy: (energy: number) =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      return {
+        ship: { ...state.ship, energy: Math.max(0, Math.min(state.ship.maxEnergy, energy)) },
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugToggleUpgrade: (upgrade: 'canMine' | 'hasNavigationArray' | 'hasUnionMembership' | 'hasMarketIntel') =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      return {
+        ship: { ...state.ship, [upgrade]: !state.ship[upgrade] },
       } as Partial<GameState> as GameState;
     }),
 }));

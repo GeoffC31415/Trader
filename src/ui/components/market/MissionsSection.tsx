@@ -31,6 +31,8 @@ interface MissionsSectionProps {
   onAcceptMission: (id: string) => void;
   onAbandonMission: (id: string) => void;
   onSetChoiceDialog: (mission: Mission) => void;
+  dockedStationId?: string;
+  onCompleteObjective?: (missionId: string, objectiveId: string) => void;
 }
 
 export function MissionsSection({
@@ -44,6 +46,8 @@ export function MissionsSection({
   onAcceptMission,
   onAbandonMission,
   onSetChoiceDialog,
+  dockedStationId,
+  onCompleteObjective,
 }: MissionsSectionProps) {
   const colors = stationTypeColors[station.type];
   const [playingIntro, setPlayingIntro] = useState<string | null>(null);
@@ -290,18 +294,48 @@ export function MissionsSection({
                   </div>
                   
                   <div style={{ marginBottom: 12 }}>
-                    {mission.objectives.map(obj => (
-                      <div key={obj.id} style={{ 
-                        fontSize: 12, 
-                        marginBottom: 4,
-                        paddingLeft: 12,
-                        opacity: obj.completed ? 0.6 : 1,
-                        textDecoration: obj.completed ? 'line-through' : 'none',
-                      }}>
-                        {obj.completed ? '✓' : '○'} {obj.description}
-                        {obj.quantity && obj.quantity > 1 && ` (${obj.current}/${obj.quantity})`}
-                      </div>
-                    ))}
+                    {mission.objectives.map(obj => {
+                      // Check if this is the pick_up_proposal objective for Diplomatic Pouch mission
+                      const isPickUpProposal = mission.id === 'pirate_accords_stage_1' && 
+                                             obj.id === 'pick_up_proposal' && 
+                                             !obj.completed &&
+                                             obj.type === 'visit' &&
+                                             obj.target === 'freeport' &&
+                                             dockedStationId === 'freeport' &&
+                                             onCompleteObjective;
+                      
+                      return (
+                        <div key={obj.id} style={{ 
+                          fontSize: 12, 
+                          marginBottom: 4,
+                          paddingLeft: 12,
+                          opacity: obj.completed ? 0.6 : 1,
+                          textDecoration: obj.completed ? 'line-through' : 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                        }}>
+                          <span>
+                            {obj.completed ? '✓' : '○'} {obj.description}
+                            {obj.quantity && obj.quantity > 1 && ` (${obj.current}/${obj.quantity})`}
+                          </span>
+                          {isPickUpProposal && (
+                            <SciFiButton
+                              stationType={station.type}
+                              onClick={() => onCompleteObjective(mission.id, obj.id)}
+                              style={{ 
+                                padding: '6px 12px', 
+                                fontSize: 11, 
+                                fontWeight: 600,
+                                marginLeft: 'auto',
+                              }}
+                            >
+                              PICK UP
+                            </SciFiButton>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                   
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>

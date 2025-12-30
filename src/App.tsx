@@ -6,6 +6,7 @@ import { SceneRoot } from './scene/scene_root';
 import { MarketPanel } from './ui/market_panel';
 import { JournalPanel } from './ui/journal_panel';
 import { TradersPanel } from './ui/traders_panel';
+import { DebugPanel } from './ui/debug_panel';
 import { Minimap } from './ui/minimap';
 import { useGameStore } from './state';
 import { DockIntro } from './ui/dock_intro';
@@ -22,9 +23,10 @@ import { useMissionAudioController, preloadMissionAudio } from './shared/audio/u
 import { TargetArrows } from './ui/components/target_arrows';
 
 export function App() {
-  const [active, setActive] = useState<'market' | 'journal' | 'traders'>('market');
+  const [active, setActive] = useState<'market' | 'journal' | 'traders' | 'debug'>('market');
   const hasNav = useGameStore(s => !!s.ship.hasNavigationArray);
   const hasChosenStarter = useGameStore(s => s.hasChosenStarter);
+  const isTestMode = useGameStore(s => s.isTestMode);
   const chooseStarter = useGameStore(s => s.chooseStarter);
   const tutorialActive = useGameStore(s => s.tutorialActive);
   const setTutorialActive = useGameStore(s => s.setTutorialActive);
@@ -91,8 +93,13 @@ export function App() {
               <UIIcon name="tab_traders" size={14} />
               Traders
             </button>
+            {isTestMode && (
+              <button onClick={() => setActive('debug')} style={{ fontWeight: active==='debug'?700:400, display: 'flex', alignItems: 'center', gap: 6, color: '#f59e0b' }}>
+                🛠️ Debug
+              </button>
+            )}
           </div>
-          {active === 'market' ? <MarketPanel /> : active === 'journal' ? <JournalPanel /> : <TradersPanel />}
+          {active === 'market' ? <MarketPanel /> : active === 'journal' ? <JournalPanel /> : active === 'traders' ? <TradersPanel /> : <DebugPanel />}
         </div>
         <div className="vignette" />
         {hasNav && <Minimap />}

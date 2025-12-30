@@ -212,6 +212,7 @@ export type GameState = {
   npcTraders: NpcTrader[];
   ship: Ship;
   hasChosenStarter: boolean;
+  isTestMode: boolean; // true when playing with test ship for dev/debug purposes
   tutorialActive: boolean;
   tutorialStep: 'dock_city' | 'accept_mission' | 'goto_refinery' | 'buy_fuel' | 'deliver_fuel' | 'done';
   // Dock intro flow
@@ -346,6 +347,17 @@ export type GameState = {
   lastPriceSnapshotTime?: number; // timestamp of last snapshot
   // Market events
   marketEvents?: MarketEvent[]; // active market events affecting prices
+  // Debug actions (only available in test mode)
+  debugSetCredits: (credits: number) => void;
+  debugSetReputation: (stationId: string, rep: number) => void;
+  debugSetAllReputation: (rep: number) => void;
+  debugAddCargo: (commodityId: string, quantity: number) => void;
+  debugClearCargo: () => void;
+  debugSetShipStat: (stat: 'acc' | 'vmax' | 'drag', value: number) => void;
+  debugSetMaxCargo: (maxCargo: number) => void;
+  debugSetHp: (hp: number) => void;
+  debugSetEnergy: (energy: number) => void;
+  debugToggleUpgrade: (upgrade: 'canMine' | 'hasNavigationArray' | 'hasUnionMembership' | 'hasMarketIntel') => void;
 };
 
 export type Notification = {

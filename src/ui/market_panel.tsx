@@ -346,6 +346,8 @@ export function MarketPanel() {
               onAcceptMission={acceptMission}
               onAbandonMission={abandonMission}
               onSetChoiceDialog={setChoiceMissionDialog}
+              dockedStationId={ship.dockedStationId}
+              onCompleteObjective={useGameStore.getState().completeMissionObjective}
             />
             <ContractsSection
               station={station}
