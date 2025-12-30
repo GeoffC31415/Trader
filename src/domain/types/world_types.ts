@@ -116,6 +116,7 @@ export type NpcTrader = {
   missionId?: string; // which mission this NPC belongs to
   isMissionEscort?: boolean; // true if spawned as escort for defend missions
   isAggressive?: boolean; // true if NPC attacks on sight
+  isDefendInPlace?: boolean; // true if defending a location (stationary)
   kind?: 'freighter' | 'clipper' | 'miner'; // ship visual type
 };
 

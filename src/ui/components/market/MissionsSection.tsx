@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import type { Station } from '../../../domain/types/world_types';
-import type { Mission, MissionArc } from '../../../domain/types/mission_types';
+import type { Mission, MissionArc, MissionObjective } from '../../../domain/types/mission_types';
 import { stationTypeColors } from '../../utils/station_theme';
 import { SciFiPanel } from '../shared/SciFiPanel';
 import { SectionHeader } from '../shared/SectionHeader';
@@ -12,6 +12,31 @@ import type { Station as StationType } from '../../../domain/types/world_types';
 import * as missionAudio from '../../../shared/audio/mission_audio';
 import { gameConfig } from '../../../config/game_config';
 import { useGameStore } from '../../../state';
+import { generateCommodities } from '../../../systems/economy/commodities';
+
+// Build a set of real commodity IDs for checking if an item is a mission-specific item
+const COMMODITY_IDS = new Set(generateCommodities().map(c => c.id));
+
+/**
+ * Check if a target is a non-standard mission item (not a real commodity)
+ * Mission items like 'diplomatic_pouch', 'union_pamphlet', 'enforcement_contract' etc.
+ */
+function isMissionItem(target: string | undefined): boolean {
+  if (!target) return false;
+  return !COMMODITY_IDS.has(target);
+}
+
+/**
+ * Get a user-friendly name for a mission item
+ */
+function getMissionItemName(target: string | undefined): string {
+  if (!target) return 'item';
+  // Convert snake_case to Title Case
+  return target
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
 interface MissionsSectionProps {
   station: Station;
@@ -335,26 +360,47 @@ export function MissionsSection({
                   
                   <div style={{ marginBottom: 12 }}>
                     {mission.objectives.map(obj => {
-                      // Check if this is the pick_up_proposal objective for Diplomatic Pouch mission
-                      const isPickUpProposal = mission.id === 'pirate_accords_stage_1' && 
-                                             obj.id === 'pick_up_proposal' && 
-                                             !obj.completed &&
-                                             obj.type === 'visit' &&
-                                             obj.target === 'freeport' &&
-                                             dockedStationId === 'freeport' &&
-                                             onCompleteObjective;
+                      // Check if this is a "visit" type objective for picking up a mission item
+                      // These are objectives where you dock at a station and click "PICK UP" to collect something
+                      const isPickUpObjective = obj.type === 'visit' && 
+                                               !obj.completed &&
+                                               obj.target === dockedStationId &&
+                                               onCompleteObjective;
                       
-                      // Check if this is the install_device objective for Audit Trail mission
-                      const isInstallDevice = mission.id === 'energy_monopoly_stage_1' && 
-                                             obj.id === 'install_device' && 
+                      // Check if this is a "deliver" type objective for a non-standard mission item
+                      // These are special items (not commodities) that need to be delivered via button click
+                      const isDeliverMissionItem = obj.type === 'deliver' &&
+                                                  !obj.completed &&
+                                                  obj.targetStation === dockedStationId &&
+                                                  isMissionItem(obj.target) &&
+                                                  onCompleteObjective;
+                      
+                      // For delivery objectives, check if any prerequisite pickup objectives are completed
+                      // (e.g., you need to pick up the diplomatic pouch before delivering it)
+                      const hasPrerequisitePickup = mission.objectives.some(
+                        o => o.type === 'visit' && !o.completed && o.id !== obj.id
+                      );
+                      const canDeliver = isDeliverMissionItem && !hasPrerequisitePickup;
+                      
+                      // Check if this is an install/wait objective that requires holding a button
+                      // For wait-type objectives, we look for a preceding visit objective that tells us where to be
+                      const objIndex = mission.objectives.findIndex(o => o.id === obj.id);
+                      const precedingVisit = objIndex > 0 
+                        ? mission.objectives.slice(0, objIndex).reverse().find(o => o.type === 'visit' && o.completed)
+                        : null;
+                      const installTargetStation = precedingVisit?.target || 'ceres-pp'; // fallback for legacy
+                      
+                      const isInstallDevice = obj.type === 'wait' && 
                                              !obj.completed &&
-                                             obj.type === 'wait' &&
-                                             dockedStationId === 'ceres-pp' &&
+                                             dockedStationId === installTargetStation &&
                                              onStartInstallDevice &&
                                              onStopInstallDevice;
                       
                       const isInstalling = missionInstallState?.missionId === mission.id && 
                                           missionInstallState?.objectiveId === obj.id;
+                      
+                      // Get the item name for display
+                      const itemName = getMissionItemName(obj.target);
                       
                       return (
                         <div key={obj.id} style={{ 
@@ -372,7 +418,7 @@ export function MissionsSection({
                             {obj.completed ? '✓' : '○'} {obj.description}
                             {obj.quantity && obj.quantity > 1 && ` (${obj.current}/${obj.quantity})`}
                           </span>
-                          {isPickUpProposal && (
+                          {isPickUpObjective && (
                             <SciFiButton
                               stationType={station.type}
                               onClick={() => onCompleteObjective(mission.id, obj.id)}
@@ -386,7 +432,21 @@ export function MissionsSection({
                               PICK UP
                             </SciFiButton>
                           )}
-                          {isInstallDevice && (
+                          {canDeliver && (
+                            <SciFiButton
+                              stationType={station.type}
+                              onClick={() => onCompleteObjective(mission.id, obj.id)}
+                              style={{ 
+                                padding: '6px 12px', 
+                                fontSize: 11, 
+                                fontWeight: 600,
+                                marginLeft: 'auto',
+                              }}
+                            >
+                              DELIVER {itemName.toUpperCase()}
+                            </SciFiButton>
+                          )}
+                          {isInstallDevice && dockedStationId && (
                             <div style={{ 
                               display: 'flex', 
                               flexDirection: 'column', 

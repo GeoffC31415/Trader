@@ -238,12 +238,16 @@ export function updateMissionsInTick(
 
       if (!escortNpc || !destinationStation) continue;
 
+      // Check if this is a defend-in-place mission
+      const isDefendInPlace = escortNpc.isDefendInPlace || false;
+
       const updateResult = updateEscortState(
         escortState,
         escortNpc,
         destinationStation,
         currentTime,
-        dt
+        dt,
+        isDefendInPlace
       );
 
       updatedEscortStates.set(escortStateKey, updateResult.updatedState);
@@ -285,7 +289,27 @@ export function updateMissionsInTick(
         };
         
         const missionAfterWave = updatedMissions.find(m => m.id === mission.id) || mission;
-        const updatedMissionWave = updateMissionObjectives(missionAfterWave, waveEvent);
+        let updatedMissionWave = updateMissionObjectives(missionAfterWave, waveEvent);
+        
+        // For defend-in-place missions, check if all defend objectives are complete
+        // If so, auto-complete the escort objectives (successful defense = location protected)
+        if (isDefendInPlace) {
+          const defendObjectives = updatedMissionWave.objectives.filter(obj => obj.type === 'defend');
+          const allDefendsComplete = defendObjectives.every(obj => obj.completed);
+          
+          if (allDefendsComplete) {
+            console.log(`✅ All defend waves survived! Auto-completing escort objectives.`);
+            updatedMissionWave = {
+              ...updatedMissionWave,
+              objectives: updatedMissionWave.objectives.map(obj =>
+                obj.type === 'escort'
+                  ? { ...obj, completed: true, current: obj.quantity || 1 }
+                  : obj
+              ),
+            };
+          }
+        }
+        
         updatedMissions = updatedMissions.map(m =>
           m.id === mission.id ? updatedMissionWave : m
         );
@@ -827,6 +851,7 @@ export function acceptMissionAction(
   // Spawn escort NPCs for escort/defend missions
   if (mission.type === 'escort') {
     const escortObjectives = mission.objectives.filter(obj => obj.type === 'escort');
+    const defendObjectives = mission.objectives.filter(obj => obj.type === 'defend');
     const startStation = stations.find(s => mission.availableAt.includes(s.id));
     
     if (startStation && escortObjectives.length > 0) {
@@ -834,12 +859,16 @@ export function acceptMissionAction(
       
       // Spawn an escort NPC for each escort objective
       for (const escortObjective of escortObjectives) {
-        if (!escortObjective.targetStation) continue;
+        // Check both 'target' and 'targetStation' for the destination station ID
+        const destinationStationId = escortObjective.targetStation || escortObjective.target;
+        if (!destinationStationId) continue;
         
-        const destinationStationId = escortObjective.targetStation;
         const destinationStation = stations.find(s => s.id === destinationStationId);
         
         if (!destinationStation) continue;
+        
+        // Determine if this is a defend-in-place mission (destination == start)
+        const isDefendInPlace = destinationStationId === startStation.id;
         
         // Create escort NPC with unique ID based on objective target
         // The validator matches escort NPCs by objective.target, so use that for the ID
@@ -865,12 +894,17 @@ export function acceptMissionAction(
           
           // Mark as mission escort
           isMissionEscort: true,
+          
+          // For defend-in-place, mark as stationary
+          isDefendInPlace: isDefendInPlace,
         };
         
-        // Plan path for escort
-        const path = planNpcPath(startStation, destinationStation, startStation.position);
-        escortNpc.path = path;
-        escortNpc.pathProgress = 0;
+        // Plan path for escort (skip for defend-in-place missions)
+        if (!isDefendInPlace) {
+          const path = planNpcPath(startStation, destinationStation, startStation.position);
+          escortNpc.path = path;
+          escortNpc.pathProgress = 0;
+        }
         
         updatedNpcTraders = [...updatedNpcTraders, escortNpc];
         
@@ -887,7 +921,11 @@ export function acceptMissionAction(
         updatedEscortStates = new Map(updatedEscortStates);
         updatedEscortStates.set(escortStateKey, escortState);
         
-        console.log(`🛡️ Spawned escort NPC ${escortId} for ${mission.title} -> ${destinationStation.name}`);
+        if (isDefendInPlace) {
+          console.log(`🛡️ Created defend-in-place mission at ${startStation.name} for ${mission.title} (${defendObjectives.length} defend waves)`);
+        } else {
+          console.log(`🛡️ Spawned escort NPC ${escortId} for ${mission.title} -> ${destinationStation.name}`);
+        }
       }
     }
   }

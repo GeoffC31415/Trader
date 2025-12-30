@@ -169,13 +169,21 @@ export function generatePirateWave(
 
 /**
  * Update escort mission state
+ * 
+ * @param state - Current escort state
+ * @param escortNpc - The escort NPC (can be stationary for defend-in-place)
+ * @param destinationStation - Destination station
+ * @param currentTime - Current game time in seconds
+ * @param deltaTime - Time since last update
+ * @param isDefendInPlace - True if this is a defend-at-location mission (stationary)
  */
 export function updateEscortState(
   state: EscortMissionState,
   escortNpc: NpcTrader | undefined,
   destinationStation: Station | undefined,
   currentTime: number,
-  deltaTime: number
+  deltaTime: number,
+  isDefendInPlace: boolean = false
 ): {
   updatedState: EscortMissionState;
   shouldSpawnNewWave: boolean;
@@ -198,7 +206,32 @@ export function updateEscortState(
     escortHp: escortNpc.hp,
   };
   
-  // Check if reached destination
+  // For defend-in-place missions, skip destination check and keep spawning waves
+  // The mission completes when all defend objectives are satisfied
+  if (isDefendInPlace) {
+    // Check if should spawn new wave
+    if (shouldSpawnWave(state.lastWaveTime, currentTime)) {
+      return {
+        updatedState: {
+          ...updatedState,
+          lastWaveTime: currentTime,
+          waveCount: state.waveCount + 1,
+        },
+        shouldSpawnNewWave: true,
+        hasReached: false, // Never "reached" for defend-in-place
+        escortDestroyed: false,
+      };
+    }
+    
+    return {
+      updatedState,
+      shouldSpawnNewWave: false,
+      hasReached: false,
+      escortDestroyed: false,
+    };
+  }
+  
+  // Standard escort logic: check if reached destination
   if (!state.hasReachedDestination && destinationStation) {
     const hasReached = hasEscortReachedDestination(
       escortNpc.position,
