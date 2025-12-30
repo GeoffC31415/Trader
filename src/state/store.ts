@@ -35,6 +35,7 @@ import {
 import { distance } from '../shared/math/vec3';
 import { NPC_BASE_HP } from '../domain/constants/weapon_constants';
 import { initializeMissionArcs, generateMissionsForStation, updateArcStatuses } from '../systems/missions/mission_generator';
+import { getMissionTemplatesByStage } from '../domain/constants/mission_constants';
 import { checkMissionCompletion, checkMissionFailure, updateMissionObjectives, type MissionEvent } from '../systems/missions/mission_validator';
 import { applyMissionRewards, advanceMissionArc, canAcceptMission, applyPermanentEffects } from './helpers/mission_helpers';
 import { applyChoicePermanentEffects } from '../systems/missions/choice_system';
@@ -1618,16 +1619,93 @@ export const useGameStore = create<GameState>((set, get) => ({
     set(state => {
       if (!state.isTestMode) return state;
       const clampedStage = Math.max(1, Math.min(4, stage));
+      
+      // Update the arc:
+      // 1. Clear completedMissions for stages >= clampedStage (so they can be re-tested)
+      // 2. Add all missions from stages < clampedStage to completedMissions (to satisfy prerequisites)
+      const updatedArcs = state.missionArcs.map(arc => {
+        if (arc.id !== arcId) return arc;
+        
+        // Get all mission IDs from prior stages that should be marked as completed
+        const priorStageMissionIds: string[] = [];
+        for (let s = 1; s < clampedStage; s++) {
+          const templates = getMissionTemplatesByStage(arcId, s);
+          for (const template of templates) {
+            priorStageMissionIds.push(template.id);
+          }
+        }
+        
+        // Filter out completed missions that are at or after the new stage
+        // This allows the player to re-test those missions
+        const filteredCompletedMissions = arc.completedMissions.filter(missionId => {
+          // Check if this mission is at stage >= clampedStage
+          // Mission IDs follow pattern: arcId_stage_N or similar
+          const stageMatch = missionId.match(/_stage_(\d+)/);
+          if (stageMatch) {
+            const missionStage = parseInt(stageMatch[1], 10);
+            return missionStage < clampedStage;
+          }
+          return true; // Keep missions we can't parse
+        });
+        
+        // Merge prior stage missions with filtered completed missions (avoid duplicates)
+        const completedSet = new Set(filteredCompletedMissions);
+        for (const missionId of priorStageMissionIds) {
+          completedSet.add(missionId);
+        }
+        
+        return {
+          ...arc,
+          currentStage: clampedStage,
+          status: status ?? arc.status,
+          completedMissions: Array.from(completedSet),
+        };
+      });
+      
+      // Regenerate missions for all stations to pick up the new arc state
+      // First, remove all offered missions from the changed arc (so they can be regenerated)
+      const missionsWithoutOfferedFromArc = state.missions.filter(
+        m => !(m.arcId === arcId && m.status === 'offered')
+      );
+      
+      // Build player state for mission generation
+      const playerReputation: Record<string, number> = {};
+      state.stations.forEach(s => {
+        playerReputation[s.id] = s.reputation ?? 0;
+      });
+      const playerUpgrades: string[] = [];
+      if (state.ship.hasNavigationArray) playerUpgrades.push('nav');
+      if (state.ship.hasUnionMembership) playerUpgrades.push('union');
+      if (state.ship.hasMarketIntel) playerUpgrades.push('intel');
+      
+      const activeMissions = missionsWithoutOfferedFromArc.filter(m => m.status === 'active');
+      const completedArcIds = updatedArcs.filter(a => a.status === 'completed').map(a => a.id);
+      
+      // Generate new missions for all stations and collect the ones that should appear
+      let allNewMissions = [...missionsWithoutOfferedFromArc];
+      for (const station of state.stations) {
+        const newMissions = generateMissionsForStation(
+          station.id,
+          playerReputation,
+          playerUpgrades,
+          updatedArcs,
+          activeMissions,
+          completedArcIds
+        );
+        
+        // Add missions that don't already exist
+        const existingIds = new Set(allNewMissions.map(m => m.id));
+        for (const mission of newMissions) {
+          if (!existingIds.has(mission.id)) {
+            allNewMissions.push(mission);
+            existingIds.add(mission.id);
+          }
+        }
+      }
+      
       return {
-        missionArcs: state.missionArcs.map(arc =>
-          arc.id === arcId
-            ? {
-                ...arc,
-                currentStage: clampedStage,
-                status: status ?? arc.status,
-              }
-            : arc
-        ),
+        missionArcs: updatedArcs,
+        missions: allNewMissions,
       } as Partial<GameState> as GameState;
     }),
 }));
