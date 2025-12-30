@@ -21,6 +21,7 @@ import { Notifications } from './ui/components/Notifications';
 import { useMusicController, initializeMusicOnInteraction } from './shared/audio/use_music';
 import { useMissionAudioController, preloadMissionAudio } from './shared/audio/use_mission_audio';
 import { TargetArrows } from './ui/components/target_arrows';
+import { StealthIndicator } from './ui/components/hud/StealthIndicator';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal' | 'traders' | 'debug'>('market');
@@ -118,6 +119,7 @@ export function App() {
         <MissionCelebration />
         <Notifications />
         <TargetArrows />
+        <StealthIndicator />
         
         {!hasChosenStarter && (
           <StarterShipSelector
