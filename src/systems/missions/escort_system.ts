@@ -233,19 +233,12 @@ export function updateEscortState(
   
   // Standard escort logic: check if reached destination
   if (!state.hasReachedDestination && destinationStation) {
-    const escortPos = escortNpc.position;
-    const destPos = destinationStation.position;
-    const dx = escortPos[0] - destPos[0];
-    const dy = escortPos[1] - destPos[1];
-    const dz = escortPos[2] - destPos[2];
-    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    
-    console.log(`📏 Distance check for ${state.escortNpcId}: escort at [${escortPos.map(v => v.toFixed(0)).join(',')}], dest ${state.destinationStationId} at [${destPos.map(v => v.toFixed(0)).join(',')}], distance=${distance.toFixed(0)}, threshold=${DESTINATION_REACH_DISTANCE}`);
-    
-    const hasReached = distance < DESTINATION_REACH_DISTANCE;
+    const hasReached = hasEscortReachedDestination(
+      escortNpc.position,
+      destinationStation.position
+    );
     
     if (hasReached) {
-      console.log(`📍 Escort ${state.escortNpcId} reached destination ${state.destinationStationId}`);
       return {
         updatedState: { ...updatedState, hasReachedDestination: true },
         shouldSpawnNewWave: false,
@@ -255,12 +248,8 @@ export function updateEscortState(
     }
   }
   
-  // Debug: log spawn wave check
-  const shouldSpawn = shouldSpawnWave(state.lastWaveTime, currentTime);
-  console.log(`🔎 updateEscortState: hasReachedDest=${state.hasReachedDestination}, shouldSpawnWave=${shouldSpawn}, lastWaveTime=${state.lastWaveTime}, currentTime=${currentTime}, diff=${(currentTime - state.lastWaveTime).toFixed(1)}s`);
-  
   // Check if should spawn new wave (only if not reached destination)
-  if (!state.hasReachedDestination && shouldSpawn) {
+  if (!state.hasReachedDestination && shouldSpawnWave(state.lastWaveTime, currentTime)) {
     return {
       updatedState: {
         ...updatedState,

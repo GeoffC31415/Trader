@@ -218,11 +218,6 @@ export function updateMissionsInTick(
   const escortMissions = getActiveEscortMissions(activeMissions);
   const currentTime = Date.now() / 1000;
 
-  // Debug: Log active escort missions and their states
-  if (escortMissions.length > 0) {
-    console.log(`🎯 Processing ${escortMissions.length} escort missions, escortStates size: ${updatedEscortStates.size}`);
-  }
-
   for (const mission of escortMissions) {
     // Find all escort states for this mission (supports multiple escorts per mission)
     const missionEscortStates: Array<{ key: string; state: any }> = [];
@@ -233,7 +228,6 @@ export function updateMissionsInTick(
     }
 
     if (missionEscortStates.length === 0) {
-      console.log(`⚠️ No escort states found for mission ${mission.id}. Available keys:`, [...updatedEscortStates.keys()]);
       continue;
     }
 
@@ -244,18 +238,74 @@ export function updateMissionsInTick(
         s => s.id === escortState.destinationStationId
       );
 
-      if (!escortNpc || !destinationStation) {
-        console.log(`⚠️ Missing escort data: escortNpc=${escortNpc?.id || 'NOT FOUND'} (looking for ${escortState.escortNpcId}), destination=${destinationStation?.id || 'NOT FOUND'}`);
-        console.log(`  Available NPC IDs with isMissionEscort:`, updatedNpcTraders.filter(n => n.isMissionEscort).map(n => n.id));
+      // Check if escort NPC is missing or destroyed (HP <= 0)
+      const escortMissing = !escortNpc;
+      const escortDead = escortNpc && escortNpc.hp <= 0;
+      const escortDestroyed = escortMissing || escortDead;
+      
+      if (!destinationStation) {
         continue;
       }
 
       // Check if this is a defend-in-place mission
-      const isDefendInPlace = escortNpc.isDefendInPlace || false;
+      const isDefendInPlace = escortNpc?.isDefendInPlace || false;
 
+      // Handle escort destroyed (NPC missing or HP <= 0)
+      if (escortDestroyed) {
+        // Skip if escort already reached its destination (NPC may have been removed after arrival)
+        if (escortState.hasReachedDestination) {
+          continue;
+        }
+        
+        // Check if this escort's objective was already marked as completed or failed
+        const missionToCheck = updatedMissions.find(m => m.id === mission.id) || mission;
+        const escortObjective = missionToCheck.objectives.find(
+          obj => obj.type === 'escort' && obj.target === escortState.escortNpcId
+        );
+        
+        // Skip if already completed or failed (don't re-process)
+        if (escortObjective?.completed || escortObjective?.failed) {
+          continue;
+        }
+        
+        // Mark the corresponding escort objective as failed
+        const missionToUpdate = missionToCheck;
+        const updatedMissionWithFailedObjective = {
+          ...missionToUpdate,
+          objectives: missionToUpdate.objectives.map(obj => {
+            // Match escort objective by target (escort NPC ID)
+            if (obj.type === 'escort' && obj.target === escortState.escortNpcId) {
+              return { ...obj, completed: false, failed: true };
+            }
+            return obj;
+          }),
+        };
+        updatedMissions = updatedMissions.map(m =>
+          m.id === mission.id ? updatedMissionWithFailedObjective : m
+        );
+        
+        // Count how many escorts have been destroyed
+        const destroyedCount = missionEscortStates.filter(({ state: s }) => {
+          const npc = updatedNpcTraders.find(n => n.id === s.escortNpcId);
+          return !npc || npc.hp <= 0;
+        }).length;
+        
+        // Mission fails if 2 or more escorts are destroyed
+        if (destroyedCount >= 2) {
+          updatedMissions = updatedMissions.map(m =>
+            m.id === mission.id ? { ...m, status: 'failed' as const } : m
+          );
+          updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
+          break; // Exit escort loop, continue to next mission
+        }
+        
+        continue; // This escort is destroyed, but mission continues
+      }
+
+      // Escort is alive - call updateEscortState for normal processing
       const updateResult = updateEscortState(
         escortState,
-        escortNpc,
+        escortNpc!,
         destinationStation,
         currentTime,
         dt,
@@ -263,26 +313,6 @@ export function updateMissionsInTick(
       );
 
       updatedEscortStates.set(escortStateKey, updateResult.updatedState);
-
-      // Handle escort destroyed
-      if (updateResult.escortDestroyed) {
-        console.log(`💥 Escort ${escortState.escortNpcId} destroyed!`);
-        // Check if all escorts are destroyed (mission fails if any escort dies)
-        const allEscortsDestroyed = missionEscortStates.every(({ state: s }) => {
-          const npc = updatedNpcTraders.find(n => n.id === s.escortNpcId);
-          return !npc || npc.hp <= 0;
-        });
-        
-        if (allEscortsDestroyed) {
-          console.log(`💥 All escorts destroyed! Mission failed: ${mission.title}`);
-          updatedMissions = updatedMissions.map(m =>
-            m.id === mission.id ? { ...m, status: 'failed' as const } : m
-          );
-          updatedEscortStates = cleanupEscortState(updatedEscortStates, mission.id);
-          break; // Exit escort loop, continue to next mission
-        }
-        continue; // This escort is destroyed, but others may still be alive
-      }
 
       // Check for wave completion (all pirates in current wave destroyed)
       const currentEscortState = updatedEscortStates.get(escortStateKey) || updateResult.updatedState;
@@ -442,16 +472,7 @@ export function updateMissionsInTick(
       const activeEscortStates = missionEscortStates.filter(({ state: s }) => !s.hasReachedDestination);
       const isFirstActiveEscort = activeEscortStates.length > 0 && escortStateKey === activeEscortStates[0].key;
       
-      // Debug: log wave spawn conditions for the first active escort
-      if (isFirstActiveEscort) {
-        const timeSinceLastWave = currentTime - escortState.lastWaveTime;
-        console.log(`🔍 Wave check for ${escortNpc.id}: shouldSpawn=${updateResult.shouldSpawnNewWave}, hasReached=${updateResult.hasReached}, stateHasReached=${escortState.hasReachedDestination}, isDefendInPlace=${isDefendInPlace}, timeSinceWave=${timeSinceLastWave.toFixed(1)}s, waveCount=${updateResult.updatedState.waveCount}, activeEscorts=${activeEscortStates.length}`);
-      }
-      
       if (updateResult.shouldSpawnNewWave && escortNpc && isFirstActiveEscort) {
-        console.log(
-          `🏴‍☠️ Pirate wave ${updateResult.updatedState.waveCount} spawning near ${escortNpc.id}!`
-        );
         const pirates = generatePirateWave(
           mission.id,
           updateResult.updatedState.waveCount,
@@ -943,11 +964,6 @@ export function acceptMissionAction(
         updatedEscortStates = new Map(updatedEscortStates);
         updatedEscortStates.set(escortStateKey, escortState);
         
-        if (isDefendInPlace) {
-          console.log(`🛡️ Created defend-in-place mission at ${startStation.name} for ${mission.title} (${defendObjectives.length} defend waves)`);
-        } else {
-          console.log(`🛡️ Spawned escort NPC ${escortId} for ${mission.title} -> ${destinationStation.name}`);
-        }
       }
     }
   }

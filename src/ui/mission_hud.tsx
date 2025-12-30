@@ -314,38 +314,45 @@ export function MissionHud() {
         }}>
           Objectives ({primaryMission.objectives.filter(o => o.completed).length} / {primaryMission.objectives.filter(o => !o.optional).length})
         </div>
-        {primaryMission.objectives.filter(o => !o.optional).map((obj, idx) => (
-          <div
-            key={obj.id}
-            style={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 8,
-              marginBottom: 4,
-              fontSize: 12,
-              opacity: obj.completed ? 0.6 : 1,
-            }}
-          >
-            <span style={{
-              color: obj.completed ? '#4ade80' : '#ffc864',
-              flexShrink: 0,
-            }}>
-              {obj.completed ? '✓' : '○'}
-            </span>
-            <span style={{
-              color: obj.completed ? '#aaa' : '#fff',
-              textDecoration: obj.completed ? 'line-through' : 'none',
-              flex: 1,
-            }}>
-              {obj.description}
-              {obj.quantity && obj.quantity > 0 && !obj.completed && (
-                <span style={{ color: '#6baaff', marginLeft: 6 }}>
-                  ({obj.current}/{obj.quantity})
-                </span>
-              )}
-            </span>
-          </div>
-        ))}
+        {primaryMission.objectives.filter(o => !o.optional).map((obj, idx) => {
+          const isFailed = obj.failed === true;
+          const isCompleted = obj.completed && !isFailed;
+          const isResolved = isCompleted || isFailed;
+          
+          return (
+            <div
+              key={obj.id}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                marginBottom: 4,
+                fontSize: 12,
+                opacity: isResolved ? 0.6 : 1,
+              }}
+            >
+              <span style={{
+                color: isFailed ? '#ef4444' : isCompleted ? '#4ade80' : '#ffc864',
+                flexShrink: 0,
+              }}>
+                {isFailed ? '✗' : isCompleted ? '✓' : '○'}
+              </span>
+              <span style={{
+                color: isFailed ? '#f87171' : isCompleted ? '#aaa' : '#fff',
+                textDecoration: isResolved ? 'line-through' : 'none',
+                flex: 1,
+              }}>
+                {obj.description}
+                {isFailed && <span style={{ color: '#ef4444', marginLeft: 6 }}>(FAILED)</span>}
+                {obj.quantity && obj.quantity > 0 && !isResolved && (
+                  <span style={{ color: '#6baaff', marginLeft: 6 }}>
+                    ({obj.current}/{obj.quantity})
+                  </span>
+                )}
+              </span>
+            </div>
+          );
+        })}
       </div>
       
       {/* Optional Objectives */}
@@ -364,30 +371,36 @@ export function MissionHud() {
           }}>
             Optional
           </div>
-          {primaryMission.objectives.filter(o => o.optional).map((obj) => (
-            <div
-              key={obj.id}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 8,
-                fontSize: 12,
-                opacity: 0.7,
-              }}
-            >
-              <span style={{
-                color: obj.completed ? '#4ade80' : '#aaa',
-              }}>
-                {obj.completed ? '✓' : '○'}
-              </span>
-              <span style={{
-                color: obj.completed ? '#aaa' : '#ccc',
-                textDecoration: obj.completed ? 'line-through' : 'none',
-              }}>
-                {obj.description}
-              </span>
-            </div>
-          ))}
+          {primaryMission.objectives.filter(o => o.optional).map((obj) => {
+            const isFailed = obj.failed === true;
+            const isCompleted = obj.completed && !isFailed;
+            
+            return (
+              <div
+                key={obj.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 8,
+                  fontSize: 12,
+                  opacity: 0.7,
+                }}
+              >
+                <span style={{
+                  color: isFailed ? '#ef4444' : isCompleted ? '#4ade80' : '#aaa',
+                }}>
+                  {isFailed ? '✗' : isCompleted ? '✓' : '○'}
+                </span>
+                <span style={{
+                  color: isFailed ? '#f87171' : isCompleted ? '#aaa' : '#ccc',
+                  textDecoration: (isCompleted || isFailed) ? 'line-through' : 'none',
+                }}>
+                  {obj.description}
+                  {isFailed && <span style={{ color: '#ef4444', marginLeft: 6 }}>(FAILED)</span>}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
       

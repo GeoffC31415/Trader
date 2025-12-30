@@ -31,6 +31,7 @@ export type MissionObjective = {
   quantity?: number;
   current: number;
   completed: boolean;
+  failed?: boolean; // true if this objective failed (e.g., escort destroyed)
   optional?: boolean;
 };
 

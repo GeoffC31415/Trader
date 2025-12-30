@@ -65,7 +65,7 @@ export function updateNpcTraders(
 }
 
 /**
- * Update hostile pirate NPCs (chase nearest escort or player)
+ * Update hostile pirate NPCs (orbit around nearest escort or player)
  */
 function updateHostilePirate(
   npc: NpcTrader,
@@ -74,6 +74,8 @@ function updateHostilePirate(
   dt: number
 ): NpcTrader {
   const pirateSpeed = 12; // Pirates move at a medium-fast speed
+  const orbitDistance = 50; // Distance to orbit around target
+  const orbitSpeed = 0.5; // Radians per second for orbit
   
   // Find nearest escort to chase
   let targetPos: [number, number, number] | null = null;
@@ -96,35 +98,73 @@ function updateHostilePirate(
     nearestDist = distance(npc.position, targetPos);
   }
   
-  // Move towards target
-  const dx = targetPos[0] - npc.position[0];
-  const dy = targetPos[1] - npc.position[1];
-  const dz = targetPos[2] - npc.position[2];
-  const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  // Calculate vector from target to pirate
+  const dx = npc.position[0] - targetPos[0];
+  const dy = npc.position[1] - targetPos[1];
+  const dz = npc.position[2] - targetPos[2];
+  const dist = Math.sqrt(dx * dx + dz * dz); // Distance in XZ plane for orbit
   
-  if (dist < 5) {
-    // Close enough, just hover near target
-    return npc;
+  // If too far, move towards the orbit distance
+  if (dist > orbitDistance * 1.5) {
+    // Approach the target until within orbit range
+    const step = pirateSpeed * dt;
+    const totalDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    const ux = -dx / totalDist;
+    const uy = -dy / totalDist;
+    const uz = -dz / totalDist;
+    
+    const newPosition: [number, number, number] = [
+      npc.position[0] + ux * step,
+      npc.position[1] + uy * step,
+      npc.position[2] + uz * step,
+    ];
+    
+    return { ...npc, position: newPosition, velocity: [ux * pirateSpeed, uy * pirateSpeed, uz * pirateSpeed] };
   }
   
-  const step = pirateSpeed * dt;
-  const ux = dx / dist;
-  const uy = dy / dist;
-  const uz = dz / dist;
+  // If too close, move outward
+  if (dist < orbitDistance * 0.5) {
+    const step = pirateSpeed * dt * 0.5; // Move out slower
+    const ux = dx / Math.max(dist, 1);
+    const uz = dz / Math.max(dist, 1);
+    
+    const newPosition: [number, number, number] = [
+      npc.position[0] + ux * step,
+      npc.position[1], // Keep Y stable
+      npc.position[2] + uz * step,
+    ];
+    
+    return { ...npc, position: newPosition, velocity: [ux * pirateSpeed * 0.5, 0, uz * pirateSpeed * 0.5] };
+  }
   
-  const newPosition: [number, number, number] = [
-    npc.position[0] + ux * step,
-    npc.position[1] + uy * step,
-    npc.position[2] + uz * step,
-  ];
+  // Within orbit range - orbit around the target
+  // Calculate current angle from target
+  const currentAngle = Math.atan2(dz, dx);
   
-  const newVelocity: [number, number, number] = [
-    ux * pirateSpeed,
-    uy * pirateSpeed,
-    uz * pirateSpeed,
-  ];
+  // Use NPC id hash to vary orbit direction and speed slightly
+  const idHash = npc.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const orbitDirection = (idHash % 2 === 0) ? 1 : -1; // Clockwise or counter-clockwise
+  const speedVariation = 0.8 + (idHash % 5) * 0.1; // 0.8 to 1.2x speed
   
-  return { ...npc, position: newPosition, velocity: newVelocity };
+  // Calculate new angle
+  const newAngle = currentAngle + orbitDirection * orbitSpeed * speedVariation * dt;
+  
+  // Calculate new position on orbit
+  const newX = targetPos[0] + Math.cos(newAngle) * orbitDistance;
+  const newZ = targetPos[2] + Math.sin(newAngle) * orbitDistance;
+  
+  // Gradually adjust Y to match target (with some variation)
+  const targetY = targetPos[1] + ((idHash % 20) - 10); // Slight Y offset based on ID
+  const newY = npc.position[1] + (targetY - npc.position[1]) * dt * 0.5;
+  
+  const newPosition: [number, number, number] = [newX, newY, newZ];
+  
+  // Calculate velocity based on orbit movement
+  const velX = (newX - npc.position[0]) / dt;
+  const velY = (newY - npc.position[1]) / dt;
+  const velZ = (newZ - npc.position[2]) / dt;
+  
+  return { ...npc, position: newPosition, velocity: [velX, velY, velZ] };
 }
 
 /**

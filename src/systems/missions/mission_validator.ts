@@ -122,10 +122,15 @@ export function validateObjective(
 
 /**
  * Check if all required objectives are completed
+ * Failed objectives are considered "resolved" - they don't block completion
+ * (the mission failure check handles whether too many objectives failed)
  */
 export function checkMissionCompletion(mission: Mission): boolean {
   const requiredObjectives = mission.objectives.filter(obj => !obj.optional);
-  return requiredObjectives.every(obj => obj.completed);
+  // An objective is "resolved" if it's completed OR failed
+  // This allows missions to complete even with some failed objectives
+  // (as long as the mission wasn't completely failed due to too many failures)
+  return requiredObjectives.every(obj => obj.completed || obj.failed);
 }
 
 /**

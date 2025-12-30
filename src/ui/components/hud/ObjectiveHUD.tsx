@@ -59,20 +59,31 @@ export function ObjectiveHUD({
             
             {/* Mission objectives */}
             <div style={{ fontSize: 12, marginTop: 8 }}>
-              {primaryMission.objectives.filter(obj => !obj.optional).map(obj => (
-                <div key={obj.id} style={{ 
-                  marginBottom: 4, 
-                  opacity: obj.completed ? 0.6 : 1,
-                  textDecoration: obj.completed ? 'line-through' : 'none',
-                }}>
-                  {obj.completed ? '✓' : '○'} {obj.description}
-                  {obj.quantity && obj.quantity > 1 && (
-                    <span style={{ marginLeft: 8, opacity: 0.8, fontFamily: 'monospace' }}>
-                      ({obj.current}/{obj.quantity})
-                    </span>
-                  )}
-                </div>
-              ))}
+              {primaryMission.objectives.filter(obj => !obj.optional).map(obj => {
+                const isFailed = obj.failed === true;
+                const isCompleted = obj.completed && !isFailed;
+                const isResolved = isCompleted || isFailed;
+                
+                return (
+                  <div key={obj.id} style={{ 
+                    marginBottom: 4, 
+                    opacity: isResolved ? 0.6 : 1,
+                    textDecoration: isResolved ? 'line-through' : 'none',
+                    color: isFailed ? '#ef4444' : (isCompleted ? '#9ca3af' : 'inherit'),
+                  }}>
+                    <span style={{ color: isFailed ? '#ef4444' : (isCompleted ? '#4ade80' : '#ffc864') }}>
+                      {isFailed ? '✗' : (isCompleted ? '✓' : '○')}
+                    </span>{' '}
+                    {obj.description}
+                    {isFailed && <span style={{ color: '#ef4444', marginLeft: 6, fontWeight: 600 }}>(FAILED)</span>}
+                    {obj.quantity && obj.quantity > 1 && !isResolved && (
+                      <span style={{ marginLeft: 8, opacity: 0.8, fontFamily: 'monospace' }}>
+                        ({obj.current}/{obj.quantity})
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             
             {/* Progress bar */}
