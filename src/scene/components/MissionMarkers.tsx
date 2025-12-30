@@ -4,6 +4,7 @@ import { useGameStore } from '../../state';
 import { Html } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useState, useMemo } from 'react';
+import * as THREE from 'three';
 
 // Check if a combat mission has pending (not yet spawned) targets
 function getPendingTargetCount(mission: any, missionNpcs: any[]): number {
@@ -116,14 +117,14 @@ export function MissionMarkers() {
             {/* Ring marker above NPC */}
             <mesh position={[0, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <ringGeometry args={[18, 22, 32]} />
-              <meshBasicMaterial color={markerColor} transparent opacity={opacity} />
+              <meshBasicMaterial color={markerColor} transparent opacity={opacity} side={THREE.DoubleSide} />
             </mesh>
             
             {/* Inner ring for active targets */}
             {!isEnRoute && (
               <mesh position={[0, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
                 <ringGeometry args={[10, 14, 32]} />
-                <meshBasicMaterial color="#ff6666" transparent opacity={opacity * 0.6} />
+                <meshBasicMaterial color="#ff6666" transparent opacity={opacity * 0.6} side={THREE.DoubleSide} />
               </mesh>
             )}
             
@@ -202,13 +203,13 @@ export function MissionMarkers() {
             {/* Teal ring marker above escort */}
             <mesh position={[0, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <ringGeometry args={[18, 22, 32]} />
-              <meshBasicMaterial color={markerColor} transparent opacity={opacity} />
+              <meshBasicMaterial color={markerColor} transparent opacity={opacity} side={THREE.DoubleSide} />
             </mesh>
             
             {/* Inner ring for active escorts */}
             <mesh position={[0, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <ringGeometry args={[10, 14, 32]} />
-              <meshBasicMaterial color="#66ddbb" transparent opacity={opacity * 0.6} />
+              <meshBasicMaterial color="#66ddbb" transparent opacity={opacity * 0.6} side={THREE.DoubleSide} />
             </mesh>
             
             {/* Distance and status label */}
@@ -311,7 +312,7 @@ export function MissionMarkers() {
             {/* Blue ring marker below station */}
             <mesh position={[0, -80, 0]} rotation={[Math.PI / 2, 0, 0]}>
               <ringGeometry args={[30, 36, 32]} />
-              <meshBasicMaterial color="#6b9aff" transparent opacity={opacity} />
+              <meshBasicMaterial color="#6b9aff" transparent opacity={opacity} side={THREE.DoubleSide} />
             </mesh>
             
             {/* Mission destination label */}
