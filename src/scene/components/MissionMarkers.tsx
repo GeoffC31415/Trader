@@ -118,13 +118,25 @@ export function MissionMarkers() {
         const dz = npc.position[2] - ship.position[2];
         const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
         
+        // Check if this is a hostile pirate
+        const isPirate = npc.isHostile || npc.id.startsWith('pirate:');
+        
         // Determine if target is "en route" (far away, still approaching)
         const isEnRoute = dist > 800;
-        const markerColor = isEnRoute ? '#ffcc44' : '#ff4444';
+        // Pirates get a purple/magenta color, regular targets get red/yellow
+        const markerColor = isPirate 
+          ? (isEnRoute ? '#aa44ff' : '#ff44aa')
+          : (isEnRoute ? '#ffcc44' : '#ff4444');
         
         // HP bar calculation
         const hpPercent = npc.maxHp > 0 ? (npc.hp / npc.maxHp) * 100 : 100;
         const hpColor = hpPercent > 60 ? '#44cc88' : hpPercent > 30 ? '#ffcc44' : '#ff4444';
+        
+        // Label and icon based on type
+        const labelText = isPirate 
+          ? (isEnRoute ? 'PIRATE INCOMING' : 'PIRATE')
+          : (isEnRoute ? 'EN ROUTE' : 'TARGET');
+        const labelIcon = isPirate ? '🏴‍☠️' : '🎯';
         
         return (
           <group key={npc.id} position={npc.position}>
@@ -138,7 +150,7 @@ export function MissionMarkers() {
             {!isEnRoute && (
               <mesh position={[0, 5, 0]} rotation={[Math.PI / 2, 0, 0]}>
                 <ringGeometry args={[10, 14, 32]} />
-                <meshBasicMaterial color="#ff6666" transparent opacity={opacity * 0.6} side={THREE.DoubleSide} />
+                <meshBasicMaterial color={isPirate ? '#ff66cc' : '#ff6666'} transparent opacity={opacity * 0.6} side={THREE.DoubleSide} />
               </mesh>
             )}
             
@@ -166,7 +178,7 @@ export function MissionMarkers() {
                 textAlign: 'center',
               }}>
                 <div style={{ marginBottom: 2 }}>
-                  🎯 {isEnRoute ? 'EN ROUTE' : 'TARGET'}
+                  {labelIcon} {labelText}
                 </div>
                 <div style={{ fontSize: 10, opacity: 0.9 }}>
                   {dist > 100 ? `${Math.floor(dist)}m` : `${dist.toFixed(0)}m`}

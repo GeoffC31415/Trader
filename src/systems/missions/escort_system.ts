@@ -32,7 +32,7 @@ export const ENEMIES_PER_WAVE_MAX = 3;
 /**
  * Distance from escort to spawn pirate waves (in world units)
  */
-export const WAVE_SPAWN_DISTANCE = 15 * SCALE;
+export const WAVE_SPAWN_DISTANCE = 8 * SCALE;
 
 // ============================================================================
 // Escort State Tracking

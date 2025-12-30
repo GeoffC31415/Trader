@@ -318,16 +318,43 @@ export function updateMissionsInTick(
         };
 
         const missionAfterEscort = updatedMissions.find(m => m.id === mission.id) || mission;
-        const updatedMission = updateMissionObjectives(missionAfterEscort, missionEvent);
+        let updatedMission = updateMissionObjectives(missionAfterEscort, missionEvent);
         updatedMissions = updatedMissions.map(m =>
           m.id === mission.id ? updatedMission : m
         );
 
-        // Check if mission is complete (all escorts reached destinations)
-        if (checkMissionCompletion(updatedMission)) {
+        // Check if ALL escort objectives are now complete
+        const escortObjectives = updatedMission.objectives.filter(
+          obj => obj.type === 'escort' && !obj.optional
+        );
+        const allEscortsArrived = escortObjectives.every(obj => obj.completed);
+
+        if (allEscortsArrived) {
+          console.log(`✅ All escorts reached destination! Auto-completing defend objectives.`);
+          
+          // Auto-complete any defend objectives (wave survival)
+          updatedMission = {
+            ...updatedMission,
+            objectives: updatedMission.objectives.map(obj => 
+              obj.type === 'defend' 
+                ? { ...obj, completed: true, current: obj.quantity || obj.current }
+                : obj
+            ),
+          };
+          
+          // Mark mission as completed
           updatedMissions = updatedMissions.map(m =>
-            m.id === mission.id ? { ...m, status: 'completed' as const } : m
+            m.id === mission.id ? { ...updatedMission, status: 'completed' as const } : m
           );
+
+          // Despawn leftover pirates tied to this mission
+          updatedNpcTraders = updatedNpcTraders.filter(npc => {
+            if (npc.missionId === mission.id && npc.isMissionTarget) {
+              console.log(`🗑️ Despawning leftover pirate: ${npc.id}`);
+              return false;
+            }
+            return true;
+          });
 
           // Apply rewards
           const rewardUpdates = applyMissionRewards(

@@ -19,7 +19,7 @@ export interface NpcUpdateResult {
 
 /**
  * Update all NPC traders for one frame
- * Handles contract escorts, mission escorts, and regular traders
+ * Handles contract escorts, mission escorts, hostile pirates, and regular traders
  * 
  * @param npcTraders - Current NPC traders
  * @param stations - All stations (for pathfinding)
@@ -37,6 +37,9 @@ export function updateNpcTraders(
     stations.map(s => [s.id, s])
   );
   const stationStockDelta: Record<string, Record<string, number>> = {};
+  
+  // Find escort NPCs for pirates to target
+  const escortNpcs = npcTraders.filter(n => n.isMissionEscort && n.hp > 0);
 
   const updatedNpcTraders = npcTraders.map((npc): NpcTrader => {
     // Contract escorts follow the player ship in formation
@@ -49,11 +52,79 @@ export function updateNpcTraders(
       return updateMissionEscort(npc, stationById, dt);
     }
 
+    // Hostile pirates chase and attack escort ships
+    if (npc.isHostile && npc.isMissionTarget && npc.hp > 0) {
+      return updateHostilePirate(npc, escortNpcs, playerShip, dt);
+    }
+
     // Regular NPC traders continue their trading routes
     return updateRegularTrader(npc, stationById, stationStockDelta, dt);
   });
 
   return { npcTraders: updatedNpcTraders, stationStockDelta };
+}
+
+/**
+ * Update hostile pirate NPCs (chase nearest escort or player)
+ */
+function updateHostilePirate(
+  npc: NpcTrader,
+  escortNpcs: NpcTrader[],
+  playerShip: { position: [number, number, number]; velocity: [number, number, number] },
+  dt: number
+): NpcTrader {
+  const pirateSpeed = 12; // Pirates move at a medium-fast speed
+  
+  // Find nearest escort to chase
+  let targetPos: [number, number, number] | null = null;
+  let nearestDist = Infinity;
+  
+  // First priority: chase mission escorts
+  for (const escort of escortNpcs) {
+    if (escort.missionId === npc.missionId) {
+      const dist = distance(npc.position, escort.position);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        targetPos = escort.position;
+      }
+    }
+  }
+  
+  // Fallback: chase player if no escorts found
+  if (!targetPos) {
+    targetPos = playerShip.position;
+    nearestDist = distance(npc.position, targetPos);
+  }
+  
+  // Move towards target
+  const dx = targetPos[0] - npc.position[0];
+  const dy = targetPos[1] - npc.position[1];
+  const dz = targetPos[2] - npc.position[2];
+  const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  
+  if (dist < 5) {
+    // Close enough, just hover near target
+    return npc;
+  }
+  
+  const step = pirateSpeed * dt;
+  const ux = dx / dist;
+  const uy = dy / dist;
+  const uz = dz / dist;
+  
+  const newPosition: [number, number, number] = [
+    npc.position[0] + ux * step,
+    npc.position[1] + uy * step,
+    npc.position[2] + uz * step,
+  ];
+  
+  const newVelocity: [number, number, number] = [
+    ux * pirateSpeed,
+    uy * pirateSpeed,
+    uz * pirateSpeed,
+  ];
+  
+  return { ...npc, position: newPosition, velocity: newVelocity };
 }
 
 /**
