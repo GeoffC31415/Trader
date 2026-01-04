@@ -39,6 +39,7 @@ import { getMissionTemplatesByStage } from '../domain/constants/mission_constant
 import { checkMissionCompletion, checkMissionFailure, updateMissionObjectives, type MissionEvent } from '../systems/missions/mission_validator';
 import { applyMissionRewards, advanceMissionArc, canAcceptMission, applyPermanentEffects } from './helpers/mission_helpers';
 import { applyChoicePermanentEffects } from '../systems/missions/choice_system';
+import { applyMissionToProfile } from './modules/politics_module';
 import { gatedCommodities, getPriceBiasForStation } from '../systems/economy/pricing';
 import { findRecipeForStation } from '../systems/economy/recipes';
 import type { GameState, Ship, Station, Objective, Contract, NpcTrader, AllyAssistToken, TrustRecord, Notification } from '../domain/types/world_types';
@@ -1157,6 +1158,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
       }
 
+      // Update political compass score (non-choice missions use 'complete' as choiceId)
+      const politicsUpdates = applyMissionToProfile(state, mission.id, null);
+
       return {
         missions: updatedMissions,
         missionArcs: updatedArcs,
@@ -1165,6 +1169,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         allyAssistTokens,
         ...rewardUpdates,
         ...effectUpdates,
+        ...politicsUpdates,
       } as Partial<GameState> as GameState;
     }),
 
@@ -1217,11 +1222,15 @@ export const useGameStore = create<GameState>((set, get) => ({
         finalArcs = updatedArcs.map(a => (a.id === mission.arcId ? updatedArc : a));
       }
 
+      // Update political compass score with the choice made
+      const politicsUpdates = applyMissionToProfile(state, mission.id, choiceId);
+
       return {
         missions: updatedMissions,
         missionArcs: finalArcs,
         ...rewardUpdates,
         ...permanentEffectsUpdates,
+        ...politicsUpdates,
       } as Partial<GameState> as GameState;
     }),
 

@@ -4,6 +4,7 @@ import type { ShipWeapon, WeaponKind } from './combat_types';
 import type { Mission, MissionArc, NarrativeContext } from './mission_types';
 import type { ShipKind } from '../constants/ship_kinds';
 import type { CharacterMemory, DialogueLine } from './character_types';
+import type { PlayerPoliticalProfile } from '../../systems/politics/political_compass';
 
 export type StationPersona = {
   id: string;
@@ -292,6 +293,8 @@ export type GameState = {
   }>;
   pirateAggressionMultiplier?: number;
   unlockedFeatures?: string[];
+  // Political compass - tracks player choices across mission arcs
+  politicalProfile?: PlayerPoliticalProfile;
   // Combat state
   projectiles: Array<{
     id: string;

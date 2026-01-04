@@ -3,6 +3,7 @@ import { usePoll } from '../shared/hooks/use_poll';
 import { useGameStore } from '../state';
 import { commodityById } from '../state/world';
 import { UIIcon } from './components/ui_icon';
+import { PoliticalCompass } from './components/political_compass';
 
 const primaryColor = '#3b82f6';
 const secondaryColor = '#60a5fa';
@@ -17,7 +18,7 @@ export function JournalPanel() {
   const routesPoll = usePoll(2000);
   const hasIntel = useGameStore(s => !!s.ship.hasMarketIntel);
 
-  const [tab, setTab] = useState<'ship' | 'trades' | 'routes'>('ship');
+  const [tab, setTab] = useState<'ship' | 'trades' | 'routes' | 'compass'>('ship');
   const [page, setPage] = useState<number>(1);
   const pageSize = 10;
 
@@ -184,6 +185,13 @@ export function JournalPanel() {
           >
             <UIIcon name="tab_routes" size={16} style={{ marginRight: 6 }} />
             Routes
+          </button>
+          <button
+            onClick={() => setTab('compass')}
+            className={`journal-button ${tab === 'compass' ? 'active' : ''}`}
+          >
+            <UIIcon name="upgrade_nav" size={16} style={{ marginRight: 6 }} />
+            Compass
           </button>
         </div>
 
@@ -536,6 +544,27 @@ export function JournalPanel() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* COMPASS TAB */}
+        {tab === 'compass' && (
+          <div className="scrollable-content-journal">
+            <div className="journal-panel">
+              <div className="section-header-journal">Political Alignment</div>
+              <div style={{
+                padding: 12,
+                background: `${primaryColor}10`,
+                border: `1px solid ${primaryColor}30`,
+                borderRadius: 6,
+                marginBottom: 16,
+                fontSize: 12,
+                opacity: 0.9,
+              }}>
+                ℹ Your choices across mission arcs shape your political alignment in the system
+              </div>
+              <PoliticalCompass showOtherPlayers={true} showTrail={true} size={320} />
+            </div>
           </div>
         )}
       </div>
