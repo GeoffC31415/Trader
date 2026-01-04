@@ -19,11 +19,11 @@ export const economy_constants = {
 	distance_norm: 1500,
 
 	// Stock-driven scarcity curve
-	k_stock: 0.5,
-	min_stock_multiplier: 0.85,
-	max_stock_multiplier: 1.35,
-	min_buy_stock_multiplier: 0.9,
-	max_buy_stock_multiplier: 1.25,
+	k_stock: 1.0,
+	min_stock_multiplier: 0.5,
+	max_stock_multiplier: 3.0,
+	min_buy_stock_multiplier: 0.8,
+	max_buy_stock_multiplier: 1.5,
 
 	// Affinity nudges (multiplicative, applied to both base buy/sell before volatility)
 	// Keys: station type -> category -> { buy, sell }
