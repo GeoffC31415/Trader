@@ -61,6 +61,7 @@ export const economy_constants = {
 		shipyard: {
 			industrial: { buy: 1.08, sell: 1.12 },
 			tech: { buy: 1.05, sell: 1.1 },
+			energy: { buy: 1.10, sell: 1.15 },  // Ships need batteries for power systems
 		},
 		pirate: {
 			luxury: { buy: 1.08, sell: 1.12 },

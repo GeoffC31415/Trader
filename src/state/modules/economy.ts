@@ -403,13 +403,16 @@ export function buyCommodity(
   // Calculate new stock and recalculate prices
   const newStock = Math.max(0, (item.stock || 0) - quantity);
   const targetStock = getTargetStock(station.type, commodityId);
+  const stationsMeta = stations.map(s => ({ id: s.id, type: s.type, position: s.position }));
   const newPrices = recalculatePriceForStock(
     station.type,
     commodityId,
     item.buy,
     item.sell,
     newStock,
-    targetStock
+    targetStock,
+    station.position,
+    stationsMeta
   );
   
   const reduced = {
@@ -529,6 +532,7 @@ export function sellCommodity(
   let nextInv = { ...station.inventory } as StationInventory;
   const newStock = (item.stock || 0) + qty;
   const targetStock = getTargetStock(station.type, commodityId);
+  const stationsMeta = stations.map(s => ({ id: s.id, type: s.type, position: s.position }));
   
   // Recalculate prices based on new stock level (immediate feedback to player)
   const newPrices = recalculatePriceForStock(
@@ -537,7 +541,9 @@ export function sellCommodity(
     item.buy,
     item.sell,
     newStock,
-    targetStock
+    targetStock,
+    station.position,
+    stationsMeta
   );
   
   nextInv[commodityId] = { 

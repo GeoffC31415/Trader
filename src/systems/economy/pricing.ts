@@ -31,6 +31,19 @@ function fluctuate(value: number, volatility: number): number {
   return Math.max(1, Math.round(value * factor));
 }
 
+/**
+ * Fluctuate buy and sell prices together with correlated volatility.
+ * This prevents absurd spreads where buy goes high and sell goes low independently.
+ * Both prices move in the same direction by the same factor.
+ */
+function fluctuatePair(baseBuy: number, baseSell: number, volatility: number): { buy: number; sell: number } {
+  const factor = 1 + (Math.random() * 2 - 1) * volatility;
+  return {
+    buy: Math.max(1, Math.round(baseBuy * factor)),
+    sell: Math.max(1, Math.round(baseSell * factor)),
+  };
+}
+
 export type EnsureSpreadInput = {
   buy: number;
   sell: number;
@@ -253,8 +266,8 @@ function applyStockCurve(category: Commodity['category'], buy: number, sell: num
  * Used after trading to immediately reflect price changes
  * 
  * IMPORTANT: This function calculates prices from commodity BASE values to avoid
- * compounding multipliers. It applies station type modifiers, affinity, and then
- * stock curve - all from scratch based on the new stock level.
+ * compounding multipliers. It applies station type modifiers, affinity, distance
+ * premium, perishable/gated bonuses, and stock curve - all from scratch.
  * 
  * @param stationType - The station type
  * @param commodityId - The commodity to recalculate
@@ -262,6 +275,8 @@ function applyStockCurve(category: Commodity['category'], buy: number, sell: num
  * @param _currentSell - (deprecated, unused) Current sell price  
  * @param stock - Current stock level
  * @param targetStock - Target/baseline stock level
+ * @param stationPosition - Optional station position for distance premium calculation
+ * @param stationsMeta - Optional list of all stations for finding nearest producer
  * @returns Updated buy and sell prices
  */
 export function recalculatePriceForStock(
@@ -270,7 +285,9 @@ export function recalculatePriceForStock(
   _currentBuy: number,
   _currentSell: number,
   stock: number,
-  targetStock: number
+  targetStock: number,
+  stationPosition?: [number, number, number],
+  stationsMeta?: StationMeta[]
 ): { buy: number; sell: number } {
   // Get commodity base prices - ALWAYS calculate from base to avoid compounding
   const commodities = generateCommodities();
@@ -310,8 +327,22 @@ export function recalculatePriceForStock(
     minAbsolute: config.minSpreadAbsolute,
   });
   
-  // Apply stock curve (this is the only dynamic multiplier based on current stock)
-  const result = applyStockCurve(commodity.category, adjusted.buy, adjusted.sell, stock, targetStock);
+  // Apply distance premium if position data is available
+  let sellWithPremium = adjusted.sell;
+  if (stationPosition && stationsMeta) {
+    const d = nearestProducerDistance(commodityId, stationPosition, stationsMeta);
+    const distPremium = distancePremiumFor(commodity.category, d);
+    
+    // Perishable goods have 50% higher sell prices (compensates for spoilage risk)
+    const perishableBonus = isPerishable(commodityId) ? 1.5 : 1.0;
+    // Gated commodities (require special cargo holds) have higher profit margins
+    const gatedBonus = (gatedCommodities as readonly string[]).includes(commodityId) ? GATED_COMMODITY_PROFIT_MULTIPLIER : 1.0;
+    
+    sellWithPremium = Math.round(adjusted.sell * (1 + distPremium) * perishableBonus * gatedBonus);
+  }
+  
+  // Apply stock curve
+  const result = applyStockCurve(commodity.category, adjusted.buy, sellWithPremium, stock, targetStock);
   
   // Safety cap: prices should never exceed 10x base (prevents any edge case runaway)
   const MAX_MULTIPLIER = 10;
@@ -349,9 +380,9 @@ export function priceForStation(type: StationType, commodities: Commodity[], her
     const withAffinity = applyAffinity(type, c.category, baseBuy, baseSell);
     baseBuy = withAffinity.buy;
     baseSell = withAffinity.sell;
-    const buy = fluctuate(baseBuy, volatility);
-    let sell = fluctuate(baseSell, volatility);
-    const adjusted = ensureSpread({ buy, sell, minPercent: config.minSpreadPercent, minAbsolute: config.minSpreadAbsolute });
+    // Use correlated volatility so buy and sell move together, preventing absurd spreads
+    const fluctuated = fluctuatePair(baseBuy, baseSell, volatility);
+    const adjusted = ensureSpread({ buy: fluctuated.buy, sell: fluctuated.sell, minPercent: config.minSpreadPercent, minAbsolute: config.minSpreadAbsolute });
     const d = nearestProducerDistance(c.id, here, stationsMeta);
     const distPremium = distancePremiumFor(c.category, d);
     const featuredM = getFeaturedMultiplier(stationId, c.id);

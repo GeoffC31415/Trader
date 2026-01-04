@@ -22,6 +22,9 @@ import { recalculatePriceForStock, getTargetStock } from '../../systems/economy/
 export function updateStationProduction(stations: Station[], dt: number): Station[] {
   const dtMinutes = dt / 60; // Convert seconds to minutes
   
+  // Create stationsMeta once for all stations
+  const stationsMeta = stations.map(s => ({ id: s.id, type: s.type, position: s.position }));
+  
   return stations.map(station => {
     const production = getProductionForStation(station.type);
     if (production.length === 0) return station; // No production for this station type
@@ -51,7 +54,9 @@ export function updateStationProduction(stations: Station[], dt: number): Statio
           item.buy,
           item.sell,
           newStock,
-          targetStock
+          targetStock,
+          station.position,
+          stationsMeta
         );
         
         inv[prod.commodityId] = {

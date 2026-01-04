@@ -505,6 +505,9 @@ export function applyStockDeltas(
     return stations;
   }
 
+  // Create stationsMeta once for all stations
+  const stationsMeta = stations.map(s => ({ id: s.id, type: s.type, position: s.position }));
+
   return stations.map(s => {
     const delta = stationStockDelta[s.id];
     if (!delta) return s;
@@ -524,7 +527,9 @@ export function applyStockDeltas(
         item.buy,
         item.sell,
         nextStock,
-        targetStock
+        targetStock,
+        s.position,
+        stationsMeta
       );
       
       inv[cid] = { 

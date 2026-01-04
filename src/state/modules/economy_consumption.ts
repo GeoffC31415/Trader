@@ -22,6 +22,9 @@ import { recalculatePriceForStock, getTargetStock } from '../../systems/economy/
 export function updateStationConsumption(stations: Station[], dt: number): Station[] {
   const dtMinutes = dt / 60; // Convert seconds to minutes
   
+  // Create stationsMeta once for all stations
+  const stationsMeta = stations.map(s => ({ id: s.id, type: s.type, position: s.position }));
+  
   return stations.map(station => {
     const consumption = getConsumptionForStation(station.type);
     if (consumption.length === 0) return station; // No consumption for this station type
@@ -49,7 +52,9 @@ export function updateStationConsumption(stations: Station[], dt: number): Stati
           item.buy,
           item.sell,
           newStock,
-          targetStock
+          targetStock,
+          station.position,
+          stationsMeta
         );
         
         inv[cons.commodityId] = {
