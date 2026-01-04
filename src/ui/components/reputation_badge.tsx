@@ -1,4 +1,5 @@
 import { CSSProperties } from 'react';
+import { formatNumber } from '../utils/number_format';
 
 interface ReputationBadgeProps {
   reputation: number;
@@ -34,7 +35,7 @@ export function ReputationBadge({ reputation, label = 'Reputation', size = 'medi
   return (
     <div style={badgeStyle}>
       <span style={labelStyle}>{label}:</span>
-      <span style={valueStyle}>{reputation.toFixed(0)}</span>
+      <span style={valueStyle}>{formatNumber(reputation)}</span>
     </div>
   );
 }

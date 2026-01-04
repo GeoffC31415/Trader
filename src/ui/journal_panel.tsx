@@ -4,6 +4,7 @@ import { useGameStore } from '../state';
 import { commodityById } from '../state/world';
 import { UIIcon } from './components/ui_icon';
 import { PoliticalCompass } from './components/political_compass';
+import { formatNumber } from './utils/number_format';
 
 const primaryColor = '#3b82f6';
 const secondaryColor = '#60a5fa';
@@ -232,15 +233,15 @@ export function JournalPanel() {
               <div className="section-header-journal">Ship Systems</div>
               <div className="stat-row-journal">
                 <div style={{ fontWeight: 600 }}>ACCELERATION</div>
-                <div style={{ color: secondaryColor, fontWeight: 700 }}>{ship.stats.acc.toFixed(1)}</div>
+                <div style={{ color: secondaryColor, fontWeight: 700 }}>{formatNumber(ship.stats.acc)}</div>
               </div>
               <div className="stat-row-journal">
                 <div style={{ fontWeight: 600 }}>MAX VELOCITY</div>
-                <div style={{ color: secondaryColor, fontWeight: 700 }}>{ship.stats.vmax.toFixed(1)}</div>
+                <div style={{ color: secondaryColor, fontWeight: 700 }}>{formatNumber(ship.stats.vmax)}</div>
               </div>
               <div className="stat-row-journal">
                 <div style={{ fontWeight: 600 }}>DRAG COEFFICIENT</div>
-                <div style={{ color: secondaryColor, fontWeight: 700 }}>{ship.stats.drag.toFixed(2)}</div>
+                <div style={{ color: secondaryColor, fontWeight: 700 }}>{formatNumber(ship.stats.drag)}</div>
               </div>
               <div className="stat-row-journal">
                 <div style={{ fontWeight: 600 }}>CARGO CAPACITY</div>
@@ -384,7 +385,7 @@ export function JournalPanel() {
                       fontWeight: 700,
                       fontFamily: 'monospace',
                     }}>
-                      {(p || 0) >= 0 ? '+' : ''}${(p || 0).toFixed(0)}
+                      {(p || 0) >= 0 ? '+' : ''}${formatNumber(p || 0)}
                     </div>
                   </div>
                 ))}
@@ -432,10 +433,10 @@ export function JournalPanel() {
                       </div>
                       <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, lineHeight: 1.6 }}>
                         {r.kind === 'direct'
-                          ? `Buy ${r.maxUnits} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Sell at ${r.toName}`
+                          ? `Buy ${formatNumber(r.maxUnits)} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Sell at ${r.toName}`
                           : (() => {
                               const inputUnits = Math.ceil(r.maxUnits * r.inputPerOutput);
-                              return `Buy ${inputUnits} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Process at ${r.viaName} → Sell ${r.maxUnits} ${r.outputId.replace(/_/g, ' ')} at ${r.toName}`;
+                              return `Buy ${formatNumber(inputUnits)} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Process at ${r.viaName} → Sell ${formatNumber(r.maxUnits)} ${r.outputId.replace(/_/g, ' ')} at ${r.toName}`;
                             })()
                         }
                       </div>
@@ -443,19 +444,19 @@ export function JournalPanel() {
                         <div>
                           <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 4, fontFamily: 'monospace' }}>UNITS</div>
                           <div style={{ fontSize: 16, fontWeight: 700, color: secondaryColor, fontFamily: 'monospace' }}>
-                            {r.maxUnits}
+                            {formatNumber(r.maxUnits)}
                           </div>
                         </div>
                         <div>
                           <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 4, fontFamily: 'monospace' }}>MARGIN/UNIT</div>
                           <div style={{ fontSize: 16, fontWeight: 700, color: '#06b6d4', fontFamily: 'monospace' }}>
-                            ${r.unitMargin.toFixed(0)}
+                            ${formatNumber(r.unitMargin)}
                           </div>
                         </div>
                         <div>
                           <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 4, fontFamily: 'monospace' }}>EST. PROFIT</div>
                           <div style={{ fontSize: 16, fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>
-                            ${r.estProfit.toFixed(0)}
+                            ${formatNumber(r.estProfit)}
                           </div>
                         </div>
                       </div>
@@ -471,7 +472,7 @@ export function JournalPanel() {
                         {r.kind === 'direct' ? (
                           <>
                             <span style={{ textTransform: 'capitalize' }}>{r.inputId.replace(/_/g, ' ')}</span>
-                            {` per unit: buy @ $${r.unitBuy.toFixed(0)} → sell @ $${r.unitSell.toFixed(0)}`}
+                            {` per unit: buy @ $${formatNumber(r.unitBuy)} → sell @ $${formatNumber(r.unitSell)}`}
                           </>
                         ) : (
                           (() => {
@@ -481,7 +482,7 @@ export function JournalPanel() {
                             return (
                               <>
                                 <span style={{ textTransform: 'capitalize' }}>{inputName}</span>
-                                {` → ${outputName}: buy ${inputUnits} @ $${r.unitBuy.toFixed(0)} at ${r.fromName} → process ${r.inputPerOutput}:1 at ${r.viaName} → sell ${r.maxUnits} @ $${r.unitSell.toFixed(0)} at ${r.toName}`}
+                                {` → ${outputName}: buy ${formatNumber(inputUnits)} @ $${formatNumber(r.unitBuy)} at ${r.fromName} → process ${r.inputPerOutput}:1 at ${r.viaName} → sell ${formatNumber(r.maxUnits)} @ $${formatNumber(r.unitSell)} at ${r.toName}`}
                               </>
                             );
                           })()
@@ -527,17 +528,17 @@ export function JournalPanel() {
                     }}>
                       <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
                         {r.kind === 'direct'
-                          ? `Buy ${r.maxUnits} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Sell at ${r.toName}`
+                          ? `Buy ${formatNumber(r.maxUnits)} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Sell at ${r.toName}`
                           : (() => {
                               const inputUnits = Math.ceil(r.maxUnits * r.inputPerOutput);
-                              return `Buy ${inputUnits} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Process at ${r.viaName} → Sell ${r.maxUnits} ${r.outputId.replace(/_/g, ' ')} at ${r.toName}`;
+                              return `Buy ${formatNumber(inputUnits)} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Process at ${r.viaName} → Sell ${formatNumber(r.maxUnits)} ${r.outputId.replace(/_/g, ' ')} at ${r.toName}`;
                             })()
                         }
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, fontFamily: 'monospace', fontSize: 12 }}>
-                        <div>Units: <strong>{r.maxUnits}</strong></div>
-                        <div>Margin: <strong>${r.unitMargin.toFixed(0)}</strong></div>
-                        <div>Profit: <strong>${r.estProfit.toFixed(0)}</strong></div>
+                        <div>Units: <strong>{formatNumber(r.maxUnits)}</strong></div>
+                        <div>Margin: <strong>${formatNumber(r.unitMargin)}</strong></div>
+                        <div>Profit: <strong>${formatNumber(r.estProfit)}</strong></div>
                       </div>
                     </div>
                   ))}

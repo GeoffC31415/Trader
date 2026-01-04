@@ -3,6 +3,7 @@ import type { Station } from '../../../domain/types/world_types';
 import type { Contract } from '../../../domain/types/world_types';
 import { UIIcon } from '../ui_icon';
 import { SHIP_STATUS_PANEL_TOP_WITH_NAV, SHIP_STATUS_PANEL_TOP_WITHOUT_NAV, SHIP_STATUS_PANEL_RIGHT, SHIP_STATUS_PANEL_MIN_WIDTH } from '../../constants/layout_constants';
+import { formatNumber } from '../../utils/number_format';
 
 interface ShipStatusPanelProps {
   ship: Ship;
@@ -119,7 +120,7 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
             fontSize: 14,
             color: ship.enginePower > 0 ? '#22c55e' : '#6b7280',
           }}>
-            {(ship.enginePower * 100).toFixed(0)}%
+            {formatNumber(ship.enginePower * 100)}%
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useState, useRef } from 'react';
 import { useGameStore } from '../state';
 import { ReputationBadge } from './components/reputation_badge';
+import { formatNumber } from './utils/number_format';
 import { getReputationTier, getTierDisplay, getTierPerks } from '../state/helpers/reputation_helpers';
 import { processRecipes } from '../systems/economy/recipes';
 import { generateCommodities } from '../systems/economy/commodities';
@@ -877,7 +878,7 @@ export function DockIntro() {
                     flexDirection: 'column',
                   }}>
                     <div style={{ fontSize: 32, fontWeight: 900, color: tierDisplay.color }}>
-                      {stationRep.toFixed(0)}
+                      {formatNumber(stationRep)}
                     </div>
                     <div style={{ fontSize: 10, opacity: 0.7, fontFamily: 'monospace' }}>REP</div>
                   </div>

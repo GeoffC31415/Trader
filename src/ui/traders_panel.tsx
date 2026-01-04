@@ -4,6 +4,7 @@ import { useGameStore } from '../state';
 import { getActiveEvents } from '../systems/economy/market_events';
 import { getActiveFeaturedOpportunities } from '../systems/economy/featured';
 import { generateCommodities } from '../systems/economy/commodities';
+import { formatNumber } from './utils/number_format';
 
 type Vec3 = [number, number, number];
 
@@ -580,7 +581,7 @@ export function TradersPanel() {
                             {idx === 0 && <span style={{ color: '#10b981' }}>★</span>}
                             <span style={{ fontSize: 12, opacity: idx === 0 ? 1 : 0.8 }}>{opt.stationName}</span>
                             <span style={{ fontSize: 10, opacity: 0.5, fontFamily: 'monospace' }}>
-                              {opt.distance.toFixed(0)}u
+                              {formatNumber(opt.distance)}u
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -802,7 +803,7 @@ export function TradersPanel() {
                         <span style={{ opacity: 0.6 }}>Commodity:</span> {(r.commodityId || 'fuel').replace(/_/g, ' ')}
                       </div>
                       <div style={{ fontSize: 11, fontFamily: 'monospace', opacity: 0.7 }}>
-                        Distance: {r.dist.toFixed(1)} units
+                        Distance: {formatNumber(r.dist)} units
                       </div>
                     </div>
                     <div style={{
@@ -822,7 +823,7 @@ export function TradersPanel() {
                         color: r.profitPerSec >= 0 ? '#10b981' : '#ef4444',
                         fontFamily: 'monospace',
                       }}>
-                        ${r.profitPerSec.toFixed(1)}
+                        ${formatNumber(r.profitPerSec)}
                       </div>
                     </div>
                   </div>
@@ -845,7 +846,7 @@ export function TradersPanel() {
                         color: r.unitMargin >= 0 ? '#10b981' : '#ef4444',
                         fontFamily: 'monospace',
                       }}>
-                        ${r.unitMargin.toFixed(0)}
+                        ${formatNumber(r.unitMargin)}
                       </div>
                     </div>
                     <div>
@@ -858,7 +859,7 @@ export function TradersPanel() {
                         color: r.tripProfit >= 0 ? '#10b981' : '#ef4444',
                         fontFamily: 'monospace',
                       }}>
-                        ${r.tripProfit.toFixed(0)}
+                        ${formatNumber(r.tripProfit)}
                       </div>
                     </div>
                   </div>
@@ -916,7 +917,7 @@ export function TradersPanel() {
                     color: '#10b981',
                     fontFamily: 'monospace',
                   }}>
-                    ${(rows.reduce((sum, r) => sum + r.unitMargin, 0) / Math.max(1, rows.length)).toFixed(0)}
+                    ${formatNumber(rows.reduce((sum, r) => sum + r.unitMargin, 0) / Math.max(1, rows.length))}
                   </div>
                 </div>
                 <div style={{
@@ -935,7 +936,7 @@ export function TradersPanel() {
                     color: '#10b981',
                     fontFamily: 'monospace',
                   }}>
-                    ${rows.length > 0 ? rows[0].profitPerSec.toFixed(1) : '0.0'}
+                    ${rows.length > 0 ? formatNumber(rows[0].profitPerSec) : '0.0'}
                   </div>
                 </div>
               </div>

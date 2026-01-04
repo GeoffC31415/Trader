@@ -5,6 +5,7 @@ import { SectionHeader } from '../shared/SectionHeader';
 import { DataRow } from '../shared/DataRow';
 import { SciFiButton } from '../shared/SciFiButton';
 import { UIIcon } from '../ui_icon';
+import { formatNumber } from '../../utils/number_format';
 
 interface ShipyardSectionProps {
   stationType: 'shipyard';
@@ -38,7 +39,7 @@ export function ShipyardSection({
               <UIIcon name="system_engine" size={20} />
               Acceleration Boost
             </div>
-            <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {ship.stats.acc.toFixed(1)}</div>
+            <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {formatNumber(ship.stats.acc)}</div>
           </div>
           <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,000</div>
           <SciFiButton stationType={stationType} onClick={() => onUpgrade('acc', 3, 1000)}>+3 ACC</SciFiButton>
@@ -50,7 +51,7 @@ export function ShipyardSection({
               <UIIcon name="system_engine" size={20} />
               Velocity Enhancer
             </div>
-            <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {ship.stats.vmax.toFixed(1)}</div>
+            <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {formatNumber(ship.stats.vmax)}</div>
           </div>
           <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,000</div>
           <SciFiButton stationType={stationType} onClick={() => onUpgrade('vmax', 3, 1000)}>+3 VMAX</SciFiButton>

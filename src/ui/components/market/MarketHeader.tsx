@@ -4,6 +4,7 @@ import type { AllyAssistToken } from '../../../domain/types/world_types';
 import { stationTypeColors } from '../../utils/station_theme';
 import { UIIcon } from '../ui_icon';
 import { SciFiButton } from '../shared/SciFiButton';
+import { formatNumber } from '../../utils/number_format';
 
 interface MarketHeaderProps {
   station: Station;
@@ -92,7 +93,7 @@ export function MarketHeader({
           <div>
             <div style={{ fontSize: 9, opacity: 0.7, fontFamily: 'monospace', marginBottom: 2 }}>REPUTATION</div>
             <div style={{ fontSize: 16, fontWeight: 700, fontFamily: 'monospace', color: colors.secondary }}>
-              {(station.reputation || 0).toFixed(0)}
+              {formatNumber(station.reputation || 0)}
             </div>
           </div>
         </div>

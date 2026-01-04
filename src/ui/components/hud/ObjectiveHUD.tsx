@@ -4,6 +4,7 @@ import type { Mission } from '../../../domain/types/mission_types';
 import type { Station } from '../../../domain/types/world_types';
 import type { Ship } from '../../../domain/types/world_types';
 import type { NpcTrader } from '../../../domain/types/world_types';
+import { formatNumber } from '../../utils/number_format';
 
 interface ObjectiveHUDProps {
   activeObj?: Objective;
@@ -156,7 +157,7 @@ export function ObjectiveHUD({
         </div>
         {trackedStation && trackedDistance !== null && (
           <div style={{ marginTop: 6, fontSize: 12, opacity: 0.9 }}>
-            Waypoint: {trackedStation.name} — Distance: {trackedDistance.toFixed(1)}
+            Waypoint: {trackedStation.name} — Distance: {formatNumber(trackedDistance)}
           </div>
         )}
       </div>
