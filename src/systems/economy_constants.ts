@@ -22,8 +22,8 @@ export const economy_constants = {
 	k_stock: 1.0,
 	min_stock_multiplier: 0.5,
 	max_stock_multiplier: 3.0,
-	min_buy_stock_multiplier: 0.8,
-	max_buy_stock_multiplier: 1.5,
+	min_buy_stock_multiplier: 0.5,
+	max_buy_stock_multiplier: 2.0,
 
 	// Affinity nudges (multiplicative, applied to both base buy/sell before volatility)
 	// Keys: station type -> category -> { buy, sell }
