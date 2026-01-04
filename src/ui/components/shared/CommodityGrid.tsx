@@ -210,7 +210,7 @@ export function CommodityGrid({
               </div>
               <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
-                  <span>{id.replace(/_/g, ' ')}</span>
+                  <span style={{ opacity: !canTrade(id) ? 0.5 : 1 }}>{id.replace(/_/g, ' ')}</span>
                   {(() => {
                     const tier = getCommodityTier(id);
                     const tierColor = getTierColor(tier);
@@ -221,6 +221,7 @@ export function CommodityGrid({
                           backgroundColor: `${tierColor}20`,
                           color: tierColor,
                           border: `1px solid ${tierColor}40`,
+                          opacity: !canTrade(id) ? 0.5 : 1,
                         }}
                       >
                         {getTierLabel(tier)}
@@ -228,6 +229,19 @@ export function CommodityGrid({
                     );
                   })()}
                 </div>
+                {!canTrade(id) && getGatingReason(id) && (
+                  <div style={{ 
+                    fontSize: 9, 
+                    color: '#f59e0b', 
+                    marginTop: 4, 
+                    fontFamily: 'monospace',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}>
+                    🔒 {getGatingReason(id)}
+                  </div>
+                )}
                 {isPerishable(id) && (ship.cargo[id] || 0) > 0 && (() => {
                   const freshness = ship.cargoFreshness?.[id] ?? 1.0;
                   const freshnessPercent = Math.round(freshness * 100);
@@ -370,12 +384,11 @@ export function CommodityGrid({
                   SELL {qty}
                 </button>
               </div>
-              {((p.canSell === false || p.canBuy === false) || !canTrade(id)) && (
+              {(p.canSell === false || p.canBuy === false) && (
                 <div style={{ gridColumn: '1 / -1', fontSize: 10, opacity: 0.6, marginTop: -4, fontFamily: 'monospace' }}>
                   {p.canSell === false && p.canBuy === false && '⚠ NOT TRADED HERE'}
                   {p.canSell === false && p.canBuy !== false && '⚠ NOT SOLD HERE'}
                   {p.canBuy === false && p.canSell !== false && '⚠ NOT BOUGHT HERE'}
-                  {!canTrade(id) && getGatingReason(id) && ` | ${getGatingReason(id)}`}
                 </div>
               )}
             </Fragment>
@@ -415,7 +428,7 @@ export function CommodityGrid({
               </div>
               <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
                 <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
-                  <span>{id.replace(/_/g, ' ')}</span>
+                  <span style={{ opacity: !canTrade(id) ? 0.5 : 1 }}>{id.replace(/_/g, ' ')}</span>
                   {(() => {
                     const tier = getCommodityTier(id);
                     const tierColor = getTierColor(tier);
@@ -426,6 +439,7 @@ export function CommodityGrid({
                           backgroundColor: `${tierColor}20`,
                           color: tierColor,
                           border: `1px solid ${tierColor}40`,
+                          opacity: !canTrade(id) ? 0.5 : 1,
                         }}
                       >
                         {getTierLabel(tier)}
@@ -433,6 +447,19 @@ export function CommodityGrid({
                     );
                   })()}
                 </div>
+                {!canTrade(id) && getGatingReason(id) && (
+                  <div style={{ 
+                    fontSize: 9, 
+                    color: '#f59e0b', 
+                    marginTop: 4, 
+                    fontFamily: 'monospace',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}>
+                    🔒 {getGatingReason(id)}
+                  </div>
+                )}
               </div>
               <div style={{ color }}>
                 <div>
@@ -531,12 +558,11 @@ export function CommodityGrid({
                   SELL {qty}
                 </button>
               </div>
-              {((p.canSell === false || p.canBuy === false) || !canTrade(id)) && (
+              {(p.canSell === false || p.canBuy === false) && (
                 <div style={{ gridColumn: '1 / -1', fontSize: 10, opacity: 0.6, marginTop: -4, fontFamily: 'monospace' }}>
                   {p.canSell === false && p.canBuy === false && '⚠ NOT TRADED HERE'}
                   {p.canSell === false && p.canBuy !== false && '⚠ NOT SOLD HERE'}
                   {p.canBuy === false && p.canSell !== false && '⚠ NOT BOUGHT HERE'}
-                  {!canTrade(id) && getGatingReason(id) && ` | ${getGatingReason(id)}`}
                 </div>
               )}
             </Fragment>
