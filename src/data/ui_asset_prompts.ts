@@ -29,6 +29,10 @@ export const uiAssetPrompts = [
     prompt: 'Navigation routes icon, connected waypoints, flight path network, mapping symbol, teal accent'
   },
   {
+    id: 'tab_compass',
+    prompt: 'Political compass icon, 2D grid with crosshairs, alignment chart, quadrant display, four colored sections, purple and cyan accent'
+  },
+  {
     id: 'tab_traders',
     prompt: 'NPC traders panel icon, multiple ships or trader network, commerce vessels, orange accent'
   },

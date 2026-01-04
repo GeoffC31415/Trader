@@ -190,7 +190,7 @@ export function JournalPanel() {
             onClick={() => setTab('compass')}
             className={`journal-button ${tab === 'compass' ? 'active' : ''}`}
           >
-            <UIIcon name="upgrade_nav" size={16} style={{ marginRight: 6 }} />
+            <UIIcon name="tab_compass" size={16} style={{ marginRight: 6 }} />
             Compass
           </button>
         </div>
