@@ -1,407 +1,387 @@
 {
-  "generatedAt": "2025-12-26T18:58:02.170Z",
-  "totalFiles": 135,
+  "generatedAt": "2026-01-04T16:32:10.253Z",
+  "totalFiles": 332,
   "missions": {
-    "greenfields_stage_1": {
-      "characterName": "Sana Whit",
-      "stationId": "greenfields",
-      "title": "Breaking the Chain",
-      "lineCount": 13,
+    "energy_monopoly_stage_1": {
+      "characterName": "Rex Calder",
+      "stationId": "sol-refinery",
+      "title": "The Audit Trail",
+      "lineCount": 11,
       "files": [
         {
-          "id": "green_s1_accept",
-          "filename": "green_s1_accept.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_accept.mp3"
+          "id": "energy_s1_accept",
+          "filename": "energy_s1_accept.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_accept.mp3"
         },
         {
-          "id": "green_s1_complete_1",
-          "filename": "green_s1_complete_1.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_complete_1.mp3"
+          "id": "energy_s1_complete_1",
+          "filename": "energy_s1_complete_1.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_complete_1.mp3"
         },
         {
-          "id": "green_s1_complete_2",
-          "filename": "green_s1_complete_2.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_complete_2.mp3"
+          "id": "energy_s1_complete_2",
+          "filename": "energy_s1_complete_2.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_complete_2.mp3"
         },
         {
-          "id": "green_s1_complete_3",
-          "filename": "green_s1_complete_3.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_complete_3.mp3"
+          "id": "energy_s1_complete_3",
+          "filename": "energy_s1_complete_3.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_complete_3.mp3"
         },
         {
-          "id": "green_s1_fail_1",
-          "filename": "green_s1_fail_1.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_fail_1.mp3"
+          "id": "energy_s1_installing",
+          "filename": "energy_s1_installing.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_installing.mp3"
         },
         {
-          "id": "green_s1_halfway",
-          "filename": "green_s1_halfway.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_halfway.mp3"
+          "id": "energy_s1_intro_1",
+          "filename": "energy_s1_intro_1.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_1.mp3"
         },
         {
-          "id": "green_s1_intro_1",
-          "filename": "green_s1_intro_1.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_1.mp3"
+          "id": "energy_s1_intro_2",
+          "filename": "energy_s1_intro_2.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_2.mp3"
         },
         {
-          "id": "green_s1_intro_2",
-          "filename": "green_s1_intro_2.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_2.mp3"
+          "id": "energy_s1_intro_3",
+          "filename": "energy_s1_intro_3.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_3.mp3"
         },
         {
-          "id": "green_s1_intro_3",
-          "filename": "green_s1_intro_3.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_3.mp3"
+          "id": "energy_s1_intro_4",
+          "filename": "energy_s1_intro_4.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_4.mp3"
         },
         {
-          "id": "green_s1_intro_4",
-          "filename": "green_s1_intro_4.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_4.mp3"
+          "id": "energy_s1_intro_5",
+          "filename": "energy_s1_intro_5.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_5.mp3"
         },
         {
-          "id": "green_s1_intro_5",
-          "filename": "green_s1_intro_5.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_5.mp3"
-        },
-        {
-          "id": "green_s1_intro_6",
-          "filename": "green_s1_intro_6.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_6.mp3"
-        },
-        {
-          "id": "green_s1_warning",
-          "filename": "green_s1_warning.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_warning.mp3"
+          "id": "energy_s1_intro_6",
+          "filename": "energy_s1_intro_6.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_6.mp3"
         }
       ]
     },
-    "greenfields_stage_2": {
-      "characterName": "Sana Whit",
-      "stationId": "greenfields",
-      "title": "The Census - Greenfields Side",
-      "lineCount": 10,
+    "energy_monopoly_stage_2": {
+      "characterName": "Rex Calder",
+      "stationId": "sol-refinery",
+      "title": "Fuel the Fire",
+      "lineCount": 8,
       "files": [
         {
-          "id": "green_s2_accept",
-          "filename": "green_s2_accept.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_accept.mp3"
+          "id": "energy_s2_accept",
+          "filename": "energy_s2_accept.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_2/energy_s2_accept.mp3"
         },
         {
-          "id": "green_s2_complete_greenfields_1",
-          "filename": "green_s2_complete_greenfields_1.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_complete_greenfields_1.mp3"
+          "id": "energy_s2_complete_1",
+          "filename": "energy_s2_complete_1.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_2/energy_s2_complete_1.mp3"
         },
         {
-          "id": "green_s2_complete_greenfields_2",
-          "filename": "green_s2_complete_greenfields_2.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_complete_greenfields_2.mp3"
+          "id": "energy_s2_intro_1",
+          "filename": "energy_s2_intro_1.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_2/energy_s2_intro_1.mp3"
         },
         {
-          "id": "green_s2_complete_greenfields_3",
-          "filename": "green_s2_complete_greenfields_3.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_complete_greenfields_3.mp3"
+          "id": "energy_s2_intro_2",
+          "filename": "energy_s2_intro_2.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_2/energy_s2_intro_2.mp3"
         },
         {
-          "id": "green_s2_intro_1",
-          "filename": "green_s2_intro_1.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_1.mp3"
+          "id": "energy_s2_intro_3",
+          "filename": "energy_s2_intro_3.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_2/energy_s2_intro_3.mp3"
         },
         {
-          "id": "green_s2_intro_2",
-          "filename": "green_s2_intro_2.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_2.mp3"
+          "id": "energy_s2_intro_4",
+          "filename": "energy_s2_intro_4.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_2/energy_s2_intro_4.mp3"
         },
         {
-          "id": "green_s2_intro_3",
-          "filename": "green_s2_intro_3.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_3.mp3"
+          "id": "energy_s2_intro_5",
+          "filename": "energy_s2_intro_5.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_2/energy_s2_intro_5.mp3"
         },
         {
-          "id": "green_s2_intro_4",
-          "filename": "green_s2_intro_4.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_4.mp3"
-        },
-        {
-          "id": "green_s2_intro_5",
-          "filename": "green_s2_intro_5.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_5.mp3"
-        },
-        {
-          "id": "green_s2_intro_6",
-          "filename": "green_s2_intro_6.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_6.mp3"
+          "id": "energy_s2_intro_6",
+          "filename": "energy_s2_intro_6.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_2/energy_s2_intro_6.mp3"
         }
       ]
     },
-    "greenfields_stage_2_sol": {
-      "characterName": "Mira Vale",
-      "stationId": "sol-city",
-      "title": "The Census - Sol City Side",
-      "lineCount": 10,
-      "files": [
-        {
-          "id": "sol_s2_accept",
-          "filename": "sol_s2_accept.mp3",
-          "path": "audio/missions/sol-city/greenfields_stage_2_sol/sol_s2_accept.mp3"
-        },
-        {
-          "id": "sol_s2_complete_1",
-          "filename": "sol_s2_complete_1.mp3",
-          "path": "audio/missions/sol-city/greenfields_stage_2_sol/sol_s2_complete_1.mp3"
-        },
-        {
-          "id": "sol_s2_complete_2",
-          "filename": "sol_s2_complete_2.mp3",
-          "path": "audio/missions/sol-city/greenfields_stage_2_sol/sol_s2_complete_2.mp3"
-        },
-        {
-          "id": "sol_s2_complete_3",
-          "filename": "sol_s2_complete_3.mp3",
-          "path": "audio/missions/sol-city/greenfields_stage_2_sol/sol_s2_complete_3.mp3"
-        },
-        {
-          "id": "sol_s2_intro_1",
-          "filename": "sol_s2_intro_1.mp3",
-          "path": "audio/missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_1.mp3"
-        },
-        {
-          "id": "sol_s2_intro_2",
-          "filename": "sol_s2_intro_2.mp3",
-          "path": "audio/missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_2.mp3"
-        },
-        {
-          "id": "sol_s2_intro_3",
-          "filename": "sol_s2_intro_3.mp3",
-          "path": "audio/missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_3.mp3"
-        },
-        {
-          "id": "sol_s2_intro_4",
-          "filename": "sol_s2_intro_4.mp3",
-          "path": "audio/missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_4.mp3"
-        },
-        {
-          "id": "sol_s2_intro_5",
-          "filename": "sol_s2_intro_5.mp3",
-          "path": "audio/missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_5.mp3"
-        },
-        {
-          "id": "sol_s2_intro_6",
-          "filename": "sol_s2_intro_6.mp3",
-          "path": "audio/missions/sol-city/greenfields_stage_2_sol/sol_s2_intro_6.mp3"
-        }
-      ]
-    },
-    "greenfields_stage_3": {
-      "characterName": "Sana Whit",
-      "stationId": "greenfields",
-      "title": "Supply Cut",
-      "lineCount": 13,
-      "files": [
-        {
-          "id": "green_s3_accept",
-          "filename": "green_s3_accept.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_accept.mp3"
-        },
-        {
-          "id": "green_s3_complete_1",
-          "filename": "green_s3_complete_1.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_complete_1.mp3"
-        },
-        {
-          "id": "green_s3_complete_2",
-          "filename": "green_s3_complete_2.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_complete_2.mp3"
-        },
-        {
-          "id": "green_s3_complete_3",
-          "filename": "green_s3_complete_3.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_complete_3.mp3"
-        },
-        {
-          "id": "green_s3_complete_4",
-          "filename": "green_s3_complete_4.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_complete_4.mp3"
-        },
-        {
-          "id": "green_s3_convoy_1",
-          "filename": "green_s3_convoy_1.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_convoy_1.mp3"
-        },
-        {
-          "id": "green_s3_convoy_2",
-          "filename": "green_s3_convoy_2.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_convoy_2.mp3"
-        },
-        {
-          "id": "green_s3_intro_1",
-          "filename": "green_s3_intro_1.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_1.mp3"
-        },
-        {
-          "id": "green_s3_intro_2",
-          "filename": "green_s3_intro_2.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_2.mp3"
-        },
-        {
-          "id": "green_s3_intro_3",
-          "filename": "green_s3_intro_3.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_3.mp3"
-        },
-        {
-          "id": "green_s3_intro_4",
-          "filename": "green_s3_intro_4.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_4.mp3"
-        },
-        {
-          "id": "green_s3_intro_5",
-          "filename": "green_s3_intro_5.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_5.mp3"
-        },
-        {
-          "id": "green_s3_intro_6",
-          "filename": "green_s3_intro_6.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_6.mp3"
-        }
-      ]
-    },
-    "sol_city_stage_3": {
-      "characterName": "Mira Vale",
-      "stationId": "sol-city",
-      "title": "Agricultural Compliance Escort",
+    "energy_monopoly_stage_3_ceres": {
+      "characterName": "Ivo Renn",
+      "stationId": "ceres-pp",
+      "title": "The Blockade - Raid Refinery Shipments",
       "lineCount": 12,
       "files": [
         {
-          "id": "sol_s3_accept",
-          "filename": "sol_s3_accept.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_accept.mp3"
+          "id": "energy_s3_ceres_accept",
+          "filename": "energy_s3_ceres_accept.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_accept.mp3"
         },
         {
-          "id": "sol_s3_complete_1",
-          "filename": "sol_s3_complete_1.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_complete_1.mp3"
+          "id": "energy_s3_ceres_complete_1",
+          "filename": "energy_s3_ceres_complete_1.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_complete_1.mp3"
         },
         {
-          "id": "sol_s3_complete_2",
-          "filename": "sol_s3_complete_2.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_complete_2.mp3"
+          "id": "energy_s3_ceres_complete_2",
+          "filename": "energy_s3_ceres_complete_2.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_complete_2.mp3"
         },
         {
-          "id": "sol_s3_complete_3",
-          "filename": "sol_s3_complete_3.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_complete_3.mp3"
+          "id": "energy_s3_ceres_complete_3",
+          "filename": "energy_s3_ceres_complete_3.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_complete_3.mp3"
         },
         {
-          "id": "sol_s3_intro_1",
-          "filename": "sol_s3_intro_1.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_1.mp3"
+          "id": "energy_s3_ceres_convoy_1_down",
+          "filename": "energy_s3_ceres_convoy_1_down.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_convoy_1_down.mp3"
         },
         {
-          "id": "sol_s3_intro_2",
-          "filename": "sol_s3_intro_2.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_2.mp3"
+          "id": "energy_s3_ceres_intro_1",
+          "filename": "energy_s3_ceres_intro_1.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_intro_1.mp3"
         },
         {
-          "id": "sol_s3_intro_3",
-          "filename": "sol_s3_intro_3.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_3.mp3"
+          "id": "energy_s3_ceres_intro_2",
+          "filename": "energy_s3_ceres_intro_2.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_intro_2.mp3"
         },
         {
-          "id": "sol_s3_intro_4",
-          "filename": "sol_s3_intro_4.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_4.mp3"
+          "id": "energy_s3_ceres_intro_3",
+          "filename": "energy_s3_ceres_intro_3.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_intro_3.mp3"
         },
         {
-          "id": "sol_s3_intro_5",
-          "filename": "sol_s3_intro_5.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_5.mp3"
+          "id": "energy_s3_ceres_intro_4",
+          "filename": "energy_s3_ceres_intro_4.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_intro_4.mp3"
         },
         {
-          "id": "sol_s3_intro_6",
-          "filename": "sol_s3_intro_6.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_6.mp3"
+          "id": "energy_s3_ceres_intro_5",
+          "filename": "energy_s3_ceres_intro_5.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_intro_5.mp3"
         },
         {
-          "id": "sol_s3_pirates",
-          "filename": "sol_s3_pirates.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_pirates.mp3"
+          "id": "energy_s3_ceres_intro_6",
+          "filename": "energy_s3_ceres_intro_6.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_intro_6.mp3"
         },
         {
-          "id": "sol_s3_wave",
-          "filename": "sol_s3_wave.mp3",
-          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_wave.mp3"
+          "id": "energy_s3_ceres_timer_low",
+          "filename": "energy_s3_ceres_timer_low.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_3_ceres/energy_s3_ceres_timer_low.mp3"
         }
       ]
     },
-    "greenfields_stage_4": {
-      "characterName": "Sana Whit",
-      "stationId": "greenfields",
-      "title": "New Markets - Independence Finale",
+    "energy_monopoly_stage_3_refinery": {
+      "characterName": "Rex Calder",
+      "stationId": "sol-refinery",
+      "title": "The Blockade - Defend Refinery Convoys",
       "lineCount": 13,
       "files": [
         {
-          "id": "green_s4_accept",
-          "filename": "green_s4_accept.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_accept.mp3"
+          "id": "energy_s3_refinery_accept",
+          "filename": "energy_s3_refinery_accept.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_accept.mp3"
         },
         {
-          "id": "green_s4_complete_1",
-          "filename": "green_s4_complete_1.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_complete_1.mp3"
+          "id": "energy_s3_refinery_complete_1",
+          "filename": "energy_s3_refinery_complete_1.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_complete_1.mp3"
         },
         {
-          "id": "green_s4_complete_2",
-          "filename": "green_s4_complete_2.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_complete_2.mp3"
+          "id": "energy_s3_refinery_complete_2",
+          "filename": "energy_s3_refinery_complete_2.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_complete_2.mp3"
         },
         {
-          "id": "green_s4_complete_3",
-          "filename": "green_s4_complete_3.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_complete_3.mp3"
+          "id": "energy_s3_refinery_complete_3",
+          "filename": "energy_s3_refinery_complete_3.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_complete_3.mp3"
         },
         {
-          "id": "green_s4_complete_4",
-          "filename": "green_s4_complete_4.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_complete_4.mp3"
+          "id": "energy_s3_refinery_convoy_2_safe",
+          "filename": "energy_s3_refinery_convoy_2_safe.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_convoy_2_safe.mp3"
         },
         {
-          "id": "green_s4_complete_5",
-          "filename": "green_s4_complete_5.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_complete_5.mp3"
+          "id": "energy_s3_refinery_fail_1",
+          "filename": "energy_s3_refinery_fail_1.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_fail_1.mp3"
         },
         {
-          "id": "green_s4_intro_1",
-          "filename": "green_s4_intro_1.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_1.mp3"
+          "id": "energy_s3_refinery_intro_1",
+          "filename": "energy_s3_refinery_intro_1.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_intro_1.mp3"
         },
         {
-          "id": "green_s4_intro_2",
-          "filename": "green_s4_intro_2.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_2.mp3"
+          "id": "energy_s3_refinery_intro_2",
+          "filename": "energy_s3_refinery_intro_2.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_intro_2.mp3"
         },
         {
-          "id": "green_s4_intro_3",
-          "filename": "green_s4_intro_3.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_3.mp3"
+          "id": "energy_s3_refinery_intro_3",
+          "filename": "energy_s3_refinery_intro_3.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_intro_3.mp3"
         },
         {
-          "id": "green_s4_intro_4",
-          "filename": "green_s4_intro_4.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_4.mp3"
+          "id": "energy_s3_refinery_intro_4",
+          "filename": "energy_s3_refinery_intro_4.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_intro_4.mp3"
         },
         {
-          "id": "green_s4_intro_5",
-          "filename": "green_s4_intro_5.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_5.mp3"
+          "id": "energy_s3_refinery_intro_5",
+          "filename": "energy_s3_refinery_intro_5.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_intro_5.mp3"
         },
         {
-          "id": "green_s4_intro_6",
-          "filename": "green_s4_intro_6.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_6.mp3"
+          "id": "energy_s3_refinery_intro_6",
+          "filename": "energy_s3_refinery_intro_6.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_intro_6.mp3"
         },
         {
-          "id": "green_s4_intro_7",
-          "filename": "green_s4_intro_7.mp3",
-          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_7.mp3"
+          "id": "energy_s3_refinery_wave_1",
+          "filename": "energy_s3_refinery_wave_1.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_3_refinery/energy_s3_refinery_wave_1.mp3"
+        }
+      ]
+    },
+    "energy_monopoly_stage_4_ceres": {
+      "characterName": "Ivo Renn",
+      "stationId": "ceres-pp",
+      "title": "Consolidate Control - Fuel Market Domination",
+      "lineCount": 12,
+      "files": [
+        {
+          "id": "energy_s4_ceres_accept",
+          "filename": "energy_s4_ceres_accept.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_accept.mp3"
+        },
+        {
+          "id": "energy_s4_ceres_complete_1",
+          "filename": "energy_s4_ceres_complete_1.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_complete_1.mp3"
+        },
+        {
+          "id": "energy_s4_ceres_complete_2",
+          "filename": "energy_s4_ceres_complete_2.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_complete_2.mp3"
+        },
+        {
+          "id": "energy_s4_ceres_complete_3",
+          "filename": "energy_s4_ceres_complete_3.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_complete_3.mp3"
+        },
+        {
+          "id": "energy_s4_ceres_final_minute",
+          "filename": "energy_s4_ceres_final_minute.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_final_minute.mp3"
+        },
+        {
+          "id": "energy_s4_ceres_intro_1",
+          "filename": "energy_s4_ceres_intro_1.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_intro_1.mp3"
+        },
+        {
+          "id": "energy_s4_ceres_intro_2",
+          "filename": "energy_s4_ceres_intro_2.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_intro_2.mp3"
+        },
+        {
+          "id": "energy_s4_ceres_intro_3",
+          "filename": "energy_s4_ceres_intro_3.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_intro_3.mp3"
+        },
+        {
+          "id": "energy_s4_ceres_intro_4",
+          "filename": "energy_s4_ceres_intro_4.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_intro_4.mp3"
+        },
+        {
+          "id": "energy_s4_ceres_intro_5",
+          "filename": "energy_s4_ceres_intro_5.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_intro_5.mp3"
+        },
+        {
+          "id": "energy_s4_ceres_intro_6",
+          "filename": "energy_s4_ceres_intro_6.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_intro_6.mp3"
+        },
+        {
+          "id": "energy_s4_ceres_two_stations",
+          "filename": "energy_s4_ceres_two_stations.mp3",
+          "path": "audio/missions/ceres-pp/energy_monopoly_stage_4_ceres/energy_s4_ceres_two_stations.mp3"
+        }
+      ]
+    },
+    "energy_monopoly_stage_4_refinery": {
+      "characterName": "Rex Calder",
+      "stationId": "sol-refinery",
+      "title": "New Sources - Independent Refinery",
+      "lineCount": 11,
+      "files": [
+        {
+          "id": "energy_s4_refinery_accept",
+          "filename": "energy_s4_refinery_accept.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_4_refinery/energy_s4_refinery_accept.mp3"
+        },
+        {
+          "id": "energy_s4_refinery_complete_1",
+          "filename": "energy_s4_refinery_complete_1.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_4_refinery/energy_s4_refinery_complete_1.mp3"
+        },
+        {
+          "id": "energy_s4_refinery_complete_2",
+          "filename": "energy_s4_refinery_complete_2.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_4_refinery/energy_s4_refinery_complete_2.mp3"
+        },
+        {
+          "id": "energy_s4_refinery_complete_3",
+          "filename": "energy_s4_refinery_complete_3.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_4_refinery/energy_s4_refinery_complete_3.mp3"
+        },
+        {
+          "id": "energy_s4_refinery_halfway",
+          "filename": "energy_s4_refinery_halfway.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_4_refinery/energy_s4_refinery_halfway.mp3"
+        },
+        {
+          "id": "energy_s4_refinery_intro_1",
+          "filename": "energy_s4_refinery_intro_1.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_4_refinery/energy_s4_refinery_intro_1.mp3"
+        },
+        {
+          "id": "energy_s4_refinery_intro_2",
+          "filename": "energy_s4_refinery_intro_2.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_4_refinery/energy_s4_refinery_intro_2.mp3"
+        },
+        {
+          "id": "energy_s4_refinery_intro_3",
+          "filename": "energy_s4_refinery_intro_3.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_4_refinery/energy_s4_refinery_intro_3.mp3"
+        },
+        {
+          "id": "energy_s4_refinery_intro_4",
+          "filename": "energy_s4_refinery_intro_4.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_4_refinery/energy_s4_refinery_intro_4.mp3"
+        },
+        {
+          "id": "energy_s4_refinery_intro_5",
+          "filename": "energy_s4_refinery_intro_5.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_4_refinery/energy_s4_refinery_intro_5.mp3"
+        },
+        {
+          "id": "energy_s4_refinery_intro_6",
+          "filename": "energy_s4_refinery_intro_6.mp3",
+          "path": "audio/missions/sol-refinery/energy_monopoly_stage_4_refinery/energy_s4_refinery_intro_6.mp3"
         }
       ]
     },
@@ -526,66 +506,721 @@
         }
       ]
     },
-    "energy_monopoly_stage_1": {
-      "characterName": "Rex Calder",
-      "stationId": "sol-refinery",
-      "title": "The Audit Trail",
+    "fabrication_wars_stage_2_aurum": {
+      "characterName": "Dr. Elin Kade",
+      "stationId": "aurum-fab",
+      "title": "Raw Materials Rush - Aurum Path",
       "lineCount": 11,
       "files": [
         {
-          "id": "energy_s1_accept",
-          "filename": "energy_s1_accept.mp3",
-          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_accept.mp3"
+          "id": "fab_s2_aurum_accept",
+          "filename": "fab_s2_aurum_accept.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_2_aurum/fab_s2_aurum_accept.mp3"
         },
         {
-          "id": "energy_s1_complete_1",
-          "filename": "energy_s1_complete_1.mp3",
-          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_complete_1.mp3"
+          "id": "fab_s2_aurum_complete_1",
+          "filename": "fab_s2_aurum_complete_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_2_aurum/fab_s2_aurum_complete_1.mp3"
         },
         {
-          "id": "energy_s1_complete_2",
-          "filename": "energy_s1_complete_2.mp3",
-          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_complete_2.mp3"
+          "id": "fab_s2_aurum_complete_2",
+          "filename": "fab_s2_aurum_complete_2.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_2_aurum/fab_s2_aurum_complete_2.mp3"
         },
         {
-          "id": "energy_s1_complete_3",
-          "filename": "energy_s1_complete_3.mp3",
-          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_complete_3.mp3"
+          "id": "fab_s2_aurum_complete_3",
+          "filename": "fab_s2_aurum_complete_3.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_2_aurum/fab_s2_aurum_complete_3.mp3"
         },
         {
-          "id": "energy_s1_installing",
-          "filename": "energy_s1_installing.mp3",
-          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_installing.mp3"
+          "id": "fab_s2_aurum_fail_1",
+          "filename": "fab_s2_aurum_fail_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_2_aurum/fab_s2_aurum_fail_1.mp3"
         },
         {
-          "id": "energy_s1_intro_1",
-          "filename": "energy_s1_intro_1.mp3",
-          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_1.mp3"
+          "id": "fab_s2_aurum_intro_1",
+          "filename": "fab_s2_aurum_intro_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_2_aurum/fab_s2_aurum_intro_1.mp3"
         },
         {
-          "id": "energy_s1_intro_2",
-          "filename": "energy_s1_intro_2.mp3",
-          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_2.mp3"
+          "id": "fab_s2_aurum_intro_2",
+          "filename": "fab_s2_aurum_intro_2.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_2_aurum/fab_s2_aurum_intro_2.mp3"
         },
         {
-          "id": "energy_s1_intro_3",
-          "filename": "energy_s1_intro_3.mp3",
-          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_3.mp3"
+          "id": "fab_s2_aurum_intro_3",
+          "filename": "fab_s2_aurum_intro_3.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_2_aurum/fab_s2_aurum_intro_3.mp3"
         },
         {
-          "id": "energy_s1_intro_4",
-          "filename": "energy_s1_intro_4.mp3",
-          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_4.mp3"
+          "id": "fab_s2_aurum_intro_4",
+          "filename": "fab_s2_aurum_intro_4.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_2_aurum/fab_s2_aurum_intro_4.mp3"
         },
         {
-          "id": "energy_s1_intro_5",
-          "filename": "energy_s1_intro_5.mp3",
-          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_5.mp3"
+          "id": "fab_s2_aurum_intro_5",
+          "filename": "fab_s2_aurum_intro_5.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_2_aurum/fab_s2_aurum_intro_5.mp3"
         },
         {
-          "id": "energy_s1_intro_6",
-          "filename": "energy_s1_intro_6.mp3",
-          "path": "audio/missions/sol-refinery/energy_monopoly_stage_1/energy_s1_intro_6.mp3"
+          "id": "fab_s2_aurum_intro_6",
+          "filename": "fab_s2_aurum_intro_6.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_2_aurum/fab_s2_aurum_intro_6.mp3"
+        }
+      ]
+    },
+    "fabrication_wars_stage_2_drydock": {
+      "characterName": "Chief Harlan",
+      "stationId": "drydock",
+      "title": "Raw Materials Rush - Drydock Path",
+      "lineCount": 11,
+      "files": [
+        {
+          "id": "fab_s2_dry_accept",
+          "filename": "fab_s2_dry_accept.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_2_drydock/fab_s2_dry_accept.mp3"
+        },
+        {
+          "id": "fab_s2_dry_complete_1",
+          "filename": "fab_s2_dry_complete_1.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_2_drydock/fab_s2_dry_complete_1.mp3"
+        },
+        {
+          "id": "fab_s2_dry_complete_2",
+          "filename": "fab_s2_dry_complete_2.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_2_drydock/fab_s2_dry_complete_2.mp3"
+        },
+        {
+          "id": "fab_s2_dry_complete_3",
+          "filename": "fab_s2_dry_complete_3.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_2_drydock/fab_s2_dry_complete_3.mp3"
+        },
+        {
+          "id": "fab_s2_dry_fail_1",
+          "filename": "fab_s2_dry_fail_1.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_2_drydock/fab_s2_dry_fail_1.mp3"
+        },
+        {
+          "id": "fab_s2_dry_intro_1",
+          "filename": "fab_s2_dry_intro_1.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_2_drydock/fab_s2_dry_intro_1.mp3"
+        },
+        {
+          "id": "fab_s2_dry_intro_2",
+          "filename": "fab_s2_dry_intro_2.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_2_drydock/fab_s2_dry_intro_2.mp3"
+        },
+        {
+          "id": "fab_s2_dry_intro_3",
+          "filename": "fab_s2_dry_intro_3.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_2_drydock/fab_s2_dry_intro_3.mp3"
+        },
+        {
+          "id": "fab_s2_dry_intro_4",
+          "filename": "fab_s2_dry_intro_4.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_2_drydock/fab_s2_dry_intro_4.mp3"
+        },
+        {
+          "id": "fab_s2_dry_intro_5",
+          "filename": "fab_s2_dry_intro_5.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_2_drydock/fab_s2_dry_intro_5.mp3"
+        },
+        {
+          "id": "fab_s2_dry_intro_6",
+          "filename": "fab_s2_dry_intro_6.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_2_drydock/fab_s2_dry_intro_6.mp3"
+        }
+      ]
+    },
+    "fabrication_wars_stage_3": {
+      "characterName": "Dr. Elin Kade",
+      "stationId": "aurum-fab",
+      "title": "Sabotage the Supply Line",
+      "lineCount": 11,
+      "files": [
+        {
+          "id": "fab_s3_accept",
+          "filename": "fab_s3_accept.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3/fab_s3_accept.mp3"
+        },
+        {
+          "id": "fab_s3_complete_1",
+          "filename": "fab_s3_complete_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3/fab_s3_complete_1.mp3"
+        },
+        {
+          "id": "fab_s3_complete_2",
+          "filename": "fab_s3_complete_2.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3/fab_s3_complete_2.mp3"
+        },
+        {
+          "id": "fab_s3_complete_3",
+          "filename": "fab_s3_complete_3.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3/fab_s3_complete_3.mp3"
+        },
+        {
+          "id": "fab_s3_fail_1",
+          "filename": "fab_s3_fail_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3/fab_s3_fail_1.mp3"
+        },
+        {
+          "id": "fab_s3_intro_1",
+          "filename": "fab_s3_intro_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3/fab_s3_intro_1.mp3"
+        },
+        {
+          "id": "fab_s3_intro_2",
+          "filename": "fab_s3_intro_2.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3/fab_s3_intro_2.mp3"
+        },
+        {
+          "id": "fab_s3_intro_3",
+          "filename": "fab_s3_intro_3.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3/fab_s3_intro_3.mp3"
+        },
+        {
+          "id": "fab_s3_intro_4",
+          "filename": "fab_s3_intro_4.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3/fab_s3_intro_4.mp3"
+        },
+        {
+          "id": "fab_s3_intro_5",
+          "filename": "fab_s3_intro_5.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3/fab_s3_intro_5.mp3"
+        },
+        {
+          "id": "fab_s3_intro_6",
+          "filename": "fab_s3_intro_6.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3/fab_s3_intro_6.mp3"
+        }
+      ]
+    },
+    "fabrication_wars_stage_3_aurum": {
+      "characterName": "Dr. Elin Kade",
+      "stationId": "aurum-fab",
+      "title": "Sabotage the Supply Line - Aurum Path",
+      "lineCount": 11,
+      "files": [
+        {
+          "id": "fab_s3_aurum_accept",
+          "filename": "fab_s3_aurum_accept.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3_aurum/fab_s3_aurum_accept.mp3"
+        },
+        {
+          "id": "fab_s3_aurum_complete_1",
+          "filename": "fab_s3_aurum_complete_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3_aurum/fab_s3_aurum_complete_1.mp3"
+        },
+        {
+          "id": "fab_s3_aurum_complete_2",
+          "filename": "fab_s3_aurum_complete_2.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3_aurum/fab_s3_aurum_complete_2.mp3"
+        },
+        {
+          "id": "fab_s3_aurum_complete_3",
+          "filename": "fab_s3_aurum_complete_3.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3_aurum/fab_s3_aurum_complete_3.mp3"
+        },
+        {
+          "id": "fab_s3_aurum_fail_1",
+          "filename": "fab_s3_aurum_fail_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3_aurum/fab_s3_aurum_fail_1.mp3"
+        },
+        {
+          "id": "fab_s3_aurum_intro_1",
+          "filename": "fab_s3_aurum_intro_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3_aurum/fab_s3_aurum_intro_1.mp3"
+        },
+        {
+          "id": "fab_s3_aurum_intro_2",
+          "filename": "fab_s3_aurum_intro_2.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3_aurum/fab_s3_aurum_intro_2.mp3"
+        },
+        {
+          "id": "fab_s3_aurum_intro_3",
+          "filename": "fab_s3_aurum_intro_3.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3_aurum/fab_s3_aurum_intro_3.mp3"
+        },
+        {
+          "id": "fab_s3_aurum_intro_4",
+          "filename": "fab_s3_aurum_intro_4.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3_aurum/fab_s3_aurum_intro_4.mp3"
+        },
+        {
+          "id": "fab_s3_aurum_intro_5",
+          "filename": "fab_s3_aurum_intro_5.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3_aurum/fab_s3_aurum_intro_5.mp3"
+        },
+        {
+          "id": "fab_s3_aurum_intro_6",
+          "filename": "fab_s3_aurum_intro_6.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_3_aurum/fab_s3_aurum_intro_6.mp3"
+        }
+      ]
+    },
+    "fabrication_wars_stage_3_drydock": {
+      "characterName": "Chief Harlan",
+      "stationId": "drydock",
+      "title": "Sabotage the Supply Line - Drydock Path",
+      "lineCount": 11,
+      "files": [
+        {
+          "id": "fab_s3_dry_accept",
+          "filename": "fab_s3_dry_accept.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_3_drydock/fab_s3_dry_accept.mp3"
+        },
+        {
+          "id": "fab_s3_dry_complete_1",
+          "filename": "fab_s3_dry_complete_1.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_3_drydock/fab_s3_dry_complete_1.mp3"
+        },
+        {
+          "id": "fab_s3_dry_complete_2",
+          "filename": "fab_s3_dry_complete_2.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_3_drydock/fab_s3_dry_complete_2.mp3"
+        },
+        {
+          "id": "fab_s3_dry_complete_3",
+          "filename": "fab_s3_dry_complete_3.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_3_drydock/fab_s3_dry_complete_3.mp3"
+        },
+        {
+          "id": "fab_s3_dry_fail_1",
+          "filename": "fab_s3_dry_fail_1.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_3_drydock/fab_s3_dry_fail_1.mp3"
+        },
+        {
+          "id": "fab_s3_dry_intro_1",
+          "filename": "fab_s3_dry_intro_1.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_3_drydock/fab_s3_dry_intro_1.mp3"
+        },
+        {
+          "id": "fab_s3_dry_intro_2",
+          "filename": "fab_s3_dry_intro_2.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_3_drydock/fab_s3_dry_intro_2.mp3"
+        },
+        {
+          "id": "fab_s3_dry_intro_3",
+          "filename": "fab_s3_dry_intro_3.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_3_drydock/fab_s3_dry_intro_3.mp3"
+        },
+        {
+          "id": "fab_s3_dry_intro_4",
+          "filename": "fab_s3_dry_intro_4.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_3_drydock/fab_s3_dry_intro_4.mp3"
+        },
+        {
+          "id": "fab_s3_dry_intro_5",
+          "filename": "fab_s3_dry_intro_5.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_3_drydock/fab_s3_dry_intro_5.mp3"
+        },
+        {
+          "id": "fab_s3_dry_intro_6",
+          "filename": "fab_s3_dry_intro_6.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_3_drydock/fab_s3_dry_intro_6.mp3"
+        }
+      ]
+    },
+    "fabrication_wars_stage_4_aurum": {
+      "characterName": "Dr. Elin Kade",
+      "stationId": "aurum-fab",
+      "title": "The Exclusive Contract - Aurum Path",
+      "lineCount": 11,
+      "files": [
+        {
+          "id": "fab_s4_aurum_accept",
+          "filename": "fab_s4_aurum_accept.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_4_aurum/fab_s4_aurum_accept.mp3"
+        },
+        {
+          "id": "fab_s4_aurum_complete_1",
+          "filename": "fab_s4_aurum_complete_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_4_aurum/fab_s4_aurum_complete_1.mp3"
+        },
+        {
+          "id": "fab_s4_aurum_complete_2",
+          "filename": "fab_s4_aurum_complete_2.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_4_aurum/fab_s4_aurum_complete_2.mp3"
+        },
+        {
+          "id": "fab_s4_aurum_complete_3",
+          "filename": "fab_s4_aurum_complete_3.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_4_aurum/fab_s4_aurum_complete_3.mp3"
+        },
+        {
+          "id": "fab_s4_aurum_fail_1",
+          "filename": "fab_s4_aurum_fail_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_4_aurum/fab_s4_aurum_fail_1.mp3"
+        },
+        {
+          "id": "fab_s4_aurum_intro_1",
+          "filename": "fab_s4_aurum_intro_1.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_4_aurum/fab_s4_aurum_intro_1.mp3"
+        },
+        {
+          "id": "fab_s4_aurum_intro_2",
+          "filename": "fab_s4_aurum_intro_2.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_4_aurum/fab_s4_aurum_intro_2.mp3"
+        },
+        {
+          "id": "fab_s4_aurum_intro_3",
+          "filename": "fab_s4_aurum_intro_3.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_4_aurum/fab_s4_aurum_intro_3.mp3"
+        },
+        {
+          "id": "fab_s4_aurum_intro_4",
+          "filename": "fab_s4_aurum_intro_4.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_4_aurum/fab_s4_aurum_intro_4.mp3"
+        },
+        {
+          "id": "fab_s4_aurum_intro_5",
+          "filename": "fab_s4_aurum_intro_5.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_4_aurum/fab_s4_aurum_intro_5.mp3"
+        },
+        {
+          "id": "fab_s4_aurum_intro_6",
+          "filename": "fab_s4_aurum_intro_6.mp3",
+          "path": "audio/missions/aurum-fab/fabrication_wars_stage_4_aurum/fab_s4_aurum_intro_6.mp3"
+        }
+      ]
+    },
+    "fabrication_wars_stage_4_drydock": {
+      "characterName": "Chief Harlan",
+      "stationId": "drydock",
+      "title": "The Exclusive Contract - Drydock Path",
+      "lineCount": 11,
+      "files": [
+        {
+          "id": "fab_s4_dry_accept",
+          "filename": "fab_s4_dry_accept.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_4_drydock/fab_s4_dry_accept.mp3"
+        },
+        {
+          "id": "fab_s4_dry_complete_1",
+          "filename": "fab_s4_dry_complete_1.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_4_drydock/fab_s4_dry_complete_1.mp3"
+        },
+        {
+          "id": "fab_s4_dry_complete_2",
+          "filename": "fab_s4_dry_complete_2.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_4_drydock/fab_s4_dry_complete_2.mp3"
+        },
+        {
+          "id": "fab_s4_dry_complete_3",
+          "filename": "fab_s4_dry_complete_3.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_4_drydock/fab_s4_dry_complete_3.mp3"
+        },
+        {
+          "id": "fab_s4_dry_fail_1",
+          "filename": "fab_s4_dry_fail_1.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_4_drydock/fab_s4_dry_fail_1.mp3"
+        },
+        {
+          "id": "fab_s4_dry_intro_1",
+          "filename": "fab_s4_dry_intro_1.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_4_drydock/fab_s4_dry_intro_1.mp3"
+        },
+        {
+          "id": "fab_s4_dry_intro_2",
+          "filename": "fab_s4_dry_intro_2.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_4_drydock/fab_s4_dry_intro_2.mp3"
+        },
+        {
+          "id": "fab_s4_dry_intro_3",
+          "filename": "fab_s4_dry_intro_3.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_4_drydock/fab_s4_dry_intro_3.mp3"
+        },
+        {
+          "id": "fab_s4_dry_intro_4",
+          "filename": "fab_s4_dry_intro_4.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_4_drydock/fab_s4_dry_intro_4.mp3"
+        },
+        {
+          "id": "fab_s4_dry_intro_5",
+          "filename": "fab_s4_dry_intro_5.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_4_drydock/fab_s4_dry_intro_5.mp3"
+        },
+        {
+          "id": "fab_s4_dry_intro_6",
+          "filename": "fab_s4_dry_intro_6.mp3",
+          "path": "audio/missions/drydock/fabrication_wars_stage_4_drydock/fab_s4_dry_intro_6.mp3"
+        }
+      ]
+    },
+    "greenfields_stage_1": {
+      "characterName": "Sana Whit",
+      "stationId": "greenfields",
+      "title": "Breaking the Chain",
+      "lineCount": 13,
+      "files": [
+        {
+          "id": "green_s1_accept",
+          "filename": "green_s1_accept.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_accept.mp3"
+        },
+        {
+          "id": "green_s1_complete_1",
+          "filename": "green_s1_complete_1.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_complete_1.mp3"
+        },
+        {
+          "id": "green_s1_complete_2",
+          "filename": "green_s1_complete_2.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_complete_2.mp3"
+        },
+        {
+          "id": "green_s1_complete_3",
+          "filename": "green_s1_complete_3.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_complete_3.mp3"
+        },
+        {
+          "id": "green_s1_fail_1",
+          "filename": "green_s1_fail_1.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_fail_1.mp3"
+        },
+        {
+          "id": "green_s1_halfway",
+          "filename": "green_s1_halfway.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_halfway.mp3"
+        },
+        {
+          "id": "green_s1_intro_1",
+          "filename": "green_s1_intro_1.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_1.mp3"
+        },
+        {
+          "id": "green_s1_intro_2",
+          "filename": "green_s1_intro_2.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_2.mp3"
+        },
+        {
+          "id": "green_s1_intro_3",
+          "filename": "green_s1_intro_3.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_3.mp3"
+        },
+        {
+          "id": "green_s1_intro_4",
+          "filename": "green_s1_intro_4.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_4.mp3"
+        },
+        {
+          "id": "green_s1_intro_5",
+          "filename": "green_s1_intro_5.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_5.mp3"
+        },
+        {
+          "id": "green_s1_intro_6",
+          "filename": "green_s1_intro_6.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_intro_6.mp3"
+        },
+        {
+          "id": "green_s1_warning",
+          "filename": "green_s1_warning.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_1/green_s1_warning.mp3"
+        }
+      ]
+    },
+    "greenfields_stage_2": {
+      "characterName": "Sana Whit",
+      "stationId": "greenfields",
+      "title": "The Census",
+      "lineCount": 10,
+      "files": [
+        {
+          "id": "green_s2_accept",
+          "filename": "green_s2_accept.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_accept.mp3"
+        },
+        {
+          "id": "green_s2_complete_greenfields_1",
+          "filename": "green_s2_complete_greenfields_1.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_complete_greenfields_1.mp3"
+        },
+        {
+          "id": "green_s2_complete_greenfields_2",
+          "filename": "green_s2_complete_greenfields_2.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_complete_greenfields_2.mp3"
+        },
+        {
+          "id": "green_s2_complete_greenfields_3",
+          "filename": "green_s2_complete_greenfields_3.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_complete_greenfields_3.mp3"
+        },
+        {
+          "id": "green_s2_intro_1",
+          "filename": "green_s2_intro_1.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_1.mp3"
+        },
+        {
+          "id": "green_s2_intro_2",
+          "filename": "green_s2_intro_2.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_2.mp3"
+        },
+        {
+          "id": "green_s2_intro_3",
+          "filename": "green_s2_intro_3.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_3.mp3"
+        },
+        {
+          "id": "green_s2_intro_4",
+          "filename": "green_s2_intro_4.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_4.mp3"
+        },
+        {
+          "id": "green_s2_intro_5",
+          "filename": "green_s2_intro_5.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_5.mp3"
+        },
+        {
+          "id": "green_s2_intro_6",
+          "filename": "green_s2_intro_6.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_2/green_s2_intro_6.mp3"
+        }
+      ]
+    },
+    "greenfields_stage_3": {
+      "characterName": "Sana Whit",
+      "stationId": "greenfields",
+      "title": "Supply Cut",
+      "lineCount": 13,
+      "files": [
+        {
+          "id": "green_s3_accept",
+          "filename": "green_s3_accept.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_accept.mp3"
+        },
+        {
+          "id": "green_s3_complete_1",
+          "filename": "green_s3_complete_1.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_complete_1.mp3"
+        },
+        {
+          "id": "green_s3_complete_2",
+          "filename": "green_s3_complete_2.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_complete_2.mp3"
+        },
+        {
+          "id": "green_s3_complete_3",
+          "filename": "green_s3_complete_3.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_complete_3.mp3"
+        },
+        {
+          "id": "green_s3_complete_4",
+          "filename": "green_s3_complete_4.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_complete_4.mp3"
+        },
+        {
+          "id": "green_s3_convoy_1",
+          "filename": "green_s3_convoy_1.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_convoy_1.mp3"
+        },
+        {
+          "id": "green_s3_convoy_2",
+          "filename": "green_s3_convoy_2.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_convoy_2.mp3"
+        },
+        {
+          "id": "green_s3_intro_1",
+          "filename": "green_s3_intro_1.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_1.mp3"
+        },
+        {
+          "id": "green_s3_intro_2",
+          "filename": "green_s3_intro_2.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_2.mp3"
+        },
+        {
+          "id": "green_s3_intro_3",
+          "filename": "green_s3_intro_3.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_3.mp3"
+        },
+        {
+          "id": "green_s3_intro_4",
+          "filename": "green_s3_intro_4.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_4.mp3"
+        },
+        {
+          "id": "green_s3_intro_5",
+          "filename": "green_s3_intro_5.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_5.mp3"
+        },
+        {
+          "id": "green_s3_intro_6",
+          "filename": "green_s3_intro_6.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_3/green_s3_intro_6.mp3"
+        }
+      ]
+    },
+    "greenfields_stage_4": {
+      "characterName": "Sana Whit",
+      "stationId": "greenfields",
+      "title": "New Markets",
+      "lineCount": 13,
+      "files": [
+        {
+          "id": "green_s4_accept",
+          "filename": "green_s4_accept.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_accept.mp3"
+        },
+        {
+          "id": "green_s4_complete_1",
+          "filename": "green_s4_complete_1.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_complete_1.mp3"
+        },
+        {
+          "id": "green_s4_complete_2",
+          "filename": "green_s4_complete_2.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_complete_2.mp3"
+        },
+        {
+          "id": "green_s4_complete_3",
+          "filename": "green_s4_complete_3.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_complete_3.mp3"
+        },
+        {
+          "id": "green_s4_complete_4",
+          "filename": "green_s4_complete_4.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_complete_4.mp3"
+        },
+        {
+          "id": "green_s4_complete_5",
+          "filename": "green_s4_complete_5.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_complete_5.mp3"
+        },
+        {
+          "id": "green_s4_intro_1",
+          "filename": "green_s4_intro_1.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_1.mp3"
+        },
+        {
+          "id": "green_s4_intro_2",
+          "filename": "green_s4_intro_2.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_2.mp3"
+        },
+        {
+          "id": "green_s4_intro_3",
+          "filename": "green_s4_intro_3.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_3.mp3"
+        },
+        {
+          "id": "green_s4_intro_4",
+          "filename": "green_s4_intro_4.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_4.mp3"
+        },
+        {
+          "id": "green_s4_intro_5",
+          "filename": "green_s4_intro_5.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_5.mp3"
+        },
+        {
+          "id": "green_s4_intro_6",
+          "filename": "green_s4_intro_6.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_6.mp3"
+        },
+        {
+          "id": "green_s4_intro_7",
+          "filename": "green_s4_intro_7.mp3",
+          "path": "audio/missions/greenfields/greenfields_stage_4/green_s4_intro_7.mp3"
         }
       ]
     },
@@ -647,61 +1282,381 @@
         }
       ]
     },
-    "pirate_accords_stage_2_vex": {
-      "characterName": "Vex Marrow",
-      "stationId": "hidden-cove",
-      "title": "Choose Your Side - Vex Introduction",
+    "pirate_accords_stage_2": {
+      "characterName": "Kalla Rook",
+      "stationId": "freeport",
+      "title": "Choose Your Side",
       "lineCount": 10,
       "files": [
         {
-          "id": "vex_s2_accept",
-          "filename": "vex_s2_accept.mp3",
-          "path": "audio/missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_accept.mp3"
+          "id": "pirate_s2_accept",
+          "filename": "pirate_s2_accept.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_2/pirate_s2_accept.mp3"
         },
         {
-          "id": "vex_s2_complete_pirate_1",
-          "filename": "vex_s2_complete_pirate_1.mp3",
-          "path": "audio/missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_complete_pirate_1.mp3"
+          "id": "pirate_s2_complete_1",
+          "filename": "pirate_s2_complete_1.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_2/pirate_s2_complete_1.mp3"
         },
         {
-          "id": "vex_s2_complete_pirate_2",
-          "filename": "vex_s2_complete_pirate_2.mp3",
-          "path": "audio/missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_complete_pirate_2.mp3"
+          "id": "pirate_s2_complete_2",
+          "filename": "pirate_s2_complete_2.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_2/pirate_s2_complete_2.mp3"
         },
         {
-          "id": "vex_s2_complete_pirate_3",
-          "filename": "vex_s2_complete_pirate_3.mp3",
-          "path": "audio/missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_complete_pirate_3.mp3"
+          "id": "pirate_s2_complete_3",
+          "filename": "pirate_s2_complete_3.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_2/pirate_s2_complete_3.mp3"
         },
         {
-          "id": "vex_s2_intro_1",
-          "filename": "vex_s2_intro_1.mp3",
-          "path": "audio/missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_1.mp3"
+          "id": "pirate_s2_intro_1",
+          "filename": "pirate_s2_intro_1.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_2/pirate_s2_intro_1.mp3"
         },
         {
-          "id": "vex_s2_intro_2",
-          "filename": "vex_s2_intro_2.mp3",
-          "path": "audio/missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_2.mp3"
+          "id": "pirate_s2_intro_2",
+          "filename": "pirate_s2_intro_2.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_2/pirate_s2_intro_2.mp3"
         },
         {
-          "id": "vex_s2_intro_3",
-          "filename": "vex_s2_intro_3.mp3",
-          "path": "audio/missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_3.mp3"
+          "id": "pirate_s2_intro_3",
+          "filename": "pirate_s2_intro_3.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_2/pirate_s2_intro_3.mp3"
         },
         {
-          "id": "vex_s2_intro_4",
-          "filename": "vex_s2_intro_4.mp3",
-          "path": "audio/missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_4.mp3"
+          "id": "pirate_s2_intro_4",
+          "filename": "pirate_s2_intro_4.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_2/pirate_s2_intro_4.mp3"
         },
         {
-          "id": "vex_s2_intro_5",
-          "filename": "vex_s2_intro_5.mp3",
-          "path": "audio/missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_5.mp3"
+          "id": "pirate_s2_intro_5",
+          "filename": "pirate_s2_intro_5.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_2/pirate_s2_intro_5.mp3"
         },
         {
-          "id": "vex_s2_intro_6",
-          "filename": "vex_s2_intro_6.mp3",
-          "path": "audio/missions/hidden-cove/pirate_accords_stage_2_vex/vex_s2_intro_6.mp3"
+          "id": "pirate_s2_intro_6",
+          "filename": "pirate_s2_intro_6.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_2/pirate_s2_intro_6.mp3"
+        }
+      ]
+    },
+    "pirate_accords_stage_3_law": {
+      "characterName": "Mira Vale",
+      "stationId": "sol-city",
+      "title": "The Enforcement - Siege Hidden Cove",
+      "lineCount": 11,
+      "files": [
+        {
+          "id": "pirate_s3_law_accept",
+          "filename": "pirate_s3_law_accept.mp3",
+          "path": "audio/missions/sol-city/pirate_accords_stage_3_law/pirate_s3_law_accept.mp3"
+        },
+        {
+          "id": "pirate_s3_law_complete_1",
+          "filename": "pirate_s3_law_complete_1.mp3",
+          "path": "audio/missions/sol-city/pirate_accords_stage_3_law/pirate_s3_law_complete_1.mp3"
+        },
+        {
+          "id": "pirate_s3_law_complete_2",
+          "filename": "pirate_s3_law_complete_2.mp3",
+          "path": "audio/missions/sol-city/pirate_accords_stage_3_law/pirate_s3_law_complete_2.mp3"
+        },
+        {
+          "id": "pirate_s3_law_complete_3",
+          "filename": "pirate_s3_law_complete_3.mp3",
+          "path": "audio/missions/sol-city/pirate_accords_stage_3_law/pirate_s3_law_complete_3.mp3"
+        },
+        {
+          "id": "pirate_s3_law_fail_1",
+          "filename": "pirate_s3_law_fail_1.mp3",
+          "path": "audio/missions/sol-city/pirate_accords_stage_3_law/pirate_s3_law_fail_1.mp3"
+        },
+        {
+          "id": "pirate_s3_law_intro_1",
+          "filename": "pirate_s3_law_intro_1.mp3",
+          "path": "audio/missions/sol-city/pirate_accords_stage_3_law/pirate_s3_law_intro_1.mp3"
+        },
+        {
+          "id": "pirate_s3_law_intro_2",
+          "filename": "pirate_s3_law_intro_2.mp3",
+          "path": "audio/missions/sol-city/pirate_accords_stage_3_law/pirate_s3_law_intro_2.mp3"
+        },
+        {
+          "id": "pirate_s3_law_intro_3",
+          "filename": "pirate_s3_law_intro_3.mp3",
+          "path": "audio/missions/sol-city/pirate_accords_stage_3_law/pirate_s3_law_intro_3.mp3"
+        },
+        {
+          "id": "pirate_s3_law_intro_4",
+          "filename": "pirate_s3_law_intro_4.mp3",
+          "path": "audio/missions/sol-city/pirate_accords_stage_3_law/pirate_s3_law_intro_4.mp3"
+        },
+        {
+          "id": "pirate_s3_law_intro_5",
+          "filename": "pirate_s3_law_intro_5.mp3",
+          "path": "audio/missions/sol-city/pirate_accords_stage_3_law/pirate_s3_law_intro_5.mp3"
+        },
+        {
+          "id": "pirate_s3_law_intro_6",
+          "filename": "pirate_s3_law_intro_6.mp3",
+          "path": "audio/missions/sol-city/pirate_accords_stage_3_law/pirate_s3_law_intro_6.mp3"
+        }
+      ]
+    },
+    "pirate_accords_stage_3_peace": {
+      "characterName": "Kalla Rook",
+      "stationId": "freeport",
+      "title": "The Enforcement - Defend Peace Conference",
+      "lineCount": 11,
+      "files": [
+        {
+          "id": "pirate_s3_peace_accept",
+          "filename": "pirate_s3_peace_accept.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_3_peace/pirate_s3_peace_accept.mp3"
+        },
+        {
+          "id": "pirate_s3_peace_complete_1",
+          "filename": "pirate_s3_peace_complete_1.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_3_peace/pirate_s3_peace_complete_1.mp3"
+        },
+        {
+          "id": "pirate_s3_peace_complete_2",
+          "filename": "pirate_s3_peace_complete_2.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_3_peace/pirate_s3_peace_complete_2.mp3"
+        },
+        {
+          "id": "pirate_s3_peace_complete_3",
+          "filename": "pirate_s3_peace_complete_3.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_3_peace/pirate_s3_peace_complete_3.mp3"
+        },
+        {
+          "id": "pirate_s3_peace_fail_1",
+          "filename": "pirate_s3_peace_fail_1.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_3_peace/pirate_s3_peace_fail_1.mp3"
+        },
+        {
+          "id": "pirate_s3_peace_intro_1",
+          "filename": "pirate_s3_peace_intro_1.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_3_peace/pirate_s3_peace_intro_1.mp3"
+        },
+        {
+          "id": "pirate_s3_peace_intro_2",
+          "filename": "pirate_s3_peace_intro_2.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_3_peace/pirate_s3_peace_intro_2.mp3"
+        },
+        {
+          "id": "pirate_s3_peace_intro_3",
+          "filename": "pirate_s3_peace_intro_3.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_3_peace/pirate_s3_peace_intro_3.mp3"
+        },
+        {
+          "id": "pirate_s3_peace_intro_4",
+          "filename": "pirate_s3_peace_intro_4.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_3_peace/pirate_s3_peace_intro_4.mp3"
+        },
+        {
+          "id": "pirate_s3_peace_intro_5",
+          "filename": "pirate_s3_peace_intro_5.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_3_peace/pirate_s3_peace_intro_5.mp3"
+        },
+        {
+          "id": "pirate_s3_peace_intro_6",
+          "filename": "pirate_s3_peace_intro_6.mp3",
+          "path": "audio/missions/freeport/pirate_accords_stage_3_peace/pirate_s3_peace_intro_6.mp3"
+        }
+      ]
+    },
+    "pirate_accords_stage_3_pirate": {
+      "characterName": "Vex Marrow",
+      "stationId": "hidden-cove",
+      "title": "The Enforcement - Assault Sol City Defenses",
+      "lineCount": 11,
+      "files": [
+        {
+          "id": "pirate_s3_pirate_accept",
+          "filename": "pirate_s3_pirate_accept.mp3",
+          "path": "audio/missions/hidden-cove/pirate_accords_stage_3_pirate/pirate_s3_pirate_accept.mp3"
+        },
+        {
+          "id": "pirate_s3_pirate_complete_1",
+          "filename": "pirate_s3_pirate_complete_1.mp3",
+          "path": "audio/missions/hidden-cove/pirate_accords_stage_3_pirate/pirate_s3_pirate_complete_1.mp3"
+        },
+        {
+          "id": "pirate_s3_pirate_complete_2",
+          "filename": "pirate_s3_pirate_complete_2.mp3",
+          "path": "audio/missions/hidden-cove/pirate_accords_stage_3_pirate/pirate_s3_pirate_complete_2.mp3"
+        },
+        {
+          "id": "pirate_s3_pirate_complete_3",
+          "filename": "pirate_s3_pirate_complete_3.mp3",
+          "path": "audio/missions/hidden-cove/pirate_accords_stage_3_pirate/pirate_s3_pirate_complete_3.mp3"
+        },
+        {
+          "id": "pirate_s3_pirate_fail_1",
+          "filename": "pirate_s3_pirate_fail_1.mp3",
+          "path": "audio/missions/hidden-cove/pirate_accords_stage_3_pirate/pirate_s3_pirate_fail_1.mp3"
+        },
+        {
+          "id": "pirate_s3_pirate_intro_1",
+          "filename": "pirate_s3_pirate_intro_1.mp3",
+          "path": "audio/missions/hidden-cove/pirate_accords_stage_3_pirate/pirate_s3_pirate_intro_1.mp3"
+        },
+        {
+          "id": "pirate_s3_pirate_intro_2",
+          "filename": "pirate_s3_pirate_intro_2.mp3",
+          "path": "audio/missions/hidden-cove/pirate_accords_stage_3_pirate/pirate_s3_pirate_intro_2.mp3"
+        },
+        {
+          "id": "pirate_s3_pirate_intro_3",
+          "filename": "pirate_s3_pirate_intro_3.mp3",
+          "path": "audio/missions/hidden-cove/pirate_accords_stage_3_pirate/pirate_s3_pirate_intro_3.mp3"
+        },
+        {
+          "id": "pirate_s3_pirate_intro_4",
+          "filename": "pirate_s3_pirate_intro_4.mp3",
+          "path": "audio/missions/hidden-cove/pirate_accords_stage_3_pirate/pirate_s3_pirate_intro_4.mp3"
+        },
+        {
+          "id": "pirate_s3_pirate_intro_5",
+          "filename": "pirate_s3_pirate_intro_5.mp3",
+          "path": "audio/missions/hidden-cove/pirate_accords_stage_3_pirate/pirate_s3_pirate_intro_5.mp3"
+        },
+        {
+          "id": "pirate_s3_pirate_intro_6",
+          "filename": "pirate_s3_pirate_intro_6.mp3",
+          "path": "audio/missions/hidden-cove/pirate_accords_stage_3_pirate/pirate_s3_pirate_intro_6.mp3"
+        }
+      ]
+    },
+    "sol_city_stage_3": {
+      "characterName": "Mira Vale",
+      "stationId": "sol-city",
+      "title": "Agricultural Compliance Escort",
+      "lineCount": 12,
+      "files": [
+        {
+          "id": "sol_s3_accept",
+          "filename": "sol_s3_accept.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_accept.mp3"
+        },
+        {
+          "id": "sol_s3_complete_1",
+          "filename": "sol_s3_complete_1.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_complete_1.mp3"
+        },
+        {
+          "id": "sol_s3_complete_2",
+          "filename": "sol_s3_complete_2.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_complete_2.mp3"
+        },
+        {
+          "id": "sol_s3_complete_3",
+          "filename": "sol_s3_complete_3.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_complete_3.mp3"
+        },
+        {
+          "id": "sol_s3_intro_1",
+          "filename": "sol_s3_intro_1.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_1.mp3"
+        },
+        {
+          "id": "sol_s3_intro_2",
+          "filename": "sol_s3_intro_2.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_2.mp3"
+        },
+        {
+          "id": "sol_s3_intro_3",
+          "filename": "sol_s3_intro_3.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_3.mp3"
+        },
+        {
+          "id": "sol_s3_intro_4",
+          "filename": "sol_s3_intro_4.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_4.mp3"
+        },
+        {
+          "id": "sol_s3_intro_5",
+          "filename": "sol_s3_intro_5.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_5.mp3"
+        },
+        {
+          "id": "sol_s3_intro_6",
+          "filename": "sol_s3_intro_6.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_intro_6.mp3"
+        },
+        {
+          "id": "sol_s3_pirates",
+          "filename": "sol_s3_pirates.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_pirates.mp3"
+        },
+        {
+          "id": "sol_s3_wave",
+          "filename": "sol_s3_wave.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_3/sol_s3_wave.mp3"
+        }
+      ]
+    },
+    "sol_city_stage_4": {
+      "characterName": "Mira Vale",
+      "stationId": "sol-city",
+      "title": "Contract Enforcement",
+      "lineCount": 11,
+      "files": [
+        {
+          "id": "sol_s4_accept",
+          "filename": "sol_s4_accept.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_4/sol_s4_accept.mp3"
+        },
+        {
+          "id": "sol_s4_complete_1",
+          "filename": "sol_s4_complete_1.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_4/sol_s4_complete_1.mp3"
+        },
+        {
+          "id": "sol_s4_complete_2",
+          "filename": "sol_s4_complete_2.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_4/sol_s4_complete_2.mp3"
+        },
+        {
+          "id": "sol_s4_complete_3",
+          "filename": "sol_s4_complete_3.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_4/sol_s4_complete_3.mp3"
+        },
+        {
+          "id": "sol_s4_fail_1",
+          "filename": "sol_s4_fail_1.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_4/sol_s4_fail_1.mp3"
+        },
+        {
+          "id": "sol_s4_intro_1",
+          "filename": "sol_s4_intro_1.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_4/sol_s4_intro_1.mp3"
+        },
+        {
+          "id": "sol_s4_intro_2",
+          "filename": "sol_s4_intro_2.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_4/sol_s4_intro_2.mp3"
+        },
+        {
+          "id": "sol_s4_intro_3",
+          "filename": "sol_s4_intro_3.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_4/sol_s4_intro_3.mp3"
+        },
+        {
+          "id": "sol_s4_intro_4",
+          "filename": "sol_s4_intro_4.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_4/sol_s4_intro_4.mp3"
+        },
+        {
+          "id": "sol_s4_intro_5",
+          "filename": "sol_s4_intro_5.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_4/sol_s4_intro_5.mp3"
+        },
+        {
+          "id": "sol_s4_intro_6",
+          "filename": "sol_s4_intro_6.mp3",
+          "path": "audio/missions/sol-city/sol_city_stage_4/sol_s4_intro_6.mp3"
         }
       ]
     },
@@ -770,6 +1725,180 @@
           "id": "union_s1_momentum",
           "filename": "union_s1_momentum.mp3",
           "path": "audio/missions/drydock/union_crisis_stage_1/union_s1_momentum.mp3"
+        }
+      ]
+    },
+    "union_crisis_stage_2": {
+      "characterName": "Chief Harlan",
+      "stationId": "drydock",
+      "title": "Strike or Break",
+      "lineCount": 10,
+      "files": [
+        {
+          "id": "union_s2_accept",
+          "filename": "union_s2_accept.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_2/union_s2_accept.mp3"
+        },
+        {
+          "id": "union_s2_complete_1",
+          "filename": "union_s2_complete_1.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_2/union_s2_complete_1.mp3"
+        },
+        {
+          "id": "union_s2_complete_2",
+          "filename": "union_s2_complete_2.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_2/union_s2_complete_2.mp3"
+        },
+        {
+          "id": "union_s2_complete_3",
+          "filename": "union_s2_complete_3.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_2/union_s2_complete_3.mp3"
+        },
+        {
+          "id": "union_s2_intro_1",
+          "filename": "union_s2_intro_1.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_2/union_s2_intro_1.mp3"
+        },
+        {
+          "id": "union_s2_intro_2",
+          "filename": "union_s2_intro_2.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_2/union_s2_intro_2.mp3"
+        },
+        {
+          "id": "union_s2_intro_3",
+          "filename": "union_s2_intro_3.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_2/union_s2_intro_3.mp3"
+        },
+        {
+          "id": "union_s2_intro_4",
+          "filename": "union_s2_intro_4.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_2/union_s2_intro_4.mp3"
+        },
+        {
+          "id": "union_s2_intro_5",
+          "filename": "union_s2_intro_5.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_2/union_s2_intro_5.mp3"
+        },
+        {
+          "id": "union_s2_intro_6",
+          "filename": "union_s2_intro_6.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_2/union_s2_intro_6.mp3"
+        }
+      ]
+    },
+    "union_crisis_stage_3_corporate": {
+      "characterName": "Dr. Elin Kade",
+      "stationId": "aurum-fab",
+      "title": "The Negotiations - Corporate Victory",
+      "lineCount": 10,
+      "files": [
+        {
+          "id": "union_s3_corp_accept",
+          "filename": "union_s3_corp_accept.mp3",
+          "path": "audio/missions/aurum-fab/union_crisis_stage_3_corporate/union_s3_corp_accept.mp3"
+        },
+        {
+          "id": "union_s3_corp_complete_1",
+          "filename": "union_s3_corp_complete_1.mp3",
+          "path": "audio/missions/aurum-fab/union_crisis_stage_3_corporate/union_s3_corp_complete_1.mp3"
+        },
+        {
+          "id": "union_s3_corp_complete_2",
+          "filename": "union_s3_corp_complete_2.mp3",
+          "path": "audio/missions/aurum-fab/union_crisis_stage_3_corporate/union_s3_corp_complete_2.mp3"
+        },
+        {
+          "id": "union_s3_corp_complete_3",
+          "filename": "union_s3_corp_complete_3.mp3",
+          "path": "audio/missions/aurum-fab/union_crisis_stage_3_corporate/union_s3_corp_complete_3.mp3"
+        },
+        {
+          "id": "union_s3_corp_intro_1",
+          "filename": "union_s3_corp_intro_1.mp3",
+          "path": "audio/missions/aurum-fab/union_crisis_stage_3_corporate/union_s3_corp_intro_1.mp3"
+        },
+        {
+          "id": "union_s3_corp_intro_2",
+          "filename": "union_s3_corp_intro_2.mp3",
+          "path": "audio/missions/aurum-fab/union_crisis_stage_3_corporate/union_s3_corp_intro_2.mp3"
+        },
+        {
+          "id": "union_s3_corp_intro_3",
+          "filename": "union_s3_corp_intro_3.mp3",
+          "path": "audio/missions/aurum-fab/union_crisis_stage_3_corporate/union_s3_corp_intro_3.mp3"
+        },
+        {
+          "id": "union_s3_corp_intro_4",
+          "filename": "union_s3_corp_intro_4.mp3",
+          "path": "audio/missions/aurum-fab/union_crisis_stage_3_corporate/union_s3_corp_intro_4.mp3"
+        },
+        {
+          "id": "union_s3_corp_intro_5",
+          "filename": "union_s3_corp_intro_5.mp3",
+          "path": "audio/missions/aurum-fab/union_crisis_stage_3_corporate/union_s3_corp_intro_5.mp3"
+        },
+        {
+          "id": "union_s3_corp_intro_6",
+          "filename": "union_s3_corp_intro_6.mp3",
+          "path": "audio/missions/aurum-fab/union_crisis_stage_3_corporate/union_s3_corp_intro_6.mp3"
+        }
+      ]
+    },
+    "union_crisis_stage_3_union": {
+      "characterName": "Chief Harlan",
+      "stationId": "drydock",
+      "title": "The Negotiations - Union Victory",
+      "lineCount": 10,
+      "files": [
+        {
+          "id": "union_s3_union_accept",
+          "filename": "union_s3_union_accept.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_3_union/union_s3_union_accept.mp3"
+        },
+        {
+          "id": "union_s3_union_complete_1",
+          "filename": "union_s3_union_complete_1.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_3_union/union_s3_union_complete_1.mp3"
+        },
+        {
+          "id": "union_s3_union_complete_2",
+          "filename": "union_s3_union_complete_2.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_3_union/union_s3_union_complete_2.mp3"
+        },
+        {
+          "id": "union_s3_union_complete_3",
+          "filename": "union_s3_union_complete_3.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_3_union/union_s3_union_complete_3.mp3"
+        },
+        {
+          "id": "union_s3_union_intro_1",
+          "filename": "union_s3_union_intro_1.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_3_union/union_s3_union_intro_1.mp3"
+        },
+        {
+          "id": "union_s3_union_intro_2",
+          "filename": "union_s3_union_intro_2.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_3_union/union_s3_union_intro_2.mp3"
+        },
+        {
+          "id": "union_s3_union_intro_3",
+          "filename": "union_s3_union_intro_3.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_3_union/union_s3_union_intro_3.mp3"
+        },
+        {
+          "id": "union_s3_union_intro_4",
+          "filename": "union_s3_union_intro_4.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_3_union/union_s3_union_intro_4.mp3"
+        },
+        {
+          "id": "union_s3_union_intro_5",
+          "filename": "union_s3_union_intro_5.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_3_union/union_s3_union_intro_5.mp3"
+        },
+        {
+          "id": "union_s3_union_intro_6",
+          "filename": "union_s3_union_intro_6.mp3",
+          "path": "audio/missions/drydock/union_crisis_stage_3_union/union_s3_union_intro_6.mp3"
         }
       ]
     }

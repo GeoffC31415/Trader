@@ -889,6 +889,470 @@ export const ENERGY_MONOPOLY_S1_DIALOGUE: MissionDialogue = {
   },
 };
 
+export const ENERGY_MONOPOLY_S2_DIALOGUE: MissionDialogue = {
+  missionId: 'energy_monopoly_stage_2',
+  characterId: 'helios-rep',
+  characterName: 'Rex Calder',
+  stationId: 'sol-refinery',
+  
+  introduction: {
+    lines: [
+      {
+        id: 'energy_s2_intro_1',
+        text: "[gruffly] You did good work at Ceres. Device pulled clean data. Clean enough to make a man like Renn sweat.",
+        emotionTag: 'gruffly',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s2_intro_2',
+        text: "[angrily] Forty percent fuel spike in six months. Not 'market forces.' Not 'bad timing.' A plan. People rationing power because one suit wants a prettier graph.",
+        emotionTag: 'angrily',
+        pauseAfterMs: 900,
+      },
+      {
+        id: 'energy_s2_intro_3',
+        text: "[determinedly] I can take this evidence to the stations that matter. Greenfields, Drydock, Freeport. Harlan will back us—he's been waiting fifteen years for someone to punch a hole in corporate lies.",
+        emotionTag: 'determinedly',
+        pauseAfterMs: 700,
+      },
+      {
+        id: 'energy_s2_intro_4',
+        text: "[pauses] But… he already knows. Your ship left a wake. Renn just pinged my private comm. Offered you money to bury it.",
+        emotionTag: 'pauses',
+        pauseAfterMs: 900,
+      },
+      {
+        id: 'energy_s2_intro_5',
+        text: "[bitterly] That's the part that makes me sick. He thinks everything has a price tag. Like my brother's death did.",
+        emotionTag: 'bitterly',
+        pauseAfterMs: 900,
+      },
+      {
+        id: 'energy_s2_intro_6',
+        text: "[directly] This is the fork. Expose him and you make enemies with deep pockets. Take his deal and you cash in while the system burns. Your call, pilot.",
+        emotionTag: 'directly',
+      },
+    ],
+  },
+  
+  acceptance: {
+    id: 'energy_s2_accept',
+    text: "[grimly] Alright. No walking it back now. Whatever you picked… we live with it.",
+    emotionTag: 'grimly',
+  },
+  
+  completion: {
+    success: {
+      lines: [
+        {
+          id: 'energy_s2_complete_1',
+          text: "[quietly] Choice made. Now the hard part starts.",
+          emotionTag: 'quietly',
+        },
+      ],
+    },
+  },
+};
+
+export const ENERGY_MONOPOLY_S3_REFINERY_DIALOGUE: MissionDialogue = {
+  missionId: 'energy_monopoly_stage_3_refinery',
+  characterId: 'helios-rep',
+  characterName: 'Rex Calder',
+  stationId: 'sol-refinery',
+  
+  introduction: {
+    lines: [
+      {
+        id: 'energy_s3_refinery_intro_1',
+        text: "[grimly] He didn't deny it. Didn't apologize. He retaliated.",
+        emotionTag: 'grimly',
+        pauseAfterMs: 700,
+      },
+      {
+        id: 'energy_s3_refinery_intro_2',
+        text: "[urgent] Three fuel convoys are lifting off right now—Greenfields, Freeport, Drydock. Civilian haulers. Families. Not combat pilots.",
+        emotionTag: 'urgent',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s3_refinery_intro_3',
+        text: "[angrily] Renn hired professionals. Not the usual opportunists. They don't want the fuel—they want the message: 'Stay quiet or starve.'",
+        emotionTag: 'angrily',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s3_refinery_intro_4',
+        text: "[tensely] Expect four waves. Hit-and-run interceptors. They'll try to isolate each convoy and carve it up fast.",
+        emotionTag: 'tensely',
+        pauseAfterMs: 700,
+      },
+      {
+        id: 'energy_s3_refinery_intro_5',
+        text: "[hard] I'm flying with them. Somebody has to. I've spent my life watching people 'ensure stability' by breaking workers.",
+        emotionTag: 'hard',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s3_refinery_intro_6',
+        text: "[directly] Keep those ships alive. Keep that fuel moving. If we fold here, the monopoly comes back wearing a nicer suit.",
+        emotionTag: 'directly',
+      },
+    ],
+  },
+  
+  acceptance: {
+    id: 'energy_s3_refinery_accept',
+    text: "[grateful] Good. Weapons hot, eyes open. They won't stop until somebody bleeds.",
+    emotionTag: 'grateful',
+  },
+  
+  keyMoments: [
+    {
+      triggerId: 'wave_1',
+      lines: [
+        {
+          id: 'energy_s3_refinery_wave_1',
+          text: "[alarmed] Contacts! First wave inbound—tight formation, corporate-grade comms. This isn't a shakedown, it's a hit!",
+          emotionTag: 'alarmed',
+        },
+      ],
+    },
+    {
+      triggerId: 'convoy_2_safe',
+      lines: [
+        {
+          id: 'energy_s3_refinery_convoy_2_safe',
+          text: "[relieved] Freeport convoy just cleared the kill zone. One down. Keep moving—don't let them reset on the next target.",
+          emotionTag: 'relieved',
+        },
+      ],
+    },
+  ],
+  
+  completion: {
+    success: {
+      lines: [
+        {
+          id: 'energy_s3_refinery_complete_1',
+          text: "[exhausted] They're gone. Convoys are intact. Fuel delivered. That's what 'free market' looks like—people doing the work without a gun to their head.",
+          emotionTag: 'exhausted',
+          pauseAfterMs: 900,
+        },
+        {
+          id: 'energy_s3_refinery_complete_2',
+          text: "[quietly] Renn expected us to flinch. To run back to him begging for stability. Not today.",
+          emotionTag: 'quietly',
+          pauseAfterMs: 800,
+        },
+        {
+          id: 'energy_s3_refinery_complete_3',
+          text: "[determinedly] One last push. We break his leverage for good. I've got a plan—meet me in the conference room.",
+          emotionTag: 'determinedly',
+        },
+      ],
+    },
+    failure: {
+      lines: [
+        {
+          id: 'energy_s3_refinery_fail_1',
+          text: "[hollow] A convoy didn't make it. Families won't get refunds. [pauses] This is what he buys with his money.",
+          emotionTag: 'hollow',
+        },
+      ],
+    },
+  },
+};
+
+export const ENERGY_MONOPOLY_S3_CERES_DIALOGUE: MissionDialogue = {
+  missionId: 'energy_monopoly_stage_3_ceres',
+  characterId: 'ceres-pp-rep',
+  characterName: 'Ivo Renn',
+  stationId: 'ceres-pp',
+  
+  introduction: {
+    lines: [
+      {
+        id: 'energy_s3_ceres_intro_1',
+        text: "[calculatingly] Rex Calder is trying to flood the lanes with cheap fuel. He calls it freedom. I call it sabotage with better branding.",
+        emotionTag: 'calculatingly',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s3_ceres_intro_2',
+        text: "[coldly] Ceres keeps eight stations powered. Hospitals. Air recyclers. Hydroponics. Systems that don't tolerate ideology.",
+        emotionTag: 'coldly',
+        pauseAfterMs: 900,
+      },
+      {
+        id: 'energy_s3_ceres_intro_3',
+        text: "[quietly] I watched a grid fail once. People froze while the lights died. You don't forget that lesson. If prices crash and we sell at a loss, the grid doesn't get poetic. It fails.",
+        emotionTag: 'quietly',
+        pauseAfterMs: 900,
+      },
+      {
+        id: 'energy_s3_ceres_intro_4',
+        text: "[coldly] Three convoys. Remove them. Not theft—termination of a destabilizing variable.",
+        emotionTag: 'coldly',
+        pauseAfterMs: 700,
+      },
+      {
+        id: 'energy_s3_ceres_intro_5',
+        text: "[menacingly] You're worried how this looks. Good. An untroubled conscience is usually an empty one.",
+        emotionTag: 'menacingly',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s3_ceres_intro_6',
+        text: "[directly] Ten minutes. Three targets. Do it cleanly, and you'll be compensated for keeping the lights on.",
+        emotionTag: 'directly',
+      },
+    ],
+  },
+  
+  acceptance: {
+    id: 'energy_s3_ceres_accept',
+    text: "[satisfied] Excellent. Efficiency, then. No theatrics.",
+    emotionTag: 'satisfied',
+  },
+  
+  keyMoments: [
+    {
+      triggerId: 'convoy_1_down',
+      lines: [
+        {
+          id: 'energy_s3_ceres_convoy_1_down',
+          text: "[flatly] First convoy removed. Note how the market immediately adjusts. Disorder hates a vacuum—so does opportunity.",
+          emotionTag: 'flatly',
+        },
+      ],
+    },
+    {
+      triggerId: 'timer_low',
+      lines: [
+        {
+          id: 'energy_s3_ceres_timer_low',
+          text: "[urgent] Time is the only resource you can't buy back. Finish the work.",
+          emotionTag: 'urgent',
+        },
+      ],
+    },
+  ],
+  
+  completion: {
+    success: {
+      lines: [
+        {
+          id: 'energy_s3_ceres_complete_1',
+          text: "[pleased] Convoys neutralized. Price volatility contained. Grid stability preserved.",
+          emotionTag: 'pleased',
+          pauseAfterMs: 700,
+        },
+        {
+          id: 'energy_s3_ceres_complete_2',
+          text: "[dry] Rex will call you a villain. He will not mention the hospitals that stay lit because of you.",
+          emotionTag: 'dry',
+          pauseAfterMs: 800,
+        },
+        {
+          id: 'energy_s3_ceres_complete_3',
+          text: "[measured] Now we consolidate. Panic creates inventory. Inventory creates power. Return when you're ready to be useful again.",
+          emotionTag: 'measured',
+        },
+      ],
+    },
+  },
+};
+
+export const ENERGY_MONOPOLY_S4_REFINERY_DIALOGUE: MissionDialogue = {
+  missionId: 'energy_monopoly_stage_4_refinery',
+  characterId: 'helios-rep',
+  characterName: 'Rex Calder',
+  stationId: 'sol-refinery',
+  
+  introduction: {
+    lines: [
+      {
+        id: 'energy_s4_refinery_intro_1',
+        text: "[lighter] You felt that? The market breathed again. Not perfect—just… not strangled.",
+        emotionTag: 'lighter',
+        pauseAfterMs: 700,
+      },
+      {
+        id: 'energy_s4_refinery_intro_2',
+        text: "[excitedly] Freeport's got engineers ready to spin up a micro-refinery. Small. Distributed. Enough to make sure Ceres can never corner supply again.",
+        emotionTag: 'excitedly',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s4_refinery_intro_3',
+        text: "[practical] We need feedstock. Catalyst-grade rare minerals from the outer belt. Forty units. That's the ticket price for independence.",
+        emotionTag: 'practical',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s4_refinery_intro_4',
+        text: "[warmly] Kalla's calling it 'insurance.' I call it dignity. When fuel stops being a weapon, people can plan their lives again.",
+        emotionTag: 'warmly',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s4_refinery_intro_5',
+        text: "[quietly] My granddad built these towers thinking fair trade was inevitable. Like gravity. Turns out you have to fight for it, every day.",
+        emotionTag: 'quietly',
+        pauseAfterMs: 900,
+      },
+      {
+        id: 'energy_s4_refinery_intro_6',
+        text: "[directly] Bring those minerals to Freeport. Once that micro-refinery goes online, no one man gets to decide who freezes and who flies.",
+        emotionTag: 'directly',
+      },
+    ],
+  },
+  
+  acceptance: {
+    id: 'energy_s4_refinery_accept',
+    text: "[grateful] Good. Fly smart. If Renn's watching, let him watch you build something he can't buy.",
+    emotionTag: 'grateful',
+  },
+  
+  keyMoments: [
+    {
+      triggerId: 'halfway',
+      lines: [
+        {
+          id: 'energy_s4_refinery_halfway',
+          text: "[encouraging] Halfway there. Keep the cargo sealed tight—those minerals are worth more than your hull plating right now.",
+          emotionTag: 'encouraging',
+        },
+      ],
+    },
+  ],
+  
+  completion: {
+    success: {
+      lines: [
+        {
+          id: 'energy_s4_refinery_complete_1',
+          text: "[overcome] Forty units delivered. Freeport's crew is already unloading. You just bought this system a future.",
+          emotionTag: 'overcome',
+          pauseAfterMs: 900,
+        },
+        {
+          id: 'energy_s4_refinery_complete_2',
+          text: "[warmly] Prices will still swing. Traders will still hustle. But nobody gets to manufacture famine and call it 'optimization.'",
+          emotionTag: 'warmly',
+          pauseAfterMs: 800,
+        },
+        {
+          id: 'energy_s4_refinery_complete_3',
+          text: "[quietly] Marcus would've liked this. Something real. Something that lasts. Thanks, pilot. Truly.",
+          emotionTag: 'quietly',
+        },
+      ],
+    },
+  },
+};
+
+export const ENERGY_MONOPOLY_S4_CERES_DIALOGUE: MissionDialogue = {
+  missionId: 'energy_monopoly_stage_4_ceres',
+  characterId: 'ceres-pp-rep',
+  characterName: 'Ivo Renn',
+  stationId: 'ceres-pp',
+  
+  introduction: {
+    lines: [
+      {
+        id: 'energy_s4_ceres_intro_1',
+        text: "[calmly] Instability has a predictable shape. First: outrage. Then: panic. Finally: consolidation by whoever planned ahead.",
+        emotionTag: 'calmly',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s4_ceres_intro_2',
+        text: "[measured] Right now, every station is buying fuel like tomorrow is a myth. We will acquire that inventory before they do.",
+        emotionTag: 'measured',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s4_ceres_intro_3',
+        text: "[dry] Five stations. Twelve minutes. Buy every unit of refined fuel you can find. Pay whatever they demand. I will reimburse double.",
+        emotionTag: 'dry',
+        pauseAfterMs: 800,
+      },
+      {
+        id: 'energy_s4_ceres_intro_4',
+        text: "[quietly] You think this is hoarding. I think it's reserve capacity. The difference is whether you prefer certainty or sermons.",
+        emotionTag: 'quietly',
+        pauseAfterMs: 900,
+      },
+      {
+        id: 'energy_s4_ceres_intro_5',
+        text: "[cool] When the next supply shock hits—and it will—Ceres will have fuel. Hospitals will have power. And the system will thank us quietly.",
+        emotionTag: 'cool',
+        pauseAfterMs: 900,
+      },
+      {
+        id: 'energy_s4_ceres_intro_6',
+        text: "[directly] Move. The market is a race, and sentiment is dead weight.",
+        emotionTag: 'directly',
+      },
+    ],
+  },
+  
+  acceptance: {
+    id: 'energy_s4_ceres_accept',
+    text: "[pleased] Good. I appreciate contractors who understand timelines.",
+    emotionTag: 'pleased',
+  },
+  
+  keyMoments: [
+    {
+      triggerId: 'two_stations',
+      lines: [
+        {
+          id: 'energy_s4_ceres_two_stations',
+          text: "[approvingly] Two stations cleared. Keep momentum. The window closes faster than people think.",
+          emotionTag: 'approvingly',
+        },
+      ],
+    },
+    {
+      triggerId: 'final_minute',
+      lines: [
+        {
+          id: 'energy_s4_ceres_final_minute',
+          text: "[urgent] Final minute. Deliver. Or the opportunity becomes someone else's.",
+          emotionTag: 'urgent',
+        },
+      ],
+    },
+  ],
+  
+  completion: {
+    success: {
+      lines: [
+        {
+          id: 'energy_s4_ceres_complete_1',
+          text: "[satisfied] Inventory secured. Prices stabilized under a single, coherent policy. This is what competence looks like.",
+          emotionTag: 'satisfied',
+          pauseAfterMs: 800,
+        },
+        {
+          id: 'energy_s4_ceres_complete_2',
+          text: "[dry] Rex will keep telling stories about freedom. Meanwhile, the grid will keep running. Stories don't keep oxygen flowing.",
+          emotionTag: 'dry',
+          pauseAfterMs: 900,
+        },
+        {
+          id: 'energy_s4_ceres_complete_3',
+          text: "[quietly] You have proven reliable. In this system, reliability is rarer than fuel.",
+          emotionTag: 'quietly',
+        },
+      ],
+    },
+  },
+};
+
 // ============================================================================
 // ARC 4: PIRATE ACCORDS
 // ============================================================================
@@ -1169,6 +1633,11 @@ export function getMissionDialogue(missionId: string): MissionDialogue | undefin
     FABRICATION_WARS_AURUM_S1_DIALOGUE,
     FABRICATION_WARS_DRYDOCK_S1_DIALOGUE,
     ENERGY_MONOPOLY_S1_DIALOGUE,
+    ENERGY_MONOPOLY_S2_DIALOGUE,
+    ENERGY_MONOPOLY_S3_REFINERY_DIALOGUE,
+    ENERGY_MONOPOLY_S3_CERES_DIALOGUE,
+    ENERGY_MONOPOLY_S4_REFINERY_DIALOGUE,
+    ENERGY_MONOPOLY_S4_CERES_DIALOGUE,
     PIRATE_ACCORDS_S1_DIALOGUE,
     PIRATE_ACCORDS_VEX_INTRO_DIALOGUE,
     UNION_CRISIS_S1_DIALOGUE,
@@ -1191,6 +1660,11 @@ export function getDialogueByCharacter(characterId: string): MissionDialogue[] {
     FABRICATION_WARS_AURUM_S1_DIALOGUE,
     FABRICATION_WARS_DRYDOCK_S1_DIALOGUE,
     ENERGY_MONOPOLY_S1_DIALOGUE,
+    ENERGY_MONOPOLY_S2_DIALOGUE,
+    ENERGY_MONOPOLY_S3_REFINERY_DIALOGUE,
+    ENERGY_MONOPOLY_S3_CERES_DIALOGUE,
+    ENERGY_MONOPOLY_S4_REFINERY_DIALOGUE,
+    ENERGY_MONOPOLY_S4_CERES_DIALOGUE,
     PIRATE_ACCORDS_S1_DIALOGUE,
     PIRATE_ACCORDS_VEX_INTRO_DIALOGUE,
     UNION_CRISIS_S1_DIALOGUE,
@@ -1222,6 +1696,11 @@ export function getAllDialogueLinesForExport(): {
     FABRICATION_WARS_AURUM_S1_DIALOGUE,
     FABRICATION_WARS_DRYDOCK_S1_DIALOGUE,
     ENERGY_MONOPOLY_S1_DIALOGUE,
+    ENERGY_MONOPOLY_S2_DIALOGUE,
+    ENERGY_MONOPOLY_S3_REFINERY_DIALOGUE,
+    ENERGY_MONOPOLY_S3_CERES_DIALOGUE,
+    ENERGY_MONOPOLY_S4_REFINERY_DIALOGUE,
+    ENERGY_MONOPOLY_S4_CERES_DIALOGUE,
     PIRATE_ACCORDS_S1_DIALOGUE,
     PIRATE_ACCORDS_VEX_INTRO_DIALOGUE,
     UNION_CRISIS_S1_DIALOGUE,
