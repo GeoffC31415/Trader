@@ -143,7 +143,21 @@ export const defaultConfig: GameConfig = {
         tech: { buy: 1.08, sell: 1.12 },
         medical: { buy: 1.08, sell: 1.12 },
       },
-      trading_post: {},
+      // Trading post (Freeport) - middle ground pricing
+      // Lower sell prices (half as profitable as consumer stations)
+      // Slightly lower buy prices (still profitable to resell to consumers)
+      trading_post: {
+        tech: { buy: 0.85, sell: 0.60 },        // Buy 15% cheaper, sell 40% less
+        energy: { buy: 0.88, sell: 0.62 },      // Batteries: meaningful middle-ground
+        industrial: { buy: 0.85, sell: 0.62 },  // Machinery, alloys
+        medical: { buy: 0.90, sell: 0.65 },     // Pharmaceuticals
+        luxury: { buy: 0.88, sell: 0.68 },      // Luxury goods
+        fuel: { buy: 0.92, sell: 0.75 },        // Refined fuel - smaller spread
+        consumer: { buy: 0.94, sell: 0.78 },    // Textiles, water
+        food: { buy: 0.95, sell: 0.82 },        // Grain, meat
+        gas: { buy: 0.96, sell: 0.85 },         // Hydrogen, oxygen
+        raw: { buy: 0.93, sell: 0.78 },         // Ore, silicon
+      },
       orbital_hab: {
         consumer: { buy: 1.06, sell: 1.08 },
         energy: { buy: 1.06, sell: 1.08 },
