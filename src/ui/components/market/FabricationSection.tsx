@@ -6,14 +6,13 @@ import { SciFiPanel } from '../shared/SciFiPanel';
 import { SectionHeader } from '../shared/SectionHeader';
 import { DataRow } from '../shared/DataRow';
 import { SciFiButton } from '../shared/SciFiButton';
-import { gatedCommodities } from '../../../systems/economy/pricing';
+import { canTradeCommodity, getGatingReason } from '../../../state/modules/economy';
 import { commodityById } from '../../../state/world';
 
 interface FabricationSectionProps {
   station: Station;
   ship: Ship;
   recipes: ProcessRecipe[];
-  hasNav: boolean;
   hasUnion: boolean;
   isPirate: boolean;
   onProcess: (inputId: string, outputs: number) => void;
@@ -23,13 +22,11 @@ export function FabricationSection({
   station,
   ship,
   recipes,
-  hasNav,
   hasUnion,
   isPirate,
   onProcess,
 }: FabricationSectionProps) {
   const colors = stationTypeColors[station.type];
-  const isGated = (id: string) => (gatedCommodities as readonly string[]).includes(id);
   
   return (
     <div className="scrollable-content">
@@ -44,9 +41,9 @@ export function FabricationSection({
             {recipes.map(r => {
               const have = ship.cargo[r.inputId] || 0;
               const canMake = Math.floor(have / r.inputPerOutput);
-              const outIsGated = isGated(r.outputId);
               const unionBlocked = !isPirate && !hasUnion;
-              const navBlocked = !hasNav && outIsGated;
+              const cargoBlocked = !canTradeCommodity(ship, r.outputId);
+              const cargoBlockReason = getGatingReason(r.outputId);
               const inputCommodity = commodityById[r.inputId];
               const outputCommodity = commodityById[r.outputId];
               return (
@@ -80,10 +77,10 @@ export function FabricationSection({
                     <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
                       RATIO: {r.inputPerOutput}:1 | AVAILABLE: {have} units
                     </div>
-                    {(unionBlocked || navBlocked) && (
+                    {(unionBlocked || cargoBlocked) && (
                       <div style={{ fontSize: 10, opacity: 0.6, marginTop: 4, color: '#ef4444' }}>
                         {!isPirate && !hasUnion && '⚠ REQUIRES UNION MEMBERSHIP'}
-                        {!hasNav && outIsGated && (unionBlocked ? ' | ' : '') + '⚠ REQUIRES NAVIGATION ARRAY'}
+                        {cargoBlocked && cargoBlockReason && (unionBlocked ? ' | ' : '') + `⚠ ${cargoBlockReason}`}
                       </div>
                     )}
                   </div>
@@ -93,7 +90,7 @@ export function FabricationSection({
                   <SciFiButton
                     stationType={station.type}
                     onClick={() => onProcess(r.inputId, 1)}
-                    disabled={canMake <= 0 || unionBlocked || navBlocked}
+                    disabled={canMake <= 0 || unionBlocked || cargoBlocked}
                   >
                     FABRICATE 1
                   </SciFiButton>

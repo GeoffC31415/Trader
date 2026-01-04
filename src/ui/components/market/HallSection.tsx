@@ -10,38 +10,35 @@ import { CommodityGrid } from '../shared/CommodityGrid';
 import { SciFiButton } from '../shared/SciFiButton';
 import { ShipyardSection } from './ShipyardSection';
 import { UIIcon } from '../ui_icon';
-import { gatedCommodities } from '../../../systems/economy/pricing';
+import { canTradeCommodity } from '../../../state/modules/economy';
 
 interface HallSectionProps {
   station: Station;
   ship: Ship;
   otherItems: Array<[string, StationInventory[string]]>;
-  hasNav: boolean;
   hasUnion: boolean;
   onBuy: (id: string, qty: number) => void;
   onSell: (id: string, qty: number) => void;
-  onUpgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel', amount: number, cost: number) => void;
+  onUpgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel' | 'ledger' | 'tempcargo' | 'shieldedcargo', amount: number, cost: number) => void;
   onReplaceShip: (kind: string, cost: number) => void;
   hasIntel: boolean;
+  avgCostByCommodity: Record<string, number>;
 }
 
 export function HallSection({
   station,
   ship,
   otherItems,
-  hasNav,
   hasUnion,
   onBuy,
   onSell,
   onUpgrade,
   onReplaceShip,
   hasIntel,
+  avgCostByCommodity,
 }: HallSectionProps) {
   const colors = stationTypeColors[station.type];
   const [qty, setQty] = useState<number>(1);
-  
-  // Helper to check if commodity is gated
-  const isGated = (id: string) => (gatedCommodities as readonly string[]).includes(id);
   
   // Sell all cargo items that can be sold at this station
   const handleSellAll = useCallback(() => {
@@ -55,13 +52,13 @@ export function HallSection({
       if (!stationItem) continue;
       if (stationItem.canBuy === false) continue;
       
-      // Check gating (navigation array requirement)
-      if (!hasNav && isGated(commodityId)) continue;
+      // Check gating (cargo hold upgrades)
+      if (!canTradeCommodity(ship, commodityId)) continue;
       
       // Sell all of this commodity
       onSell(commodityId, amount);
     }
-  }, [station.inventory, ship.cargo, hasNav, onSell]);
+  }, [station.inventory, ship.cargo, ship, onSell]);
   
   return (
     <div className="scrollable-content">
@@ -145,10 +142,11 @@ export function HallSection({
             station={station}
             ship={ship}
             qty={qty}
-            hasNav={hasNav}
+            hasTradeLedger={!!ship.hasTradeLedger}
             onBuy={onBuy}
             onSell={onSell}
             onSellAll={handleSellAll}
+            avgCostByCommodity={avgCostByCommodity}
           />
         </SciFiPanel>
       )}

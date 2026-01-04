@@ -5,7 +5,7 @@
  */
 
 import { distance } from '../../shared/math/vec3';
-import { gatedCommodities, ensureSpread, getPriceBiasForStation, recalculatePriceForStock, getTargetStock } from '../../systems/economy/pricing';
+import { gatedCommodities, perishableCommodities, shieldedCommodities, ensureSpread, getPriceBiasForStation, recalculatePriceForStock, getTargetStock } from '../../systems/economy/pricing';
 import { processRecipes, findRecipeForStation } from '../../systems/economy/recipes';
 import { getEventPriceMultiplier } from '../../systems/economy/market_events';
 import { shipCaps } from '../../domain/constants/ship_constants';
@@ -273,6 +273,40 @@ export function jitterPrices(stations: Station[], dt: number, activeEvents?: any
 }
 
 /**
+ * Check if a commodity can be traded with the ship's current upgrades
+ * @param ship - Player ship
+ * @param commodityId - Commodity to check
+ * @returns true if commodity can be traded
+ */
+export function canTradeCommodity(ship: Ship, commodityId: string): boolean {
+  // Check perishable commodities - require temp cargo
+  if ((perishableCommodities as readonly string[]).includes(commodityId)) {
+    return !!ship.hasTempCargo;
+  }
+  // Check shielded commodities - require shielded cargo
+  if ((shieldedCommodities as readonly string[]).includes(commodityId)) {
+    return !!ship.hasShieldedCargo;
+  }
+  // Non-gated commodities can always be traded
+  return true;
+}
+
+/**
+ * Get the reason why a commodity cannot be traded
+ * @param commodityId - Commodity to check
+ * @returns Description of required upgrade, or null if not gated
+ */
+export function getGatingReason(commodityId: string): string | null {
+  if ((perishableCommodities as readonly string[]).includes(commodityId)) {
+    return 'REQUIRES TEMPERATURE CONTROLLED CARGO';
+  }
+  if ((shieldedCommodities as readonly string[]).includes(commodityId)) {
+    return 'REQUIRES SHIELDED CARGO HOLD';
+  }
+  return null;
+}
+
+/**
  * Result of buy action
  */
 export interface BuyResult {
@@ -306,8 +340,7 @@ export function buyCommodity(
   priceMultiplier?: number
 ): BuyResult | null {
   if (!ship.dockedStationId || quantity <= 0) return null;
-  if (!ship.hasNavigationArray && (gatedCommodities as readonly string[]).includes(commodityId))
-    return null;
+  if (!canTradeCommodity(ship, commodityId)) return null;
 
   const station = stations.find(s => s.id === ship.dockedStationId);
   if (!station) return null;
@@ -465,8 +498,7 @@ export function sellCommodity(
   escorts: NpcTrader[]
 ): SellBaseResult | null {
   if (!ship.dockedStationId || quantity <= 0) return null;
-  if (!ship.hasNavigationArray && (gatedCommodities as readonly string[]).includes(commodityId))
-    return null;
+  if (!canTradeCommodity(ship, commodityId)) return null;
 
   const station = stations.find(s => s.id === ship.dockedStationId);
   if (!station) return null;
@@ -661,7 +693,7 @@ export function upgradeShip(
   ship: Ship,
   dockedStationId: string | undefined,
   stations: Station[],
-  type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'intel' | 'union',
+  type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'intel' | 'ledger' | 'tempcargo' | 'shieldedcargo' | 'union',
   amount: number,
   cost: number
 ): Ship | null {
@@ -676,7 +708,10 @@ export function upgradeShip(
       type === 'cargo' ||
       type === 'mining' ||
       type === 'navigation' ||
-      type === 'intel') &&
+      type === 'intel' ||
+      type === 'ledger' ||
+      type === 'tempcargo' ||
+      type === 'shieldedcargo') &&
     station.type !== 'shipyard'
   )
     return null;
@@ -706,6 +741,21 @@ export function upgradeShip(
   if (type === 'intel') {
     if (ship.hasMarketIntel) return null;
     return { ...ship, credits: ship.credits - cost, hasMarketIntel: true };
+  }
+
+  if (type === 'ledger') {
+    if (ship.hasTradeLedger) return null;
+    return { ...ship, credits: ship.credits - cost, hasTradeLedger: true };
+  }
+
+  if (type === 'tempcargo') {
+    if (ship.hasTempCargo) return null;
+    return { ...ship, credits: ship.credits - cost, hasTempCargo: true };
+  }
+
+  if (type === 'shieldedcargo') {
+    if (ship.hasShieldedCargo) return null;
+    return { ...ship, credits: ship.credits - cost, hasShieldedCargo: true };
   }
 
   if (type === 'union') {

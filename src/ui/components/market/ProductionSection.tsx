@@ -12,7 +12,6 @@ interface ProductionSectionProps {
   station: Station;
   ship: Ship;
   producedItems: Array<[string, StationInventory[string]]>;
-  hasNav: boolean;
   onBuy: (id: string, qty: number) => void;
   onSell: (id: string, qty: number) => void;
 }
@@ -21,7 +20,6 @@ export function ProductionSection({
   station,
   ship,
   producedItems,
-  hasNav,
   onBuy,
   onSell,
 }: ProductionSectionProps) {
@@ -83,7 +81,7 @@ export function ProductionSection({
           station={station}
           ship={ship}
           qty={qty}
-          hasNav={hasNav}
+          hasTradeLedger={!!ship.hasTradeLedger}
           onBuy={onBuy}
           onSell={onSell}
         />

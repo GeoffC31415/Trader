@@ -551,6 +551,27 @@ export function DebugPanel() {
                 <div className="debug-toggle-indicator">{ship.hasUnionMembership ? '✓' : ''}</div>
                 <span style={{ fontSize: 12 }}>Union Membership</span>
               </div>
+              <div
+                className={`debug-toggle ${ship.hasTradeLedger ? 'debug-toggle-active' : ''}`}
+                onClick={() => debugToggleUpgrade('hasTradeLedger')}
+              >
+                <div className="debug-toggle-indicator">{ship.hasTradeLedger ? '✓' : ''}</div>
+                <span style={{ fontSize: 12 }}>Trade Ledger</span>
+              </div>
+              <div
+                className={`debug-toggle ${ship.hasTempCargo ? 'debug-toggle-active' : ''}`}
+                onClick={() => debugToggleUpgrade('hasTempCargo')}
+              >
+                <div className="debug-toggle-indicator">{ship.hasTempCargo ? '✓' : ''}</div>
+                <span style={{ fontSize: 12 }}>Temp Cargo</span>
+              </div>
+              <div
+                className={`debug-toggle ${ship.hasShieldedCargo ? 'debug-toggle-active' : ''}`}
+                onClick={() => debugToggleUpgrade('hasShieldedCargo')}
+              >
+                <div className="debug-toggle-indicator">{ship.hasShieldedCargo ? '✓' : ''}</div>
+                <span style={{ fontSize: 12 }}>Shielded Cargo</span>
+              </div>
             </div>
           </div>
 
@@ -724,6 +745,9 @@ export function DebugPanel() {
                   debugToggleUpgrade('hasNavigationArray');
                   debugToggleUpgrade('hasMarketIntel');
                   debugToggleUpgrade('hasUnionMembership');
+                  debugToggleUpgrade('hasTradeLedger');
+                  debugToggleUpgrade('hasTempCargo');
+                  debugToggleUpgrade('hasShieldedCargo');
                 }}
               >
                 🔧 Toggle All Upgrades

@@ -3,7 +3,8 @@ import type { StationType } from '../../../domain/types/economy_types';
 import type { StationInventory } from '../../../domain/types/economy_types';
 import type { Ship } from '../../../domain/types/world_types';
 import { stationTypeColors } from '../../utils/station_theme';
-import { getPriceBiasForStation, gatedCommodities, getStockPriceEffect, getTargetStock } from '../../../systems/economy/pricing';
+import { getPriceBiasForStation, getStockPriceEffect, getTargetStock } from '../../../systems/economy/pricing';
+import { canTradeCommodity, getGatingReason } from '../../../state/modules/economy';
 import { commodityById } from '../../../state/world';
 import { getAdjustedPrices } from '../../utils/price_display';
 import { getCommodityTier, getTierLabel, getTierColor, isPerishable } from '../../../systems/economy/commodity_tiers';
@@ -15,10 +16,11 @@ interface CommodityGridProps {
   station: { type: StationType; reputation?: number };
   ship: Ship;
   qty: number;
-  hasNav: boolean;
+  hasTradeLedger: boolean;
   onBuy: (id: string, qty: number) => void;
   onSell: (id: string, qty: number) => void;
   onSellAll?: () => void;
+  avgCostByCommodity?: Record<string, number>;
 }
 
 export function CommodityGrid({
@@ -26,13 +28,14 @@ export function CommodityGrid({
   station,
   ship,
   qty,
-  hasNav,
+  hasTradeLedger,
   onBuy,
   onSell,
   onSellAll,
+  avgCostByCommodity = {},
 }: CommodityGridProps) {
   const colors = stationTypeColors[station.type];
-  const isGated = (id: string) => (gatedCommodities as readonly string[]).includes(id);
+  const canTrade = (id: string) => canTradeCommodity(ship, id);
   
   // Split items into cargo (items player has) and other items
   const { cargoItems, otherItems } = useMemo(() => {
@@ -53,7 +56,7 @@ export function CommodityGrid({
   
   // Check if there's anything to sell
   const hasCargoToSell = cargoItems.some(([id, p]) => 
-    p.canBuy !== false && (hasNav || !isGated(id))
+    p.canBuy !== false && canTrade(id)
   );
   
   return (
@@ -257,6 +260,25 @@ export function CommodityGrid({
                   <span style={{ opacity: 0.5 }}> / </span>
                   <span style={{ color: '#ef4444' }}>${adjSell}</span>
                 </div>
+                {hasTradeLedger && (() => {
+                  const avgCost = avgCostByCommodity[id];
+                  if (avgCost && avgCost > 0) {
+                    const profitPerUnit = adjSell - avgCost;
+                    const profitColor = profitPerUnit >= 0 ? '#10b981' : '#ef4444';
+                    const profitSymbol = profitPerUnit >= 0 ? '▲' : '▼';
+                    return (
+                      <div style={{ fontSize: 9, marginTop: 4, fontFamily: 'monospace' }}>
+                        <div style={{ opacity: 0.7, marginBottom: 2 }}>
+                          Avg cost: <span style={{ color: '#94a3b8' }}>${Math.round(avgCost)}</span>
+                        </div>
+                        <div style={{ color: profitColor, fontWeight: 600 }}>
+                          {profitSymbol} {profitPerUnit >= 0 ? '+' : ''}${Math.round(profitPerUnit)}/unit
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
                 {isPerishable(id) && p.canSell !== false && (
                   <div style={{ fontSize: 9, color: '#f59e0b', marginTop: 4, opacity: 0.8 }}>
                     ⏱ Spoils in {formatSpoilageTime(getSpoilageTimeSeconds())}
@@ -313,7 +335,7 @@ export function CommodityGrid({
               <div style={{ display: 'flex', gap: 6 }}>
                 <button
                   onClick={() => onBuy(id, qty)}
-                  disabled={p.canSell === false || (!hasNav && isGated(id))}
+                  disabled={p.canSell === false || !canTrade(id)}
                   style={{
                     padding: '4px 10px',
                     fontSize: 10,
@@ -321,17 +343,17 @@ export function CommodityGrid({
                     border: `1px solid ${colors.primary}`,
                     borderRadius: 6,
                     color: '#e5e7eb',
-                    cursor: p.canSell === false || (!hasNav && isGated(id)) ? 'not-allowed' : 'pointer',
+                    cursor: p.canSell === false || !canTrade(id) ? 'not-allowed' : 'pointer',
                     fontWeight: 600,
                     fontFamily: 'monospace',
-                    opacity: p.canSell === false || (!hasNav && isGated(id)) ? 0.4 : 1,
+                    opacity: p.canSell === false || !canTrade(id) ? 0.4 : 1,
                   }}
                 >
                   BUY {qty}
                 </button>
                 <button
                   onClick={() => onSell(id, qty)}
-                  disabled={p.canBuy === false || (!hasNav && isGated(id))}
+                  disabled={p.canBuy === false || !canTrade(id)}
                   style={{
                     padding: '4px 10px',
                     fontSize: 10,
@@ -339,21 +361,21 @@ export function CommodityGrid({
                     border: `1px solid ${colors.primary}`,
                     borderRadius: 6,
                     color: '#e5e7eb',
-                    cursor: p.canBuy === false || (!hasNav && isGated(id)) ? 'not-allowed' : 'pointer',
+                    cursor: p.canBuy === false || !canTrade(id) ? 'not-allowed' : 'pointer',
                     fontWeight: 600,
                     fontFamily: 'monospace',
-                    opacity: p.canBuy === false || (!hasNav && isGated(id)) ? 0.4 : 1,
+                    opacity: p.canBuy === false || !canTrade(id) ? 0.4 : 1,
                   }}
                 >
                   SELL {qty}
                 </button>
               </div>
-              {((p.canSell === false || p.canBuy === false) || (!hasNav && isGated(id))) && (
+              {((p.canSell === false || p.canBuy === false) || !canTrade(id)) && (
                 <div style={{ gridColumn: '1 / -1', fontSize: 10, opacity: 0.6, marginTop: -4, fontFamily: 'monospace' }}>
                   {p.canSell === false && p.canBuy === false && '⚠ NOT TRADED HERE'}
                   {p.canSell === false && p.canBuy !== false && '⚠ NOT SOLD HERE'}
                   {p.canBuy === false && p.canSell !== false && '⚠ NOT BOUGHT HERE'}
-                  {!hasNav && isGated(id) && ' | REQUIRES NAVIGATION ARRAY'}
+                  {!canTrade(id) && getGatingReason(id) && ` | ${getGatingReason(id)}`}
                 </div>
               )}
             </Fragment>
@@ -474,7 +496,7 @@ export function CommodityGrid({
               <div style={{ display: 'flex', gap: 6 }}>
                 <button
                   onClick={() => onBuy(id, qty)}
-                  disabled={p.canSell === false || (!hasNav && isGated(id))}
+                  disabled={p.canSell === false || !canTrade(id)}
                   style={{
                     padding: '4px 10px',
                     fontSize: 10,
@@ -482,17 +504,17 @@ export function CommodityGrid({
                     border: `1px solid ${colors.primary}`,
                     borderRadius: 6,
                     color: '#e5e7eb',
-                    cursor: p.canSell === false || (!hasNav && isGated(id)) ? 'not-allowed' : 'pointer',
+                    cursor: p.canSell === false || !canTrade(id) ? 'not-allowed' : 'pointer',
                     fontWeight: 600,
                     fontFamily: 'monospace',
-                    opacity: p.canSell === false || (!hasNav && isGated(id)) ? 0.4 : 1,
+                    opacity: p.canSell === false || !canTrade(id) ? 0.4 : 1,
                   }}
                 >
                   BUY {qty}
                 </button>
                 <button
                   onClick={() => onSell(id, qty)}
-                  disabled={p.canBuy === false || (!hasNav && isGated(id))}
+                  disabled={p.canBuy === false || !canTrade(id)}
                   style={{
                     padding: '4px 10px',
                     fontSize: 10,
@@ -500,21 +522,21 @@ export function CommodityGrid({
                     border: `1px solid ${colors.primary}`,
                     borderRadius: 6,
                     color: '#e5e7eb',
-                    cursor: p.canBuy === false || (!hasNav && isGated(id)) ? 'not-allowed' : 'pointer',
+                    cursor: p.canBuy === false || !canTrade(id) ? 'not-allowed' : 'pointer',
                     fontWeight: 600,
                     fontFamily: 'monospace',
-                    opacity: p.canBuy === false || (!hasNav && isGated(id)) ? 0.4 : 1,
+                    opacity: p.canBuy === false || !canTrade(id) ? 0.4 : 1,
                   }}
                 >
                   SELL {qty}
                 </button>
               </div>
-              {((p.canSell === false || p.canBuy === false) || (!hasNav && isGated(id))) && (
+              {((p.canSell === false || p.canBuy === false) || !canTrade(id)) && (
                 <div style={{ gridColumn: '1 / -1', fontSize: 10, opacity: 0.6, marginTop: -4, fontFamily: 'monospace' }}>
                   {p.canSell === false && p.canBuy === false && '⚠ NOT TRADED HERE'}
                   {p.canSell === false && p.canBuy !== false && '⚠ NOT SOLD HERE'}
                   {p.canBuy === false && p.canSell !== false && '⚠ NOT BOUGHT HERE'}
-                  {!hasNav && isGated(id) && ' | REQUIRES NAVIGATION ARRAY'}
+                  {!canTrade(id) && getGatingReason(id) && ` | ${getGatingReason(id)}`}
                 </div>
               )}
             </Fragment>

@@ -11,7 +11,7 @@ interface ShipyardSectionProps {
   stationType: 'shipyard';
   ship: Ship;
   hasIntel: boolean;
-  onUpgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel', amount: number, cost: number) => void;
+  onUpgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel' | 'ledger' | 'tempcargo' | 'shieldedcargo', amount: number, cost: number) => void;
   onReplaceShip: (kind: string, cost: number) => void;
 }
 
@@ -40,6 +40,9 @@ export function ShipyardSection({
               Acceleration Boost
             </div>
             <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {formatNumber(ship.stats.acc)}</div>
+            <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
+              Increases thrust power for faster acceleration
+            </div>
           </div>
           <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,000</div>
           <SciFiButton stationType={stationType} onClick={() => onUpgrade('acc', 3, 1000)}>+3 ACC</SciFiButton>
@@ -52,6 +55,9 @@ export function ShipyardSection({
               Velocity Enhancer
             </div>
             <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {formatNumber(ship.stats.vmax)}</div>
+            <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
+              Raises maximum cruising speed
+            </div>
           </div>
           <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,000</div>
           <SciFiButton stationType={stationType} onClick={() => onUpgrade('vmax', 3, 1000)}>+3 VMAX</SciFiButton>
@@ -64,6 +70,9 @@ export function ShipyardSection({
               Cargo Bay Expansion
             </div>
             <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>Current: {ship.maxCargo} units</div>
+            <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
+              Expands cargo hold capacity for more goods
+            </div>
           </div>
           <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$1,200</div>
           <SciFiButton stationType={stationType} onClick={() => onUpgrade('cargo', 50, 1200)}>+50 CARGO</SciFiButton>
@@ -77,6 +86,9 @@ export function ShipyardSection({
             </div>
             <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
               Status: {ship.canMine ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
+            </div>
+            <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
+              Enables asteroid mining near belt rings
             </div>
           </div>
           <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$25,000</div>
@@ -94,10 +106,51 @@ export function ShipyardSection({
             <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
               Status: {ship.hasNavigationArray ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
             </div>
+            <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
+              Enables the system minimap display
+            </div>
+          </div>
+          <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$500</div>
+          <SciFiButton stationType={stationType} onClick={() => onUpgrade('navigation', 0, 500)} disabled={!!ship.hasNavigationArray}>
+            {ship.hasNavigationArray ? 'OWNED' : 'INSTALL'}
+          </SciFiButton>
+        </DataRow>
+
+        <DataRow stationType={stationType}>
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <UIIcon name="system_cargo" size={20} />
+              Temperature Controlled Cargo
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
+              Status: {ship.hasTempCargo ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
+            </div>
+            <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
+              Allows trading perishables: pharmaceuticals, meat
+            </div>
           </div>
           <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$5,000</div>
-          <SciFiButton stationType={stationType} onClick={() => onUpgrade('navigation', 0, 5000)} disabled={!!ship.hasNavigationArray}>
-            {ship.hasNavigationArray ? 'OWNED' : 'INSTALL'}
+          <SciFiButton stationType={stationType} onClick={() => onUpgrade('tempcargo', 0, 5000)} disabled={!!ship.hasTempCargo}>
+            {ship.hasTempCargo ? 'OWNED' : 'INSTALL'}
+          </SciFiButton>
+        </DataRow>
+
+        <DataRow stationType={stationType}>
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <UIIcon name="system_cargo" size={20} />
+              Shielded Cargo Hold
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
+              Status: {ship.hasShieldedCargo ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
+            </div>
+            <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
+              Allows trading sensitive tech: electronics, chips, data, nano
+            </div>
+          </div>
+          <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$5,000</div>
+          <SciFiButton stationType={stationType} onClick={() => onUpgrade('shieldedcargo', 0, 5000)} disabled={!!ship.hasShieldedCargo}>
+            {ship.hasShieldedCargo ? 'OWNED' : 'INSTALL'}
           </SciFiButton>
         </DataRow>
 
@@ -110,10 +163,32 @@ export function ShipyardSection({
             <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
               Status: {hasIntel ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
             </div>
+            <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
+              Shows NPC trader activity & market intel
+            </div>
           </div>
           <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$2,500</div>
           <SciFiButton stationType={stationType} onClick={() => onUpgrade('intel', 0, 2500)} disabled={hasIntel}>
             {hasIntel ? 'OWNED' : 'INSTALL'}
+          </SciFiButton>
+        </DataRow>
+
+        <DataRow stationType={stationType}>
+          <div>
+            <div style={{ fontWeight: 600, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <UIIcon name="system_cargo" size={20} />
+              Trade Ledger
+            </div>
+            <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
+              Status: {ship.hasTradeLedger ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
+            </div>
+            <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
+              Shows purchase costs & profit/loss when selling
+            </div>
+          </div>
+          <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$750</div>
+          <SciFiButton stationType={stationType} onClick={() => onUpgrade('ledger', 0, 750)} disabled={!!ship.hasTradeLedger}>
+            {ship.hasTradeLedger ? 'OWNED' : 'INSTALL'}
           </SciFiButton>
         </DataRow>
       </div>

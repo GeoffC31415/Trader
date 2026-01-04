@@ -71,6 +71,9 @@ export type Ship = {
   hasNavigationArray?: boolean;
   hasUnionMembership?: boolean;
   hasMarketIntel?: boolean;
+  hasTradeLedger?: boolean;
+  hasTempCargo?: boolean;
+  hasShieldedCargo?: boolean;
   kind: ShipKind;
   stats: {
     acc: number;
@@ -367,7 +370,7 @@ export type GameState = {
   debugSetMaxCargo: (maxCargo: number) => void;
   debugSetHp: (hp: number) => void;
   debugSetEnergy: (energy: number) => void;
-  debugToggleUpgrade: (upgrade: 'canMine' | 'hasNavigationArray' | 'hasUnionMembership' | 'hasMarketIntel') => void;
+  debugToggleUpgrade: (upgrade: 'canMine' | 'hasNavigationArray' | 'hasUnionMembership' | 'hasMarketIntel' | 'hasTradeLedger' | 'hasTempCargo' | 'hasShieldedCargo') => void;
   debugSetMissionArcStage: (arcId: string, stage: number, status?: 'locked' | 'available' | 'in_progress' | 'completed') => void;
   debugCompleteMission: (missionId: string) => void;
   debugFailMission: (missionId: string) => void;

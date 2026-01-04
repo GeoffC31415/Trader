@@ -34,6 +34,7 @@ export function MarketPanel() {
   const acceptContract = useGameStore(s => s.acceptContract);
   const abandonContract = useGameStore(s => s.abandonContract);
   const setTrackedStation = useGameStore(s => s.setTrackedStation);
+  const avgCostByCommodity = useGameStore(s => s.avgCostByCommodity);
   
   // Mission arc system
   const missions = useGameStore(s => s.missions);
@@ -76,7 +77,6 @@ export function MarketPanel() {
   const visibleItems = items.filter(([_, p]) => (p.canSell !== false) || (p.canBuy !== false));
   const producedItems = visibleItems.filter(([id, _]) => outputSet.has(id));
   const otherItems = visibleItems.filter(([id, _]) => !outputSet.has(id));
-  const hasNav = !!ship.hasNavigationArray;
   const hasUnion = !!ship.hasUnionMembership;
   const isPirate = station?.type === 'pirate';
   const hallLabel = station ? getHallLabel(station.type) : 'Trading Hall';
@@ -297,13 +297,13 @@ export function MarketPanel() {
             station={station}
             ship={ship}
             otherItems={otherItems}
-            hasNav={hasNav}
             hasUnion={hasUnion}
             onBuy={buy}
             onSell={sell}
             onUpgrade={upgrade}
             onReplaceShip={replaceShip}
             hasIntel={hasIntel}
+            avgCostByCommodity={avgCostByCommodity}
           />
         )}
 
@@ -313,7 +313,6 @@ export function MarketPanel() {
             station={station}
             ship={ship}
             recipes={recipes}
-            hasNav={hasNav}
             hasUnion={hasUnion}
             isPirate={isPirate}
             onProcess={process}
@@ -326,7 +325,6 @@ export function MarketPanel() {
             station={station}
             ship={ship}
             producedItems={producedItems}
-            hasNav={hasNav}
             onBuy={buy}
             onSell={sell}
           />

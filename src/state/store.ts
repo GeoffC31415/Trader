@@ -659,6 +659,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         hasNavigationArray: state.ship.hasNavigationArray,
         hasUnionMembership: state.ship.hasUnionMembership,
         hasMarketIntel: state.ship.hasMarketIntel,
+        hasTradeLedger: state.ship.hasTradeLedger,
+        hasTempCargo: state.ship.hasTempCargo,
+        hasShieldedCargo: state.ship.hasShieldedCargo,
         weapon: state.ship.weapon, // Preserve weapon upgrades
         dockedStationId: state.ship.dockedStationId,
       });
@@ -686,6 +689,9 @@ export const useGameStore = create<GameState>((set, get) => ({
           hasNavigationArray: true,
           hasUnionMembership: true,
           hasMarketIntel: true,
+          hasTradeLedger: true,
+          hasTempCargo: true,
+          hasShieldedCargo: true,
           maxCargo: shipCaps[kindR].cargo,
           stats: {
             acc: shipCaps[kindR].acc * 2,
@@ -1632,7 +1638,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       } as Partial<GameState> as GameState;
     }),
 
-  debugToggleUpgrade: (upgrade: 'canMine' | 'hasNavigationArray' | 'hasUnionMembership' | 'hasMarketIntel') =>
+  debugToggleUpgrade: (upgrade: 'canMine' | 'hasNavigationArray' | 'hasUnionMembership' | 'hasMarketIntel' | 'hasTradeLedger' | 'hasTempCargo' | 'hasShieldedCargo') =>
     set(state => {
       if (!state.isTestMode) return state;
       return {

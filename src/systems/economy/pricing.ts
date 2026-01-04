@@ -10,8 +10,21 @@ import { generateCommodities } from './commodities';
 import type { MarketEvent } from '../../domain/types/world_types';
 import { getEventPriceMultiplier } from './market_events';
 
-export const gatedCommodities = ['luxury_goods', 'pharmaceuticals', 'microchips', 'nanomaterials'] as const;
+// Gated commodities - require specific cargo hold upgrades
+// Perishable goods require Temperature Controlled Cargo Hold
+export const perishableCommodities = ['pharmaceuticals', 'meat'] as const;
+export type PerishableCommodity = typeof perishableCommodities[number];
+
+// Sensitive tech goods require Shielded Cargo Hold
+export const shieldedCommodities = ['nanomaterials', 'microchips', 'data_drives', 'electronics'] as const;
+export type ShieldedCommodity = typeof shieldedCommodities[number];
+
+// Combined list for backwards compatibility and route calculations
+export const gatedCommodities = [...perishableCommodities, ...shieldedCommodities] as const;
 export type GatedCommodity = typeof gatedCommodities[number];
+
+// Profit multiplier for gated commodities (they're harder to trade, so more profitable)
+export const GATED_COMMODITY_PROFIT_MULTIPLIER = 2.0;
 
 function fluctuate(value: number, volatility: number): number {
   const factor = 1 + (Math.random() * 2 - 1) * volatility;
@@ -348,7 +361,9 @@ export function priceForStation(type: StationType, commodities: Commodity[], her
       : 1.0;
     // Perishable goods have 50% higher sell prices (compensates for spoilage risk)
     const perishableBonus = isPerishable(c.id) ? 1.5 : 1.0;
-    let sellExtra = Math.round(adjusted.sell * (1 + distPremium) * perishableBonus);
+    // Gated commodities (require special cargo holds) have higher profit margins
+    const gatedBonus = (gatedCommodities as readonly string[]).includes(c.id) ? GATED_COMMODITY_PROFIT_MULTIPLIER : 1.0;
+    let sellExtra = Math.round(adjusted.sell * (1 + distPremium) * perishableBonus * gatedBonus);
     sellExtra = Math.round(sellExtra * featuredM * eventMult);
     const isGlobalOutput = allRecipeOutputs.has(c.id);
     const sellWithPremium = Math.round(
@@ -397,7 +412,8 @@ export function priceForStation(type: StationType, commodities: Commodity[], her
     // Base floor ensures minimum profitability even on short routes
     // 20% base margin + distance premium ensures trades are always worth making
     // Perishable goods have 50% higher floor (compensates for spoilage risk)
-    const baseFloor = Math.round(c.baseSell * (1 + 0.2 + distPremium) * perishableBonus);
+    // Gated commodities have higher floor (reward for investing in cargo upgrades)
+    const baseFloor = Math.round(c.baseSell * (1 + 0.2 + distPremium) * perishableBonus * gatedBonus);
     if (finalSell < baseFloor) finalSell = baseFloor;
     inv[c.id] = { buy: withStock.buy, sell: finalSell, stock, canBuy, canSell: true };
   }
