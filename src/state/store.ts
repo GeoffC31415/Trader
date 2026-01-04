@@ -929,6 +929,9 @@ export const useGameStore = create<GameState>((set, get) => ({
       // Check active missions
       const activeMissions = updatedMissions.filter(m => m.status === 'active');
 
+      // Track political profile updates for failed missions
+      let politicalProfile = state.politicalProfile;
+
       for (const mission of activeMissions) {
         // Check for failure conditions
         const failureCheck = checkMissionFailure(mission, currentTime);
@@ -938,6 +941,17 @@ export const useGameStore = create<GameState>((set, get) => ({
             m.id === mission.id ? { ...m, status: 'failed' as const } : m
           );
           console.log(`Mission failed: ${mission.title} - ${failureCheck.reason}`);
+          
+          // Apply 50% political compass score for failed missions
+          const politicsUpdates = applyMissionToProfile(
+            { ...state, politicalProfile } as GameState,
+            mission.id,
+            null,
+            0.5
+          );
+          if (politicsUpdates.politicalProfile) {
+            politicalProfile = politicsUpdates.politicalProfile;
+          }
           continue;
         }
 
@@ -1082,6 +1096,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         missionArcs: updatedArcs,
         stations: updatedStations,
         ship: updatedShip,
+        politicalProfile,
       } as Partial<GameState> as GameState;
     }),
 
@@ -1234,7 +1249,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       } as Partial<GameState> as GameState;
     }),
 
-  completeMissionObjective: (missionId, objectiveId) =>
+  completeMissionObjective: (missionId: string, objectiveId: string) =>
     set(state => {
       const mission = state.missions.find(m => m.id === missionId);
       if (!mission || mission.status !== 'active') return state;
@@ -1343,7 +1358,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       } as Partial<GameState> as GameState;
     }),
 
-  startInstallDevice: (missionId, objectiveId) =>
+  startInstallDevice: (missionId: string, objectiveId: string) =>
     set(state => {
       const mission = state.missions.find(m => m.id === missionId);
       if (!mission || mission.status !== 'active') return state;
@@ -1716,6 +1731,78 @@ export const useGameStore = create<GameState>((set, get) => ({
       return {
         missionArcs: updatedArcs,
         missions: allNewMissions,
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugCompleteMission: (missionId: string) =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      
+      const mission = state.missions.find(m => m.id === missionId);
+      if (!mission || mission.status !== 'active') return state;
+      
+      // Force-complete all objectives
+      const completedMission = {
+        ...mission,
+        status: 'completed' as const,
+        objectives: mission.objectives.map(o => ({
+          ...o,
+          current: o.quantity || 1,
+          completed: true,
+        })),
+      };
+      
+      const updatedMissions = state.missions.map(m =>
+        m.id === missionId ? completedMission : m
+      );
+      
+      // Apply rewards
+      const rewardUpdates = applyMissionRewards(state, completedMission);
+      
+      // Advance arc
+      const arc = state.missionArcs.find(a => a.id === mission.arcId);
+      let updatedArcs = state.missionArcs;
+      if (arc) {
+        const updatedArc = advanceMissionArc(arc, mission.id);
+        updatedArcs = state.missionArcs.map(a =>
+          a.id === mission.arcId ? updatedArc : a
+        );
+      }
+      
+      // Apply political compass update
+      const politicsUpdates = applyMissionToProfile(state, mission.id, null);
+      
+      return {
+        missions: updatedMissions,
+        missionArcs: updatedArcs,
+        ...rewardUpdates,
+        ...politicsUpdates,
+      } as Partial<GameState> as GameState;
+    }),
+
+  debugFailMission: (missionId: string) =>
+    set(state => {
+      if (!state.isTestMode) return state;
+      
+      const mission = state.missions.find(m => m.id === missionId);
+      if (!mission || mission.status !== 'active') return state;
+      
+      // Mark mission as failed
+      const failedMission = {
+        ...mission,
+        status: 'failed' as const,
+      };
+      
+      const updatedMissions = state.missions.map(m =>
+        m.id === missionId ? failedMission : m
+      );
+      
+      // Apply 50% political compass score for failed missions (you tried!)
+      const politicsUpdates = applyMissionToProfile(state, mission.id, null, 0.5);
+      
+      return {
+        missions: updatedMissions,
+        ...politicsUpdates,
       } as Partial<GameState> as GameState;
     }),
 }));

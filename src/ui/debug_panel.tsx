@@ -12,6 +12,7 @@ export function DebugPanel() {
   const ship = useGameStore(s => s.ship);
   const stations = useGameStore(s => s.stations);
   const missionArcs = useGameStore(s => s.missionArcs);
+  const missions = useGameStore(s => s.missions);
   
   // Debug actions
   const debugSetCredits = useGameStore(s => s.debugSetCredits);
@@ -25,6 +26,8 @@ export function DebugPanel() {
   const debugSetEnergy = useGameStore(s => s.debugSetEnergy);
   const debugToggleUpgrade = useGameStore(s => s.debugToggleUpgrade);
   const debugSetMissionArcStage = useGameStore(s => s.debugSetMissionArcStage);
+  const debugCompleteMission = useGameStore(s => s.debugCompleteMission);
+  const debugFailMission = useGameStore(s => s.debugFailMission);
 
   // Local state for inputs
   const [creditsInput, setCreditsInput] = useState(ship.credits.toString());
@@ -45,6 +48,12 @@ export function DebugPanel() {
 
   const commodities = useMemo(() => generateCommodities(), []);
   const arcOptions = useMemo(() => Object.values(MISSION_ARCS), []);
+  
+  // Get active missions
+  const activeMissions = useMemo(
+    () => missions.filter(m => m.status === 'active'),
+    [missions]
+  );
 
   if (!isTestMode) {
     return (
@@ -543,6 +552,56 @@ export function DebugPanel() {
                 <span style={{ fontSize: 12 }}>Union Membership</span>
               </div>
             </div>
+          </div>
+
+          {/* Active Missions Section */}
+          <div className="debug-panel">
+            <div className="debug-section-header">Active Missions</div>
+            {activeMissions.length === 0 ? (
+              <div style={{ fontSize: 11, opacity: 0.6, fontFamily: 'monospace' }}>
+                No active missions
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {activeMissions.map(mission => (
+                  <div
+                    key={mission.id}
+                    style={{
+                      padding: 12,
+                      background: 'rgba(0,0,0,0.3)',
+                      border: `1px solid ${primaryColor}40`,
+                      borderRadius: 6,
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 6, color: secondaryColor }}>
+                      {mission.title}
+                    </div>
+                    <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 8, fontFamily: 'monospace' }}>
+                      ID: {mission.id} | Arc: {mission.arcId} | Stage: {mission.stage}
+                    </div>
+                    <div style={{ fontSize: 11, marginBottom: 8 }}>
+                      Objectives: {mission.objectives.filter(o => o.completed).length}/{mission.objectives.length} complete
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        className="debug-btn"
+                        onClick={() => debugCompleteMission(mission.id)}
+                        style={{ flex: 1 }}
+                      >
+                        ✓ Complete Mission
+                      </button>
+                      <button
+                        className="debug-btn debug-btn-danger"
+                        onClick={() => debugFailMission(mission.id)}
+                        style={{ flex: 1 }}
+                      >
+                        ✗ Fail Mission
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Mission Arc Section */}

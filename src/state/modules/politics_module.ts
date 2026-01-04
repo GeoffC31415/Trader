@@ -21,14 +21,16 @@ export function getOrCreateProfile(state: GameState): PlayerPoliticalProfile {
 
 /**
  * Apply a mission completion to the political profile
+ * @param multiplier - Score multiplier (1.0 for success, 0.5 for failure)
  */
 export function applyMissionToProfile(
   state: GameState,
   missionId: string,
-  choiceId: string | null
+  choiceId: string | null,
+  multiplier: number = 1.0
 ): Partial<GameState> {
   const currentProfile = getOrCreateProfile(state);
-  const updatedProfile = applyMissionContribution(currentProfile, missionId, choiceId);
+  const updatedProfile = applyMissionContribution(currentProfile, missionId, choiceId, multiplier);
   
   return {
     politicalProfile: updatedProfile,

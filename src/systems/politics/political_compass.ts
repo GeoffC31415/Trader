@@ -164,36 +164,36 @@ export const MISSION_SCORES: Record<string, {
   },
   
   // Stage 2: Materials race (continues direction)
-  'fabrication_wars_stage_2:aurum': {
+  'fabrication_wars_stage_2_aurum:complete': {
     freedomDelta: 0,
     laborDelta: -10,
     description: 'Secured materials for Aurum automation',
   },
-  'fabrication_wars_stage_2:drydock': {
+  'fabrication_wars_stage_2_drydock:complete': {
     freedomDelta: 0,
     laborDelta: 10,
     description: 'Secured materials for Drydock workers',
   },
   
   // Stage 3: Sabotage
-  'fabrication_wars_stage_3:aurum': {
+  'fabrication_wars_stage_3_aurum:complete': {
     freedomDelta: 5,
     laborDelta: -10,
     description: 'Sabotaged Drydock operations for Aurum',
   },
-  'fabrication_wars_stage_3:drydock': {
+  'fabrication_wars_stage_3_drydock:complete': {
     freedomDelta: -5,
     laborDelta: 10,
     description: 'Sabotaged Aurum automation for Drydock',
   },
   
   // Stage 4: Final contract
-  'fabrication_wars_stage_4:aurum': {
+  'fabrication_wars_stage_4_aurum:complete': {
     freedomDelta: 0,
     laborDelta: -15,
     description: 'Won Ceres contract for Aurum Fabricator',
   },
-  'fabrication_wars_stage_4:drydock': {
+  'fabrication_wars_stage_4_drydock:complete': {
     freedomDelta: 0,
     laborDelta: 15,
     description: 'Won Ceres contract for Drydock workers',
@@ -211,12 +211,12 @@ export const MISSION_SCORES: Record<string, {
   },
   
   // Stage 2: Choice - Expose or Protect Ivo
-  'energy_monopoly_stage_2:expose': {
+  'energy_monopoly_stage_2:expose_ceres': {
     freedomDelta: 15,
     laborDelta: 15,
     description: 'Chose to expose Ivo Renn\'s price manipulation',
   },
-  'energy_monopoly_stage_2:protect': {
+  'energy_monopoly_stage_2:protect_ceres': {
     freedomDelta: -15,
     laborDelta: -15,
     description: 'Chose to protect Ivo Renn\'s monopoly',
@@ -366,33 +366,55 @@ export function createInitialProfile(): PlayerPoliticalProfile {
 
 /**
  * Apply a mission contribution to the current score
+ * @param multiplier - Score multiplier (1.0 for full, 0.5 for failed missions)
  */
 export function applyMissionContribution(
   profile: PlayerPoliticalProfile,
   missionId: string,
-  choiceId: string | null
+  choiceId: string | null,
+  multiplier: number = 1.0
 ): PlayerPoliticalProfile {
   const key = choiceId ? `${missionId}:${choiceId}` : `${missionId}:complete`;
   const scoreData = MISSION_SCORES[key];
   
+  // Debug logging
+  console.log('[PoliticalCompass] Looking for key:', key);
+  console.log('[PoliticalCompass] Found score data:', scoreData);
+  console.log('[PoliticalCompass] Multiplier:', multiplier);
+  
   if (!scoreData) {
     // No score mapping for this mission/choice
+    console.log('[PoliticalCompass] No score mapping found for:', key);
     return profile;
   }
   
+  // Apply multiplier (e.g., 0.5 for failed missions)
+  const adjustedFreedomDelta = Math.round(scoreData.freedomDelta * multiplier);
+  const adjustedLaborDelta = Math.round(scoreData.laborDelta * multiplier);
+  
   const contribution: PoliticalScoreContribution = {
     missionId,
-    choiceId: choiceId || 'complete',
-    description: scoreData.description,
-    freedomDelta: scoreData.freedomDelta,
-    laborDelta: scoreData.laborDelta,
+    choiceId: choiceId || (multiplier < 1.0 ? 'failed' : 'complete'),
+    description: multiplier < 1.0 
+      ? `[Failed] ${scoreData.description}` 
+      : scoreData.description,
+    freedomDelta: adjustedFreedomDelta,
+    laborDelta: adjustedLaborDelta,
     timestamp: Date.now(),
   };
   
   const newScore: PoliticalScore = {
-    freedom: clampScore(profile.score.freedom + scoreData.freedomDelta),
-    labor: clampScore(profile.score.labor + scoreData.laborDelta),
+    freedom: clampScore(profile.score.freedom + adjustedFreedomDelta),
+    labor: clampScore(profile.score.labor + adjustedLaborDelta),
   };
+  
+  console.log('[PoliticalCompass] Applied score change:', {
+    key,
+    originalDelta: { freedom: scoreData.freedomDelta, labor: scoreData.laborDelta },
+    adjustedDelta: { freedom: adjustedFreedomDelta, labor: adjustedLaborDelta },
+    multiplier,
+    newScore,
+  });
   
   return {
     score: newScore,

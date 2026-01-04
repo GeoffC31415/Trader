@@ -369,6 +369,8 @@ export type GameState = {
   debugSetEnergy: (energy: number) => void;
   debugToggleUpgrade: (upgrade: 'canMine' | 'hasNavigationArray' | 'hasUnionMembership' | 'hasMarketIntel') => void;
   debugSetMissionArcStage: (arcId: string, stage: number, status?: 'locked' | 'available' | 'in_progress' | 'completed') => void;
+  debugCompleteMission: (missionId: string) => void;
+  debugFailMission: (missionId: string) => void;
 };
 
 export type Notification = {
