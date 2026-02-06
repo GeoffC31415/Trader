@@ -274,8 +274,10 @@ export type GameState = {
     destinationStationId: string;
     lastWaveTime: number;
     waveCount: number;
+    wavesCompleted: number;
     hasReachedDestination: boolean;
     spawnedPirateIds: string[];
+    currentWavePirateIds: string[];
   }>;
   // Mission choice system (Phase 5)
   permanentEffects?: Array<{
@@ -329,7 +331,7 @@ export type GameState = {
   buy: (commodityId: string, quantity: number) => void;
   sell: (commodityId: string, quantity: number) => void;
   process: (inputId: string, outputs: number) => void;
-  upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel', amount: number, cost: number) => void;
+  upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel' | 'ledger' | 'tempcargo' | 'shieldedcargo', amount: number, cost: number) => void;
   replaceShip: (kind: ShipKind, cost: number) => void;
   chooseStarter: (kind: ShipKind | 'test', opts?: { tutorial?: boolean }) => void;
   setTutorialActive: (active: boolean) => void;
@@ -345,6 +347,10 @@ export type GameState = {
   checkMissionProgress: () => void;
   completeMission: (missionId: string) => void;
   makeMissionChoice: (missionId: string, choiceId: string) => void;
+  completeMissionObjective: (missionId: string, objectiveId: string) => void;
+  startInstallDevice: (missionId: string, objectiveId: string) => void;
+  stopInstallDevice: () => void;
+  recordDialogueShown: (stationId: string, lineIds: string[]) => void;
   // Combat actions
   fireWeapon: (targetPos?: [number, number, number]) => void;
   upgradeWeapon: (upgradeType: 'damage' | 'fireRate' | 'range', cost: number) => void;

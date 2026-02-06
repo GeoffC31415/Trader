@@ -120,7 +120,7 @@ export function getActionPropagation(action: string): {
   spreadsToAll: boolean;
 } {
   // Actions that everyone hears about
-  const universalActions = [
+  const universalActions: string[] = [
     SIGNIFICANT_ACTIONS.GREENFIELDS_INDEPENDENT,
     SIGNIFICANT_ACTIONS.GREENFIELDS_CONTROLLED,
     SIGNIFICANT_ACTIONS.AURUM_WON_CONTRACT,
@@ -136,34 +136,41 @@ export function getActionPropagation(action: string): {
   }
   
   // Specific propagation rules
-  const propagationMap: Record<string, { allies: string[]; rivals: string[] }> = {
+  const propagationMap: Record<string, { allies: string[]; rivals: string[]; spreadsToAll: boolean }> = {
     [SIGNIFICANT_ACTIONS.SIDED_WITH_GREENFIELDS]: {
       allies: ['drydock', 'sol-refinery', 'freeport'],
       rivals: ['sol-city', 'aurum-fab'],
+      spreadsToAll: false,
     },
     [SIGNIFICANT_ACTIONS.SIDED_WITH_SOL_CITY]: {
       allies: ['sol-refinery', 'ceres-pp'],
       rivals: ['greenfields', 'drydock'],
+      spreadsToAll: false,
     },
     [SIGNIFICANT_ACTIONS.JOINED_PIRATES]: {
       allies: ['freeport'],
       rivals: ['sol-city', 'sol-refinery'],
+      spreadsToAll: false,
     },
     [SIGNIFICANT_ACTIONS.ENFORCED_LAW]: {
       allies: ['sol-city', 'sol-refinery'],
       rivals: ['hidden-cove', 'freeport'],
+      spreadsToAll: false,
     },
     [SIGNIFICANT_ACTIONS.BROKERED_PEACE]: {
       allies: ['freeport'],
       rivals: [],
+      spreadsToAll: false,
     },
     [SIGNIFICANT_ACTIONS.SUPPORTED_STRIKE]: {
       allies: ['greenfields', 'sol-refinery', 'drydock'],
       rivals: ['sol-city', 'aurum-fab', 'ceres-pp'],
+      spreadsToAll: false,
     },
     [SIGNIFICANT_ACTIONS.BROKE_STRIKE]: {
       allies: ['sol-city', 'aurum-fab', 'ceres-pp'],
       rivals: ['greenfields', 'sol-refinery', 'drydock'],
+      spreadsToAll: false,
     },
   };
   

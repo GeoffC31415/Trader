@@ -55,7 +55,9 @@ export function validateObjective(
       break;
       
     case 'destroy':
-      if (event.type === 'npc_destroyed' && event.npcId) {
+      // Only count NPC destruction events that are tied to a mission target.
+      // (Prevents random NPC kills from satisfying story objectives.)
+      if (event.type === 'npc_destroyed' && event.npcId && event.missionId) {
         const newCurrent = objective.current + 1;
         return {
           completed: newCurrent >= (objective.quantity || 1),
@@ -122,15 +124,27 @@ export function validateObjective(
 
 /**
  * Check if all required objectives are completed
- * Failed objectives are considered "resolved" - they don't block completion
- * (the mission failure check handles whether too many objectives failed)
  */
 export function checkMissionCompletion(mission: Mission): boolean {
   const requiredObjectives = mission.objectives.filter(obj => !obj.optional);
-  // An objective is "resolved" if it's completed OR failed
-  // This allows missions to complete even with some failed objectives
-  // (as long as the mission wasn't completely failed due to too many failures)
-  return requiredObjectives.every(obj => obj.completed || obj.failed);
+  if (requiredObjectives.length === 0) return true;
+
+  // Escort missions support partial success when multiple escorts exist:
+  // - Single-escort missions require the escort to arrive (failed escort => not complete)
+  // - Multi-escort missions may allow losing up to one escort (the module enforces the fail threshold)
+  const escortObjectives = requiredObjectives.filter(obj => obj.type === 'escort');
+  const nonEscortObjectives = requiredObjectives.filter(obj => obj.type !== 'escort');
+
+  const nonEscortComplete = nonEscortObjectives.every(obj => obj.completed);
+  if (!nonEscortComplete) return false;
+
+  if (escortObjectives.length === 0) return true;
+
+  const completedEscorts = escortObjectives.filter(obj => obj.completed).length;
+  if (escortObjectives.length === 1) return completedEscorts === 1;
+
+  // Allow up to one escort loss on multi-escort missions.
+  return completedEscorts >= escortObjectives.length - 1;
 }
 
 /**
@@ -212,7 +226,7 @@ export type MissionEvent =
   | { type: 'commodity_sold'; commodityId: string; quantity: number; stationId: string }
   | { type: 'commodity_acquired'; commodityId: string; quantity: number }
   | { type: 'station_docked'; stationId: string }
-  | { type: 'npc_destroyed'; npcId: string }
+  | { type: 'npc_destroyed'; npcId: string; missionId?: string }
   | { type: 'escort_reached_destination'; npcId: string }
   | { type: 'wave_survived'; waveNumber: number }
   | { type: 'time_elapsed'; duration: number }

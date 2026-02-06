@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { create } from 'zustand';
 import { ensureSpread, gatedCommodities, getPriceBiasForStation } from '../systems/economy/pricing';
 import { processRecipes, findRecipeForStation } from '../systems/economy/recipes';

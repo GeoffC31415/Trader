@@ -364,43 +364,65 @@ export function DockIntro() {
     const inventory = station.inventory;
     
     // Calculate opportunity scores for each commodity
-    const opportunities = commodities.map(commodity => {
-      const item = inventory[commodity.id];
-      if (!item) return null;
-      
-      // Price ratio compared to base prices (higher = station pays more)
-      const sellPriceRatio = item.sell / commodity.baseSell;
-      const buyPriceRatio = item.buy / commodity.baseBuy;
-      
-      // Get stock effect for visual indicator
-      const targetStock = getTargetStock(station.type, commodity.id);
-      const stockEffect = getStockPriceEffect(item.stock || 50, targetStock);
-      
-      // Price bias at this station
-      const bias = getPriceBiasForStation(station.type, commodity.id);
-      
-      return {
-        id: commodity.id,
-        name: commodity.name,
-        category: commodity.category,
-        buyPrice: item.buy,
-        sellPrice: item.sell,
-        baseBuy: commodity.baseBuy,
-        baseSell: commodity.baseSell,
-        stock: item.stock || 50,
-        targetStock,
-        sellPriceRatio,
-        buyPriceRatio,
-        stockEffect,
-        bias,
-        canBuy: item.canBuy !== false,
-        canSell: item.canSell !== false,
-        // Demand score: higher when station pays well for a commodity (good for player to sell)
-        demandScore: item.canBuy !== false ? sellPriceRatio * (bias === 'expensive' ? 1.3 : bias === 'cheap' ? 0.7 : 1.0) : 0,
-        // Surplus score: higher when station sells cheap (good for player to buy)
-        surplusScore: item.canSell !== false ? (1 / buyPriceRatio) * (bias === 'cheap' ? 1.3 : bias === 'expensive' ? 0.7 : 1.0) : 0,
-      };
-    }).filter(Boolean) as NonNullable<typeof opportunities[0]>[];
+    type Opportunity = {
+      id: string;
+      name: string;
+      category: string;
+      buyPrice: number;
+      sellPrice: number;
+      baseBuy: number;
+      baseSell: number;
+      stock: number;
+      targetStock: number;
+      sellPriceRatio: number;
+      buyPriceRatio: number;
+      stockEffect: ReturnType<typeof getStockPriceEffect>;
+      bias: ReturnType<typeof getPriceBiasForStation>;
+      canBuy: boolean;
+      canSell: boolean;
+      demandScore: number;
+      surplusScore: number;
+    };
+
+    const opportunities: Opportunity[] = commodities
+      .map((commodity): Opportunity | null => {
+        const item = inventory[commodity.id];
+        if (!item) return null;
+        
+        // Price ratio compared to base prices (higher = station pays more)
+        const sellPriceRatio = item.sell / commodity.baseSell;
+        const buyPriceRatio = item.buy / commodity.baseBuy;
+        
+        // Get stock effect for visual indicator
+        const targetStock = getTargetStock(station.type, commodity.id);
+        const stockEffect = getStockPriceEffect(item.stock || 50, targetStock);
+        
+        // Price bias at this station
+        const bias = getPriceBiasForStation(station.type, commodity.id);
+        
+        return {
+          id: commodity.id,
+          name: commodity.name,
+          category: commodity.category,
+          buyPrice: item.buy,
+          sellPrice: item.sell,
+          baseBuy: commodity.baseBuy,
+          baseSell: commodity.baseSell,
+          stock: item.stock || 50,
+          targetStock,
+          sellPriceRatio,
+          buyPriceRatio,
+          stockEffect,
+          bias,
+          canBuy: item.canBuy !== false,
+          canSell: item.canSell !== false,
+          // Demand score: higher when station pays well for a commodity (good for player to sell)
+          demandScore: item.canBuy !== false ? sellPriceRatio * (bias === 'expensive' ? 1.3 : bias === 'cheap' ? 0.7 : 1.0) : 0,
+          // Surplus score: higher when station sells cheap (good for player to buy)
+          surplusScore: item.canSell !== false ? (1 / buyPriceRatio) * (bias === 'cheap' ? 1.3 : bias === 'expensive' ? 0.7 : 1.0) : 0,
+        };
+      })
+      .filter((o): o is Opportunity => o !== null);
     
     // Sort by demand (station wants to buy = player can sell)
     const inDemand = opportunities

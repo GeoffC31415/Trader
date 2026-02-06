@@ -90,16 +90,36 @@ export function updateMissionsInTick(
 
   const activeMissions = updatedMissions.filter(m => m.status === 'active');
 
+  // Process time-based objectives (e.g., wait timers) while docked
+  // `wait` objectives rely on a `time_elapsed` mission event, which we emit here.
+  if (ship.dockedStationId && dt > 0 && activeMissions.length > 0) {
+    const dockedStationId = ship.dockedStationId;
+    const timeEvent: MissionEvent = { type: 'time_elapsed', duration: dt };
+
+    for (const mission of activeMissions) {
+      // Conservative gating: only progress timers if mission is relevant to this station
+      // (prevents waiting anywhere in space from satisfying a station-specific download/installation)
+      const isRelevantHere = mission.objectives.some(
+        obj => obj.type === 'visit' && obj.target === dockedStationId
+      );
+      if (!isRelevantHere) continue;
+
+      const updatedMission = updateMissionObjectives(mission, timeEvent);
+      updatedMissions = updatedMissions.map(m => (m.id === mission.id ? updatedMission : m));
+    }
+  }
+
   // Process destroyed mission NPCs
   for (const destroyEvent of missionNpcDestroyedEvents) {
     const missionEvent: MissionEvent = {
       type: 'npc_destroyed',
       npcId: destroyEvent.npcId,
+      missionId: destroyEvent.missionId,
     };
 
     // Update relevant mission objectives
     for (const mission of activeMissions) {
-      if (mission.id === destroyEvent.missionId || mission.type === 'combat') {
+      if (destroyEvent.missionId && mission.id === destroyEvent.missionId) {
         const updatedMission = updateMissionObjectives(mission, missionEvent);
         updatedMissions = updatedMissions.map(m =>
           m.id === mission.id ? updatedMission : m
@@ -869,18 +889,36 @@ export function acceptMissionAction(
   let updatedEscortStates = escortStates;
 
   if (mission.type === 'combat') {
+    const spawn_near_by_mission_id: Record<string, string> = {
+      // Greenfields Independence
+      greenfields_stage_3: 'sol-city',
+      // Fabrication Wars
+      fabrication_wars_stage_3_aurum: 'drydock',
+      fabrication_wars_stage_3_drydock: 'aurum-fab',
+      // Energy Monopoly
+      energy_monopoly_stage_3_ceres: 'sol-refinery',
+      // Pirate Accords
+      pirate_accords_stage_3_pirate: 'sol-city',
+      pirate_accords_stage_3_law: 'hidden-cove',
+    };
+
     const destroyObjectives = mission.objectives.filter(obj => obj.type === 'destroy');
     for (const objective of destroyObjectives) {
       if (objective.quantity && objective.quantity > 0) {
-        // Spawn NPCs near a random station
-        const randomStation = stations[Math.floor(Math.random() * stations.length)];
+        const preferredSpawnNear =
+          spawn_near_by_mission_id[mission.id] || mission.availableAt[0] || stations[0]?.id;
+        const spawnNearStation =
+          (preferredSpawnNear
+            ? stations.find(s => s.id === preferredSpawnNear)
+            : undefined) || stations[Math.floor(Math.random() * stations.length)];
+
         const missionNpcs = spawnMissionNPCs(
           mission.id,
           {
             count: objective.quantity,
             hp: 80,
             isHostile: true,
-            spawnNear: randomStation.id,
+            spawnNear: spawnNearStation.id,
             cargo: { electronics: 5, alloys: 3 },
           },
           stations

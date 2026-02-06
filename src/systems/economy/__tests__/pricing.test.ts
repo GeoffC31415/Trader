@@ -22,9 +22,9 @@ describe('priceForStation', () => {
 
   it('applies distance premium for commodities', () => {
     const stationPos: [number, number, number] = [1000, 0, 1000];
-    const stationsMeta = [
-      { id: 'refinery1', type: 'refinery' as const, position: [0, 0, 0] },
-      { id: 'refinery2', type: 'refinery' as const, position: [500, 0, 500] },
+    const stationsMeta: Array<{ id: string; type: 'refinery'; position: [number, number, number] }> = [
+      { id: 'refinery1', type: 'refinery', position: [0, 0, 0] },
+      { id: 'refinery2', type: 'refinery', position: [500, 0, 500] },
     ];
     
     const invFar = priceForStation('city', commodities, stationPos, stationsMeta);

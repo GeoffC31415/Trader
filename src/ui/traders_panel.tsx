@@ -64,7 +64,20 @@ export function TradersPanel() {
     const cargoItems = Object.entries(ship.cargo).filter(([_, qty]) => qty > 0);
     if (cargoItems.length === 0) return [];
 
-    return cargoItems.map(([commodityId, quantity]) => {
+    type CargoRecommendation = {
+      commodityId: string;
+      commodityName: string;
+      quantity: number;
+      sellOptions: Array<{
+        stationId: string;
+        stationName: string;
+        sellPrice: number;
+        distance: number;
+        priceVsAvg: number;
+      }>;
+    };
+
+    return cargoItems.map(([commodityId, quantity]): CargoRecommendation | null => {
       const commodity = commodityById[commodityId];
       if (!commodity) return null;
 
@@ -92,7 +105,7 @@ export function TradersPanel() {
           priceVsAvg: Math.round(((opt.sellPrice / avgPrice) - 1) * 100),
         })),
       };
-    }).filter(Boolean).slice(0, 4) as NonNullable<typeof cargoRecommendations[0]>[];
+    }).filter((r): r is CargoRecommendation => r !== null).slice(0, 4);
   }, [ship.cargo, ship.position, stations, commodityById, poll]);
 
   // ============== ROUTE COMPETITION ANALYSIS ==============

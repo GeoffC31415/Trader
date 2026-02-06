@@ -57,7 +57,7 @@ function isPerishable(commodityId: string): boolean {
  * @returns Updated ship with decayed freshness
  */
 export function updateCargoFreshness(ship: Ship, dt: number): Ship {
-  const cargoFreshness = { ...ship.cargoFreshness } || {};
+  const cargoFreshness = ship.cargoFreshness ? { ...ship.cargoFreshness } : {};
   let hasChanges = false;
 
   for (const [commodityId, quantity] of Object.entries(ship.cargo)) {

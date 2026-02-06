@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Station } from '../../../domain/types/world_types';
-import type { Ship } from '../../../domain/types/world_types';
+import type { Station, Ship } from '../../../domain/types/world_types';
 import type { StationInventory } from '../../../domain/types/economy_types';
 import { stationTypeColors } from '../../utils/station_theme';
 import { SciFiPanel } from '../shared/SciFiPanel';
@@ -20,7 +19,7 @@ interface HallSectionProps {
   onBuy: (id: string, qty: number) => void;
   onSell: (id: string, qty: number) => void;
   onUpgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel' | 'ledger' | 'tempcargo' | 'shieldedcargo', amount: number, cost: number) => void;
-  onReplaceShip: (kind: string, cost: number) => void;
+  onReplaceShip: (kind: Ship['kind'], cost: number) => void;
   hasIntel: boolean;
   avgCostByCommodity: Record<string, number>;
 }

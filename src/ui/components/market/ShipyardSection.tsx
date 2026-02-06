@@ -12,7 +12,7 @@ interface ShipyardSectionProps {
   ship: Ship;
   hasIntel: boolean;
   onUpgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel' | 'ledger' | 'tempcargo' | 'shieldedcargo', amount: number, cost: number) => void;
-  onReplaceShip: (kind: string, cost: number) => void;
+  onReplaceShip: (kind: Ship['kind'], cost: number) => void;
 }
 
 export function ShipyardSection({
@@ -207,14 +207,16 @@ export function ShipyardSection({
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        {[
-          { kind: 'freighter', cargo: 300, acc: 10, vmax: 11, price: 20000 },
-          { kind: 'clipper', cargo: 60, acc: 18, vmax: 20, price: 20000 },
-          { kind: 'miner', cargo: 80, acc: 9, vmax: 11, price: 10000, mining: true },
-          { kind: 'heavy_freighter', cargo: 600, acc: 9, vmax: 12, price: 60000 },
-          { kind: 'racer', cargo: 40, acc: 24, vmax: 28, price: 50000 },
-          { kind: 'industrial_miner', cargo: 160, acc: 10, vmax: 12, price: 40000, mining: true },
-        ].map(s => (
+        {(
+          [
+            { kind: 'freighter', cargo: 300, acc: 10, vmax: 11, price: 20000 },
+            { kind: 'clipper', cargo: 60, acc: 18, vmax: 20, price: 20000 },
+            { kind: 'miner', cargo: 80, acc: 9, vmax: 11, price: 10000, mining: true },
+            { kind: 'heavy_freighter', cargo: 600, acc: 9, vmax: 12, price: 60000 },
+            { kind: 'racer', cargo: 40, acc: 24, vmax: 28, price: 50000 },
+            { kind: 'industrial_miner', cargo: 160, acc: 10, vmax: 12, price: 40000, mining: true },
+          ] as Array<{ kind: Ship['kind']; cargo: number; acc: number; vmax: number; price: number; mining?: boolean }>
+        ).map(s => (
           <div key={s.kind} style={{
             padding: 14,
             background: `${colors.primary}10`,
