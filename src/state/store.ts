@@ -43,9 +43,11 @@ import { applyMissionToProfile } from './modules/politics_module';
 import { gatedCommodities, getPriceBiasForStation } from '../systems/economy/pricing';
 import { findRecipeForStation } from '../systems/economy/recipes';
 import type { GameState, Ship, Station, Objective, Contract, NpcTrader, AllyAssistToken, TrustRecord, Notification } from '../domain/types/world_types';
+import type { ExplosionEffect } from '../domain/types/world_types';
 import { createNotification } from './modules/notifications';
 import type { ShipWeapon } from '../domain/types/combat_types';
 import type { Mission } from '../domain/types/mission_types';
+import { CARGO_DROP_PERCENTAGE } from '../domain/constants/weapon_constants';
 
 // Module imports
 import { updatePhysics, applyThrust, setEngineTarget as setEngineTargetModule } from './modules/physics';
@@ -101,6 +103,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     credits: 0,
     cargo: {},
     maxCargo: 100,
+    lastDockedStationId: undefined,
+    isDead: false,
     canMine: false,
     enginePower: 0,
     engineTarget: 0,
@@ -135,6 +139,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   lastFireTime: 0,
   npcLastFireTimes: {},
   npcAggression: {},
+  lastDamageTime: 0,
+  explosions: [],
+  targetedNpcId: null,
+  debris: [],
   // Mission arcs system
   missionArcs: initializeMissionArcs(),
   missions: [],
@@ -154,10 +162,10 @@ export const useGameStore = create<GameState>((set, get) => ({
   tick: (dt) =>
     set(state => {
       // 1. Physics - update ship movement
-      let ship = updatePhysics(state.ship, dt);
+      let ship = state.ship.isDead ? state.ship : updatePhysics(state.ship, dt);
       
       // 1a. Cargo freshness - decay perishable goods
-      ship = updateCargoFreshness(ship, dt);
+      ship = ship.isDead ? ship : updateCargoFreshness(ship, dt);
 
       // 2. Economy - jitter prices (with market event multipliers)
       // Get active events first (before they're updated)
@@ -209,6 +217,10 @@ export const useGameStore = create<GameState>((set, get) => ({
         !!ship.dockedStationId
       );
 
+      const shipHpBeforeCombat = ship.hp;
+      const npcBeforeCombatById = new Map<string, NpcTrader>();
+      for (const npc of npcTraders) npcBeforeCombatById.set(npc.id, npc);
+
       // 5. Combat - update combat systems
       const combatResult = updateCombat(
         {
@@ -226,6 +238,60 @@ export const useGameStore = create<GameState>((set, get) => ({
       ship = combatResult.ship;
       npcTraders = combatResult.npcTraders;
 
+      const now = Date.now();
+      const tookDamage = ship.hp < shipHpBeforeCombat;
+      const lastDamageTime = tookDamage ? now : state.lastDamageTime;
+
+      const explosions: ExplosionEffect[] = (state.explosions || []).filter(e => (now - e.startedAt) < e.duration);
+      let debris = (state.debris || []).filter(d => (now - d.createdAt) < d.lifetime);
+
+      // NPC death explosions
+      const npcAfterCombatIds = new Set(npcTraders.map(n => n.id));
+      for (const [npcId, npc] of npcBeforeCombatById.entries()) {
+        if (npcAfterCombatIds.has(npcId)) continue;
+        if ((npc.hp || 0) <= 0) continue;
+        explosions.push({
+          id: `expl_${npcId}_${now}`,
+          kind: 'explosion',
+          position: npc.position,
+          color: npc.isHostile ? '#f97316' : '#ef4444',
+          startedAt: now,
+          duration: 700,
+          maxRadius: 5.5,
+        });
+
+        // Cargo drops: spawn collectible debris with ~50% of NPC cargo capacity
+        if (npc.commodityId) {
+          const approxCargo = Math.max(1, Math.floor((npc.cargoCapacity || 30) * CARGO_DROP_PERCENTAGE));
+          debris.push({
+            id: `debris_${npcId}_${now}`,
+            position: [npc.position[0], npc.position[1], npc.position[2]],
+            cargo: { [npc.commodityId]: approxCargo } as Record<string, number>,
+            createdAt: now,
+            lifetime: 60_000,
+          });
+        }
+      }
+
+      // NPC hit sparks (white flash)
+      const npcAfterCombatById = new Map<string, NpcTrader>();
+      for (const npc of npcTraders) npcAfterCombatById.set(npc.id, npc);
+      for (const [npcId, after] of npcAfterCombatById.entries()) {
+        const before = npcBeforeCombatById.get(npcId);
+        if (!before) continue;
+        if ((after.hp || 0) <= 0) continue;
+        if ((after.hp || 0) >= (before.hp || 0)) continue;
+        explosions.push({
+          id: `hit_${npcId}_${now}_${Math.random().toString(36).slice(2, 7)}`,
+          kind: 'hit',
+          position: after.position,
+          color: '#ffffff',
+          startedAt: now,
+          duration: 180,
+          maxRadius: 2.2,
+        });
+      }
+
       // Apply reputation changes from combat
       for (const repChange of combatResult.reputationChanges) {
         stations = applyReputationWithPropagation(
@@ -233,6 +299,46 @@ export const useGameStore = create<GameState>((set, get) => ({
           repChange.stationId,
           repChange.delta
         );
+      }
+
+      // Clear target if it no longer exists
+      const targetedNpcId =
+        state.targetedNpcId && npcTraders.some(n => n.id === state.targetedNpcId)
+          ? state.targetedNpcId
+          : null;
+
+      // Auto-collect nearby debris
+      if (!ship.isDead && !ship.dockedStationId && debris.length > 0) {
+        const pickupRange = 18;
+        const remaining: typeof debris = [];
+        let cargo = { ...ship.cargo } as Record<string, number>;
+        const usedCargo = Object.values(cargo).reduce((a, b) => a + b, 0);
+        let free = Math.max(0, ship.maxCargo - usedCargo);
+
+        for (const d of debris) {
+          const dx = d.position[0] - ship.position[0];
+          const dy = d.position[1] - ship.position[1];
+          const dz = d.position[2] - ship.position[2];
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          if (dist > pickupRange) {
+            remaining.push(d);
+            continue;
+          }
+
+          for (const [cid, qtyRaw] of Object.entries(d.cargo)) {
+            const qty = Math.max(0, Math.floor(qtyRaw || 0));
+            if (qty <= 0) continue;
+            const toTake = Math.min(qty, free);
+            if (toTake <= 0) break;
+            cargo[cid] = (cargo[cid] || 0) + toTake;
+            free -= toTake;
+          }
+
+          if (free <= 0) remaining.push(d);
+        }
+
+        ship = free === ship.maxCargo - usedCargo ? ship : ({ ...ship, cargo } as Ship);
+        debris = remaining;
       }
 
       // 6. Missions - update mission systems
@@ -254,7 +360,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (missionResult.stations) stations = missionResult.stations;
 
       // 7. Market Events - spawn rare high-impact events
-      const currentTime = Date.now();
+      const currentTime = now;
       let marketEvents = state.marketEvents || [];
       // Remove expired events
       marketEvents = getActiveEvents(marketEvents, currentTime);
@@ -289,6 +395,10 @@ export const useGameStore = create<GameState>((set, get) => ({
         projectiles: combatResult.projectiles,
         npcAggression: combatResult.npcAggression,
         npcLastFireTimes: combatResult.npcLastFireTimes,
+        lastDamageTime,
+        explosions,
+        targetedNpcId,
+        debris,
         missions: missionResult.missions,
         missionArcs: missionResult.missionArcs,
         stealthStates: missionResult.stealthStates,
@@ -305,6 +415,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   thrust: (dir, dt) =>
     set(state => {
       if (!state.hasChosenStarter) return state;
+      if (state.ship.isDead) return state;
       if (state.ship.dockedStationId) return state;
 
       const updatedShip = applyThrust(state.ship, dir, dt);
@@ -326,6 +437,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   tryDock: () =>
     set(state => {
       if (!state.hasChosenStarter) return state;
+      if (state.ship.isDead) return state;
       if (state.ship.dockedStationId) return state;
       
       // Find all stations within docking range
@@ -394,7 +506,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       let missionCelebrationData: GameState['missionCelebrationData'] | undefined;
       let updatedStations = state.stations;
-      let updatedShip = { ...state.ship, dockedStationId: near.id, velocity: [0, 0, 0] } as Ship;
+      let updatedShip = { ...state.ship, dockedStationId: near.id, lastDockedStationId: near.id, velocity: [0, 0, 0] } as Ship;
       let relationships = { ...(state.relationships || {}) };
       let allyAssistTokens = [...(state.allyAssistTokens || [])];
 
@@ -550,6 +662,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   undock: () =>
     set(state => {
       if (!state.hasChosenStarter) return state;
+      if (state.ship.isDead) return state;
       if (!state.ship.dockedStationId) return state;
       return {
         ship: { ...state.ship, dockedStationId: undefined },
@@ -561,6 +674,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   mine: () =>
     set(state => {
       if (!state.hasChosenStarter) return state;
+      if (state.ship.isDead) return state;
       if (state.ship.dockedStationId) return state;
       if (!state.ship.canMine) return state;
 
@@ -821,6 +935,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   // Combat actions
   fireWeapon: targetPos =>
     set(state => {
+      if (state.ship.isDead) return state;
       const result = firePlayerWeapon(state.ship, state.lastFireTime, targetPos || null);
       if (!result) return state;
 
@@ -852,7 +967,12 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (!station || station.type !== 'shipyard') return state;
 
       // Filter out unsupported weapon types
-      if (weaponKind !== 'laser' && weaponKind !== 'railgun' && weaponKind !== 'missile') {
+      if (
+        weaponKind !== 'laser' &&
+        weaponKind !== 'plasma' &&
+        weaponKind !== 'railgun' &&
+        weaponKind !== 'missile'
+      ) {
         return state;
       }
 
@@ -866,6 +986,130 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       return {
         ship: updatedShip,
+      } as Partial<GameState> as GameState;
+    }),
+
+  respawnPlayer: () =>
+    set(state => {
+      const respawnStation =
+        (state.ship.lastDockedStationId
+          ? state.stations.find(s => s.id === state.ship.lastDockedStationId)
+          : undefined) ||
+        state.stations.find(s => s.type === 'city') ||
+        state.stations[0];
+      if (!respawnStation) return state;
+
+      const creditsPenaltyMultiplier = 0.9;
+      const nextCredits = Math.max(0, Math.floor(state.ship.credits * creditsPenaltyMultiplier));
+
+      const ship: Ship = {
+        ...state.ship,
+        isDead: false,
+        hp: state.ship.maxHp,
+        energy: state.ship.maxEnergy,
+        credits: nextCredits,
+        cargo: {},
+        cargoFreshness: undefined,
+        velocity: [0, 0, 0],
+        enginePower: 0,
+        engineTarget: 0,
+        dockedStationId: respawnStation.id,
+        lastDockedStationId: respawnStation.id,
+        position: [
+          respawnStation.position[0] + 5,
+          respawnStation.position[1],
+          respawnStation.position[2] + 5,
+        ],
+      };
+
+      return {
+        ship,
+        projectiles: [],
+        lastFireTime: 0,
+        npcLastFireTimes: {},
+        npcAggression: {},
+        lastDamageTime: 0,
+        explosions: [],
+        targetedNpcId: null,
+        debris: [],
+      } as Partial<GameState> as GameState;
+    }),
+
+  cycleTarget: () =>
+    set(state => {
+      if (state.ship.isDead) return state;
+      if (state.ship.dockedStationId) return state;
+
+      const shipPos = state.ship.position;
+      const candidates = state.npcTraders
+        .filter(n => !n.isEscort && (n.hp || 0) > 0)
+        .map(n => {
+          const dx = n.position[0] - shipPos[0];
+          const dy = n.position[1] - shipPos[1];
+          const dz = n.position[2] - shipPos[2];
+          const d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+          return { n, d };
+        })
+        .filter(x => x.d <= 1600)
+        .sort((a, b) => a.d - b.d)
+        .map(x => x.n);
+
+      if (candidates.length === 0) {
+        if (state.targetedNpcId === null) return state;
+        return { targetedNpcId: null } as Partial<GameState> as GameState;
+      }
+
+      const idx = state.targetedNpcId
+        ? candidates.findIndex(n => n.id === state.targetedNpcId)
+        : -1;
+      const next = candidates[(idx + 1) % candidates.length];
+      return { targetedNpcId: next?.id ?? null } as Partial<GameState> as GameState;
+    }),
+
+  clearTarget: () =>
+    set(state => {
+      if (state.targetedNpcId === null) return state;
+      return { targetedNpcId: null } as Partial<GameState> as GameState;
+    }),
+
+  collectDebris: () =>
+    set(state => {
+      if (state.ship.isDead) return state;
+      if (state.ship.dockedStationId) return state;
+      if (!state.debris || state.debris.length === 0) return state;
+
+      const pickupRange = 18;
+      const shipPos = state.ship.position;
+      const remaining: typeof state.debris = [];
+      const cargo = { ...state.ship.cargo } as Record<string, number>;
+      const usedCargo = Object.values(cargo).reduce((a, b) => a + b, 0);
+      let free = Math.max(0, state.ship.maxCargo - usedCargo);
+
+      for (const d of state.debris) {
+        const dx = d.position[0] - shipPos[0];
+        const dy = d.position[1] - shipPos[1];
+        const dz = d.position[2] - shipPos[2];
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist > pickupRange) {
+          remaining.push(d);
+          continue;
+        }
+
+        for (const [cid, qtyRaw] of Object.entries(d.cargo)) {
+          const qty = Math.max(0, Math.floor(qtyRaw || 0));
+          if (qty <= 0) continue;
+          const toTake = Math.min(qty, free);
+          if (toTake <= 0) break;
+          cargo[cid] = (cargo[cid] || 0) + toTake;
+          free -= toTake;
+        }
+
+        if (free <= 0) remaining.push(d);
+      }
+
+      return {
+        ship: { ...state.ship, cargo } as Ship,
+        debris: remaining,
       } as Partial<GameState> as GameState;
     }),
 

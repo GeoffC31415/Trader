@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useGameStore } from '../state';
 import { INPUT_ACTIONS } from './keyboard_bindings';
 import type { InputAction } from './keyboard_bindings';
+import { calculateLeadPosition, getWeaponStats } from '../systems/combat/weapon_systems';
 
 /**
  * Game-specific input hook that integrates with game store actions
@@ -17,6 +18,7 @@ export function useGameInput() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
+      const code = e.code;
       
       // Handle action keys
       if (key === 'e') {
@@ -31,12 +33,36 @@ export function useGameInput() {
         mine();
         return;
       }
+      if (key === 'tab' || code === 'Tab') {
+        e.preventDefault();
+        useGameStore.getState().cycleTarget();
+        return;
+      }
+      if (key === 'escape' || code === 'Escape') {
+        useGameStore.getState().clearTarget();
+        return;
+      }
       if (key === ' ' || e.code === 'Space') {
         e.preventDefault();
         
         // Calculate target position based on ship's forward direction
         const state = useGameStore.getState();
         const shipState = state.ship;
+        const targetedNpcId = state.targetedNpcId;
+        const targetedNpc = targetedNpcId ? state.npcTraders.find(n => n.id === targetedNpcId) : undefined;
+        if (targetedNpc) {
+          const stats = getWeaponStats(shipState.weapon);
+          const projectileSpeed = stats.projectileSpeed;
+          const leadPos = calculateLeadPosition(
+            shipState.position,
+            targetedNpc.position,
+            targetedNpc.velocity || [0, 0, 0],
+            projectileSpeed
+          );
+          state.fireWeapon(leadPos);
+          return;
+        }
+
         const vx = shipState.velocity[0];
         const vy = shipState.velocity[1];
         const vz = shipState.velocity[2];

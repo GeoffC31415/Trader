@@ -384,7 +384,7 @@ export function TradersPanel() {
         }
         .section-header-traders {
           font-size: 11px;
-          font-family: monospace;
+          font-family: var(--font-heading);
           letter-spacing: 0.1em;
           color: ${secondaryColor};
           margin-bottom: 12px;
@@ -449,7 +449,7 @@ export function TradersPanel() {
           border-radius: 12px;
           font-size: 10px;
           font-weight: 600;
-          font-family: monospace;
+          font-family: var(--font-ui);
         }
         .trend-arrow {
           display: inline-flex;

@@ -41,7 +41,7 @@ export function MarketHeader({
         <div style={{ fontSize: 11, fontFamily: 'monospace', color: colors.secondary, letterSpacing: '0.1em', marginBottom: 4 }}>
           DOCKED AT
         </div>
-        <div style={{ fontSize: 20, fontWeight: 700, textShadow: `0 0 10px ${colors.glow}` }}>
+        <div style={{ fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-heading)', textShadow: `0 0 10px ${colors.glow}` }}>
           {station.name.toUpperCase()}
         </div>
       </div>

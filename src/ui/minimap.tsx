@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useGameStore } from '../state';
+import { stationTypeColors } from './utils/station_theme';
 
 type Vec3 = [number, number, number];
 
@@ -9,6 +10,24 @@ function projectTo2D(p: Vec3, center: Vec3, scale: number): { x: number; y: numb
   return { x: dx * scale, y: dz * scale };
 }
 
+function niceGridStep(rawWorldStep: number): number {
+  if (!Number.isFinite(rawWorldStep) || rawWorldStep <= 0) return 100;
+  const pow10 = 10 ** Math.floor(Math.log10(rawWorldStep));
+  const n = rawWorldStep / pow10;
+  const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+  return step * pow10;
+}
+
+function abbreviateStationName(name: string): string {
+  const cleaned = name.trim().replace(/\s+/g, ' ');
+  if (!cleaned) return '???';
+  const parts = cleaned.split(' ');
+  const first = parts[0] || cleaned;
+  const lettersOnly = first.replace(/[^a-z0-9]/gi, '');
+  const abbr = (lettersOnly || first).slice(0, 3).toUpperCase();
+  return abbr.padEnd(3, ' ');
+}
+
 export function Minimap() {
   const planets = useGameStore(s => s.planets);
   const stations = useGameStore(s => s.stations);
@@ -16,6 +35,7 @@ export function Minimap() {
   const ship = useGameStore(s => s.ship);
   const npcTraders = useGameStore(s => s.npcTraders);
   const missions = useGameStore(s => s.missions);
+  const trackedStationId = useGameStore(s => s.trackedStationId);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   
@@ -136,6 +156,78 @@ export function Minimap() {
     ctx.save();
     ctx.translate(padding + drawW / 2, padding + drawH / 2);
 
+    // Subtle radar sweep for atmosphere
+    {
+      const sweepT = (Date.now() % 4000) / 4000;
+      const sweepAngle = sweepT * Math.PI * 2;
+      const sweepRadius = Math.min(drawW, drawH) * 0.52;
+      ctx.save();
+      ctx.rotate(sweepAngle);
+      const grad = ctx.createLinearGradient(0, 0, sweepRadius, 0);
+      grad.addColorStop(0, 'rgba(96,165,250,0.00)');
+      grad.addColorStop(0.6, 'rgba(96,165,250,0.06)');
+      grad.addColorStop(1, 'rgba(96,165,250,0.18)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(sweepRadius, 0);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Grid lines (scale reference)
+    {
+      const worldPerPixel = 1 / Math.max(1e-9, scale);
+      const gridWorldStep = niceGridStep(worldPerPixel * 40); // target ~40px spacing
+
+      const halfWorldW = drawW / 2 / scale;
+      const halfWorldH = drawH / 2 / scale;
+      const minWorldX = worldCenter[0] - halfWorldW;
+      const maxWorldX = worldCenter[0] + halfWorldW;
+      const minWorldZ = worldCenter[2] - halfWorldH;
+      const maxWorldZ = worldCenter[2] + halfWorldH;
+
+      const startX = Math.floor(minWorldX / gridWorldStep) * gridWorldStep;
+      const startZ = Math.floor(minWorldZ / gridWorldStep) * gridWorldStep;
+
+      // Minor grid
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let wx = startX; wx <= maxWorldX; wx += gridWorldStep) {
+        const x = (wx - worldCenter[0]) * scale;
+        ctx.moveTo(x, -drawH / 2);
+        ctx.lineTo(x, drawH / 2);
+      }
+      for (let wz = startZ; wz <= maxWorldZ; wz += gridWorldStep) {
+        const y = (wz - worldCenter[2]) * scale;
+        ctx.moveTo(-drawW / 2, y);
+        ctx.lineTo(drawW / 2, y);
+      }
+      ctx.stroke();
+
+      // Major grid every 5 lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+      ctx.beginPath();
+      const majorStep = gridWorldStep * 5;
+      const startXMajor = Math.floor(minWorldX / majorStep) * majorStep;
+      const startZMajor = Math.floor(minWorldZ / majorStep) * majorStep;
+      for (let wx = startXMajor; wx <= maxWorldX; wx += majorStep) {
+        const x = (wx - worldCenter[0]) * scale;
+        ctx.moveTo(x, -drawH / 2);
+        ctx.lineTo(x, drawH / 2);
+      }
+      for (let wz = startZMajor; wz <= maxWorldZ; wz += majorStep) {
+        const y = (wz - worldCenter[2]) * scale;
+        ctx.moveTo(-drawW / 2, y);
+        ctx.lineTo(drawW / 2, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // belts as rings
     for (const b of belts) {
       const p2 = projectTo2D(b.position, worldCenter, scale);
@@ -155,11 +247,45 @@ export function Minimap() {
       ctx.fill();
     }
 
+    // Waypoint path (tracked station)
+    const trackedStation = trackedStationId ? stations.find(s => s.id === trackedStationId) : undefined;
+    if (trackedStation) {
+      const ship2 = projectTo2D(ship.position, worldCenter, scale);
+      const st2 = projectTo2D(trackedStation.position, worldCenter, scale);
+
+      ctx.save();
+      ctx.setLineDash([6, 6]);
+      ctx.strokeStyle = 'rgba(34,197,94,0.75)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(ship2.x, ship2.y);
+      ctx.lineTo(st2.x, st2.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Station highlight ring
+      ctx.strokeStyle = 'rgba(34,197,94,0.85)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(st2.x, st2.y, 7, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // stations
     for (const s of stations) {
       const p2 = projectTo2D(s.position, worldCenter, scale);
-      ctx.fillStyle = s.type === 'shipyard' ? '#34d399' : '#7dd3fc';
+      const colors = stationTypeColors[s.type] ?? stationTypeColors.city;
+      ctx.fillStyle = colors.secondary;
       ctx.fillRect(p2.x - 2, p2.y - 2, 4, 4);
+
+      // label (2-3 chars)
+      ctx.save();
+      ctx.font = '9px "Share Tech Mono", ui-monospace, monospace';
+      ctx.fillStyle = 'rgba(229,231,235,0.75)';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(abbreviateStationName(s.name), p2.x + 6, p2.y);
+      ctx.restore();
     }
     
     // Mission targets (only when player has Navigation Array)
@@ -260,6 +386,18 @@ export function Minimap() {
     // ship
     {
       const p2 = projectTo2D(ship.position, worldCenter, scale);
+
+      // Player glow ring
+      ctx.save();
+      ctx.shadowColor = 'rgba(96,165,250,0.85)';
+      ctx.shadowBlur = 12;
+      ctx.strokeStyle = 'rgba(96,165,250,0.9)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(p2.x, p2.y, 6, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
       ctx.beginPath();
       ctx.fillStyle = '#60a5fa';
       ctx.arc(p2.x, p2.y, 3, 0, Math.PI * 2);
@@ -283,7 +421,7 @@ export function Minimap() {
 
     // HUD text
     ctx.fillStyle = 'rgba(229,231,235,0.8)';
-    ctx.font = '16px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto';
+    ctx.font = '16px Orbitron, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto';
     ctx.fillText('System Map', padding, cssSize.h - 10);
     
     // Mission target and escort legend (when showing targets/escorts)
@@ -323,7 +461,7 @@ export function Minimap() {
         ctx.fillText(`${pendingTargetCount} En Route`, padding + 16, legendY + 4);
       }
     }
-  }, [planets, stations, belts, ship.position, ship.velocity, bounds, hasNavArray, missionTargets, missionEscorts, pendingTargetCount]);
+  }, [planets, stations, belts, ship.position, ship.velocity, trackedStationId, bounds, hasNavArray, missionTargets, missionEscorts, pendingTargetCount]);
 
   return (
     <div className="minimap">

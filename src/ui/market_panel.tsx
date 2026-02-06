@@ -29,6 +29,8 @@ export function MarketPanel() {
   const process = useGameStore(s => s.process);
   const upgrade = useGameStore(s => s.upgrade);
   const replaceShip = useGameStore(s => s.replaceShip);
+  const purchaseWeapon = useGameStore(s => s.purchaseWeapon);
+  const upgradeWeapon = useGameStore(s => s.upgradeWeapon);
   const hasIntel = !!ship.hasMarketIntel;
   const contracts = useGameStore(s => s.contracts || []);
   const acceptContract = useGameStore(s => s.acceptContract);
@@ -301,6 +303,8 @@ export function MarketPanel() {
             onBuy={buy}
             onSell={sell}
             onUpgrade={upgrade}
+            onPurchaseWeapon={purchaseWeapon}
+            onUpgradeWeapon={upgradeWeapon}
             onReplaceShip={replaceShip}
             hasIntel={hasIntel}
             avgCostByCommodity={avgCostByCommodity}

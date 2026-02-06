@@ -26,7 +26,7 @@ export function SciFiButton({
     textTransform: 'uppercase' as const,
     letterSpacing: '0.05em',
     transition: 'all 0.2s ease',
-    fontFamily: 'monospace',
+    fontFamily: 'var(--font-ui)',
   };
 
   let background: string;

@@ -35,19 +35,67 @@ const stationTypeColors: Record<StationType, { primary: string; secondary: strin
   orbital_hab: { primary: '#a855f7', secondary: '#c084fc', glow: '#a855f780' },
 };
 
-const stationTypeIcons: Record<StationType, string> = {
-  city: '🏙️',
-  refinery: '⚗️',
-  fabricator: '⚙️',
-  farm: '🌾',
-  power_plant: '⚡',
-  trading_post: '🏪',
-  shipyard: '🚀',
-  pirate: '☠️',
-  mine: '⛏️',
-  research: '🔬',
-  orbital_hab: '🛰️',
-};
+function stationTypeAbbr(type: StationType): string {
+  if (type === 'city') return 'CI';
+  if (type === 'refinery') return 'RF';
+  if (type === 'fabricator') return 'FX';
+  if (type === 'farm') return 'FM';
+  if (type === 'power_plant') return 'PP';
+  if (type === 'trading_post') return 'TP';
+  if (type === 'shipyard') return 'SY';
+  if (type === 'pirate') return 'PR';
+  if (type === 'mine') return 'MN';
+  if (type === 'research') return 'RS';
+  if (type === 'orbital_hab') return 'OH';
+  return 'ST';
+}
+
+function StationTypeIcon({
+  type,
+  colors,
+  size,
+  glitchActive,
+}: {
+  type: StationType;
+  colors: { primary: string; secondary: string; glow: string };
+  size: number;
+  glitchActive: boolean;
+}) {
+  const abbr = stationTypeAbbr(type);
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 64 64"
+      style={{
+        filter: glitchActive ? 'blur(2px)' : 'none',
+        transform: glitchActive ? 'translate(2px, 0)' : 'none',
+        display: 'block',
+      }}
+    >
+      <defs>
+        <linearGradient id="stationGlyph" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={colors.primary} stopOpacity="0.85" />
+          <stop offset="1" stopColor={colors.secondary} stopOpacity="0.85" />
+        </linearGradient>
+      </defs>
+      <rect x="6" y="6" width="52" height="52" rx="10" fill="rgba(2,6,23,0.35)" stroke="url(#stationGlyph)" strokeWidth="2" />
+      <rect x="12" y="12" width="40" height="40" rx="8" fill="rgba(255,255,255,0.03)" stroke={colors.primary} strokeOpacity="0.35" strokeWidth="1" />
+      <text
+        x="32"
+        y="39"
+        textAnchor="middle"
+        fontFamily="var(--font-heading)"
+        fontWeight="900"
+        fontSize="20"
+        letterSpacing="2"
+        fill={colors.secondary}
+      >
+        {abbr}
+      </text>
+    </svg>
+  );
+}
 
 export function DockIntro() {
   const stationId = useGameStore(s => s.dockIntroVisibleId);
@@ -325,6 +373,69 @@ export function DockIntro() {
   // Legacy single line for backwards compatibility (with emotion tags stripped for display)
   const line = stripEmotionTags(dialogueLines.greeting?.line.text);
   const contextualLine = stripEmotionTags(dialogueLines.contextual?.line.text);
+
+  // Typewriter effect for dialogue (visual polish; audio remains unchanged).
+  const [typedGreeting, setTypedGreeting] = useState<string>('');
+  const [isGreetingDone, setIsGreetingDone] = useState<boolean>(true);
+  const [typedContextual, setTypedContextual] = useState<string>('');
+  const [isContextualDone, setIsContextualDone] = useState<boolean>(true);
+
+  useEffect(() => {
+    const greetingText = line || '';
+    const contextualText = contextualLine || '';
+
+    setTypedGreeting('');
+    setTypedContextual('');
+    setIsGreetingDone(greetingText.length === 0);
+    setIsContextualDone(contextualText.length === 0);
+
+    let greetingInterval: number | null = null;
+    let contextualInterval: number | null = null;
+    let contextualStartTimeout: number | null = null;
+
+    const typeText = (text: string, setText: (v: string) => void, onDone: () => void, speedMs: number) => {
+      let i = 0;
+      return window.setInterval(() => {
+        i += 1;
+        setText(text.slice(0, i));
+        if (i >= text.length) {
+          onDone();
+        }
+      }, speedMs);
+    };
+
+    if (greetingText.length > 0) {
+      greetingInterval = typeText(
+        greetingText,
+        setTypedGreeting,
+        () => {
+          setIsGreetingDone(true);
+          if (greetingInterval) { window.clearInterval(greetingInterval); greetingInterval = null; }
+        },
+        18
+      );
+    }
+
+    if (contextualText.length > 0) {
+      contextualStartTimeout = window.setTimeout(() => {
+        contextualInterval = typeText(
+          contextualText,
+          setTypedContextual,
+          () => {
+            setIsContextualDone(true);
+            if (contextualInterval) { window.clearInterval(contextualInterval); contextualInterval = null; }
+          },
+          14
+        );
+      }, 550);
+    }
+
+    return () => {
+      if (greetingInterval) window.clearInterval(greetingInterval);
+      if (contextualInterval) window.clearInterval(contextualInterval);
+      if (contextualStartTimeout) window.clearTimeout(contextualStartTimeout);
+    };
+  }, [line, contextualLine, stationId]);
   
   // Player relationship tier with this character
   const relationshipTier = useMemo(() => 
@@ -452,7 +563,7 @@ export function DockIntro() {
   }, [station]);
 
   const colors = station ? stationTypeColors[station.type] : stationTypeColors.city;
-  const icon = station ? stationTypeIcons[station.type] : '🏪';
+  const stationType = station ? station.type : 'city';
 
   // Scanline animation
   useEffect(() => {
@@ -519,6 +630,17 @@ export function DockIntro() {
         @keyframes glow {
           0%, 100% { filter: drop-shadow(0 0 8px ${colors.glow}) drop-shadow(0 0 16px ${colors.glow}); }
           50% { filter: drop-shadow(0 0 12px ${colors.glow}) drop-shadow(0 0 24px ${colors.glow}); }
+        }
+        @keyframes caretBlink {
+          0%, 49% { opacity: 1; }
+          50%, 100% { opacity: 0; }
+        }
+        .typing-caret {
+          display: inline-block;
+          width: 8px;
+          margin-left: 2px;
+          opacity: 0.85;
+          animation: caretBlink 1s steps(1, end) infinite;
         }
         @keyframes scanline {
           from { transform: translateY(-100%); }
@@ -603,11 +725,9 @@ export function DockIntro() {
             <div style={{
               fontSize: 64,
               lineHeight: 1,
-              filter: glitchActive ? 'blur(2px)' : 'none',
               animation: 'glow 2s ease-in-out infinite',
-              transform: glitchActive ? 'translate(2px, 0)' : 'none',
             }}>
-              {icon}
+              <StationTypeIcon type={stationType} colors={colors} size={64} glitchActive={glitchActive} />
             </div>
             <div>
               <div style={{
@@ -760,7 +880,10 @@ export function DockIntro() {
                       fontStyle: 'italic',
                       lineHeight: 1.6,
                     }}>
-                      "{line}"
+                      <span style={{ opacity: 0.9 }}>"</span>
+                      {typedGreeting}
+                      {!isGreetingDone && <span className="typing-caret">▌</span>}
+                      <span style={{ opacity: 0.9 }}>"</span>
                     </div>
                   )}
                   
@@ -792,7 +915,10 @@ export function DockIntro() {
                          dialogueLines.contextual?.line.category === 'concern' ? '◦ Current concerns' :
                          '◦ Local intel'}
                       </span>
-                      "{contextualLine}"
+                      <span style={{ opacity: 0.9 }}>"</span>
+                      {typedContextual}
+                      {!isContextualDone && isGreetingDone && <span className="typing-caret">▌</span>}
+                      <span style={{ opacity: 0.9 }}>"</span>
                     </div>
                   )}
                 </div>

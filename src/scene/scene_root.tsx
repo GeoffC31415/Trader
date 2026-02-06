@@ -112,6 +112,98 @@ function Projectiles() {
   );
 }
 
+function Explosions() {
+  const explosions = useGameStore(s => s.explosions);
+  const now = Date.now();
+
+  return (
+    <>
+      {explosions.map(e => {
+        const age = now - e.startedAt;
+        const t = Math.max(0, Math.min(1, age / e.duration));
+        const radius = Math.max(0.05, e.maxRadius * t);
+        const opacity = (1 - t) * (e.kind === 'hit' ? 0.9 : 0.65);
+        const emissiveIntensity = e.kind === 'hit' ? 0.9 : 0.6;
+        const sparkCount = e.kind === 'hit' ? 4 : 14;
+
+        return (
+          <group key={e.id} position={e.position as any}>
+            <mesh>
+              <sphereGeometry args={[radius, 16, 16]} />
+              <meshBasicMaterial
+                color={e.color}
+                transparent
+                opacity={opacity}
+                depthWrite={false}
+              />
+            </mesh>
+            <Sparkles
+              count={sparkCount}
+              scale={e.kind === 'hit' ? 1.8 : 4.5}
+              size={e.kind === 'hit' ? 1.2 : 1.8}
+              speed={e.kind === 'hit' ? 0.4 : 1.1}
+              color={e.color}
+              opacity={opacity}
+            />
+            <mesh>
+              <sphereGeometry args={[Math.max(0.05, radius * 0.25), 10, 10]} />
+              <meshStandardMaterial
+                color={e.color}
+                emissive={new THREE.Color(e.color)}
+                emissiveIntensity={emissiveIntensity}
+                transparent
+                opacity={opacity}
+              />
+            </mesh>
+          </group>
+        );
+      })}
+    </>
+  );
+}
+
+function DebrisField() {
+  const debris = useGameStore(s => s.debris);
+  const now = Date.now();
+
+  return (
+    <>
+      {debris.map(d => {
+        const age = now - d.createdAt;
+        const t = Math.max(0, Math.min(1, age / Math.max(1, d.lifetime)));
+        const bob = Math.sin((now / 1000) * 2 + (d.position[0] + d.position[2]) * 0.01) * 0.6;
+        const opacity = Math.max(0.15, 1 - t);
+        return (
+          <group key={d.id} position={[d.position[0], d.position[1] + 1.0 + bob, d.position[2]] as any}>
+            <mesh>
+              <boxGeometry args={[1.4, 1.0, 1.4]} />
+              <meshStandardMaterial
+                color={new THREE.Color('#fbbf24')}
+                emissive={new THREE.Color('#f59e0b')}
+                emissiveIntensity={0.35}
+                transparent
+                opacity={opacity}
+                metalness={0.2}
+                roughness={0.35}
+              />
+            </mesh>
+            <mesh>
+              <boxGeometry args={[1.8, 1.4, 1.8]} />
+              <meshBasicMaterial
+                color={'#f59e0b'}
+                transparent
+                opacity={opacity * 0.18}
+                depthWrite={false}
+              />
+            </mesh>
+            <Sparkles count={10} scale={3.2} size={1.4} speed={0.35} color={'#fde68a'} opacity={opacity * 0.6} />
+          </group>
+        );
+      })}
+    </>
+  );
+}
+
 function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; turnRight?: boolean }) {
   const ship = useGameStore(s => s.ship);
   const hasRig = ship.canMine;
@@ -255,6 +347,34 @@ function EscortShip({ escort, playerPosition, playerVelocity }: { escort: any; p
 import { PlaneGrid } from './components/primitives/PlaneGrid';
 
 import { BeltRing } from './components/primitives/BeltRing';
+
+function TargetReticle() {
+  const targetedNpcId = useGameStore(s => s.targetedNpcId);
+  const npcTraders = useGameStore(s => s.npcTraders);
+  const ship = useGameStore(s => s.ship);
+
+  if (!targetedNpcId || ship.dockedStationId) return null;
+  const npc = npcTraders.find(n => n.id === targetedNpcId);
+  if (!npc) return null;
+
+  return (
+    <Html position={[npc.position[0], npc.position[1] + 2.0, npc.position[2]]} center distanceFactor={45}>
+      <div
+        style={{
+          width: 42,
+          height: 42,
+          borderRadius: 10,
+          border: '2px solid rgba(239,68,68,0.85)',
+          boxShadow: '0 0 18px rgba(239,68,68,0.35)',
+          position: 'relative',
+          pointerEvents: 'none',
+        }}
+      >
+        <div style={{ position: 'absolute', inset: 6, border: '1px solid rgba(255,255,255,0.35)', borderRadius: 8 }} />
+      </div>
+    </Html>
+  );
+}
 
 export function SceneRoot() {
   const planets = useGameStore(s => s.planets);
@@ -406,6 +526,12 @@ export function SceneRoot() {
       ))}
       {/* Projectiles */}
       <Projectiles />
+      {/* Explosions / hit sparks */}
+      <Explosions />
+      {/* Debris (cargo drops) */}
+      <DebrisField />
+      {/* Target reticle */}
+      <TargetReticle />
       {/* Mission markers */}
       <MissionMarkers />
       <Ship turnLeft={!!pressed['a']} turnRight={!!pressed['d']} />

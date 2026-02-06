@@ -21,7 +21,7 @@ export function SectionHeader({
       className={className}
       style={{
         fontSize: 11,
-        fontFamily: 'monospace',
+        fontFamily: 'var(--font-heading)',
         letterSpacing: '0.1em',
         color: colors.secondary,
         marginBottom: 12,

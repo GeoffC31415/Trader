@@ -1,4 +1,4 @@
-import { StrictMode, useState, Suspense, useEffect } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Stars, Environment } from '@react-three/drei';
 import * as THREE from 'three';
@@ -22,6 +22,9 @@ import { useMusicController, initializeMusicOnInteraction } from './shared/audio
 import { useMissionAudioController, preloadMissionAudio } from './shared/audio/use_mission_audio';
 import { TargetArrows } from './ui/components/target_arrows';
 import { StealthIndicator } from './ui/components/hud/StealthIndicator';
+import { DeathScreen } from './ui/components/hud/DeathScreen';
+import { DamageVignette } from './ui/components/hud/DamageVignette';
+import { TargetIndicator } from './ui/components/hud/TargetIndicator';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal' | 'traders' | 'debug'>('market');
@@ -76,33 +79,108 @@ export function App() {
       document.removeEventListener('keydown', handleFirstInteraction);
     };
   }, []);
+
+  const tabs = useMemo(() => {
+    const base = [
+      { key: 'market' as const, label: 'Market', icon: 'tab_market' as const, disabled: false, title: undefined },
+      { key: 'journal' as const, label: 'Journal', icon: 'tab_journal' as const, disabled: false, title: undefined },
+      { key: 'traders' as const, label: 'Traders', icon: 'tab_traders' as const, disabled: !hasIntel, title: !hasIntel ? 'Requires Mercantile Data Nexus upgrade' : undefined },
+    ];
+    if (isTestMode) base.push({ key: 'debug' as const, label: 'Debug', icon: undefined, disabled: false, title: undefined });
+    return base;
+  }, [hasIntel, isTestMode]);
+
+  const tabTheme = useMemo(() => {
+    return {
+      market: { accent: '#3b82f6', accentSoft: 'rgba(59,130,246,0.25)', accentGlow: 'rgba(59,130,246,0.55)' },
+      journal: { accent: '#60a5fa', accentSoft: 'rgba(96,165,250,0.22)', accentGlow: 'rgba(96,165,250,0.50)' },
+      traders: { accent: '#22d3ee', accentSoft: 'rgba(34,211,238,0.22)', accentGlow: 'rgba(34,211,238,0.50)' },
+      debug: { accent: '#f59e0b', accentSoft: 'rgba(245,158,11,0.22)', accentGlow: 'rgba(245,158,11,0.50)' },
+    } satisfies Record<'market' | 'journal' | 'traders' | 'debug', { accent: string; accentSoft: string; accentGlow: string }>;
+  }, []);
+
+  const tabsRef = useRef<HTMLDivElement | null>(null);
+  const tabButtonRefs = useRef<Record<'market' | 'journal' | 'traders' | 'debug', HTMLButtonElement | null>>({
+    market: null,
+    journal: null,
+    traders: null,
+    debug: null,
+  });
+  const [indicatorStyle, setIndicatorStyle] = useState<{ left: number; width: number; opacity: number }>({ left: 0, width: 0, opacity: 0 });
+
+  const updateIndicator = () => {
+    const container = tabsRef.current;
+    const btn = tabButtonRefs.current[active];
+    if (!container || !btn) return;
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = btn.getBoundingClientRect();
+    setIndicatorStyle({
+      left: Math.max(0, btnRect.left - containerRect.left),
+      width: Math.max(0, btnRect.width),
+      opacity: 1,
+    });
+  };
+
+  useLayoutEffect(() => {
+    updateIndicator();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, hasIntel, isTestMode]);
+
+  useEffect(() => {
+    const onResize = () => updateIndicator();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
   
   return (
-    <StrictMode>
-      <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
         <div className={`ui-overlay${hasNav ? ' has-minimap' : ''}`}>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-            <button onClick={() => setActive('market')} style={{ fontWeight: active==='market'?700:400, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <UIIcon name="tab_market" size={14} />
-              Market
-            </button>
-            <button onClick={() => setActive('journal')} style={{ fontWeight: active==='journal'?700:400, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <UIIcon name="tab_journal" size={14} />
-              Journal
-            </button>
-            <button onClick={() => setActive('traders')} disabled={!hasIntel} title={!hasIntel ? 'Requires Mercantile Data Nexus upgrade' : undefined} style={{ fontWeight: active==='traders'?700:400, opacity: hasIntel ? 1 : 0.6, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <UIIcon name="tab_traders" size={14} />
-              Traders
-            </button>
-            {isTestMode && (
-              <button onClick={() => setActive('debug')} style={{ fontWeight: active==='debug'?700:400, display: 'flex', alignItems: 'center', gap: 6, color: '#f59e0b' }}>
-                🛠️ Debug
+          <div
+            ref={tabsRef}
+            className="top-tabs"
+            role="tablist"
+            aria-label="Main panels"
+          >
+            <div
+              className="top-tabs-indicator"
+              style={{
+                left: indicatorStyle.left,
+                width: indicatorStyle.width,
+                opacity: indicatorStyle.opacity,
+                background: `linear-gradient(90deg, transparent, ${tabTheme[active].accent}, transparent)`,
+                boxShadow: `0 0 12px ${tabTheme[active].accentGlow}`,
+              }}
+            />
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                ref={(el) => { tabButtonRefs.current[t.key] = el; }}
+                role="tab"
+                aria-selected={active === t.key}
+                data-active={active === t.key}
+                className="top-tab"
+                disabled={t.disabled}
+                title={t.title}
+                style={{
+                  // Per-tab accent theme (used by CSS)
+                  ['--tab-accent' as any]: tabTheme[t.key].accent,
+                  ['--tab-accent-soft' as any]: tabTheme[t.key].accentSoft,
+                  ['--tab-accent-glow' as any]: tabTheme[t.key].accentGlow,
+                }}
+                onClick={() => setActive(t.key)}
+              >
+                {t.icon ? <UIIcon name={t.icon} size={14} /> : <span style={{ fontSize: 14 }}>🛠️</span>}
+                <span className="top-tab-label">{t.label}</span>
               </button>
-            )}
+            ))}
           </div>
-          {active === 'market' ? <MarketPanel /> : active === 'journal' ? <JournalPanel /> : active === 'traders' ? <TradersPanel /> : <DebugPanel />}
+          <div className="panel-switch">
+            <div key={active} className="panel-switch-content">
+              {active === 'market' ? <MarketPanel /> : active === 'journal' ? <JournalPanel /> : active === 'traders' ? <TradersPanel /> : <DebugPanel />}
+            </div>
+          </div>
         </div>
-        <div className="vignette" />
         {hasNav && <Minimap />}
         
         {hasChosenStarter && (
@@ -118,6 +196,10 @@ export function App() {
         <Celebration />
         <MissionCelebration />
         <Notifications />
+        <div className="vignette" />
+        <DamageVignette />
+        <DeathScreen />
+        <TargetIndicator />
         <TargetArrows />
         <StealthIndicator />
         
@@ -176,7 +258,6 @@ export function App() {
             onSetTrackedStation={setTrackedStation}
           />
         )}
-      </div>
-    </StrictMode>
+    </div>
   );
 }

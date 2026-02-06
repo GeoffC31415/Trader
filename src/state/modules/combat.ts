@@ -73,6 +73,18 @@ export function updateCombat(
   const reputationChanges: Array<{ stationId: string; delta: number }> = [];
   const missionNpcDestroyedEvents: Array<{ npcId: string; missionId?: string }> = [];
 
+  if (ship.isDead) {
+    return {
+      ship,
+      npcTraders,
+      projectiles: [],
+      npcAggression,
+      npcLastFireTimes,
+      reputationChanges,
+      missionNpcDestroyedEvents,
+    };
+  }
+
   // Energy regeneration (only when not docked)
   if (!ship.dockedStationId) {
     ship.energy = Math.min(ship.maxEnergy, ship.energy + ENERGY_REGEN_RATE * dt);
@@ -109,7 +121,12 @@ export function updateCombat(
   for (const event of damageEvents) {
     if (event.targetType === 'player') {
       ship.hp = Math.max(0, ship.hp - event.damage);
-      // TODO: Add death/respawn logic for player later
+      if (ship.hp <= 0) {
+        ship.isDead = true;
+        ship.velocity = [0, 0, 0];
+        ship.enginePower = 0;
+        ship.engineTarget = 0;
+      }
     } else {
       // Damage to NPC
       npcTraders = npcTraders.map(npc => {
@@ -184,7 +201,7 @@ export function updateCombat(
     }
 
     // Drop cargo (simple: add to a nearby "debris" - for now, skip actual spawning)
-    // TODO: Spawn collectible debris with cargo in future iteration
+    // Cargo drops are handled in the store tick (spawns debris VFX + collectibles)
   }
 
   // Remove dead NPCs
@@ -365,7 +382,7 @@ export function upgradePlayerWeapon(
  */
 export function purchasePlayerWeapon(
   ship: Ship,
-  weaponKind: 'laser' | 'railgun' | 'missile',
+  weaponKind: 'laser' | 'plasma' | 'railgun' | 'missile',
   cost: number,
   hasMarketIntel: boolean
 ): Ship | null {

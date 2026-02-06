@@ -88,7 +88,7 @@ export function JournalPanel() {
           text-transform: uppercase;
           letter-spacing: 0.05em;
           transition: all 0.2s ease;
-          font-family: monospace;
+          font-family: var(--font-ui);
         }
         .journal-button:hover:not(:disabled) {
           background: linear-gradient(135deg, ${primaryColor}50, ${primaryColor}30);
@@ -109,7 +109,7 @@ export function JournalPanel() {
         }
         .section-header-journal {
           font-size: 11px;
-          font-family: monospace;
+          font-family: var(--font-heading);
           letter-spacing: 0.1em;
           color: ${secondaryColor};
           margin-bottom: 12px;
@@ -127,7 +127,7 @@ export function JournalPanel() {
         .data-grid-journal {
           display: grid;
           gap: 8px;
-          font-family: monospace;
+          font-family: var(--font-ui);
           font-size: 13px;
         }
         .stat-row-journal {

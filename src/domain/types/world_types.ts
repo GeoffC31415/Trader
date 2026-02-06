@@ -65,6 +65,8 @@ export type Ship = {
   cargo: Record<Commodity['id'], number>;
   maxCargo: number;
   dockedStationId?: string;
+  lastDockedStationId?: string;
+  isDead?: boolean;
   canMine: boolean;
   enginePower: number;
   engineTarget: number;
@@ -135,6 +137,24 @@ export type TradeEntry = {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+};
+
+export type ExplosionEffect = {
+  id: string;
+  kind: 'explosion' | 'hit';
+  position: [number, number, number];
+  color: string;
+  startedAt: number; // epoch ms
+  duration: number; // ms
+  maxRadius: number;
+};
+
+export type Debris = {
+  id: string;
+  position: [number, number, number];
+  cargo: Record<Commodity['id'], number>;
+  createdAt: number; // epoch ms
+  lifetime: number; // ms
 };
 
 export type RouteSuggestion = {
@@ -320,6 +340,10 @@ export type GameState = {
     targetId?: string;
     lastAttackedTime?: number;
   }>;
+  lastDamageTime: number; // epoch ms (used for vignette/feedback)
+  explosions: ExplosionEffect[]; // transient visual effects (explosions + hit sparks)
+  targetedNpcId: string | null;
+  debris: Debris[];
   getSuggestedRoutes: (opts?: { limit?: number; prioritizePerDistance?: boolean }) => RouteSuggestion[];
   tick: (dt: number) => void;
   thrust: (dir: [number, number, number], dt: number) => void;
@@ -355,6 +379,10 @@ export type GameState = {
   fireWeapon: (targetPos?: [number, number, number]) => void;
   upgradeWeapon: (upgradeType: 'damage' | 'fireRate' | 'range', cost: number) => void;
   purchaseWeapon: (weaponKind: WeaponKind, cost: number) => void;
+  respawnPlayer: () => void;
+  cycleTarget: () => void;
+  clearTarget: () => void;
+  collectDebris: () => void;
   // Ally assists
   consumeAssist: (type: AllyAssistToken['type'], by?: string) => boolean;
   // Notifications

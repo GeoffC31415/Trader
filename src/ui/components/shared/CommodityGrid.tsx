@@ -23,6 +23,248 @@ interface CommodityGridProps {
   avgCostByCommodity?: Record<string, number>;
 }
 
+interface CommodityRowProps {
+  id: string;
+  p: StationInventory[string];
+  station: { type: StationType; reputation?: number };
+  ship: Ship;
+  qty: number;
+  colors: { primary: string; secondary: string; glow: string };
+  hasTradeLedger: boolean;
+  avgCostByCommodity: Record<string, number>;
+  canTrade: (id: string) => boolean;
+  onBuy: (id: string, qty: number) => void;
+  onSell: (id: string, qty: number) => void;
+  showFreshness: boolean;
+  showAvgCostProfit: boolean;
+}
+
+function CommodityRow({
+  id,
+  p,
+  station,
+  ship,
+  qty,
+  colors,
+  hasTradeLedger,
+  avgCostByCommodity,
+  canTrade,
+  onBuy,
+  onSell,
+  showFreshness,
+  showAvgCostProfit,
+}: CommodityRowProps) {
+  const bias = getPriceBiasForStation(station.type, id);
+  const biasColor = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
+  const rep = station.reputation || 0;
+  const { adjBuy, adjSell } = getAdjustedPrices({ buy: p.buy, sell: p.sell }, rep);
+  const commodity = commodityById[id];
+  const held = ship.cargo[id] || 0;
+
+  return (
+    <Fragment>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {commodity?.icon && (
+          <img 
+            src={commodity.icon} 
+            alt={commodity.name}
+            style={{ 
+              width: 32, 
+              height: 32, 
+              objectFit: 'contain',
+              filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))'
+            }}
+            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+          />
+        )}
+      </div>
+      <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+          <span style={{ opacity: !canTrade(id) ? 0.5 : 1 }}>{id.replace(/_/g, ' ')}</span>
+          {(() => {
+            const tier = getCommodityTier(id);
+            const tierColor = getTierColor(tier);
+            return (
+              <span 
+                className="tier-badge"
+                style={{
+                  backgroundColor: `${tierColor}20`,
+                  color: tierColor,
+                  border: `1px solid ${tierColor}40`,
+                  opacity: !canTrade(id) ? 0.5 : 1,
+                }}
+              >
+                {getTierLabel(tier)}
+              </span>
+            );
+          })()}
+        </div>
+        {!canTrade(id) && getGatingReason(id) && (
+          <div style={{ 
+            fontSize: 9, 
+            color: '#f59e0b', 
+            marginTop: 4, 
+            fontFamily: 'monospace',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+          }}>
+            🔒 {getGatingReason(id)}
+          </div>
+        )}
+        {showFreshness && isPerishable(id) && held > 0 && (() => {
+          const freshness = ship.cargoFreshness?.[id] ?? 1.0;
+          const freshnessPercent = Math.round(freshness * 100);
+          // Color coding: green >80%, amber 20-80%, red <20%, dark red at 0%
+          const freshnessColor = freshness > 0.8 ? '#10b981' 
+            : freshness > 0.2 ? '#f59e0b' 
+            : freshness > 0 ? '#ef4444' 
+            : '#7f1d1d'; // Dark red for worthless (0%)
+          return (
+            <div style={{ width: '100%', marginTop: 6 }}>
+              <div className="freshness-bar">
+                <div 
+                  className="freshness-fill"
+                  style={{
+                    width: `${freshnessPercent}%`,
+                    background: `linear-gradient(90deg, ${freshnessColor}, ${freshnessColor}80)`,
+                  }}
+                />
+              </div>
+              <div style={{ fontSize: 9, color: freshnessColor, marginTop: 2, opacity: 0.8 }}>
+                {freshnessPercent > 0 ? `${freshnessPercent}% fresh` : 'WORTHLESS'}
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+      <div style={{ color: biasColor }}>
+        <div>
+          <span style={{ color: '#10b981' }}>${adjBuy}</span>
+          <span style={{ opacity: 0.5 }}> / </span>
+          <span style={{ color: '#ef4444' }}>${adjSell}</span>
+        </div>
+        {showAvgCostProfit && hasTradeLedger && (() => {
+          const avgCost = avgCostByCommodity[id];
+          if (avgCost && avgCost > 0) {
+            const profitPerUnit = adjSell - avgCost;
+            const profitColor = profitPerUnit >= 0 ? '#10b981' : '#ef4444';
+            const profitSymbol = profitPerUnit >= 0 ? '▲' : '▼';
+            return (
+              <div style={{ fontSize: 9, marginTop: 4, fontFamily: 'monospace' }}>
+                <div style={{ opacity: 0.7, marginBottom: 2 }}>
+                  Avg cost: <span style={{ color: '#94a3b8' }}>${Math.round(avgCost)}</span>
+                </div>
+                <div style={{ color: profitColor, fontWeight: 600 }}>
+                  {profitSymbol} {profitPerUnit >= 0 ? '+' : ''}${Math.round(profitPerUnit)}/unit
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
+        {isPerishable(id) && p.canSell !== false && (
+          <div style={{ fontSize: 9, color: '#f59e0b', marginTop: 4, opacity: 0.8 }}>
+            ⏱ Spoils in {formatSpoilageTime(getSpoilageTimeSeconds())}
+          </div>
+        )}
+      </div>
+      {/* Stock column with price effect */}
+      {(() => {
+        const currentStock = Math.round(p.stock || 0);
+        const targetStock = getTargetStock(station.type, id);
+        const stockEffect = getStockPriceEffect(currentStock, targetStock);
+        const stockPercent = Math.min(150, Math.max(0, (currentStock / targetStock) * 100));
+        // Color the bar based on stock level
+        const barColor = stockPercent > 100 ? '#3b82f6' // blue for surplus
+          : stockPercent > 50 ? '#10b981' // green for healthy
+          : stockPercent > 20 ? '#f59e0b' // amber for low
+          : '#ef4444'; // red for critical
+        
+        return (
+          <div style={{ minWidth: 70 }}>
+            <div style={{ fontWeight: 600, fontSize: 12 }}>
+              {currentStock}
+              <span style={{ opacity: 0.5, fontSize: 10 }}> / {targetStock}</span>
+            </div>
+            <div className="stock-bar">
+              <div 
+                className="stock-fill"
+                style={{
+                  width: `${Math.min(100, stockPercent)}%`,
+                  background: `linear-gradient(90deg, ${barColor}, ${barColor}80)`,
+                }}
+              />
+            </div>
+            {stockEffect.label && (
+              <span 
+                className="stock-effect-badge"
+                style={{
+                  backgroundColor: `${stockEffect.color}20`,
+                  color: stockEffect.color,
+                  border: `1px solid ${stockEffect.color}40`,
+                  marginTop: 4,
+                  display: 'inline-block',
+                }}
+              >
+                {stockEffect.label}
+              </span>
+            )}
+          </div>
+        );
+      })()}
+      <div style={{ fontWeight: 700, color: colors.secondary }}>
+        {held}
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <button
+          onClick={() => onBuy(id, qty)}
+          disabled={p.canSell === false || !canTrade(id)}
+          style={{
+            padding: '4px 10px',
+            fontSize: 10,
+            background: `linear-gradient(135deg, ${colors.primary}30, ${colors.primary}20)`,
+            border: `1px solid ${colors.primary}`,
+            borderRadius: 6,
+            color: '#e5e7eb',
+            cursor: p.canSell === false || !canTrade(id) ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+            fontFamily: 'monospace',
+            opacity: p.canSell === false || !canTrade(id) ? 0.4 : 1,
+          }}
+        >
+          BUY {qty}
+        </button>
+        <button
+          onClick={() => onSell(id, qty)}
+          disabled={p.canBuy === false || !canTrade(id)}
+          style={{
+            padding: '4px 10px',
+            fontSize: 10,
+            background: `linear-gradient(135deg, ${colors.primary}30, ${colors.primary}20)`,
+            border: `1px solid ${colors.primary}`,
+            borderRadius: 6,
+            color: '#e5e7eb',
+            cursor: p.canBuy === false || !canTrade(id) ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+            fontFamily: 'monospace',
+            opacity: p.canBuy === false || !canTrade(id) ? 0.4 : 1,
+          }}
+        >
+          SELL {qty}
+        </button>
+      </div>
+      {(p.canSell === false || p.canBuy === false) && (
+        <div style={{ gridColumn: '1 / -1', fontSize: 10, opacity: 0.6, marginTop: -4, fontFamily: 'monospace' }}>
+          {p.canSell === false && p.canBuy === false && '⚠ NOT TRADED HERE'}
+          {p.canSell === false && p.canBuy !== false && '⚠ NOT SOLD HERE'}
+          {p.canBuy === false && p.canSell !== false && '⚠ NOT BOUGHT HERE'}
+        </div>
+      )}
+    </Fragment>
+  );
+}
+
 export function CommodityGrid({
   items,
   station,
@@ -184,216 +426,24 @@ export function CommodityGrid({
           </div>
         )}
         
-        {cargoItems.map(([id, p]) => {
-          const bias = getPriceBiasForStation(station.type, id);
-          const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
-          const rep = station.reputation || 0;
-          const { adjBuy, adjSell } = getAdjustedPrices({ buy: p.buy, sell: p.sell }, rep);
-          const commodity = commodityById[id];
-          
-          return (
-            <Fragment key={id}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {commodity?.icon && (
-                  <img 
-                    src={commodity.icon} 
-                    alt={commodity.name}
-                    style={{ 
-                      width: 32, 
-                      height: 32, 
-                      objectFit: 'contain',
-                      filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))'
-                    }}
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                  />
-                )}
-              </div>
-              <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
-                  <span style={{ opacity: !canTrade(id) ? 0.5 : 1 }}>{id.replace(/_/g, ' ')}</span>
-                  {(() => {
-                    const tier = getCommodityTier(id);
-                    const tierColor = getTierColor(tier);
-                    return (
-                      <span 
-                        className="tier-badge"
-                        style={{
-                          backgroundColor: `${tierColor}20`,
-                          color: tierColor,
-                          border: `1px solid ${tierColor}40`,
-                          opacity: !canTrade(id) ? 0.5 : 1,
-                        }}
-                      >
-                        {getTierLabel(tier)}
-                      </span>
-                    );
-                  })()}
-                </div>
-                {!canTrade(id) && getGatingReason(id) && (
-                  <div style={{ 
-                    fontSize: 9, 
-                    color: '#f59e0b', 
-                    marginTop: 4, 
-                    fontFamily: 'monospace',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}>
-                    🔒 {getGatingReason(id)}
-                  </div>
-                )}
-                {isPerishable(id) && (ship.cargo[id] || 0) > 0 && (() => {
-                  const freshness = ship.cargoFreshness?.[id] ?? 1.0;
-                  const freshnessPercent = Math.round(freshness * 100);
-                  // Color coding: green >80%, amber 20-80%, red <20%, dark red at 0%
-                  const freshnessColor = freshness > 0.8 ? '#10b981' 
-                    : freshness > 0.2 ? '#f59e0b' 
-                    : freshness > 0 ? '#ef4444' 
-                    : '#7f1d1d'; // Dark red for worthless (0%)
-                  return (
-                    <div style={{ width: '100%', marginTop: 6 }}>
-                      <div className="freshness-bar">
-                        <div 
-                          className="freshness-fill"
-                          style={{
-                            width: `${freshnessPercent}%`,
-                            background: `linear-gradient(90deg, ${freshnessColor}, ${freshnessColor}80)`,
-                          }}
-                        />
-                      </div>
-                      <div style={{ fontSize: 9, color: freshnessColor, marginTop: 2, opacity: 0.8 }}>
-                        {freshnessPercent > 0 ? `${freshnessPercent}% fresh` : 'WORTHLESS'}
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-              <div style={{ color }}>
-                <div>
-                  <span style={{ color: '#10b981' }}>${adjBuy}</span>
-                  <span style={{ opacity: 0.5 }}> / </span>
-                  <span style={{ color: '#ef4444' }}>${adjSell}</span>
-                </div>
-                {hasTradeLedger && (() => {
-                  const avgCost = avgCostByCommodity[id];
-                  if (avgCost && avgCost > 0) {
-                    const profitPerUnit = adjSell - avgCost;
-                    const profitColor = profitPerUnit >= 0 ? '#10b981' : '#ef4444';
-                    const profitSymbol = profitPerUnit >= 0 ? '▲' : '▼';
-                    return (
-                      <div style={{ fontSize: 9, marginTop: 4, fontFamily: 'monospace' }}>
-                        <div style={{ opacity: 0.7, marginBottom: 2 }}>
-                          Avg cost: <span style={{ color: '#94a3b8' }}>${Math.round(avgCost)}</span>
-                        </div>
-                        <div style={{ color: profitColor, fontWeight: 600 }}>
-                          {profitSymbol} {profitPerUnit >= 0 ? '+' : ''}${Math.round(profitPerUnit)}/unit
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-                {isPerishable(id) && p.canSell !== false && (
-                  <div style={{ fontSize: 9, color: '#f59e0b', marginTop: 4, opacity: 0.8 }}>
-                    ⏱ Spoils in {formatSpoilageTime(getSpoilageTimeSeconds())}
-                  </div>
-                )}
-              </div>
-              {/* Stock column with price effect */}
-              {(() => {
-                const currentStock = Math.round(p.stock || 0);
-                const targetStock = getTargetStock(station.type, id);
-                const stockEffect = getStockPriceEffect(currentStock, targetStock);
-                const stockPercent = Math.min(150, Math.max(0, (currentStock / targetStock) * 100));
-                // Color the bar based on stock level
-                const barColor = stockPercent > 100 ? '#3b82f6' // blue for surplus
-                  : stockPercent > 50 ? '#10b981' // green for healthy
-                  : stockPercent > 20 ? '#f59e0b' // amber for low
-                  : '#ef4444'; // red for critical
-                
-                return (
-                  <div style={{ minWidth: 70 }}>
-                    <div style={{ fontWeight: 600, fontSize: 12 }}>
-                      {currentStock}
-                      <span style={{ opacity: 0.5, fontSize: 10 }}> / {targetStock}</span>
-                    </div>
-                    <div className="stock-bar">
-                      <div 
-                        className="stock-fill"
-                        style={{
-                          width: `${Math.min(100, stockPercent)}%`,
-                          background: `linear-gradient(90deg, ${barColor}, ${barColor}80)`,
-                        }}
-                      />
-                    </div>
-                    {stockEffect.label && (
-                      <span 
-                        className="stock-effect-badge"
-                        style={{
-                          backgroundColor: `${stockEffect.color}20`,
-                          color: stockEffect.color,
-                          border: `1px solid ${stockEffect.color}40`,
-                          marginTop: 4,
-                          display: 'inline-block',
-                        }}
-                      >
-                        {stockEffect.label}
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
-              <div style={{ fontWeight: 700, color: colors.secondary }}>
-                {ship.cargo[id] || 0}
-              </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  onClick={() => onBuy(id, qty)}
-                  disabled={p.canSell === false || !canTrade(id)}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: 10,
-                    background: `linear-gradient(135deg, ${colors.primary}30, ${colors.primary}20)`,
-                    border: `1px solid ${colors.primary}`,
-                    borderRadius: 6,
-                    color: '#e5e7eb',
-                    cursor: p.canSell === false || !canTrade(id) ? 'not-allowed' : 'pointer',
-                    fontWeight: 600,
-                    fontFamily: 'monospace',
-                    opacity: p.canSell === false || !canTrade(id) ? 0.4 : 1,
-                  }}
-                >
-                  BUY {qty}
-                </button>
-                <button
-                  onClick={() => onSell(id, qty)}
-                  disabled={p.canBuy === false || !canTrade(id)}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: 10,
-                    background: `linear-gradient(135deg, ${colors.primary}30, ${colors.primary}20)`,
-                    border: `1px solid ${colors.primary}`,
-                    borderRadius: 6,
-                    color: '#e5e7eb',
-                    cursor: p.canBuy === false || !canTrade(id) ? 'not-allowed' : 'pointer',
-                    fontWeight: 600,
-                    fontFamily: 'monospace',
-                    opacity: p.canBuy === false || !canTrade(id) ? 0.4 : 1,
-                  }}
-                >
-                  SELL {qty}
-                </button>
-              </div>
-              {(p.canSell === false || p.canBuy === false) && (
-                <div style={{ gridColumn: '1 / -1', fontSize: 10, opacity: 0.6, marginTop: -4, fontFamily: 'monospace' }}>
-                  {p.canSell === false && p.canBuy === false && '⚠ NOT TRADED HERE'}
-                  {p.canSell === false && p.canBuy !== false && '⚠ NOT SOLD HERE'}
-                  {p.canBuy === false && p.canSell !== false && '⚠ NOT BOUGHT HERE'}
-                </div>
-              )}
-            </Fragment>
-          );
-        })}
+        {cargoItems.map(([id, p]) => (
+          <CommodityRow
+            key={id}
+            id={id}
+            p={p}
+            station={station}
+            ship={ship}
+            qty={qty}
+            colors={colors}
+            hasTradeLedger={hasTradeLedger}
+            avgCostByCommodity={avgCostByCommodity}
+            canTrade={canTrade}
+            onBuy={onBuy}
+            onSell={onSell}
+            showFreshness={true}
+            showAvgCostProfit={true}
+          />
+        ))}
         
         {/* Other available commodities section */}
         {otherItems.length > 0 && (
@@ -402,172 +452,24 @@ export function CommodityGrid({
           </div>
         )}
         
-        {otherItems.map(([id, p]) => {
-          const bias = getPriceBiasForStation(station.type, id);
-          const color = bias === 'cheap' ? '#10b981' : bias === 'expensive' ? '#ef4444' : undefined;
-          const rep = station.reputation || 0;
-          const { adjBuy, adjSell } = getAdjustedPrices({ buy: p.buy, sell: p.sell }, rep);
-          const commodity = commodityById[id];
-          
-          return (
-            <Fragment key={id}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {commodity?.icon && (
-                  <img 
-                    src={commodity.icon} 
-                    alt={commodity.name}
-                    style={{ 
-                      width: 32, 
-                      height: 32, 
-                      objectFit: 'contain',
-                      filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))'
-                    }}
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                  />
-                )}
-              </div>
-              <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
-                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
-                  <span style={{ opacity: !canTrade(id) ? 0.5 : 1 }}>{id.replace(/_/g, ' ')}</span>
-                  {(() => {
-                    const tier = getCommodityTier(id);
-                    const tierColor = getTierColor(tier);
-                    return (
-                      <span 
-                        className="tier-badge"
-                        style={{
-                          backgroundColor: `${tierColor}20`,
-                          color: tierColor,
-                          border: `1px solid ${tierColor}40`,
-                          opacity: !canTrade(id) ? 0.5 : 1,
-                        }}
-                      >
-                        {getTierLabel(tier)}
-                      </span>
-                    );
-                  })()}
-                </div>
-                {!canTrade(id) && getGatingReason(id) && (
-                  <div style={{ 
-                    fontSize: 9, 
-                    color: '#f59e0b', 
-                    marginTop: 4, 
-                    fontFamily: 'monospace',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}>
-                    🔒 {getGatingReason(id)}
-                  </div>
-                )}
-              </div>
-              <div style={{ color }}>
-                <div>
-                  <span style={{ color: '#10b981' }}>${adjBuy}</span>
-                  <span style={{ opacity: 0.5 }}> / </span>
-                  <span style={{ color: '#ef4444' }}>${adjSell}</span>
-                </div>
-                {isPerishable(id) && p.canSell !== false && (
-                  <div style={{ fontSize: 9, color: '#f59e0b', marginTop: 4, opacity: 0.8 }}>
-                    ⏱ Spoils in {formatSpoilageTime(getSpoilageTimeSeconds())}
-                  </div>
-                )}
-              </div>
-              {/* Stock column with price effect */}
-              {(() => {
-                const currentStock = Math.round(p.stock || 0);
-                const targetStock = getTargetStock(station.type, id);
-                const stockEffect = getStockPriceEffect(currentStock, targetStock);
-                const stockPercent = Math.min(150, Math.max(0, (currentStock / targetStock) * 100));
-                // Color the bar based on stock level
-                const barColor = stockPercent > 100 ? '#3b82f6' // blue for surplus
-                  : stockPercent > 50 ? '#10b981' // green for healthy
-                  : stockPercent > 20 ? '#f59e0b' // amber for low
-                  : '#ef4444'; // red for critical
-                
-                return (
-                  <div style={{ minWidth: 70 }}>
-                    <div style={{ fontWeight: 600, fontSize: 12 }}>
-                      {currentStock}
-                      <span style={{ opacity: 0.5, fontSize: 10 }}> / {targetStock}</span>
-                    </div>
-                    <div className="stock-bar">
-                      <div 
-                        className="stock-fill"
-                        style={{
-                          width: `${Math.min(100, stockPercent)}%`,
-                          background: `linear-gradient(90deg, ${barColor}, ${barColor}80)`,
-                        }}
-                      />
-                    </div>
-                    {stockEffect.label && (
-                      <span 
-                        className="stock-effect-badge"
-                        style={{
-                          backgroundColor: `${stockEffect.color}20`,
-                          color: stockEffect.color,
-                          border: `1px solid ${stockEffect.color}40`,
-                          marginTop: 4,
-                          display: 'inline-block',
-                        }}
-                      >
-                        {stockEffect.label}
-                      </span>
-                    )}
-                  </div>
-                );
-              })()}
-              <div style={{ fontWeight: 700, color: colors.secondary }}>
-                {ship.cargo[id] || 0}
-              </div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  onClick={() => onBuy(id, qty)}
-                  disabled={p.canSell === false || !canTrade(id)}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: 10,
-                    background: `linear-gradient(135deg, ${colors.primary}30, ${colors.primary}20)`,
-                    border: `1px solid ${colors.primary}`,
-                    borderRadius: 6,
-                    color: '#e5e7eb',
-                    cursor: p.canSell === false || !canTrade(id) ? 'not-allowed' : 'pointer',
-                    fontWeight: 600,
-                    fontFamily: 'monospace',
-                    opacity: p.canSell === false || !canTrade(id) ? 0.4 : 1,
-                  }}
-                >
-                  BUY {qty}
-                </button>
-                <button
-                  onClick={() => onSell(id, qty)}
-                  disabled={p.canBuy === false || !canTrade(id)}
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: 10,
-                    background: `linear-gradient(135deg, ${colors.primary}30, ${colors.primary}20)`,
-                    border: `1px solid ${colors.primary}`,
-                    borderRadius: 6,
-                    color: '#e5e7eb',
-                    cursor: p.canBuy === false || !canTrade(id) ? 'not-allowed' : 'pointer',
-                    fontWeight: 600,
-                    fontFamily: 'monospace',
-                    opacity: p.canBuy === false || !canTrade(id) ? 0.4 : 1,
-                  }}
-                >
-                  SELL {qty}
-                </button>
-              </div>
-              {(p.canSell === false || p.canBuy === false) && (
-                <div style={{ gridColumn: '1 / -1', fontSize: 10, opacity: 0.6, marginTop: -4, fontFamily: 'monospace' }}>
-                  {p.canSell === false && p.canBuy === false && '⚠ NOT TRADED HERE'}
-                  {p.canSell === false && p.canBuy !== false && '⚠ NOT SOLD HERE'}
-                  {p.canBuy === false && p.canSell !== false && '⚠ NOT BOUGHT HERE'}
-                </div>
-              )}
-            </Fragment>
-          );
-        })}
+        {otherItems.map(([id, p]) => (
+          <CommodityRow
+            key={id}
+            id={id}
+            p={p}
+            station={station}
+            ship={ship}
+            qty={qty}
+            colors={colors}
+            hasTradeLedger={hasTradeLedger}
+            avgCostByCommodity={avgCostByCommodity}
+            canTrade={canTrade}
+            onBuy={onBuy}
+            onSell={onSell}
+            showFreshness={false}
+            showAvgCostProfit={false}
+          />
+        ))}
       </div>
     </>
   );
