@@ -26,12 +26,20 @@ Systems-driven 3D space trading game with a dynamic economy, narrative-driven mi
 - **Background music**: Ambient exploration music and station-specific themes with smooth crossfading.
 - Optional tutorial guides new players through core mechanics.
 
+**Station Screen** – Dock at stations to meet commanders, view market opportunities, and manage reputation.
+
+![Station Screen](docs/StationScreen.png)
+
 Core loop:
 1) Identify price gaps and route opportunities.
 2) Buy goods at source → move → sell at demand destination.
 3) Fabricate at intermediate stations when profitable (if permitted).
 4) Complete mission arcs to unlock rewards and permanent economic effects.
 5) Reinvest in upgrades and capabilities to unlock new routes and margins.
+
+**Commodity Exchange** – Trade commodities, fabricate goods, and track market prices at refinery and fabrication stations.
+
+![Trading Market](docs/TradingMarket.png)
 
 ## Requirements
 
@@ -297,6 +305,8 @@ Stations belong to factions with reputation propagation:
 - **Independent Workers**: Greenfields, Drydock, Freeport
 - **Corporate**: Aurum Fab, Ceres Power Plant
 - **Pirate**: Hidden Cove
+
+![Political Alignment](MissionAlignment.png)
 
 Actions at one station affect other stations in the same faction (+50% of rep change).
 
