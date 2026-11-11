@@ -12,7 +12,7 @@ interface ShipyardSectionProps {
   ship: Ship;
   hasIntel: boolean;
   onUpgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel' | 'ledger' | 'tempcargo' | 'shieldedcargo', amount: number, cost: number) => void;
-  onReplaceShip: (kind: string, cost: number) => void;
+  onReplaceShip: (kind: Ship['kind'], cost: number) => void;
 }
 
 export function ShipyardSection({
@@ -235,7 +235,7 @@ export function ShipyardSection({
               </div>
               <SciFiButton
                 stationType={stationType}
-                onClick={() => onReplaceShip(s.kind, s.price)}
+                onClick={() => onReplaceShip(s.kind as Ship['kind'], s.price)}
                 disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}
                 style={{ fontSize: 11, padding: '6px 12px' }}
               >

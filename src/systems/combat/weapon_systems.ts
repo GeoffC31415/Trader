@@ -1,176 +1,90 @@
-// Weapon system logic - firing, damage calculation, projectile physics
-
 import type { ShipWeapon, Projectile, DamageEvent } from '../../domain/types/combat_types';
 import type { Ship, NpcTrader } from '../../domain/types/world_types';
-import { WEAPON_BASE_STATS, WEAPON_UPGRADE_BONUSES, PROJECTILE_DESPAWN_TIME, HITSCAN_INSTANT_HIT_TIME } from '../../domain/constants/weapon_constants';
+import { WEAPON_UPGRADE_BONUSES, PROJECTILE_DESPAWN_TIME } from '../../domain/constants/weapon_constants';
 import { distance } from '../../shared/math/vec3';
+type Vec = [number, number, number];
 
-// Calculate actual weapon stats including upgrades
 export function getWeaponStats(weapon: ShipWeapon): ShipWeapon {
-  const base = WEAPON_BASE_STATS[weapon.kind];
-  return {
-    ...weapon,
-    damage: base.damage + (weapon.damageLevel * WEAPON_UPGRADE_BONUSES.damage),
-    fireRate: base.fireRate + (weapon.fireRateLevel * WEAPON_UPGRADE_BONUSES.fireRate),
-    range: base.range + (weapon.rangeLevel * WEAPON_UPGRADE_BONUSES.range),
+  return { ...weapon,
+    damage: weapon.damage + weapon.damageLevel * WEAPON_UPGRADE_BONUSES.damage,
+    fireRate: weapon.fireRate + weapon.fireRateLevel * WEAPON_UPGRADE_BONUSES.fireRate,
+    range: weapon.range + weapon.rangeLevel * WEAPON_UPGRADE_BONUSES.range,
   };
 }
 
-// Create a projectile when firing
-export function createProjectile(
-  weapon: ShipWeapon,
-  shooterPos: [number, number, number],
-  shooterVel: [number, number, number],
-  targetPos: [number, number, number] | null,
-  ownerId: string,
-  ownerType: 'player' | 'npc'
-): Projectile {
+export function createProjectile(weapon: ShipWeapon, shooterPos: Vec, shooterVel: Vec, targetPos: Vec | null, ownerId: string, ownerType: 'player' | 'npc'): Projectile {
   const stats = getWeaponStats(weapon);
-  const id = `proj_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  const delta: Vec = targetPos ? targetPos.map((v, i) => v - shooterPos[i]) as Vec : [0, 0, -1];
+  const length = Math.hypot(...delta) || 1;
+  const direction = delta.map(v => v / length) as Vec;
+  const hitscan = stats.projectileSpeed === 0;
+  const lifetime = hitscan ? 0.12 : Math.min(PROJECTILE_DESPAWN_TIME, stats.range / stats.projectileSpeed);
+  return {
+    id: `proj_${Date.now()}_${Math.random().toString(36).slice(2)}`, ownerId, ownerType,
+    position: [...shooterPos], previousPosition: [...shooterPos], direction,
+    velocity: direction.map((v, i) => hitscan ? 0 : v * stats.projectileSpeed + shooterVel[i] * 0.5) as Vec,
+    damage: stats.damage, lifetime, maxLifetime: lifetime, weaponKind: weapon.kind,
+    range: stats.range, distanceTraveled: 0, hitscan,
+  };
+}
 
-  // Calculate direction to target or forward
-  let direction: [number, number, number];
-  if (targetPos) {
-    const dx = targetPos[0] - shooterPos[0];
-    const dy = targetPos[1] - shooterPos[1];
-    const dz = targetPos[2] - shooterPos[2];
-    const len = Math.sqrt(dx * dx + dy * dy + dz * dz);
-    if (len > 0.001) {
-      direction = [dx / len, dy / len, dz / len];
-    } else {
-      direction = [1, 0, 0]; // default forward
-    }
+export function updateProjectile(p: Projectile, dt: number): Projectile {
+  if (p.hitscan) return { ...p, lifetime: p.lifetime - dt };
+  const remaining = Math.max(0, (p.range ?? Infinity) - (p.distanceTraveled ?? 0));
+  const speed = Math.hypot(...p.velocity);
+  const step = Math.min(dt, remaining / Math.max(speed, 0.001));
+  return { ...p, previousPosition: [...p.position],
+    position: p.position.map((v, i) => v + p.velocity[i] * step) as Vec,
+    distanceTraveled: (p.distanceTraveled ?? 0) + speed * step,
+    lifetime: p.lifetime - dt,
+  };
+}
+
+// Returns the first intersection along a finite segment, including when it starts inside.
+function intersect(start: Vec, end: Vec, center: Vec, radius: number): number | null {
+  const d = end.map((v, i) => v - start[i]);
+  const m = start.map((v, i) => v - center[i]);
+  const a = d.reduce((sum, v) => sum + v * v, 0);
+  const c = m.reduce((sum, v) => sum + v * v, 0) - radius * radius;
+  if (c <= 0) return 0;
+  if (a < 1e-12) return null;
+  const b = m.reduce((sum, v, i) => sum + v * d[i], 0);
+  const disc = b * b - a * c;
+  if (disc < 0) return null;
+  const t = (-b - Math.sqrt(disc)) / a;
+  return t >= 0 && t <= 1 ? t : null;
+}
+
+export function checkProjectileCollision(p: Projectile, ship: Ship, npcs: NpcTrader[]): DamageEvent | null {
+  if (p.resolved) return null;
+  const start = p.previousPosition ?? p.position;
+  const end = p.hitscan && p.direction
+    ? p.position.map((v, i) => v + p.direction![i] * (p.range ?? 0)) as Vec : p.position;
+  const candidates: { id: string; type: 'player' | 'npc'; position: Vec }[] = [];
+  if (p.ownerType === 'npc') {
+    if (!ship.dockedStationId && ship.hp > 0) candidates.push({ id: 'player', type: 'player', position: ship.position });
+    // Friendly escorts are vulnerable; hostile NPCs cannot friendly-fire one another.
+    candidates.push(...npcs.filter(n => n.hp > 0 && !n.isHostile && n.id !== p.ownerId)
+      .map(n => ({ id: n.id, type: 'npc' as const, position: n.position })));
   } else {
-    // Default forward direction if no target
-    direction = [1, 0, 0];
+    candidates.push(...npcs.filter(n => n.hp > 0).map(n => ({ id: n.id, type: 'npc' as const, position: n.position })));
   }
-
-  // Projectile velocity = direction * speed + shooter velocity (inheritance)
-  const speed = stats.projectileSpeed;
-  const velocity: [number, number, number] = [
-    direction[0] * speed + shooterVel[0] * 0.5,
-    direction[1] * speed + shooterVel[1] * 0.5,
-    direction[2] * speed + shooterVel[2] * 0.5,
-  ];
-
-  // Hitscan weapons have very short lifetime
-  const lifetime = speed === 0 ? HITSCAN_INSTANT_HIT_TIME : PROJECTILE_DESPAWN_TIME;
-
-  return {
-    id,
-    ownerId,
-    ownerType,
-    position: [...shooterPos],
-    velocity,
-    damage: stats.damage,
-    lifetime,
-    maxLifetime: lifetime,
-    weaponKind: weapon.kind,
-  };
+  let closest: { t: number; id: string; type: 'player' | 'npc' } | undefined;
+  for (const candidate of candidates) {
+    const t = intersect(start, end, candidate.position, 8);
+    if (t !== null && (!closest || t < closest.t)) closest = { t, id: candidate.id, type: candidate.type };
+  }
+  return closest ? { targetId: closest.id, targetType: closest.type, damage: p.damage, sourceId: p.ownerId, sourceType: p.ownerType } : null;
 }
 
-// Update projectile position and lifetime
-export function updateProjectile(projectile: Projectile, dt: number): Projectile {
-  return {
-    ...projectile,
-    position: [
-      projectile.position[0] + projectile.velocity[0] * dt,
-      projectile.position[1] + projectile.velocity[1] * dt,
-      projectile.position[2] + projectile.velocity[2] * dt,
-    ],
-    lifetime: projectile.lifetime - dt,
-  };
-}
-
-// Check if projectile hit a target (sphere collision)
-export function checkProjectileCollision(
-  projectile: Projectile,
-  ship: Ship,
-  npcs: NpcTrader[]
-): DamageEvent | null {
-  const hitRadius = 20; // collision radius for hits
-
-  // Check hit on player ship
-  if (projectile.ownerType === 'npc') {
-    const dist = distance(projectile.position, ship.position);
-    if (dist < hitRadius) {
-      return {
-        targetId: 'player',
-        targetType: 'player',
-        damage: projectile.damage,
-        sourceId: projectile.ownerId,
-        sourceType: 'npc',
-      };
-    }
-  }
-
-  // Check hit on NPCs
-  if (projectile.ownerType === 'player') {
-    for (const npc of npcs) {
-      const dist = distance(projectile.position, npc.position);
-      if (dist < hitRadius) {
-        return {
-          targetId: npc.id,
-          targetType: 'npc',
-          damage: projectile.damage,
-          sourceId: projectile.ownerId,
-          sourceType: 'player',
-        };
-      }
-    }
-  }
-
-  return null;
-}
-
-// Check if weapon can fire (fire rate limiting)
 export function canFireWeapon(weapon: ShipWeapon, lastFireTime: number, currentTime: number): boolean {
-  const stats = getWeaponStats(weapon);
-  const fireInterval = 1000 / stats.fireRate; // milliseconds between shots
-  return (currentTime - lastFireTime) >= fireInterval;
+  return currentTime - lastFireTime >= 1000 / getWeaponStats(weapon).fireRate;
 }
-
-// Calculate energy cost for firing
-export function getFireEnergyCost(weapon: ShipWeapon): number {
-  return WEAPON_BASE_STATS[weapon.kind].energyCost;
+export function getFireEnergyCost(weapon: ShipWeapon): number { return weapon.energyCost; }
+export function isInRange(shooterPos: Vec, targetPos: Vec, weapon: ShipWeapon): boolean {
+  return distance(shooterPos, targetPos) <= getWeaponStats(weapon).range;
 }
-
-// Calculate if target is in range
-export function isInRange(
-  shooterPos: [number, number, number],
-  targetPos: [number, number, number],
-  weapon: ShipWeapon
-): boolean {
-  const stats = getWeaponStats(weapon);
-  const dist = distance(shooterPos, targetPos);
-  return dist <= stats.range;
+export function calculateLeadPosition(shooterPos: Vec, targetPos: Vec, targetVel: Vec, projectileSpeed: number): Vec {
+  const time = projectileSpeed > 0 ? distance(shooterPos, targetPos) / projectileSpeed : 0;
+  return targetPos.map((v, i) => v + targetVel[i] * time) as Vec;
 }
-
-// Lead target calculation for projectile weapons (predict where to shoot)
-export function calculateLeadPosition(
-  shooterPos: [number, number, number],
-  targetPos: [number, number, number],
-  targetVel: [number, number, number],
-  projectileSpeed: number
-): [number, number, number] {
-  // Simple lead calculation
-  const dx = targetPos[0] - shooterPos[0];
-  const dy = targetPos[1] - shooterPos[1];
-  const dz = targetPos[2] - shooterPos[2];
-  const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-  
-  if (projectileSpeed === 0) {
-    // Hitscan - no lead needed
-    return targetPos;
-  }
-
-  const timeToTarget = dist / projectileSpeed;
-  
-  return [
-    targetPos[0] + targetVel[0] * timeToTarget,
-    targetPos[1] + targetVel[1] * timeToTarget,
-    targetPos[2] + targetVel[2] * timeToTarget,
-  ];
-}
-
-

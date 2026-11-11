@@ -63,12 +63,12 @@ export function shouldNpcFire(
   currentTime: number
 ): boolean {
   // Must be alive and aggressive
-  if (npcHp <= 0 || !aggressionState?.isAggressive) {
+  if (npcHp <= 0 || ship.hp <= 0 || ship.dockedStationId || !(aggressionState?.isAggressive || npc.isAggressive || npc.isHostile)) {
     return false;
   }
 
   // Must have player as target
-  if (aggressionState.targetId !== 'player') {
+  if (aggressionState?.targetId && aggressionState.targetId !== 'player') {
     return false;
   }
 
@@ -84,8 +84,7 @@ export function shouldNpcFire(
     return false;
   }
 
-  // Random chance to fire (70% when in range and ready)
-  return Math.random() < 0.7;
+  return true; // Deterministic cooldown; independent of frame rate.
 }
 
 // Create NPC weapon (simplified, non-upgradeable)

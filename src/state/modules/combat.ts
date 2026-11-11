@@ -62,6 +62,7 @@ export function updateCombat(
     npcLastFireTimes: Record<string, number>;
     lastFireTime: number;
     stations: Station[];
+    now?: number;
   },
   dt: number
 ): CombatUpdateResult {
@@ -79,11 +80,9 @@ export function updateCombat(
   }
 
   // Update projectiles
-  projectiles = projectiles
-    .map(p => updateProjectile(p, dt))
-    .filter(p => p.lifetime > 0);
+  projectiles = projectiles.map(p => updateProjectile(p, dt));
 
-  const currentTime = Date.now();
+  const currentTime = state.now ?? Date.now();
   const damageEvents: Array<{
     targetId: string;
     targetType: 'player' | 'npc';
@@ -103,7 +102,8 @@ export function updateCombat(
   }
 
   // Remove projectiles that hit
-  projectiles = projectiles.filter(p => !projectilesToRemove.has(p.id));
+  projectiles = projectiles.filter(p => !projectilesToRemove.has(p.id) && p.lifetime > 0)
+    .map(p => p.hitscan ? { ...p, resolved: true } : p);
 
   // Apply damage and update aggression
   for (const event of damageEvents) {
@@ -159,8 +159,10 @@ export function updateCombat(
     const aggressionState = npcAggression[npc.id];
     const lastFire = npcLastFireTimes[npc.id] || 0;
 
-    if (shouldNpcFire(npc, npc.hp, ship, aggressionState, lastFire, currentTime)) {
-      const npcProjectile = npcFireAtPlayer(npc, ship);
+    const escort = npcTraders.find(n => n.isMissionEscort && n.missionId === npc.missionId && n.hp > 0);
+    const target = escort ? { ...ship, position: escort.position, velocity: escort.velocity ?? [0, 0, 0] as [number, number, number], dockedStationId: undefined } : ship;
+    if (shouldNpcFire(npc, npc.hp, target, aggressionState, lastFire, currentTime)) {
+      const npcProjectile = npcFireAtPlayer(npc, target);
       projectiles.push(npcProjectile);
       npcLastFireTimes[npc.id] = currentTime;
     }
@@ -282,12 +284,13 @@ export function spawnHostileDefenders(
 export function firePlayerWeapon(
   ship: Ship,
   lastFireTime: number,
-  targetPos: [number, number, number] | null
+  targetPos: [number, number, number] | null,
+  now = Date.now()
 ): { ship: Ship; projectile: Projectile } | null {
   // Can't fire while docked
-  if (ship.dockedStationId) return null;
+  if (ship.dockedStationId || ship.hp <= 0) return null;
 
-  const currentTime = Date.now();
+  const currentTime = now;
   const weapon = ship.weapon;
 
   // Check fire rate cooldown
@@ -365,7 +368,7 @@ export function upgradePlayerWeapon(
  */
 export function purchasePlayerWeapon(
   ship: Ship,
-  weaponKind: 'laser' | 'railgun' | 'missile',
+  weaponKind: 'laser' | 'plasma' | 'railgun' | 'missile',
   cost: number,
   hasMarketIntel: boolean
 ): Ship | null {

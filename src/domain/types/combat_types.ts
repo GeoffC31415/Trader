@@ -27,7 +27,14 @@ export type Projectile = {
   lifetime: number; // remaining seconds before despawn
   maxLifetime: number; // starting lifetime
   weaponKind: WeaponKind;
-  // For homing missiles
+  // Swept collision / hitscan use a finite segment, not a point at the shooter.
+  previousPosition?: [number, number, number];
+  direction?: [number, number, number];
+  range?: number;
+  distanceTraveled?: number;
+  hitscan?: boolean;
+  resolved?: boolean;
+  // For homing missiles and explicit AI target selection
   targetId?: string;
   homingStrength?: number;
 };

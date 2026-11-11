@@ -1,6 +1,7 @@
 import type { Commodity, StationInventory } from '../types/economy_types';
 import type { StationType } from '../types/economy_types';
-import type { ShipWeapon, WeaponKind } from './combat_types';
+import type { ShipWeapon, WeaponKind, Projectile } from './combat_types';
+import type { EscortMissionState } from '../../systems/missions/escort_system';
 import type { Mission, MissionArc, NarrativeContext } from './mission_types';
 import type { ShipKind } from '../constants/ship_kinds';
 import type { CharacterMemory, DialogueLine } from './character_types';
@@ -122,6 +123,9 @@ export type NpcTrader = {
   isAggressive?: boolean; // true if NPC attacks on sight
   isDefendInPlace?: boolean; // true if defending a location (stationary)
   kind?: 'freighter' | 'clipper' | 'miner'; // ship visual type
+  targetGroup?: string;
+  role?: 'raider' | 'convoy' | 'turret' | 'defender';
+  launched?: boolean;
 };
 
 export type TradeEntry = {
@@ -266,17 +270,7 @@ export type GameState = {
     objectiveId: string;
     startTime: number; // timestamp in ms
   };
-  escortStates: Map<string, {
-    missionId: string;
-    escortNpcId: string;
-    escortHp: number;
-    escortMaxHp: number;
-    destinationStationId: string;
-    lastWaveTime: number;
-    waveCount: number;
-    hasReachedDestination: boolean;
-    spawnedPirateIds: string[];
-  }>;
+  escortStates: Map<string, EscortMissionState>;
   // Mission choice system (Phase 5)
   permanentEffects?: Array<{
     type: 'price_discount' | 'fabrication_discount' | 'production_efficiency';
@@ -299,17 +293,7 @@ export type GameState = {
   // Political compass - tracks player choices across mission arcs
   politicalProfile?: PlayerPoliticalProfile;
   // Combat state
-  projectiles: Array<{
-    id: string;
-    ownerId: string;
-    ownerType: 'player' | 'npc';
-    position: [number, number, number];
-    velocity: [number, number, number];
-    damage: number;
-    lifetime: number;
-    maxLifetime: number;
-    weaponKind: 'laser' | 'plasma' | 'railgun' | 'missile';
-  }>;
+  projectiles: Projectile[];
   lastFireTime: number; // player's last fire time
   npcLastFireTimes: Record<string, number>; // npcId -> last fire time
   npcAggression: Record<string, {
@@ -329,7 +313,7 @@ export type GameState = {
   buy: (commodityId: string, quantity: number) => void;
   sell: (commodityId: string, quantity: number) => void;
   process: (inputId: string, outputs: number) => void;
-  upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel', amount: number, cost: number) => void;
+  upgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel' | 'ledger' | 'tempcargo' | 'shieldedcargo', amount: number, cost: number) => void;
   replaceShip: (kind: ShipKind, cost: number) => void;
   chooseStarter: (kind: ShipKind | 'test', opts?: { tutorial?: boolean }) => void;
   setTutorialActive: (active: boolean) => void;
@@ -345,6 +329,10 @@ export type GameState = {
   checkMissionProgress: () => void;
   completeMission: (missionId: string) => void;
   makeMissionChoice: (missionId: string, choiceId: string) => void;
+  completeMissionObjective: (missionId: string, objectiveId: string) => void;
+  startInstallDevice: (missionId: string, objectiveId: string) => void;
+  stopInstallDevice: () => void;
+  recordDialogueShown: (stationId: string, lineIds: string[]) => void;
   // Combat actions
   fireWeapon: (targetPos?: [number, number, number]) => void;
   upgradeWeapon: (upgradeType: 'damage' | 'fireRate' | 'range', cost: number) => void;

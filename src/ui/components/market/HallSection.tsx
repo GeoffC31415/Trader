@@ -20,7 +20,7 @@ interface HallSectionProps {
   onBuy: (id: string, qty: number) => void;
   onSell: (id: string, qty: number) => void;
   onUpgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel' | 'ledger' | 'tempcargo' | 'shieldedcargo', amount: number, cost: number) => void;
-  onReplaceShip: (kind: string, cost: number) => void;
+  onReplaceShip: (kind: Ship['kind'], cost: number) => void;
   hasIntel: boolean;
   avgCostByCommodity: Record<string, number>;
 }

@@ -400,7 +400,7 @@ export function DockIntro() {
         // Surplus score: higher when station sells cheap (good for player to buy)
         surplusScore: item.canSell !== false ? (1 / buyPriceRatio) * (bias === 'cheap' ? 1.3 : bias === 'expensive' ? 0.7 : 1.0) : 0,
       };
-    }).filter(Boolean) as NonNullable<typeof opportunities[0]>[];
+    }).filter((item): item is NonNullable<typeof item> => item !== null);
     
     // Sort by demand (station wants to buy = player can sell)
     const inDemand = opportunities

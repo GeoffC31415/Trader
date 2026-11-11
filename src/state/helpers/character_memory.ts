@@ -120,7 +120,7 @@ export function getActionPropagation(action: string): {
   spreadsToAll: boolean;
 } {
   // Actions that everyone hears about
-  const universalActions = [
+  const universalActions: string[] = [
     SIGNIFICANT_ACTIONS.GREENFIELDS_INDEPENDENT,
     SIGNIFICANT_ACTIONS.GREENFIELDS_CONTROLLED,
     SIGNIFICANT_ACTIONS.AURUM_WON_CONTRACT,
@@ -167,7 +167,7 @@ export function getActionPropagation(action: string): {
     },
   };
   
-  return propagationMap[action] ?? { allies: [], rivals: [], spreadsToAll: false };
+  return { ...(propagationMap[action] ?? { allies: [], rivals: [] }), spreadsToAll: false };
 }
 
 /**

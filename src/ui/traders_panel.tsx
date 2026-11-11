@@ -92,7 +92,7 @@ export function TradersPanel() {
           priceVsAvg: Math.round(((opt.sellPrice / avgPrice) - 1) * 100),
         })),
       };
-    }).filter(Boolean).slice(0, 4) as NonNullable<typeof cargoRecommendations[0]>[];
+    }).filter((item): item is NonNullable<typeof item> => item !== null).slice(0, 4);
   }, [ship.cargo, ship.position, stations, commodityById, poll]);
 
   // ============== ROUTE COMPETITION ANALYSIS ==============

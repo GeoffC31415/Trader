@@ -22,7 +22,7 @@ describe('priceForStation', () => {
 
   it('applies distance premium for commodities', () => {
     const stationPos: [number, number, number] = [1000, 0, 1000];
-    const stationsMeta = [
+    const stationsMeta: { id: string; type: 'refinery'; position: [number, number, number] }[] = [
       { id: 'refinery1', type: 'refinery' as const, position: [0, 0, 0] },
       { id: 'refinery2', type: 'refinery' as const, position: [500, 0, 500] },
     ];
