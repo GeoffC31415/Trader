@@ -3,7 +3,7 @@ import { netAssetValue } from '../../../systems/finance';
 import { humanize } from '../../../systems/journal';
 import { HistoryChart, simTime } from './JournalCharts';
 import './assets.css';
-const money = (value: number) => `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} cr`;
+const money = (value: number) => `${(value === 0 ? 0 : value).toLocaleString(undefined, { maximumFractionDigits: 2 })} cr`;
 export function AssetOverview({ s }: { s: GameState }) {
   const value = netAssetValue(s), history = s.finance?.navHistory ?? [];
   const current = { at: s.gameTime, value: value.total };

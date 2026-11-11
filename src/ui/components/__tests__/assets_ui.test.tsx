@@ -40,6 +40,10 @@ it('Meridian has a distinct persona and an operational loan facility', () => {
 });
 it('command deck presents consolidated NAV and real historical observations including liabilities', () => {
   const s = setup(); const value = netAssetValue(s).total;
+  const initial = render(<JournalPanel />);
+  expect(screen.getByText('Loan liability').parentElement!.textContent).toBe('Loan liability0 cr');
+  expect(screen.getByRole('figure', { name: 'Net asset value over time' }).querySelectorAll('circle')).toHaveLength(1);
+  initial.unmount();
   useGameStore.setState({ finance: { ...s.finance!, loan: { principal: 1000, interest: 40000, dueAt: 600 }, navHistory: [{ at: 0, value }, { at: 30, value: value - 41000 }], lastNavAt: 30 }, gameTime: 30 });
   render(<JournalPanel />);
   const overview = screen.getByRole('region', { name: 'Net asset value overview' });
