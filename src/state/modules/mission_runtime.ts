@@ -117,10 +117,10 @@ export function acceptStoryMission(s: GameState, id: string): GameState {
     for (const o of m.objectives.filter(o => o.type === 'destroy')) for (let i = 0; i < (o.quantity ?? 1); i++) {
       const turret = id.startsWith('pirate_accords');
       const angle = (targets.length + 1) * 2.1;
-      const position: [number, number, number] = [station.position[0] + Math.cos(angle) * 100, station.position[1], station.position[2] + Math.sin(angle) * 100];
+      const position: [number, number, number] = [station.position[0] + Math.cos(angle) * (turret ? 100 : 600), station.position[1], station.position[2] + Math.sin(angle) * (turret ? 100 : 600)];
       targets.push({ id: `${id}:${m.attempt}:${o.target ?? o.id}:${i}`, targetGroup: o.target, missionId: id, isMissionTarget: true,
         hp: turret ? 100 : 70, maxHp: turret ? 100 : 70, position, velocity: [0, 0, 0], fromId: station.id, toId: station.id,
-        isHostile: true, isAggressive: true, role: turret ? 'turret' : 'raider', kind: turret ? 'miner' : 'freighter' });
+        isHostile: turret, isAggressive: turret, role: turret ? 'turret' : 'convoy', speed: 5, path: [position, [...station.position]], pathProgress: 0, launched: false, kind: turret ? 'miner' : 'freighter' });
     }
     s = { ...s, npcTraders: [...s.npcTraders, ...targets] };
   }
@@ -206,12 +206,16 @@ export function tickStoryMissions(input: GameState, dt: number, kills: { npcId: 
       const station = s.stations.find(st => st.id === o.target)!;
       const key = `${m.id}:${station.id}`;
       const previous = s.stealthStates.get(key)?.suspicionLevel ?? 0;
-      const level = updateSuspicionLevel(previous, distance(s.ship.position, station.position) < DETECTION_RADIUS, !s.ship.dockedStationId && shouldDetectShip(s.ship, m, o), dt);
+      const level = updateSuspicionLevel(previous, distance(s.ship.position, station.position) < DETECTION_RADIUS, !s.ship.dockedStationId && shouldDetectShip(s.ship, m, o), dt * (s.ship.silentRunning ? 0.25 : 1));
       const stealthStates = new Map(s.stealthStates).set(key, { stationId: station.id, suspicionLevel: level, detected: level >= 100 });
       s = { ...s, stealthStates };
       if (level >= 100) s = dispatchMissionEvents(s, [{ type: 'detection_triggered', stationId: station.id, missionId: m.id }]);
     }
     m = s.missions.find(x => x.id === snapshot.id)!;
+    if (m.status === 'active' && m.type === 'combat' && s.npcTraders.some(n => n.missionId === m.id && n.role === 'convoy' && n.launched && distance(n.position, s.stations.find(st => st.id === n.toId)!.position) < 40)) {
+      s = failMission(s, m.id, 'A required convoy escaped to its destination');
+      continue;
+    }
     if (m.status !== 'active' || m.type !== 'escort' || !m.launched) continue;
     const template = MISSION_TEMPLATES[m.id];
     const objectives = m.objectives.filter(o => o.type === 'escort');

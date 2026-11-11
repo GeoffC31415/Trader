@@ -4,6 +4,7 @@ import type { Contract } from '../../../domain/types/world_types';
 import { UIIcon } from '../ui_icon';
 import { SHIP_STATUS_PANEL_TOP_WITH_NAV, SHIP_STATUS_PANEL_TOP_WITHOUT_NAV, SHIP_STATUS_PANEL_RIGHT, SHIP_STATUS_PANEL_MIN_WIDTH } from '../../constants/layout_constants';
 import { formatNumber } from '../../utils/number_format';
+import { useGameStore } from '../../../state';
 
 interface ShipStatusPanelProps {
   ship: Ship;
@@ -13,6 +14,11 @@ interface ShipStatusPanelProps {
 }
 
 export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatusPanelProps) {
+  const state = useGameStore();
+  const speed = Math.hypot(...ship.velocity);
+  const target = state.npcTraders.find(n => n.id === state.selectedTargetId);
+  const waypoint = stations.find(st => st.id === state.trackedStationId);
+  const distance = waypoint ? Math.hypot(...waypoint.position.map((v, i) => v - ship.position[i])) : undefined;
   const activeContractsCount = contracts.filter(c => c.status === 'accepted').length;
   const dockedStation = ship.dockedStationId ? stations.find(s => s.id === ship.dockedStationId) : null;
   const cargoUsed = Object.values(ship.cargo).reduce((a, b) => a + b, 0);
@@ -125,6 +131,20 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
         </div>
       </div>
       
+      <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
+        <label>Hull {Math.ceil(ship.hp)}/{ship.maxHp}<progress aria-label="Hull" max={ship.maxHp} value={ship.hp} /></label>
+        <label>Energy {Math.floor(ship.energy)}/{ship.maxEnergy}<progress aria-label="Weapon energy" max={ship.maxEnergy} value={ship.energy} /></label>
+        <div>Weapon: {ship.weapon.kind} • Speed: {speed.toFixed(1)} m/s</div>
+        {distance !== undefined && <div>{waypoint!.name}: {Math.ceil(distance)}m • ETA {speed > 1 ? `${Math.ceil(distance / speed)}s` : '—'}</div>}
+        {target && <div style={{ color: '#ffb48a' }}>Target: {target.role ?? 'ship'} • Hull {Math.ceil(target.hp)}/{target.maxHp}<br />Range {Math.round(Math.hypot(...target.position.map((v, i) => v - ship.position[i])))}m</div>}
+        {!ship.dockedStationId && <>
+          <button onClick={state.cycleTarget}>Target next (Tab)</button>
+          <button onClick={state.toggleCruise}>{ship.cruise ? `Cruise ${Math.min(3, ship.cruiseSpool ?? 0).toFixed(1)}s / 3s` : 'Cruise drive (C)'}</button>
+          <button onClick={state.toggleSilentRunning}>{ship.silentRunning ? 'Silent running ON — half speed, weapons off' : 'Silent running (H)'}</button>
+          <button onClick={state.toggleAutopilot}>{ship.autopilot ? 'Cancel waypoint pilot' : 'Waypoint pilot (T)'}</button>
+        </>}
+        {ship.dockedStationId && <button onClick={state.repairShip}>Repair & recharge ({Math.ceil((ship.maxHp - ship.hp) * 5)} credits)</button>}
+      </div>
       {/* Active Contracts Indicator */}
       {activeContractsCount > 0 && (
         <div style={{

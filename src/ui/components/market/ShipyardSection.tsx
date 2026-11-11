@@ -6,6 +6,9 @@ import { DataRow } from '../shared/DataRow';
 import { SciFiButton } from '../shared/SciFiButton';
 import { UIIcon } from '../ui_icon';
 import { formatNumber } from '../../utils/number_format';
+import { useGameStore } from '../../../state';
+import { WEAPON_COSTS, WEAPON_UPGRADE_COSTS, WEAPON_BASE_STATS } from '../../../domain/constants/weapon_constants';
+import type { WeaponKind } from '../../../domain/types/combat_types';
 
 interface ShipyardSectionProps {
   stationType: 'shipyard';
@@ -23,9 +26,18 @@ export function ShipyardSection({
   onReplaceShip,
 }: ShipyardSectionProps) {
   const colors = stationTypeColors[stationType];
+  const purchaseWeapon = useGameStore(s => s.purchaseWeapon);
+  const upgradeWeapon = useGameStore(s => s.upgradeWeapon);
   
   return (
     <SciFiPanel stationType={stationType}>
+      <SectionHeader stationType={stationType}>Weapons & Combat Services</SectionHeader>
+      <p>Current weapon: {ship.weapon.kind}. Aim with the mouse or select a target with Tab, then hold Space. Cruise and silent running disable weapons.</p>
+      {(Object.keys(WEAPON_COSTS) as WeaponKind[]).map(kind => <DataRow key={kind} stationType={stationType}>
+        <span>{kind} • {WEAPON_BASE_STATS[kind].damage} damage • {WEAPON_BASE_STATS[kind].range}m range</span>
+        <button disabled={ship.credits < WEAPON_COSTS[kind] || (kind === 'missile' && !hasIntel)} onClick={() => purchaseWeapon(kind, WEAPON_COSTS[kind])}>Equip ({WEAPON_COSTS[kind].toLocaleString()} credits)</button>
+      </DataRow>)}
+      {(Object.keys(WEAPON_UPGRADE_COSTS) as ('damage' | 'fireRate' | 'range')[]).map(type => <button key={type} onClick={() => upgradeWeapon(type, WEAPON_UPGRADE_COSTS[type])}>Upgrade {type} ({WEAPON_UPGRADE_COSTS[type]})</button>)}
       <SectionHeader stationType={stationType}>Ship Upgrades & Services</SectionHeader>
       
       <div style={{ marginBottom: 16 }}>

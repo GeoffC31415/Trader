@@ -102,7 +102,7 @@ export function updateCombat(
   }
 
   // Remove projectiles that hit
-  projectiles = projectiles.filter(p => !projectilesToRemove.has(p.id) && p.lifetime > 0)
+  projectiles = projectiles.filter(p => (!projectilesToRemove.has(p.id) || p.hitscan) && p.lifetime > 0)
     .map(p => p.hitscan ? { ...p, resolved: true } : p);
 
   // Apply damage and update aggression
@@ -152,6 +152,8 @@ export function updateCombat(
     }
   }
 
+  // Limit simultaneous attackers on a trader; escorts remain the explicit priority for raiders.
+  let playerAttackers = 0;
   // NPC combat AI - fire back when aggressive
   for (const npc of npcTraders) {
     if (npc.hp <= 0) continue;
@@ -160,11 +162,13 @@ export function updateCombat(
     const lastFire = npcLastFireTimes[npc.id] || 0;
 
     const escort = npcTraders.find(n => n.isMissionEscort && n.missionId === npc.missionId && n.hp > 0);
-    const target = escort ? { ...ship, position: escort.position, velocity: escort.velocity ?? [0, 0, 0] as [number, number, number], dockedStationId: undefined } : ship;
+    if (!escort && playerAttackers >= 2) continue;
+    const target = escort ? { ...ship, position: escort.position, velocity: escort.velocity ?? [0, 0, 0] as [number, number, number], dockedStationId: undefined, silentRunning: false } : ship;
     if (shouldNpcFire(npc, npc.hp, target, aggressionState, lastFire, currentTime)) {
       const npcProjectile = npcFireAtPlayer(npc, target);
       projectiles.push(npcProjectile);
       npcLastFireTimes[npc.id] = currentTime;
+      if (!escort) playerAttackers += 1;
     }
   }
 
@@ -260,6 +264,7 @@ export function spawnHostileDefenders(
               hp: NPC_BASE_HP * 2, // Tougher than normal NPCs
               maxHp: NPC_BASE_HP * 2,
               isHostile: true,
+              role: 'defender',
               isAggressive: true, // Attack player on sight
               kind: 'clipper', // Fast combat ship
             };

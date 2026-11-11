@@ -132,7 +132,8 @@ export function ObjectiveHUD({
         <div style={{ display: 'flex', gap: 8, marginTop: (activeObj || primaryMission) ? 8 : 0 }}>
           <button
             onClick={() => {
-              const target = activeObj?.targetStationId;
+              const next = primaryMission?.objectives.find(o => !o.completed && !o.failed && o.type !== 'avoid_detection');
+              const target = next?.targetStation ?? (next?.type === 'visit' ? next.target : undefined) ?? activeObj?.targetStationId;
               if (target) {
                 onSetTrackedStation(target);
                 return;

@@ -22,10 +22,11 @@ import { useMusicController, initializeMusicOnInteraction } from './shared/audio
 import { useMissionAudioController, preloadMissionAudio } from './shared/audio/use_mission_audio';
 import { TargetArrows } from './ui/components/target_arrows';
 import { StealthIndicator } from './ui/components/hud/StealthIndicator';
+import { MissionLog } from './ui/components/hud/MissionLog';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal' | 'traders' | 'debug'>('market');
-  const hasNav = useGameStore(s => !!s.ship.hasNavigationArray);
+  const hasNav = true; // Basic orientation is standard equipment; upgrades add intelligence.
   const hasChosenStarter = useGameStore(s => s.hasChosenStarter);
   const isTestMode = useGameStore(s => s.isTestMode);
   const chooseStarter = useGameStore(s => s.chooseStarter);
@@ -118,6 +119,7 @@ export function App() {
         <Celebration />
         <MissionCelebration />
         <Notifications />
+        <MissionLog />
         <TargetArrows />
         <StealthIndicator />
         

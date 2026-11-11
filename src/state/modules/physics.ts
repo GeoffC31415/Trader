@@ -19,7 +19,10 @@ import type { Ship } from '../../domain/types/world_types';
 export function updatePhysics(ship: Ship, dt: number): Ship {
   // Apply exponential damping to velocity
   const drag = ship.stats.drag;
-  const dampFactor = Math.exp(-drag * dt);
+  // Damping is a brake, not an invisible limit on advertised full-thrust speed.
+  const dampFactor = ship.engineTarget > 0 ? 1 : Math.exp(-drag * dt * 2);
+  const cruiseSpool = ship.cruise ? Math.min(3, (ship.cruiseSpool ?? 0) + dt) : 0;
+  const multiplier = ship.silentRunning ? 0.5 : cruiseSpool >= 3 ? 6 : 1;
   const dampedVel: [number, number, number] = [
     ship.velocity[0] * dampFactor,
     ship.velocity[1] * dampFactor,
@@ -27,7 +30,7 @@ export function updatePhysics(ship: Ship, dt: number): Ship {
   ];
 
   // Clamp velocity to max speed
-  const [vx, vy, vz] = clampMagnitude(dampedVel as any, ship.stats.vmax);
+  const [vx, vy, vz] = clampMagnitude(dampedVel as any, ship.stats.vmax * multiplier);
 
   // Integrate position
   const position: [number, number, number] = [
@@ -44,6 +47,7 @@ export function updatePhysics(ship: Ship, dt: number): Ship {
   return {
     ...ship,
     position,
+    cruiseSpool,
     velocity: [vx, vy, vz],
     enginePower,
   };
@@ -62,7 +66,7 @@ export function applyThrust(
   direction: [number, number, number],
   dt: number
 ): Ship {
-  const acc = ship.stats.acc;
+  const acc = ship.stats.acc * ((ship.cruiseSpool ?? 0) >= 3 && ship.cruise ? 6 : ship.silentRunning ? 0.5 : 1);
   const velocity: [number, number, number] = [
     ship.velocity[0] + direction[0] * acc * dt,
     ship.velocity[1] + direction[1] * acc * dt,

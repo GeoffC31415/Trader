@@ -53,8 +53,12 @@ export function updateNpcTraders(
       return updateMissionEscort(npc, stationById, dt);
     }
 
+    if (npc.role === 'convoy') {
+      if (!npc.launched && distance(npc.position, playerShip.position) > 500) return npc;
+      return updateMissionEscort({ ...npc, launched: true }, stationById, dt);
+    }
     // Hostile pirates chase and attack escort ships
-    if (npc.isHostile && npc.isMissionTarget && npc.hp > 0) {
+    if (npc.isHostile && (npc.isMissionTarget || npc.role === 'defender') && npc.hp > 0) {
       return updateHostilePirate(npc, escortNpcs, playerShip, dt);
     }
 

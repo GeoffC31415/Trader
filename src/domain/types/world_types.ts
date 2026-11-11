@@ -86,6 +86,10 @@ export type Ship = {
     drag: number;
     vmax: number;
   };
+  cruise?: boolean;
+  cruiseSpool?: number;
+  silentRunning?: boolean;
+  autopilot?: boolean;
   // Combat properties
   weapon: ShipWeapon;
   hp: number;
@@ -226,6 +230,8 @@ export type GameState = {
   npcTraders: NpcTrader[];
   ship: Ship;
   gameTime: number;
+  paused: boolean;
+  selectedTargetId?: string;
   hasChosenStarter: boolean;
   isTestMode: boolean; // true when playing with test ship for dev/debug purposes
   tutorialActive: boolean;
@@ -335,6 +341,13 @@ export type GameState = {
   retryMission: (missionId: string) => void;
   launchMission: (missionId: string) => void;
   repairShip: () => void;
+  toggleCruise: () => void;
+  toggleSilentRunning: () => void;
+  toggleAutopilot: () => void;
+  togglePause: () => void;
+  cycleTarget: () => void;
+  saveGame: () => void;
+  loadGame: () => void;
   // Mission arc actions
   acceptMission: (missionId: string) => void;
   abandonMission: (missionId: string) => void;

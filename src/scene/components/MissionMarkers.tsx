@@ -97,6 +97,7 @@ export function MissionMarkers() {
       if ((objective.type === 'deliver' || objective.type === 'visit') && objective.targetStation) {
         targetStationIds.add(objective.targetStation);
       }
+      if (objective.type === 'visit' && objective.target && !objective.completed) targetStationIds.add(objective.target);
       if (objective.type === 'avoid_detection' && objective.target) {
         // Mark detection zones differently
       }

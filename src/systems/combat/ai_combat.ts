@@ -80,7 +80,7 @@ export function shouldNpcFire(
 
   // Check if player is in range
   const dist = distance(npc.position, ship.position);
-  if (dist > NPC_WEAPON_RANGE) {
+  if (dist > NPC_WEAPON_RANGE * (ship.silentRunning ? 0.35 : 1)) {
     return false;
   }
 

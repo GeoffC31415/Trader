@@ -79,12 +79,12 @@ function Projectiles() {
         }
         
         // Render as a stretched capsule or line
-        const length = proj.weaponKind === 'laser' ? 8 : 4;
-        const dir = new THREE.Vector3(proj.velocity[0], proj.velocity[1], proj.velocity[2]).normalize();
+        const length = proj.hitscan ? proj.range ?? 800 : 4;
+        const dir = new THREE.Vector3(...(proj.direction ?? proj.velocity)).normalize();
         const endPos = new THREE.Vector3(
-          proj.position[0] - dir.x * length,
-          proj.position[1] - dir.y * length,
-          proj.position[2] - dir.z * length
+          proj.position[0] + dir.x * length,
+          proj.position[1] + dir.y * length,
+          proj.position[2] + dir.z * length
         );
         
         return (
@@ -266,7 +266,9 @@ export function SceneRoot() {
   const setEngineTarget = useGameStore(s => s.setEngineTarget);
   const ship = useGameStore(s => s.ship);
   const trackedStationId = useGameStore(s => s.trackedStationId);
-  const { camera } = useThree();
+  const { camera, pointer } = useThree();
+  const aimRay = useMemo(() => new THREE.Raycaster(), []);
+  const aimPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0)), []);
   const cameraTarget = useRef<THREE.Vector3>(new THREE.Vector3());
   const yawRef = useRef<number>(0);
   const isDragging = useRef<boolean>(false);
@@ -275,6 +277,8 @@ export function SceneRoot() {
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
+    const current = useGameStore.getState();
+    if (current.paused) return;
     // Movement input evaluated every frame: WSAD on station plane, RF vertical
     const up = new THREE.Vector3(0, 1, 0);
     const yaw = yawRef.current;
@@ -289,6 +293,14 @@ export function SceneRoot() {
     if (pressed['d']) dir.add(rightPlanar);
     if (pressed['r']) dir.add(up);
     if (pressed['f']) dir.addScaledVector(up, -1);
+    if (dir.lengthSq() > 0 && current.ship.autopilot) current.toggleAutopilot();
+    if (current.ship.autopilot && dir.lengthSq() === 0 && current.trackedStationId) {
+      const destination = current.stations.find(st => st.id === current.trackedStationId);
+      if (destination) {
+        dir.set(...destination.position).sub(new THREE.Vector3(...current.ship.position));
+        if (dir.length() < 55) { current.tryDock(); if (useGameStore.getState().ship.autopilot) current.toggleAutopilot(); dir.set(0, 0, 0); }
+      }
+    }
     if (dir.lengthSq() > 0) {
       dir.normalize();
       thrust([dir.x, dir.y, dir.z], dt);
@@ -298,6 +310,15 @@ export function SceneRoot() {
     }
     
     tick(dt);
+    if (pressed[' ']) {
+      const latest = useGameStore.getState();
+      const target = latest.npcTraders.find(n => n.id === latest.selectedTargetId && n.hp > 0);
+      const aim = new THREE.Vector3();
+      aimPlane.constant = -latest.ship.position[1];
+      aimRay.setFromCamera(pointer, camera);
+      const hit = aimRay.ray.intersectPlane(aimPlane, aim);
+      latest.fireWeapon(target?.position ?? (hit ? aim.toArray() as [number, number, number] : [latest.ship.position[0] + fwdPlanar.x * 800, latest.ship.position[1], latest.ship.position[2] + fwdPlanar.z * 800]));
+    }
 
     // Camera follow: keep ship in lower center by offsetting camera behind and above
     const desiredOffset = new THREE.Vector3(0, 20, 35); // above and behind
