@@ -42,12 +42,16 @@ test('fresh tutorial flies the fuel route, trades, completes, and reloads a chec
   await expect(page.getByText('Mission Reward: +$1,000', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Continue', exact: true }).click();
   await expect(page.getByText(/Tutorial complete! You've completed your first contract/)).toBeVisible();
+  const creditText = () => page.getByText('CREDITS', { exact: true }).locator('..').innerText();
+  const completedCredits = await creditText();
+  expect(Number(completedCredits.replace(/[^0-9.-]/g, '')), 'A completed purchase order must actually pay its sale revenue, not only the bonus').toBeGreaterThanOrEqual(11000);
   await page.getByRole('button', { name: 'Pause (P)', exact: true }).click();
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await page.reload();
   await page.getByRole('button', { name: 'Load saved campaign', exact: true }).click();
   await expect(page.getByText('Paused — deadlines and simulation frozen.')).toBeVisible();
   await expect(page.getByText(/Tutorial complete! You've completed your first contract/)).toBeVisible();
+  expect(await creditText()).toBe(completedCredits);
   await page.screenshot({ path: test.info().outputPath('tutorial-checkpoint.png') });
   expect(errors).toEqual([]);
   expect(failedAssets).toEqual([]);

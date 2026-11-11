@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { isSimulationBlocked } from '../state/helpers/simulation_clock';
+import { dockingCandidate } from '../state/helpers/docking';
+import { canDockAtStation } from '../systems/reputation/faction_system';
 import { calculateLeadPosition } from '../systems/combat/weapon_systems';
 import { useGameStore } from '../state';
 import { Html, Sparkles } from '@react-three/drei';
@@ -59,6 +61,7 @@ function colorFromCommodity(id: string): string {
 import { Planet } from './components/primitives/Planet';
 import { StationVisual } from './components/stations/StationVisual';
 import { MissionMarkers } from './components/MissionMarkers';
+import { CombatFeedback } from './components/CombatFeedback';
 
 // Projectile rendering component
 function Projectiles() {
@@ -310,7 +313,7 @@ export function SceneRoot() {
         if (movingTarget) {
           if (current.ship.cruise) current.toggleCruise();
           if (dir.length() < 90) dir.set(0, 0, 0);
-        } else if (dir.length() < 55) {
+        } else if (dir.length() < DOCKING_RANGE_WORLD * 0.9) {
           if (destination.id !== current.opportunity?.id || current.opportunity.kind === 'procurement') {
             current.tryDock('stationId' in destination ? destination.stationId : destination.id);
           }
@@ -384,6 +387,7 @@ export function SceneRoot() {
   }, [gl]);
 
   const dockIntroVisibleId = useGameStore(s => s.dockIntroVisibleId);
+  const nearDock = dockingCandidate(stations, ship.position);
   return (
     <group>
       <PlaneGrid />
@@ -400,7 +404,7 @@ export function SceneRoot() {
               ship.position[2]-b.position[2]
             ) - b.radius
             ) < MINING_RANGE_WORLD && !ship.dockedStationId && (
-            <Html position={[b.position[0], b.position[1]+3, b.position[2]]} center distanceFactor={60}>
+            <Html position={[b.position[0], b.position[1]+3, b.position[2]]} center distanceFactor={60} style={{ pointerEvents: 'none' }}>
               <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6 }}>
                 <span style={{ fontSize: 12, opacity: 0.5 }}>
                   {ship.canMine ? 'Press M to Mine' : 'Dock at a shipyard to buy Mining Rig'}
@@ -412,22 +416,18 @@ export function SceneRoot() {
       ))}
       {stations.map(s => (
         <group key={s.id}>
-          {lowDetail ? <group position={s.position}><mesh><icosahedronGeometry args={[8, 0]} /><meshStandardMaterial color="#709bab" /></mesh>{!dockIntroVisibleId && <Html center distanceFactor={50}><div>{s.name}</div></Html>}</group> : <StationVisual position={s.position} name={s.name} type={s.type} hideLabel={!!dockIntroVisibleId} />}
+          {lowDetail ? <group position={s.position}><mesh><icosahedronGeometry args={[8, 0]} /><meshStandardMaterial color="#709bab" /></mesh>{!dockIntroVisibleId && <Html center distanceFactor={50} style={{ pointerEvents: 'none' }}><div>{s.name}</div></Html>}</group> : <StationVisual position={s.position} name={s.name} type={s.type} hideLabel={!!dockIntroVisibleId} />}
           {/* Dock prompt when near */}
-          {Math.hypot(
-            ship.position[0]-s.position[0],
-            ship.position[1]-s.position[1],
-            ship.position[2]-s.position[2]
-            ) < MINING_RANGE_WORLD && !ship.dockedStationId && (
-            <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center distanceFactor={60}>
+          {nearDock?.id === s.id && !ship.dockedStationId && (
+            <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center style={{ pointerEvents: 'none' }}>
               <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6 }}>
-                <span style={{ fontSize: 12, opacity: 0.5 }}>Press E to Dock</span>
+                <span style={{ fontSize: 12 }}>{canDockAtStation(s) ? `Press E to dock at ${s.name}` : `${s.name}: docking denied`}</span>
               </div>
             </Html>
           )}
           {/* Waypoint marker (visible while undocked for clarity) */}
           {trackedStationId === s.id && !ship.dockedStationId && (
-            <Html position={[s.position[0], s.position[1]+5, s.position[2]]} center>
+            <Html position={[s.position[0], s.position[1]+5, s.position[2]]} center style={{ pointerEvents: 'none' }}>
               <div style={{ background:'rgba(34,197,94,0.15)', border: '1px solid #22c55e', padding: '4px 8px', borderRadius: 6, color: '#bbf7d0' }}>
                 Waypoint
               </div>
@@ -451,6 +451,7 @@ export function SceneRoot() {
       ))}
       {/* Projectiles */}
       <Projectiles />
+      <CombatFeedback />
       {/* Mission markers */}
       <MissionMarkers />
       <Ship turnLeft={!!pressed['a']} turnRight={!!pressed['d']} />

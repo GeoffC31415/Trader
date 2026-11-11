@@ -64,6 +64,20 @@ test('escort launch, abandonment/retry, and held combat fire use real UI actions
   try {
     await expect.poll(() => page.evaluate(async id => { const path = '/src/state/store.ts'; return (await import(path)).useGameStore.getState().npcTraders.find((n: any) => n.id === id)?.hp ?? 0; }, target.id), { timeout: 20000 }).toBeLessThan(target.hp);
   } finally { await page.keyboard.up('Space'); }
+  expect(await page.evaluate(async () => { const path = '/src/state/store.ts'; return (await import(path)).useGameStore.getState().combatImpacts.length; })).toBeGreaterThan(0);
+  // Move off the station mesh so the ship/plume can be inspected, then arrange an
+  // incoming weapon, not a hull mutation: actual collision drives the flash/smoke.
+  await page.evaluate(async () => { const path = '/src/state/store.ts'; const store = (await import(path)).useGameStore, s = store.getState(); store.setState({ ship: { ...s.ship, position: [s.ship.position[0], s.ship.position[1], s.ship.position[2] + 160] } }); });
+  await page.waitForTimeout(1500); // Camera follow, not an accelerated simulation clock.
+  await page.evaluate(async () => {
+    const statePath = '/src/state/store.ts', weaponsPath = '/src/systems/combat/weapon_systems.ts';
+    const store = (await import(statePath)).useGameStore, s = store.getState();
+    const shot = (await import(weaponsPath)).createProjectile({ ...s.ship.weapon, damage: 80 }, [s.ship.position[0] + 20, s.ship.position[1], s.ship.position[2]], [0, 0, 0], s.ship.position, 'smoke-test-attacker', 'npc');
+    store.setState({ projectiles: [...s.projectiles, shot] });
+  });
+  await expect(page.getByLabel('Incoming damage', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Pause (P)', exact: true }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'Hull hit' })).toBeVisible();
   await page.screenshot({ path: test.info().outputPath('combat-controls.png') });
   expect(errors).toEqual([]);
 });

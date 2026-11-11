@@ -31,13 +31,14 @@ import {
   shouldNpcFire,
   npcFireAtPlayer,
 } from '../../systems/combat/ai_combat';
-import type { Ship, Station, NpcTrader } from '../../domain/types/world_types';
+import type { GameState, Ship, Station, NpcTrader } from '../../domain/types/world_types';
 import type { Projectile, ShipWeapon } from '../../domain/types/combat_types';
 
 /**
  * Result of combat system update
  */
 export interface CombatUpdateResult {
+  combatImpacts: NonNullable<GameState['combatImpacts']>;
   ship: Ship;
   npcTraders: NpcTrader[];
   projectiles: Projectile[];
@@ -107,9 +108,14 @@ export function updateCombat(
   projectiles = projectiles.filter(p => (!projectilesToRemove.has(p.id) || p.hitscan) && p.lifetime > 0)
     .map(p => p.hitscan ? { ...p, resolved: true } : p);
 
+  const combatImpacts: NonNullable<GameState['combatImpacts']> = [];
   const playerKills = new Set<string>();
   // Apply damage and update aggression
   for (const event of damageEvents) {
+    const target = event.targetType === 'player' ? ship : npcTraders.find(n => n.id === event.targetId);
+    if (!target || target.hp <= 0 || event.damage <= 0) continue;
+    combatImpacts.push({ id: `${currentTime}:${combatImpacts.length}:${event.targetId}`, targetId: event.targetId,
+      position: [...target.position], damage: Math.min(event.damage, target.hp), at: currentTime / 1000 });
     if (event.targetType === 'player') {
       ship.hp = Math.max(0, ship.hp - event.damage);
     } else {
@@ -201,6 +207,7 @@ export function updateCombat(
   npcTraders = npcTraders.filter(npc => npc.hp > 0);
 
   return {
+    combatImpacts,
     ship,
     npcTraders,
     projectiles,

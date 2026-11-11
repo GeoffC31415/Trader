@@ -8,6 +8,7 @@ test('renders WebGL, flies with held input, pauses, and loads a checkpoint', asy
   await page.goto('/');
   await page.getByRole('button', { name: 'Select Freighter', exact: true }).click();
   await expect(page.locator('canvas[data-engine]')).toBeVisible();
+  await expect.poll(() => page.evaluate(async () => { const path = '/src/shared/audio/music_audio.ts'; return (await import(path)).getPlaybackState(); }), { timeout: 15000 }).toEqual({ trackId: 'ambient_exploring', playing: true });
   const before = await page.evaluate(async () => { const path = '/src/state/store.ts'; return (await import(path)).useGameStore.getState().ship.position; });
   await page.keyboard.down('w');
   await expect.poll(() => page.evaluate(async p => { const path = '/src/state/store.ts'; const s = (await import(path)).useGameStore.getState(); return Math.hypot(...s.ship.position.map((v: number, i: number) => v - p[i])); }, before), { timeout: 15000 }).toBeGreaterThan(1);

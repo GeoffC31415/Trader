@@ -240,6 +240,7 @@ export type TravelOpportunity = {
 };
 
 export type GameState = {
+  economyVersion?: 2;
   planets: Planet[];
   stations: Station[];
   belts: AsteroidBelt[];

@@ -18,8 +18,9 @@ import { TutorialOverlay } from './ui/components/hud/TutorialOverlay';
 import { ObjectiveHUD } from './ui/components/hud/ObjectiveHUD';
 import { StarterShipSelector } from './ui/components/hud/StarterShipSelector';
 import { Notifications } from './ui/components/Notifications';
-import { useMusicController, initializeMusicOnInteraction } from './shared/audio/use_music';
+import { useMusicController } from './shared/audio/use_music';
 import { useMissionAudioController, preloadMissionAudio } from './shared/audio/use_mission_audio';
+import { DamageFeedback } from './ui/components/hud/DamageFeedback';
 import { TargetArrows } from './ui/components/target_arrows';
 import { MissionLog } from './ui/components/hud/MissionLog';
 
@@ -52,7 +53,6 @@ export function App() {
   // Initialize audio systems on first user interaction
   useEffect(() => {
     const handleFirstInteraction = () => {
-      initializeMusicOnInteraction();
       preloadMissionAudio();
     };
     
@@ -108,6 +108,7 @@ export function App() {
         <Notifications />
         <MissionLog />
         <TargetArrows />
+        <DamageFeedback />
         
         {!hasChosenStarter && (
           <StarterShipSelector

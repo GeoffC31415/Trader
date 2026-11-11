@@ -87,6 +87,14 @@ it('rejects a loss-making contract purchase before spending credits or taking ca
   expect(useGameStore.getState().ship.cargo.refined_fuel ?? 0).toBe(0);
   expect(useGameStore.getState().notifications?.slice(-1)[0]?.message).toContain('Purchase blocked');
 });
+it('checks the lowest active payment floor when buying for several same-commodity orders', () => {
+  setup(); useGameStore.setState({ contracts: [{ ...fuelOrder(), id: 'high', unitSell: 250 }, fuelOrder()] });
+  useGameStore.getState().acceptContract('high'); useGameStore.getState().acceptContract('fuel');
+  dock('sol-refinery'); price('sol-refinery', 120, 1); useGameStore.getState().buy('refined_fuel', 4);
+  expect(useGameStore.getState().ship.credits).toBe(10000);
+  useGameStore.getState().abandonContract('fuel'); useGameStore.getState().buy('refined_fuel', 4);
+  expect(useGameStore.getState().ship.cargo.refined_fuel).toBe(4);
+});
 it('funds story procurement and reimburses recorded turn-in cost above the advance, without double payment', () => {
   story(); const funded = useGameStore.getState(); const budget = funded.missions[0].procurementBudget!;
   useGameStore.setState({ ship: { ...funded.ship, credits: 30000 + budget } });
@@ -123,6 +131,20 @@ it('clears anger and provides a real recovery ceasefire, ending it only when a s
   for (let i = 0; i < 30; i++) useGameStore.getState().tick(0.1);
   expect(useGameStore.getState().ship.hp).toBe(100); expect(useGameStore.getState().projectiles).toEqual([]);
   useGameStore.getState().fireWeapon([1000, 0, 0]); expect(useGameStore.getState().recoveryGraceUntil).toBeUndefined();
+});
+it('recovers recorded missing alpha-1 sale credits once, without replaying bonuses or refunding purchases', () => {
+  setup(); const snapshot = JSON.parse(serializeGame(useGameStore.getState()));
+  delete snapshot.data.economyVersion;
+  snapshot.data.tradeLog = [
+    { id: 'sale', type: 'sell', time: 1, stationId: 'sol-city', commodityId: 'grain', quantity: 5, unitPrice: 20, totalPrice: 100 },
+    { id: 'buy', type: 'buy', time: 2, stationId: 'greenfields', commodityId: 'grain', quantity: 5, unitPrice: 10, totalPrice: 50 },
+  ];
+  const loaded = deserializeGame(JSON.stringify(snapshot));
+  expect(loaded.ship!.credits).toBe(10100); expect(loaded.economyVersion).toBe(2);
+  expect(loaded.notifications![0].message).toContain('Recovered 100');
+  useGameStore.setState(loaded);
+  const again = deserializeGame(serializeGame(useGameStore.getState()));
+  expect(again.ship!.credits).toBe(10100); expect(again.notifications).toEqual([]);
 });
 it('checkpoints preserve purchase-order rates and recovery deadlines, not hit flashes', () => {
   setup(); useGameStore.setState({ contracts: [fuelOrder()] }); useGameStore.getState().acceptContract('fuel');

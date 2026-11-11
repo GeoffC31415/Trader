@@ -140,6 +140,7 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
         <label>Hull {Math.ceil(ship.hp)}/{ship.maxHp}<progress aria-label="Hull" max={ship.maxHp} value={ship.hp} /></label>
         <label>Energy {Math.floor(ship.energy)}/{ship.maxEnergy}<progress aria-label="Weapon energy" max={ship.maxEnergy} value={ship.energy} /></label>
         <div>Weapon: {ship.weapon.kind} • Speed: {speed.toFixed(1)} m/s</div>
+        {state.gameTime < (state.recoveryGraceUntil ?? 0) && <div style={{ color: '#8dd6ff', fontSize: 12 }}>Recovery ceasefire: {Math.ceil(state.recoveryGraceUntil! - state.gameTime)}s — firing ends protection.</div>}
         {distance !== undefined && <div>{waypoint!.name}: {Math.ceil(distance)}m • ETA {speed > 1 ? `${Math.ceil(distance / speed)}s` : '—'}</div>}
         {state.missions.filter(m => m.status === 'active' && m.type === 'escort').map(m => <div key={m.id}>
           {m.title}: waves {[...state.escortStates.values()].find(e => e.missionId === m.id)?.wavesCompleted ?? 0}/{MISSION_TEMPLATES[m.id].waves ?? 0}

@@ -52,7 +52,7 @@ export function StationVisual({ position, name, type, hideLabel = false }: { pos
     <group position={position as any}>
       <primitive object={clonedScene} scale={scale} />
       {!hideLabel && (
-        <Html center distanceFactor={50}><div style={{ fontSize: 14, opacity: 0.5 }}>{name}</div></Html>
+        <Html center distanceFactor={50} style={{ pointerEvents: 'none' }}><div style={{ fontSize: 14, opacity: 0.5 }}>{name}</div></Html>
       )}
     </group>
   );

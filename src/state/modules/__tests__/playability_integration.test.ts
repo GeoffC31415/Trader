@@ -208,7 +208,8 @@ it('guides the tutorial to its actual supplier, waits for the full cargo, then t
 });
 it('docks at an explicit navigation destination rather than a closer overlapping station', () => {
   const initial = useGameStore.getInitialState();
-  useGameStore.setState({ ...initial, hasChosenStarter: true, ship: { ...initial.ship, position: [493, 0, -47], dockedStationId: undefined } }, true);
+  const stations = initial.stations.map(st => st.id === 'greenfields' ? { ...st, position: [480, 0, -94] as [number, number, number] } : st);
+  useGameStore.setState({ ...initial, stations, hasChosenStarter: true, ship: { ...initial.ship, position: [480, 0, -90], dockedStationId: undefined } }, true);
   useGameStore.getState().tryDock();
   expect(useGameStore.getState().ship.dockedStationId).toBe('greenfields');
   useGameStore.getState().undock();

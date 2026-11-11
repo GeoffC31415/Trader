@@ -7,6 +7,8 @@ import { WEAPON_BASE_STATS, WEAPON_COSTS, WEAPON_UPGRADE_COSTS } from '../domain
 import { planets, stations as initialStations, belts } from './world';
 import { spawnNpcTraders } from './npc';
 import { distance } from '../shared/math/vec3';
+import { DOCKING_RANGE_WORLD } from '../domain/constants/game_constants';
+import { dockingCandidate } from './helpers/docking';
 import { canDockAtStation, isStationHostile, applyReputationWithPropagation } from '../systems/reputation/faction_system';
 import { projectWorldEffects, stripPriceModifiers } from '../systems/missions/choice_system';
 import { initializeMissionArcs } from '../systems/missions/mission_generator';
@@ -41,8 +43,9 @@ function initialGraphicsQuality(): GameState['graphicsQuality'] {
   return 'medium';
 }
 export const useGameStore = create<GameState>((set, get) => ({
+  economyVersion: 2,
   planets, stations: initialStations, belts, npcTraders: spawnNpcTraders(initialStations, 24),
-  ship: createShip('freighter', [500, 0, 80]), gameTime: 0, paused: false, graphicsQuality: initialGraphicsQuality(),
+  ship: createShip('freighter', [512, 0, 68]), gameTime: 0, paused: false, graphicsQuality: initialGraphicsQuality(),
   hasChosenStarter: false, isTestMode: false, tutorialActive: false, tutorialStep: 'dock_city',
   tradeLog: [], profitByCommodity: {}, avgCostByCommodity: {}, objectives: [], contracts: [],
   projectiles: [], lastFireTime: -Infinity, npcLastFireTimes: {}, npcAggression: {},
@@ -71,7 +74,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const combat = updateCombat({ ...s, suppressNpcFire: protectedByRecovery, ship, stations, npcTraders: spawnHostileDefenders(npc.npcTraders, readyStations, ship.position, !!ship.dockedStationId), now }, dt);
     s = { ...s, defenseCooldowns };
     for (const rep of combat.reputationChanges) stations = applyReputationWithPropagation(stations, rep.stationId, rep.delta);
-    s = { ...s, ...combat, stations, marketEvents: events };
+    s = { ...s, ...combat, combatImpacts: [...(s.combatImpacts ?? []), ...combat.combatImpacts].filter(hit => hit.at >= s.gameTime - 0.7).slice(-48), stations, marketEvents: events };
     if (s.gameTime >= (s.nextMarketEventAt ?? 120)) {
       const event = generateMarketEvent(stations);
       if (event) s = notice({ ...s, marketEvents: [...events, { ...event, startedAt: now }] }, `${event.title}: ${event.description}`);
@@ -95,8 +98,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   setEngineTarget: target => set(s => ({ ship: engineTarget(s.ship, target, !!s.ship.dockedStationId) })),
   tryDock: stationId => set(s => {
     if (!s.hasChosenStarter || s.ship.dockedStationId || s.ship.hp <= 0) return s;
-    const near = s.stations.filter(st => (!stationId || st.id === stationId) && distance(st.position, s.ship.position) < 60).sort((a, b) => distance(a.position, s.ship.position) - distance(b.position, s.ship.position))[0];
-    if (!near) return notice(s, 'Move within 60m of a station to dock', 'warning');
+    const near = dockingCandidate(s.stations, s.ship.position, stationId);
+    if (!near) return notice(s, `Move within ${DOCKING_RANGE_WORLD}m of a station to dock`, 'warning');
     if (!canDockAtStation(near)) return notice(s, 'Docking denied. Mission documents and research contacts can use a local liaison within 100m.', 'warning');
     s = { ...s, stations: recordStationInteraction(s.stations, near.id, s.gameTime), ship: { ...s.ship, dockedStationId: near.id, velocity: [0, 0, 0], cruise: false, cruiseSpool: 0, autopilot: false }, dockIntroVisibleId: near.id };
     if (s.tutorialActive && s.tutorialStep === 'dock_city' && near.id === 'sol-city') {
@@ -129,7 +132,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const multiplier = assist?.by === s.ship.dockedStationId && (assist?.type === 'discount' || assist?.type === 'waiver' || (assist?.type === 'refuel' && commodityId === 'refined_fuel')) ? assist.multiplier : undefined;
     const result = buyCommodity(s.ship, s.stations, s.npcTraders, s.avgCostByCommodity, commodityId, quantity, contract, multiplier);
     if (!result) return notice(s, 'Purchase unavailable: check stock, credits, cargo space and required cargo equipment', 'warning');
-    if (contract && result.trade.unitPrice > contractUnitPayout(contract)) return notice(s, `Purchase blocked: this supplier charges ${result.trade.unitPrice} per unit, above your contract's guaranteed ${contractUnitPayout(contract)}. Try another supplier, or abandon the order to trade speculatively.`, 'warning');
+    const purchaseCeiling = Math.min(...(s.contracts ?? []).filter(c => c.status === 'accepted' && c.commodityId === commodityId).map(contractUnitPayout));
+    if (result.trade.unitPrice > purchaseCeiling) return notice(s, `Purchase blocked: this supplier charges ${result.trade.unitPrice} per unit, above an active order's guaranteed ${purchaseCeiling}. Try another supplier, fulfill that order first, or abandon it to trade speculatively.`, 'warning');
     if (commodityId === 'luxury_goods' && s.ship.dockedStationId === 'sol-city' && s.missions.some(m => m.id === 'greenfields_stage_1' && m.status === 'active')) return notice(s, 'Sol City cannot supply this covert order. Procure luxury goods elsewhere and avoid its inspections.', 'warning');
     const held = (result.ship.cargo[commodityId] ?? 0) + result.npcTraders.filter(n => n.isEscort && n.commodityId === commodityId).reduce((q, n) => q + (n.escortCargoUsed ?? 0), 0);
     const ready = contract && held >= contract.units - (contract.deliveredUnits ?? 0);
