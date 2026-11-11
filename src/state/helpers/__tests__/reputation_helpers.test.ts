@@ -7,22 +7,22 @@ describe('reputation_helpers', () => {
       expect(getPriceDiscount(0)).toBe(0);
     });
 
-    it('returns 10% discount at 100 reputation', () => {
-      expect(getPriceDiscount(100)).toBeCloseTo(0.10, 2);
+    it('returns 20% hero discount at 100 reputation', () => {
+      expect(getPriceDiscount(100)).toBeCloseTo(0.20, 2);
     });
 
-    it('returns 5% discount at 50 reputation', () => {
-      expect(getPriceDiscount(50)).toBeCloseTo(0.05, 2);
+    it('returns 10% partner discount at 50 reputation', () => {
+      expect(getPriceDiscount(50)).toBeCloseTo(0.10, 2);
     });
 
-    it('caps discount at 10%', () => {
-      expect(getPriceDiscount(200)).toBeLessThanOrEqual(0.10);
+    it('caps discount at 20%', () => {
+      expect(getPriceDiscount(200)).toBeLessThanOrEqual(0.20);
     });
   });
 
   describe('getContractMultiplierBonus', () => {
-    it('returns 1.0x multiplier at 0 reputation', () => {
-      expect(getContractMultiplierBonus(0)).toBe(1.0);
+    it('returns no additive bonus at 0 reputation', () => {
+      expect(getContractMultiplierBonus(0)).toBe(0);
     });
 
     it('returns higher multiplier at higher reputation', () => {

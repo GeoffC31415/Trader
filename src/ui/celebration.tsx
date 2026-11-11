@@ -41,6 +41,7 @@ export function Celebration() {
       if (e.code === 'Space') {
         e.preventDefault();
         setVisible(false);
+        useGameStore.setState({ celebrationVisible: undefined });
       }
     };
 
@@ -53,6 +54,7 @@ export function Celebration() {
 
   const handleContinue = () => {
     setVisible(false);
+    useGameStore.setState({ celebrationVisible: undefined });
   };
 
   if (!visible) return null;

@@ -131,20 +131,13 @@ export function generateMarketEvent(stations: Station[]): MarketEvent | null {
  */
 export function shouldSpawnEvent(
   lastEventTime: number | undefined,
-  currentTime: number
+  currentTime: number,
+  deltaMs = 1000
 ): boolean {
-  if (!lastEventTime) {
-    // First event can spawn after 2 minutes
-    return currentTime - (Date.now() - 120000) > 120000;
-  }
-
-  // Average 7.5 minutes between events (450000 ms)
-  // Using exponential distribution: P(spawn) increases over time
-  const timeSinceLastEvent = currentTime - lastEventTime;
-  const averageInterval = 450000; // 7.5 minutes
-  const probability = 1 - Math.exp(-timeSinceLastEvent / averageInterval);
-  
-  return Math.random() < probability;
+  // Simulation-clock helper; the store uses an explicit persisted next-event deadline.
+  if (lastEventTime === undefined) return currentTime >= 120000;
+  if (currentTime - lastEventTime < 300000) return false;
+  return Math.random() < 1 - Math.exp(-Math.max(0, deltaMs) / 150000);
 }
 
 /**

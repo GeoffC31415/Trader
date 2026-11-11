@@ -54,7 +54,6 @@ export function ClipperModel({ power, hasRig }: { power: number; hasRig: boolean
   );
 }
 
-// Preload the model for better performance
-useGLTF.preload('/ships/racer_ship.glb');
+// useGLTF loads on mount; compatibility graphics must not fetch this model.
 
 

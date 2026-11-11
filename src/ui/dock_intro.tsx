@@ -15,13 +15,14 @@ import type { DialogueContext, DialogueResult } from '../domain/types/character_
 import { preloadManifest } from '../shared/audio/dialogue_audio';
 
 // Import all generated avatars as URLs via Vite's glob import
-const avatarModules = import.meta.glob('../../generated_avatars/*.png', { eager: true, as: 'url' }) as Record<string, string>;
+const avatarModules = import.meta.glob('../../generated_avatars/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
 function toSafeFilename(name: string): string {
   return name.replace(/[^a-z0-9-_\.\s]/gi, '_').replace(/\s+/g, ' ').trim();
 }
 
 const stationTypeColors: Record<StationType, { primary: string; secondary: string; glow: string }> = {
+  bank: { primary: '#c49a46', secondary: '#f6dfa0', glow: '#c49a4680' },
   city: { primary: '#3b82f6', secondary: '#60a5fa', glow: '#3b82f680' },
   refinery: { primary: '#f59e0b', secondary: '#fbbf24', glow: '#f59e0b80' },
   fabricator: { primary: '#8b5cf6', secondary: '#a78bfa', glow: '#8b5cf680' },
@@ -36,6 +37,7 @@ const stationTypeColors: Record<StationType, { primary: string; secondary: strin
 };
 
 function stationTypeAbbr(type: StationType): string {
+  if (type === 'bank') return 'BK';
   if (type === 'city') return 'CI';
   if (type === 'refinery') return 'RF';
   if (type === 'fabricator') return 'FX';

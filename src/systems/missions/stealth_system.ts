@@ -11,7 +11,7 @@ import { SCALE } from '../../domain/constants/world_constants';
 /**
  * Detection radius around stations (in world units)
  */
-export const DETECTION_RADIUS = 15 * SCALE;
+export const DETECTION_RADIUS = 8 * SCALE; // Never overlaps Greenfields' friendly dock.
 
 /**
  * Suspicion level required to trigger detection

@@ -19,6 +19,7 @@ export function generateMissionsForStation(
   
   // Check each mission template
   for (const template of Object.values(MISSION_TEMPLATES)) {
+    if (template.deprecated) continue;
     // Skip if mission isn't available at this station
     if (!template.availableAt.includes(stationId)) {
       continue;
@@ -30,6 +31,8 @@ export function generateMissionsForStation(
       continue;
     }
     
+    const chosen = arc.choicesMade['stage_2_choice'] ?? arc.choicesMade['stage_1_choice'];
+    if (template.branch && chosen !== template.branch) continue;
     // Check if arc is completed
     if (arc.status === 'completed') {
       continue;
@@ -139,6 +142,8 @@ export function checkArcUnlock(
     }
   }
   
+  if (arcId === 'union_crisis' && completedArcCount < 2) return false;
+
   // Special check for Pirate Accords (requires rep 25 at Hidden Cove OR rep 50 at Sol City)
   if (arcId === 'pirate_accords') {
     const hiddenCoveRep = playerReputation['hidden-cove'] || 0;

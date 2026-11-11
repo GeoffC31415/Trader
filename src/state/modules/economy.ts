@@ -5,15 +5,13 @@
  */
 
 import { distance } from '../../shared/math/vec3';
-import { gatedCommodities, perishableCommodities, shieldedCommodities, ensureSpread, getPriceBiasForStation, recalculatePriceForStock, getTargetStock } from '../../systems/economy/pricing';
+import { perishableCommodities, shieldedCommodities, ensureSpread, getPriceBiasForStation, recalculatePriceForStock, getTargetStock } from '../../systems/economy/pricing';
 import { processRecipes, findRecipeForStation } from '../../systems/economy/recipes';
-import { getEventPriceMultiplier } from '../../systems/economy/market_events';
 import { shipCaps } from '../../domain/constants/ship_constants';
-import { applyReputationWithPropagation } from '../../systems/reputation/faction_system';
+import { applyReputationWithPropagation, canDockAtStation } from '../../systems/reputation/faction_system';
 import { getEconomyConfig } from '../../config/game_config';
 import { generateCommodities } from '../../systems/economy/commodities';
 import { getFreshnessMultiplier } from './cargo_freshness';
-import { isPerishable } from '../../systems/economy/commodity_tiers';
 import { 
   applyReputationToBuyPrice, 
   applyReputationToSellPrice,
@@ -50,15 +48,13 @@ export function getSuggestedRoutes(
   ship: Ship,
   opts?: RouteSuggestionOptions
 ): RouteSuggestion[] {
+  stations = stations.filter(canDockAtStation);
   const cargoCapacity = ship.maxCargo;
-  const hasNav = !!ship.hasNavigationArray;
   const hasUnion = !!ship.hasUnionMembership;
   const limit = opts?.limit ?? 8;
   const prioritizePerDistance = !!opts?.prioritizePerDistance;
 
   const suggestions: RouteSuggestion[] = [];
-  const isGated = (id: string) =>
-    (gatedCommodities as readonly string[]).includes(id as any);
 
   // Direct trading routes
   for (let i = 0; i < stations.length; i++) {
@@ -70,7 +66,7 @@ export function getSuggestedRoutes(
       const keys = Object.keys(a.inventory);
 
       for (const id of keys) {
-        if (!hasNav && isGated(id)) continue;
+        if (!canTradeCommodity(ship, id)) continue;
         const ai = a.inventory[id];
         const bi = b.inventory[id];
         if (!ai || !bi) continue;
@@ -87,8 +83,7 @@ export function getSuggestedRoutes(
         if (maxUnits <= 0) continue;
 
         // Perishable goods routes are 50% more profitable (compensates for spoilage risk)
-        const perishableBonus = isPerishable(id) ? 1.5 : 1.0;
-        const estProfit = margin * maxUnits * perishableBonus;
+        const estProfit = margin * maxUnits;
         const profitPerDistance = d > 0 ? estProfit / d : estProfit;
 
         suggestions.push({
@@ -117,13 +112,13 @@ export function getSuggestedRoutes(
 
   // Processing routes
   for (const p of stations) {
-    const recipes = processRecipes[p.type] || [];
+    const recipes = p.fabricationDisabled ? [] : (processRecipes[p.type] || []).map(r => ({ ...r, inputPerOutput: r.inputPerOutput * (p.fabricationMultiplier ?? 1) }));
     if (recipes.length === 0) continue;
     const canProcessAtP = hasUnion || p.type === 'pirate';
 
     for (const r of recipes) {
       if (!canProcessAtP) continue;
-      if (!hasNav && (isGated(r.inputId) || isGated(r.outputId))) continue;
+      if (!canTradeCommodity(ship, r.inputId) || !canTradeCommodity(ship, r.outputId)) continue;
 
       for (const s of stations) {
         const sItem = s.inventory[r.inputId];
@@ -132,7 +127,7 @@ export function getSuggestedRoutes(
         if (stockIn <= 0) continue;
 
         const maxInput = Math.max(0, Math.min(stockIn, cargoCapacity));
-        const maxOutputs = Math.floor(maxInput / r.inputPerOutput);
+        const maxOutputs = Math.min(cargoCapacity, Math.floor(maxInput / r.inputPerOutput));
         if (maxOutputs <= 0) continue;
 
         for (const dSt of stations) {
@@ -147,9 +142,7 @@ export function getSuggestedRoutes(
           const d1 = distance(s.position, p.position);
           const d2 = distance(p.position, dSt.position);
           const tripDist = d1 + d2;
-          // Perishable goods routes are 50% more profitable (compensates for spoilage risk)
-          const perishableBonus = isPerishable(r.outputId) ? 1.5 : 1.0;
-          const estProfit = unitMargin * maxOutputs * perishableBonus;
+          const estProfit = unitMargin * maxOutputs;
           const profitPerDistance = tripDist > 0 ? estProfit / tripDist : estProfit;
 
           suggestions.push({
@@ -237,9 +230,8 @@ export function jitterPrices(stations: Station[], dt: number, activeEvents?: any
       const category = commodity.category;
 
       // Apply market event multipliers
-      const eventMult = activeEvents && activeEvents.length > 0
-        ? getEventPriceMultiplier(activeEvents, st.id, k, category)
-        : 1.0;
+      // Active modifiers are projected once from unmodified prices, never compounded here.
+      const eventMult = 1;
 
       // Calculate jitter factors (small random variation ±10%)
       const factorBuy = 1 + (Math.random() * 2 - 1) * config.jitterFactor;
@@ -337,7 +329,8 @@ export function buyCommodity(
   commodityId: string,
   quantity: number,
   activeContract: any,
-  priceMultiplier?: number
+  priceMultiplier?: number,
+  stored: Record<string, number> = {}
 ): BuyResult | null {
   if (!ship.dockedStationId || quantity <= 0) return null;
   if (!canTradeCommodity(ship, commodityId)) return null;
@@ -360,7 +353,6 @@ export function buyCommodity(
 
   const used = Object.values(ship.cargo).reduce((a, b) => a + b, 0);
   if (ship.credits < totalCost) return null;
-  if (used + quantity > ship.maxCargo) return null;
 
   const prevQty = ship.cargo[commodityId] || 0;
 
@@ -369,19 +361,14 @@ export function buyCommodity(
     n => n.isEscort && activeContract && n.escortingContract === activeContract.id
   );
 
-  let playerBuying = quantity;
-  let escortBuying = 0;
+  const totalEscortCapacity = escorts.reduce((sum, e) => sum + Math.max(0, (e.escortCargoCapacity ?? 0) - (e.escortCargoUsed ?? 0)), 0);
+  const playerBuying = Math.min(quantity, Math.max(0, ship.maxCargo - used));
+  const escortBuying = quantity - playerBuying;
+  if (escortBuying > totalEscortCapacity) return null;
   let updatedNpcTraders = [...npcTraders];
 
   // Distribute to escort if available
   if (activeContract && escorts.length > 0) {
-    const totalEscortCapacity = escorts.reduce(
-      (sum, e) => sum + ((e.escortCargoCapacity || 0) - (e.escortCargoUsed || 0)),
-      0
-    );
-    escortBuying = Math.min(quantity, totalEscortCapacity);
-    playerBuying = quantity - escortBuying;
-
     // Distribute escort cargo across escorts
     let remaining = escortBuying;
     for (const escort of escorts) {
@@ -422,6 +409,8 @@ export function buyCommodity(
       stock: newStock,
       buy: newPrices.buy,
       sell: newPrices.sell,
+      unmodifiedBuy: newPrices.buy,
+      unmodifiedSell: newPrices.sell,
     },
   };
 
@@ -435,9 +424,9 @@ export function buyCommodity(
 
   const avgMap = { ...avgCostByCommodity } as Record<string, number>;
   const oldAvg = avgMap[commodityId] || 0;
-  const newQty = prevQty + playerBuying;
-  const newAvg =
-    newQty > 0 ? (oldAvg * prevQty + unitBuyPrice * playerBuying) / newQty : 0;
+  const previouslyOwned = (stored[commodityId] ?? 0) + prevQty + npcTraders.filter(n => n.isEscort && n.commodityId === commodityId).reduce((sum, n) => sum + (n.escortCargoUsed ?? 0), 0);
+  const newQty = previouslyOwned + quantity;
+  const newAvg = newQty > 0 ? (oldAvg * previouslyOwned + unitBuyPrice * quantity) / newQty : 0;
   avgMap[commodityId] = newAvg;
 
   const trade = {
@@ -498,7 +487,8 @@ export function sellCommodity(
   avgCostByCommodity: Record<string, number>,
   commodityId: string,
   quantity: number,
-  escorts: NpcTrader[]
+  escorts: NpcTrader[],
+  stored: Record<string, number> = {}
 ): SellBaseResult | null {
   if (!ship.dockedStationId || quantity <= 0) return null;
   if (!canTradeCommodity(ship, commodityId)) return null;
@@ -551,6 +541,8 @@ export function sellCommodity(
     stock: newStock,
     buy: newPrices.buy,
     sell: newPrices.sell,
+    unmodifiedBuy: newPrices.buy,
+    unmodifiedSell: newPrices.sell,
   };
 
   // Auto-processing at refineries
@@ -588,7 +580,7 @@ export function sellCommodity(
   const profit = { ...profitByCommodity } as Record<string, number>;
   profit[commodityId] = (profit[commodityId] || 0) + realized;
 
-  if ((cargo[commodityId] || 0) === 0) {
+  if (totalAvailable + (stored[commodityId] ?? 0) === qty) {
     avgMap[commodityId] = 0;
   }
 
@@ -629,7 +621,7 @@ export function sellCommodity(
   });
 
   return {
-    ship: { ...ship, cargo } as Ship,
+    ship: { ...ship, cargo, credits: ship.credits + revenue } as Ship,
     stations: updatedStations,
     npcTraders: updatedNpcTraders,
     profitByCommodity: profit,
@@ -658,15 +650,17 @@ export function processCommodity(
   inputId: string,
   outputs: number
 ): Ship | null {
-  if (!dockedStationId || outputs <= 0) return null;
+  if (!dockedStationId || !Number.isInteger(outputs) || outputs <= 0) return null;
 
   const station = stations.find(s => s.id === dockedStationId);
   if (!station) return null;
 
-  const recipe = findRecipeForStation(station.type, inputId);
+  if (station.fabricationDisabled) return null;
+  const originalRecipe = findRecipeForStation(station.type, inputId);
+  const recipe = originalRecipe ? { ...originalRecipe, inputPerOutput: originalRecipe.inputPerOutput * (station.fabricationMultiplier ?? 1) } : undefined;
   if (!recipe) return null;
 
-  if (!ship.hasNavigationArray && (gatedCommodities as readonly string[]).includes(recipe.outputId))
+  if (!canTradeCommodity(ship, recipe.inputId) || !canTradeCommodity(ship, recipe.outputId))
     return null;
 
   const atPirate = station.type === 'pirate';
@@ -678,8 +672,9 @@ export function processCommodity(
   if (outCount <= 0) return null;
 
   const newCargo = { ...ship.cargo };
-  newCargo[inputId] = have - outCount * recipe.inputPerOutput;
+  newCargo[inputId] = have - Math.ceil(outCount * recipe.inputPerOutput);
   newCargo[recipe.outputId] = (newCargo[recipe.outputId] || 0) + outCount;
+  if (Object.values(newCargo).reduce((sum, qty) => sum + qty, 0) > ship.maxCargo) return null;
 
   return { ...ship, cargo: newCargo };
 }

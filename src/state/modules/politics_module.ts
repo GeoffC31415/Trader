@@ -30,7 +30,7 @@ export function applyMissionToProfile(
   multiplier: number = 1.0
 ): Partial<GameState> {
   const currentProfile = getOrCreateProfile(state);
-  const updatedProfile = applyMissionContribution(currentProfile, missionId, choiceId, multiplier);
+  const updatedProfile = applyMissionContribution(currentProfile, missionId, choiceId, multiplier, state.gameTime);
   
   return {
     politicalProfile: updatedProfile,

@@ -5,6 +5,7 @@
  * hostile defenders, and weapon systems.
  */
 
+import { FIRE_HULL_THRESHOLD } from '../../systems/combat/ship_fire';
 import { distance } from '../../shared/math/vec3';
 import {
   PLAYER_MAX_HP,
@@ -15,6 +16,7 @@ import {
   REP_LOSS_PER_HIT,
   WEAPON_BASE_STATS,
   WEAPON_UPGRADE_MAX_LEVELS,
+  NPC_WEAPON_RANGE,
 } from '../../domain/constants/weapon_constants';
 import { HOSTILE_EFFECTS } from '../../domain/constants/faction_constants';
 import { isStationHostile } from '../../systems/reputation/faction_system';
@@ -30,20 +32,21 @@ import {
   shouldNpcFire,
   npcFireAtPlayer,
 } from '../../systems/combat/ai_combat';
-import type { Ship, Station, NpcTrader } from '../../domain/types/world_types';
+import type { GameState, Ship, Station, NpcTrader } from '../../domain/types/world_types';
 import type { Projectile, ShipWeapon } from '../../domain/types/combat_types';
 
 /**
  * Result of combat system update
  */
 export interface CombatUpdateResult {
+  combatImpacts: NonNullable<GameState['combatImpacts']>;
   ship: Ship;
   npcTraders: NpcTrader[];
   projectiles: Projectile[];
   npcAggression: Record<string, any>;
   npcLastFireTimes: Record<string, number>;
   reputationChanges: Array<{ stationId: string; delta: number }>;
-  missionNpcDestroyedEvents: Array<{ npcId: string; missionId?: string }>;
+  missionNpcDestroyedEvents: Array<{ npcId: string; missionId?: string; targetGroup?: string }>;
 }
 
 /**
@@ -62,28 +65,18 @@ export function updateCombat(
     npcLastFireTimes: Record<string, number>;
     lastFireTime: number;
     stations: Station[];
+    now?: number;
+    suppressNpcFire?: boolean;
   },
   dt: number
 ): CombatUpdateResult {
   let ship = { ...state.ship };
   let npcTraders = [...state.npcTraders];
-  let projectiles = [...state.projectiles];
+  let projectiles = state.projectiles.filter(p => !state.suppressNpcFire || p.ownerType === 'player');
   const npcAggression = { ...state.npcAggression };
   const npcLastFireTimes = { ...state.npcLastFireTimes };
   const reputationChanges: Array<{ stationId: string; delta: number }> = [];
-  const missionNpcDestroyedEvents: Array<{ npcId: string; missionId?: string }> = [];
-
-  if (ship.isDead) {
-    return {
-      ship,
-      npcTraders,
-      projectiles: [],
-      npcAggression,
-      npcLastFireTimes,
-      reputationChanges,
-      missionNpcDestroyedEvents,
-    };
-  }
+  const missionNpcDestroyedEvents: Array<{ npcId: string; missionId?: string; targetGroup?: string }> = [];
 
   // Energy regeneration (only when not docked)
   if (!ship.dockedStationId) {
@@ -91,11 +84,9 @@ export function updateCombat(
   }
 
   // Update projectiles
-  projectiles = projectiles
-    .map(p => updateProjectile(p, dt))
-    .filter(p => p.lifetime > 0);
+  projectiles = projectiles.map(p => updateProjectile(p, dt, npcTraders.find(n => n.id === p.targetId && n.hp > 0)?.position));
 
-  const currentTime = Date.now();
+  const currentTime = state.now ?? Date.now();
   const damageEvents: Array<{
     targetId: string;
     targetType: 'player' | 'npc';
@@ -115,22 +106,28 @@ export function updateCombat(
   }
 
   // Remove projectiles that hit
-  projectiles = projectiles.filter(p => !projectilesToRemove.has(p.id));
+  projectiles = projectiles.filter(p => (!projectilesToRemove.has(p.id) || p.hitscan) && p.lifetime > 0)
+    .map(p => p.hitscan ? { ...p, resolved: true } : p);
 
+  const combatImpacts: NonNullable<GameState['combatImpacts']> = [];
+  const playerKills = new Set<string>();
   // Apply damage and update aggression
   for (const event of damageEvents) {
+    const target = event.targetType === 'player' ? ship : npcTraders.find(n => n.id === event.targetId);
+    if (!target || target.hp <= 0 || event.damage <= 0) continue;
+    combatImpacts.push({ id: `${currentTime}:${combatImpacts.length}:${event.targetId}`, targetId: event.targetId,
+      position: [...target.position], damage: Math.min(event.damage, target.hp), at: currentTime / 1000 });
     if (event.targetType === 'player') {
       ship.hp = Math.max(0, ship.hp - event.damage);
-      if (ship.hp <= 0) {
-        ship.isDead = true;
-        ship.velocity = [0, 0, 0];
-        ship.enginePower = 0;
-        ship.engineTarget = 0;
+      if (!ship.dockedStationId && ship.hp > 0 && ship.hp / ship.maxHp <= FIRE_HULL_THRESHOLD && !ship.onFire) {
+        ship.onFire = true;
+        ship.fireSeconds = 0;
       }
     } else {
       // Damage to NPC
       npcTraders = npcTraders.map(npc => {
-        if (npc.id === event.targetId) {
+        if (npc.id === event.targetId && npc.hp > 0) {
+          if (event.sourceType === 'player' && event.damage >= npc.hp) playerKills.add(npc.id);
           const newHp = Math.max(0, npc.hp - event.damage);
 
           // Update aggression if hit by player
@@ -169,16 +166,22 @@ export function updateCombat(
     }
   }
 
+  // Limit simultaneous attackers on a trader; escorts remain the explicit priority for raiders.
+  const playerFiringSlots = new Set(npcTraders.filter(n => n.hp > 0 && (n.isHostile || n.isAggressive || npcAggression[n.id]?.isAggressive) && distance(n.position, ship.position) <= NPC_WEAPON_RANGE * (ship.silentRunning ? 0.35 : 1))
+    .sort((a, b) => distance(a.position, ship.position) - distance(b.position, ship.position)).slice(0, 2).map(n => n.id));
   // NPC combat AI - fire back when aggressive
   for (const npc of npcTraders) {
-    if (npc.hp <= 0) continue;
+    if (npc.hp <= 0 || state.suppressNpcFire) continue;
 
     const aggressionState = npcAggression[npc.id];
     const lastFire = npcLastFireTimes[npc.id] || 0;
 
-    if (shouldNpcFire(npc, npc.hp, ship, aggressionState, lastFire, currentTime)) {
-      const npcProjectile = npcFireAtPlayer(npc, ship);
-      projectiles.push(npcProjectile);
+    const escort = npcTraders.find(n => n.isMissionEscort && n.missionId === npc.missionId && n.hp > 0);
+    if (!escort && !playerFiringSlots.has(npc.id)) continue;
+    const target = escort ? { ...ship, position: escort.position, velocity: escort.velocity ?? [0, 0, 0] as [number, number, number], dockedStationId: undefined, silentRunning: false } : ship;
+    if (shouldNpcFire(npc, npc.hp, target, aggressionState, lastFire, currentTime)) {
+      const npcProjectile = npcFireAtPlayer(npc, target);
+      projectiles.push({ ...npcProjectile, missionId: npc.missionId });
       npcLastFireTimes[npc.id] = currentTime;
     }
   }
@@ -188,26 +191,28 @@ export function updateCombat(
 
   for (const destroyed of destroyedNpcs) {
     // Track mission NPC destruction
-    if (destroyed.isMissionTarget && destroyed.missionId) {
+    if (playerKills.has(destroyed.id) && destroyed.isMissionTarget && destroyed.missionId) {
       missionNpcDestroyedEvents.push({
         npcId: destroyed.id,
         missionId: destroyed.missionId,
+        targetGroup: destroyed.targetGroup,
       });
     }
 
     // Apply reputation loss for kill
-    if (!destroyed.isHostile) {
+    if (playerKills.has(destroyed.id) && !destroyed.isHostile) {
       reputationChanges.push({ stationId: destroyed.fromId, delta: REP_LOSS_PER_NPC_KILL });
     }
 
     // Drop cargo (simple: add to a nearby "debris" - for now, skip actual spawning)
-    // Cargo drops are handled in the store tick (spawns debris VFX + collectibles)
+    // TODO: Spawn collectible debris with cargo in future iteration
   }
 
   // Remove dead NPCs
   npcTraders = npcTraders.filter(npc => npc.hp > 0);
 
   return {
+    combatImpacts,
     ship,
     npcTraders,
     projectiles,
@@ -274,6 +279,7 @@ export function spawnHostileDefenders(
               hp: NPC_BASE_HP * 2, // Tougher than normal NPCs
               maxHp: NPC_BASE_HP * 2,
               isHostile: true,
+              role: 'defender',
               isAggressive: true, // Attack player on sight
               kind: 'clipper', // Fast combat ship
             };
@@ -299,12 +305,13 @@ export function spawnHostileDefenders(
 export function firePlayerWeapon(
   ship: Ship,
   lastFireTime: number,
-  targetPos: [number, number, number] | null
+  targetPos: [number, number, number] | null,
+  now = Date.now()
 ): { ship: Ship; projectile: Projectile } | null {
   // Can't fire while docked
-  if (ship.dockedStationId) return null;
+  if (ship.dockedStationId || ship.hp <= 0) return null;
 
-  const currentTime = Date.now();
+  const currentTime = now;
   const weapon = ship.weapon;
 
   // Check fire rate cooldown

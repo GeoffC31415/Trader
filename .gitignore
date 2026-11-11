@@ -1,4 +1,9 @@
 node_modules
+dist/
+*.tsbuildinfo
+test-results/
+playwright-report/
+artifacts/
 
 # Environment variables
 .env

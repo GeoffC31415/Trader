@@ -8,7 +8,7 @@ import type { Station } from '../../domain/types/world_types';
 import type { PriceSnapshot } from '../../domain/types/world_types';
 
 const SNAPSHOT_INTERVAL_MS = 30000; // 30 seconds
-const MAX_SNAPSHOTS_PER_COMMODITY = 20; // Keep last 20 snapshots (10 minutes of history)
+const MAX_SNAPSHOTS_PER_COMMODITY = 60; // 30 simulation minutes, bounded for browser-local saves.
 
 /**
  * Record price snapshots for all stations
@@ -27,7 +27,7 @@ export function recordPriceHistory(
   lastSnapshotTime: number;
 } {
   // Only snapshot every 30 seconds
-  if (lastSnapshotTime && currentTime - lastSnapshotTime < SNAPSHOT_INTERVAL_MS) {
+  if (lastSnapshotTime !== undefined && currentTime - lastSnapshotTime < SNAPSHOT_INTERVAL_MS) {
     return {
       priceHistory: {},
       lastSnapshotTime: lastSnapshotTime,
@@ -76,6 +76,7 @@ export function mergePriceHistory(
       merged[stationId] = {};
     }
 
+    merged[stationId] = { ...merged[stationId] };
     for (const [commodityId, snapshots] of Object.entries(stationHistory)) {
       const existingSnapshots = merged[stationId][commodityId] || [];
       const combined = [...existingSnapshots, ...snapshots];

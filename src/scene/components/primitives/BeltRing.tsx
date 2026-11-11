@@ -9,8 +9,7 @@ const asteroidModels = [
   '/asteroids/asteroid_ore.glb',
 ];
 
-// Preload asteroid models
-asteroidModels.forEach(path => useGLTF.preload(path));
+// Asteroid models load on mount, not while compatibility graphics hides them.
 
 function AsteroidField({ radius }: { radius: number }) {
   // Load all asteroid models
@@ -83,7 +82,7 @@ export function BeltRing({ position, radius, name, showAsteroids = true }: { pos
       {/* Scatter asteroid models - can be toggled for performance */}
       {showAsteroids && <AsteroidField radius={radius} />}
       
-      <Html center distanceFactor={12}><div style={{ fontSize: 12 }}>{name}</div></Html>
+      <Html center distanceFactor={12} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}><div style={{ fontSize: 12 }}>{name}</div></Html>
     </group>
   );
 }

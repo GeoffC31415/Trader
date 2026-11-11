@@ -79,9 +79,9 @@ export const NPC_PIRATE_HP = 120;
 export const NPC_BOUNTY_HUNTER_HP = 180;
 
 // NPC weapon (simpler, non-upgradeable)
-export const NPC_WEAPON_DAMAGE = 8;
-export const NPC_WEAPON_FIRE_RATE = 1.5;
-export const NPC_WEAPON_RANGE = 700;
+export const NPC_WEAPON_DAMAGE = 3; // Trader-friendly baseline; encounter size is bounded.
+export const NPC_WEAPON_FIRE_RATE = 1.0;
+export const NPC_WEAPON_RANGE = 450;
 export const NPC_WEAPON_ENERGY_COST = 5;
 
 // Combat behavior

@@ -151,7 +151,7 @@ export function applyMultipleReputationChanges(
  */
 export function isStationHostile(station: Station): boolean {
   const rep = station.reputation || 0;
-  return rep < FACTION_REP_THRESHOLDS.HOSTILE;
+  return station.isHostile === true || rep < FACTION_REP_THRESHOLDS.HOSTILE;
 }
 
 /**

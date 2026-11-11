@@ -19,7 +19,7 @@ export function SciFiPanel({
   
   return (
     <div
-      className={`sci-fi-panel ${className}`}
+      className={`sci-fi-panel sci-fi-panel-${stationType} ${className}`}
       style={{
         background: 'linear-gradient(135deg, rgba(10,15,25,0.95) 0%, rgba(15,20,30,0.98) 100%)',
         border: `2px solid ${colors.primary}`,

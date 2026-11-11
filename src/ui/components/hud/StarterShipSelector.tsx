@@ -1,8 +1,10 @@
+import { GraphicsQualityControl } from './GraphicsQualityControl';
 import type { ShipKind } from '../../../domain/constants/ship_kinds';
 
 interface StarterShipSelectorProps {
   tutorialActive: boolean;
   onSetTutorialActive: (active: boolean) => void;
+  onLoad?: () => void;
   onChooseStarter: (kind: ShipKind | 'test', opts?: { tutorial?: boolean }) => void;
 }
 
@@ -10,6 +12,7 @@ export function StarterShipSelector({
   tutorialActive,
   onSetTutorialActive,
   onChooseStarter,
+  onLoad,
 }: StarterShipSelectorProps) {
   return (
     <div
@@ -20,6 +23,8 @@ export function StarterShipSelector({
     >
       <div style={{ background: 'rgba(12,15,22,0.95)', padding: 20, borderRadius: 12, width: 820, color: '#e5e7eb', boxShadow: '0 8px 30px rgba(0,0,0,0.5)' }}>
         <div style={{ fontSize: 22, fontWeight: 700, marginBottom: 12 }}>Choose Your Starter Ship</div>
+        <GraphicsQualityControl />
+        <button onClick={onLoad} disabled={!onLoad}>Load saved campaign</button>
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, opacity: 0.9 }}>
           <input type="checkbox" checked={tutorialActive} onChange={(e) => onSetTutorialActive(e.target.checked)} />
           Start with tutorial (recommended for new players)

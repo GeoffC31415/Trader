@@ -1,0 +1,87 @@
+import { test, expect } from '@playwright/test';
+
+test('banking, local warehouses, loans, actual defeat losses and asset history persist through UI checkpoints', async ({ page }) => {
+  test.setTimeout(180000);
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await page.addInitScript(() => localStorage.setItem('trader.graphics', 'low'));
+  await page.route('https://**/*', route => route.abort());
+  await page.goto('/'); await page.getByRole('button', { name: 'Select Freighter', exact: true }).click();
+  await expect(page.getByText('Press E to dock at Sol City', { exact: true })).toBeVisible();
+  await page.keyboard.press('e'); await page.getByRole('button', { name: /Enter Station/ }).click();
+  const data = () => page.evaluate(async () => { const path = '/src/state/store.ts'; const s = (await import(path)).useGameStore.getState(); return { ship: s.ship, finance: s.finance, time: s.gameTime }; });
+  await page.getByRole('button', { name: 'Banking', exact: true }).click();
+  await page.getByRole('spinbutton', { name: 'Bank transaction amount' }).fill('2000'); await page.getByRole('button', { name: 'Deposit to savings', exact: true }).click();
+  await expect.poll(async () => (await data()).finance.savings).toBe(2000);
+  expect((await data()).ship.credits).toBe(8000);
+  await page.getByRole('spinbutton', { name: 'Bank transaction amount' }).fill('500'); await page.getByRole('button', { name: 'Invest savings', exact: true }).click();
+  await expect.poll(async () => (await data()).finance.funds['meridian-bank'].units).toBeGreaterThan(0);
+  await expect(page.getByRole('button', { name: 'Borrow to ship', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: /Civic Exchange/ }).click();
+  await page.getByRole('spinbutton').fill('3');
+  await page.getByRole('button', { name: /Production/ }).click();
+  await page.getByRole('spinbutton').fill('3');
+  const luxury = page.locator('.commodity-grid > div').filter({ has: page.getByText('luxury goods', { exact: true }) }).locator('xpath=following-sibling::div[4]');
+  await luxury.getByRole('button', { name: 'BUY 3', exact: true }).click();
+  await page.getByRole('button', { name: 'Warehouse', exact: true }).click();
+  await page.getByRole('spinbutton', { name: 'Warehouse transfer quantity' }).fill('2');
+  const cash = (await data()).ship.credits;
+  await page.getByRole('button', { name: 'Store Luxury Goods', exact: true }).click();
+  expect((await data()).finance.warehouses['sol-city'].goods.luxury_goods).toBe(2); expect((await data()).ship.cargo.luxury_goods).toBe(1); expect((await data()).ship.credits).toBe(cash);
+  await page.screenshot({ path: test.info().outputPath('warehouse.png') });
+  // Travel to the new bank is arranged; loans, trades, transfers and repayments are real UI actions.
+  await page.evaluate(async () => { const path = '/src/state/store.ts'; const store = (await import(path)).useGameStore; store.getState().undock(); const s = store.getState(), bank = s.stations.find((st: any) => st.id === 'meridian-bank'); store.setState({ ship: { ...s.ship, position: [bank.position[0] + 12, bank.position[1], bank.position[2]], velocity: [0, 0, 0] } }); store.getState().tryDock('meridian-bank'); });
+  await page.getByRole('button', { name: /Enter Station/ }).click();
+  const bank = page.getByRole('region', { name: 'Meridian banking services' });
+  await expect(bank).toContainText('Director Ada Voss');
+  await bank.getByRole('spinbutton', { name: 'Bank transaction amount' }).fill('1000'); await bank.getByRole('button', { name: 'Borrow to ship', exact: true }).click();
+  await expect.poll(async () => (await data()).finance.loan.principal).toBe(1000);
+  // Arrange one simulation minute via the real settlement helpers, not wall-clock/offline accrual.
+  await page.evaluate(async () => { const path = '/src/state/store.ts', finance = '/src/systems/finance.ts', journal = '/src/systems/journal.ts'; const store = (await import(path)).useGameStore, s = store.getState(), f = await import(finance); store.setState((await import(journal)).recordJournalTransition(s, f.recordAssets(s, f.tickFinance({ ...s, gameTime: s.gameTime + 60 }, () => .5)))); });
+  expect((await data()).finance.loan.interest).toBeGreaterThan(4.9);
+  await bank.getByRole('heading', { name: 'Capital deserves a safe harbour.', exact: true }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: test.info().outputPath('meridian-bank.png') });
+  const beforeDeath = await data();
+  await page.evaluate(async () => { const path = '/src/state/store.ts', weapons = '/src/systems/combat/weapon_systems.ts'; const store = (await import(path)).useGameStore; store.getState().undock(); const s = store.getState(); const shot = (await import(weapons)).createProjectile({ ...s.ship.weapon, damage: 1000 }, [s.ship.position[0] + 20, s.ship.position[1], s.ship.position[2]], [0, 0, 0], s.ship.position, 'finance-test-attacker', 'npc'); store.setState({ projectiles: [shot] }); });
+  await expect.poll(async () => (await data()).ship.credits).toBe(beforeDeath.ship.credits * .5);
+  const recovered = await data(); expect(recovered.finance.savings).toBe(beforeDeath.finance.savings); expect(recovered.finance.funds).toEqual(beforeDeath.finance.funds); expect(recovered.finance.warehouses).toEqual(beforeDeath.finance.warehouses); expect(recovered.finance.loan.principal).toBe(1000);
+  await page.getByRole('button', { name: /Enter Station/ }).click();
+  await page.getByRole('button', { name: 'Banking', exact: true }).click();
+  await page.getByRole('spinbutton', { name: 'Bank transaction amount' }).fill('100'); await page.getByRole('button', { name: 'Repay loan', exact: true }).click();
+  await expect.poll(async () => (await data()).finance.loan.principal).toBeLessThan(1000); expect((await data()).finance.loan.interest).toBe(0);
+  await page.getByRole('button', { name: 'Pause (P)', exact: true }).click(); await page.getByRole('button', { name: 'Save', exact: true }).click();
+  const saved = await data(); await page.reload(); await page.getByRole('button', { name: 'Load saved campaign', exact: true }).click();
+  expect((await data()).finance).toEqual(saved.finance); expect((await data()).ship.credits).toBe(saved.ship.credits);
+  await page.getByRole('button', { name: /tab journal Journal/ }).click();
+  const nav = page.getByRole('region', { name: 'Net asset value overview' });
+  await expect(nav.getByRole('figure', { name: 'Net asset value over time' })).toBeVisible();
+  await expect(nav).toContainText('Loan liability'); expect(await nav.locator('polyline').count()).toBe(1);
+  await page.screenshot({ path: test.info().outputPath('net-assets.png') });
+  expect(errors).toEqual([]);
+});
+
+test('linked production chains and the eight-system ship blueprint support focus, rotation and narrow windows', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.addInitScript(() => localStorage.setItem('trader.graphics', 'low'));
+  await page.goto('/'); await page.getByRole('button', { name: 'Select Freighter', exact: true }).click();
+  // Installed-system configuration is a labelled visual fixture, not eight earned purchases.
+  await page.evaluate(async () => { const path = '/src/state/store.ts'; const store = (await import(path)).useGameStore; store.setState((s: any) => ({ ship: { ...s.ship, canMine: true, hasNavigationArray: true, hasUnionMembership: true, hasMarketIntel: true, hasTradeLedger: true, hasTempCargo: true, hasShieldedCargo: true, hasFireSuppression: true } })); });
+  await page.getByRole('button', { name: /tab journal Journal/ }).click();
+  const journal = page.getByRole('region', { name: 'Commander journal' });
+  await journal.getByRole('button', { name: /Ship & systems/ }).click();
+  const model = journal.getByRole('region', { name: 'Ship technical schematic' });
+  await expect(model.locator('[data-installed="true"]')).toHaveCount(8);
+  await expect(model.getByRole('button', { name: 'Automatic rotation disabled', exact: true })).toBeDisabled();
+  const points = await model.locator('polygon').first().getAttribute('points'); await model.getByRole('button', { name: 'Rotate model step', exact: true }).click(); expect(await model.locator('polygon').first().getAttribute('points')).not.toBe(points);
+  await model.getByRole('button', { name: 'Fire suppression: installed', exact: true }).focus(); await expect(model.getByRole('status')).toContainText('three simulation seconds');
+  await page.screenshot({ path: test.info().outputPath('ship-blueprint-installed-fixture.png') });
+  await journal.getByRole('button', { name: /Manufacturing/ }).click(); await journal.getByRole('searchbox', { name: 'Search manufacturing', exact: true }).fill('hydrogen');
+  const network = journal.getByRole('region', { name: 'Manufacturing chain network' });
+  await expect(network.getByRole('img', { name: 'Hydrogen', exact: true })).toBeVisible(); await expect(network.getByRole('img', { name: 'Batteries', exact: true })).toBeVisible();
+  await network.getByRole('button', { name: 'Refined Fuel to Batteries method', exact: true }).focus();
+  await expect(network.getByRole('region', { name: 'Refined Fuel to Batteries supporting stations', exact: true })).toContainText('Ceres Power Plant');
+  await page.screenshot({ path: test.info().outputPath('linked-production.png') });
+  await page.setViewportSize({ width: 640, height: 900 }); expect(await journal.evaluate(el => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath('linked-production-narrow.png') });
+  expect(errors).toEqual([]);
+});

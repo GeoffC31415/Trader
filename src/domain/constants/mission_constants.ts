@@ -1,6 +1,7 @@
 // Mission arc definitions and templates
 
 import type { MissionTemplate, MissionArc } from '../types/mission_types';
+import { buildMissionCatalog } from '../../systems/missions/mission_catalog';
 
 // ============================================================================
 // Arc Definitions
@@ -63,7 +64,7 @@ export const MISSION_ARCS: Record<string, Omit<MissionArc, 'status' | 'currentSt
     characters: ['drydock', 'greenfields', 'sol-refinery'],
     unlockRequirements: {
       upgrades: ['union'], // Requires Union Membership
-      completedArcs: ['any_arc_1', 'any_arc_2'], // Requires completion of 2 other arcs (checked at runtime)
+      // Requires completion of 2 other arcs (checked at runtime)
     },
   },
 };
@@ -72,7 +73,7 @@ export const MISSION_ARCS: Record<string, Omit<MissionArc, 'status' | 'currentSt
 // Mission Templates - Stage 1
 // ============================================================================
 
-export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
+const LEGACY_MISSION_TEMPLATES: Record<string, MissionTemplate> = {
   
   // ---------------------------------------------------------------------------
   // Arc 1: Greenfields Independence - Stage 1
@@ -205,9 +206,10 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
       },
       {
         id: 'return_aurum',
-        type: 'visit',
-        description: 'Return to Aurum Fab',
-        target: 'aurum-fab',
+        type: 'deliver',
+        description: 'Return data to Aurum Fab',
+        target: 'data_chip', // special mission item
+        targetStation: 'aurum-fab',
         quantity: 1,
       },
     ],
@@ -242,10 +244,11 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
       },
       {
         id: 'deliver_fake_data',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver fake schematics to Aurum Fab',
+        target: 'fake_data_chip',
+        targetStation: 'aurum-fab',
         quantity: 1,
-        target: 'aurum-fab',
       },
     ],
     rewards: {
@@ -262,6 +265,40 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
     availableAt: ['drydock'],
   },
   
+  // ---------------------------------------------------------------------------
+  // Arc 2: Fabrication Wars - Stage 3 (Combat Test)
+  // ---------------------------------------------------------------------------
+
+  fabrication_wars_stage_3: {
+    id: 'fabrication_wars_stage_3',
+    arcId: 'fabrication_wars',
+    title: 'Sabotage the Supply Line',
+    description: 'Destroy 5 NPC traders carrying electronics or alloys to disrupt the enemy\'s fabrication supply chain. Must destroy within 10 minutes.',
+    type: 'combat',
+    stage: 3,
+    objectiveTemplates: [
+      {
+        id: 'destroy_traders',
+        type: 'destroy',
+        description: 'Destroy 5 supply traders',
+        quantity: 5,
+      },
+    ],
+    rewards: {
+      credits: 7000,
+      reputationChanges: {
+        'aurum-fab': 25, // Rewards whoever you chose in stage 1
+        'drydock': -30,
+      },
+    },
+    requiredRep: {
+      'aurum-fab': 40,
+    },
+    availableAt: ['aurum-fab'],
+    timeLimit: 600, // 10 minutes
+    prerequisiteMissions: ['fabrication_wars_aurum_stage_1'],
+  },
+
   // ---------------------------------------------------------------------------
   // Arc 3: Energy Monopoly - Stage 1
   // ---------------------------------------------------------------------------
@@ -329,10 +366,11 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
       },
       {
         id: 'deliver_proposal',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver proposal to Hidden Cove',
+        target: 'diplomatic_pouch',
+        targetStation: 'hidden-cove',
         quantity: 1,
-        target: 'hidden-cove',
       },
     ],
     rewards: {
@@ -570,31 +608,35 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
     objectiveTemplates: [
       {
         id: 'deliver_contract_1',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver contract to Ceres Power Plant',
+        target: 'enforcement_contract',
+        targetStation: 'ceres-pp',
         quantity: 1,
-        target: 'ceres-pp',
       },
       {
         id: 'deliver_contract_2',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver contract to Aurum Fabricator',
+        target: 'enforcement_contract',
+        targetStation: 'aurum-fab',
         quantity: 1,
-        target: 'aurum-fab',
       },
       {
         id: 'deliver_contract_3',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver contract to Drydock',
+        target: 'enforcement_contract',
+        targetStation: 'drydock',
         quantity: 1,
-        target: 'drydock',
       },
       {
         id: 'deliver_contract_4',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver contract to Freeport',
+        target: 'enforcement_contract',
+        targetStation: 'freeport',
         quantity: 1,
-        target: 'freeport',
       },
     ],
     rewards: {
@@ -627,20 +669,25 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
     stage: 2,
     objectiveTemplates: [
       {
-        type: 'deliver',
-        id: 'deliver_copper',
-        description: 'Deliver 20 copper ore to Aurum Fab',
+        id: 'collect_copper',
+        type: 'collect',
+        description: 'Buy all available copper ore',
         target: 'copper_ore',
-        targetStation: 'aurum-fab',
         quantity: 20,
       },
       {
-        id: 'deliver_silicon',
-        type: 'deliver',
-        description: 'Deliver 20 silicon to Aurum Fab',
+        id: 'collect_silicon',
+        type: 'collect',
+        description: 'Buy all available silicon',
         target: 'silicon',
-        targetStation: 'aurum-fab',
         quantity: 20,
+      },
+      {
+        id: 'deliver_materials',
+        type: 'deliver',
+        description: 'Deliver materials to Aurum Fab',
+        targetStation: 'aurum-fab',
+        quantity: 1,
       },
     ],
     rewards: {
@@ -669,20 +716,25 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
     stage: 2,
     objectiveTemplates: [
       {
-        type: 'deliver',
-        id: 'deliver_copper',
-        description: 'Deliver 20 copper ore to Drydock',
+        id: 'collect_copper',
+        type: 'collect',
+        description: 'Buy all available copper ore',
         target: 'copper_ore',
-        targetStation: 'drydock',
         quantity: 20,
       },
       {
-        id: 'deliver_silicon',
-        type: 'deliver',
-        description: 'Deliver 20 silicon to Drydock',
+        id: 'collect_silicon',
+        type: 'collect',
+        description: 'Buy all available silicon',
         target: 'silicon',
-        targetStation: 'drydock',
         quantity: 20,
+      },
+      {
+        id: 'deliver_materials',
+        type: 'deliver',
+        description: 'Deliver materials to Drydock',
+        targetStation: 'drydock',
+        quantity: 1,
       },
     ],
     rewards: {
@@ -785,28 +837,12 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
     stage: 4,
     objectiveTemplates: [
       {
-        id: 'deliver_machinery',
+        id: 'deliver_mixed_fabricated',
         type: 'deliver',
-        description: 'Deliver 20 machinery to Ceres Power Plant',
-        target: 'machinery',
+        description: 'Deliver 50 mixed fabricated goods to Ceres Power Plant',
+        target: 'fabricated_goods_mixed',
         targetStation: 'ceres-pp',
-        quantity: 20,
-      },
-      {
-        id: 'deliver_microchips',
-        type: 'deliver',
-        description: 'Deliver 15 microchips to Ceres Power Plant',
-        target: 'microchips',
-        targetStation: 'ceres-pp',
-        quantity: 15,
-      },
-      {
-        id: 'deliver_batteries',
-        type: 'deliver',
-        description: 'Deliver 15 batteries to Ceres Power Plant',
-        target: 'batteries',
-        targetStation: 'ceres-pp',
-        quantity: 15,
+        quantity: 50,
       },
     ],
     rewards: {
@@ -834,28 +870,12 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
     stage: 4,
     objectiveTemplates: [
       {
-        id: 'deliver_machinery',
+        id: 'deliver_mixed_fabricated',
         type: 'deliver',
-        description: 'Deliver 20 machinery to Ceres Power Plant',
-        target: 'machinery',
+        description: 'Deliver 50 mixed fabricated goods to Ceres Power Plant',
+        target: 'fabricated_goods_mixed',
         targetStation: 'ceres-pp',
-        quantity: 20,
-      },
-      {
-        id: 'deliver_microchips',
-        type: 'deliver',
-        description: 'Deliver 15 microchips to Ceres Power Plant',
-        target: 'microchips',
-        targetStation: 'ceres-pp',
-        quantity: 15,
-      },
-      {
-        id: 'deliver_batteries',
-        type: 'deliver',
-        description: 'Deliver 15 batteries to Ceres Power Plant',
-        target: 'batteries',
-        targetStation: 'ceres-pp',
-        quantity: 15,
+        quantity: 50,
       },
     ],
     rewards: {
@@ -1096,16 +1116,22 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
     arcId: 'energy_monopoly',
     title: 'Consolidate Control - Fuel Market Domination',
     description: 'Ivo Renn\'s office displays real-time fuel prices across every station in the system. You watch the numbers shift and flow like living things—supply, demand, speculation, need. He studies the data with the focus of a chess master planning moves ahead.\n\n"The refinery convoys are disrupted," he says without looking away from the screens. "Market instability is creating opportunity. Every station is scrambling for fuel reserves. Panic buying. Hoarding. Exactly as predicted."\n\nHe finally turns to face you, and his expression is unreadable. "I need you to capitalize on this moment. Visit five stations in twelve minutes. Buy every unit of refined fuel available. Doesn\'t matter what you pay—I\'ll reimburse double. Bring it all here to Ceres."\n\nThe implications are staggering. This isn\'t just maintaining a monopoly—this is cementing it permanently.\n\n"You\'re wondering if this makes you complicit," Ivo observes. "If helping me corner the fuel market makes you part of the problem." He pulls up infrastructure dependency charts. "Consider: Ceres Power Plant hasn\'t had a grid failure in nine years. Not one. That\'s because we maintain operational reserves that free-market idealists call \'hoarding.\'"\n\nHe highlights critical systems—hospitals, life support, agriculture. "These systems can\'t function on market volatility. They need guaranteed supply. Stability. Certainty. I provide that. Rex Calder provides dreams of free markets that collapse the moment supply chains hiccup."\n\nThe timer starts: twelve minutes. Five stations. Every unit of fuel you can carry. You\'re either building stability or enabling oppression. Maybe both. Maybe neither. Maybe the answer depends on who\'s asking.\n\nThe market is waiting. Choose.',
-    type: 'delivery',
+    type: 'collection',
     stage: 4,
     objectiveTemplates: [
       {
+        id: 'buy_fuel_all',
+        type: 'collect',
+        description: 'Buy all refined fuel from 5 stations',
+        target: 'refined_fuel',
+        quantity: 50,
+      },
+      {
         id: 'deliver_to_ceres',
         type: 'deliver',
-        description: 'Deliver 50 refined fuel to Ceres Power Plant',
-        target: 'refined_fuel',
+        description: 'Deliver all fuel to Ceres Power Plant',
         targetStation: 'ceres-pp',
-        quantity: 50,
+        quantity: 1,
       },
     ],
     rewards: {
@@ -1282,38 +1308,43 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
     objectiveTemplates: [
       {
         id: 'deliver_pamphlets_1',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver pamphlets to Greenfields',
+        target: 'union_pamphlet',
+        targetStation: 'greenfields',
         quantity: 1,
-        target: 'greenfields',
       },
       {
         id: 'deliver_pamphlets_2',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver pamphlets to Sol Refinery',
+        target: 'union_pamphlet',
+        targetStation: 'sol-refinery',
         quantity: 1,
-        target: 'sol-refinery',
       },
       {
         id: 'deliver_pamphlets_3',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver pamphlets to Freeport',
+        target: 'union_pamphlet',
+        targetStation: 'freeport',
         quantity: 1,
-        target: 'freeport',
       },
       {
         id: 'deliver_pamphlets_4',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver pamphlets to Hidden Cove',
+        target: 'union_pamphlet',
+        targetStation: 'hidden-cove',
         quantity: 1,
-        target: 'hidden-cove',
       },
       {
         id: 'deliver_pamphlets_5',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver pamphlets to Ceres Power Plant',
+        target: 'union_pamphlet',
+        targetStation: 'ceres-pp',
         quantity: 1,
-        target: 'ceres-pp',
       },
     ],
     rewards: {
@@ -1465,10 +1496,11 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
       },
       {
         id: 'deliver_to_freeport',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver all data to Freeport for arbitration',
+        target: 'economic_data',
+        targetStation: 'freeport',
         quantity: 1,
-        target: 'freeport',
       },
     ],
     rewards: {
@@ -1541,10 +1573,11 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
       },
       {
         id: 'deliver_to_freeport',
-        type: 'visit',
+        type: 'deliver',
         description: 'Deliver all data to Freeport for arbitration',
+        target: 'economic_data',
+        targetStation: 'freeport',
         quantity: 1,
-        target: 'freeport',
       },
     ],
     rewards: {
@@ -1569,6 +1602,8 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+export const MISSION_TEMPLATES = buildMissionCatalog(LEGACY_MISSION_TEMPLATES);
 
 export function getArcById(arcId: string): Omit<MissionArc, 'status' | 'currentStage' | 'choicesMade' | 'completedMissions'> | undefined {
   return MISSION_ARCS[arcId];

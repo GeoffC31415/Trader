@@ -7,6 +7,7 @@ export type ProcessRecipe = {
 };
 
 export const processRecipes: Record<StationType, ProcessRecipe[]> = {
+  bank: [],
   refinery: [
     { inputId: 'iron_ore', outputId: 'steel', inputPerOutput: 2 },
     { inputId: 'copper_ore', outputId: 'alloys', inputPerOutput: 3 },

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useGameStore } from '../state';
-import { processRecipes } from '../systems/economy/recipes';
+import { processRecipes, findRecipeForStation } from '../systems/economy/recipes';
 import { CONTRACT_REFRESH_INTERVAL } from '../domain/constants/contract_constants';
 import { MissionChoiceDialog } from './components/mission_choice_dialog';
 import type { Mission } from '../domain/types/mission_types';
@@ -8,6 +8,9 @@ import { getMissionTemplatesByStage } from '../domain/constants/mission_constant
 import { UIIcon } from './components/ui_icon';
 import { stationTypeColors, getHallLabel } from './utils/station_theme';
 import { MarketHeader } from './components/market/MarketHeader';
+import { BANK_PORTS } from '../systems/finance';
+import { WarehouseSection } from './components/market/WarehouseSection';
+import { BankingSection } from './components/market/BankingSection';
 import { HallSection } from './components/market/HallSection';
 import { FabricationSection } from './components/market/FabricationSection';
 import { ProductionSection } from './components/market/ProductionSection';
@@ -29,8 +32,6 @@ export function MarketPanel() {
   const process = useGameStore(s => s.process);
   const upgrade = useGameStore(s => s.upgrade);
   const replaceShip = useGameStore(s => s.replaceShip);
-  const purchaseWeapon = useGameStore(s => s.purchaseWeapon);
-  const upgradeWeapon = useGameStore(s => s.upgradeWeapon);
   const hasIntel = !!ship.hasMarketIntel;
   const contracts = useGameStore(s => s.contracts || []);
   const acceptContract = useGameStore(s => s.acceptContract);
@@ -74,7 +75,7 @@ export function MarketPanel() {
   }, [allyAssistTokens, stationId]);
 
   const items = station ? Object.entries(station.inventory) : [];
-  const recipes = station ? (processRecipes[station.type] || []) : [];
+  const recipes = station ? (processRecipes[station.type] || []).filter(recipe => findRecipeForStation(station.type, recipe.inputId) === recipe) : [];
   const outputSet = new Set(recipes.map(r => r.outputId));
   const visibleItems = items.filter(([_, p]) => (p.canSell !== false) || (p.canBuy !== false));
   const producedItems = visibleItems.filter(([id, _]) => outputSet.has(id));
@@ -83,6 +84,7 @@ export function MarketPanel() {
   const isPirate = station?.type === 'pirate';
   const hallLabel = station ? getHallLabel(station.type) : 'Trading Hall';
 
+  const hasBanking = BANK_PORTS.includes(ship.dockedStationId ?? '');
   const hasFabrication = recipes.length > 0;
   const hasProduction = producedItems.length > 0;
   const stationContracts = useMemo(() => 
@@ -127,6 +129,7 @@ export function MarketPanel() {
       if (arc.status === 'locked' || arc.status === 'completed') continue;
       const templates = getMissionTemplatesByStage(arc.id, arc.currentStage)
         .filter(t => t.availableAt.includes(station.id))
+        .filter(t => !t.branch || Object.values(arc.choicesMade).includes(t.branch))
         .filter(t => !activeIds.has(t.id) && !arc.completedMissions.includes(t.id));
 
       const lockedCandidates = templates.map(t => {
@@ -175,14 +178,15 @@ export function MarketPanel() {
     [contracts]
   );
 
-  const [section, setSection] = useState<'hall' | 'fabrication' | 'production' | 'missions'>('hall');
+  const [section, setSection] = useState<'hall' | 'fabrication' | 'production' | 'missions' | 'warehouse' | 'banking'>('hall');
   useEffect(() => {
     setSection('hall');
   }, [stationId]);
   useEffect(() => {
     if (section === 'fabrication' && !hasFabrication) setSection('hall');
     if (section === 'production' && !hasProduction) setSection('hall');
-  }, [section, hasFabrication, hasProduction]);
+    if (section === 'banking' && !hasBanking) setSection('hall');
+  }, [section, hasFabrication, hasProduction, hasBanking]);
 
   const colors = station ? stationTypeColors[station.type] : stationTypeColors.city;
 
@@ -254,7 +258,7 @@ export function MarketPanel() {
         />
 
         {/* Section Tabs */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
           <SciFiButton 
             stationType={station.type}
             variant={section === 'hall' ? 'active' : 'default'}
@@ -291,10 +295,14 @@ export function MarketPanel() {
             <UIIcon name="tab_missions" size={16} style={{ marginRight: 6 }} />
             Missions {stationContracts.length > 0 && `(${stationContracts.length})`}
           </SciFiButton>
+          <SciFiButton stationType={station.type} variant={section === 'warehouse' ? 'active' : 'default'} onClick={() => setSection('warehouse')}>Warehouse</SciFiButton>
+          {hasBanking && station.type !== 'bank' && <SciFiButton stationType={station.type} variant={section === 'banking' ? 'active' : 'default'} onClick={() => setSection('banking')}>Banking</SciFiButton>}
         </div>
 
+        {section === 'warehouse' && <div className="scrollable-content"><WarehouseSection station={station} /></div>}
+        {(section === 'banking' || section === 'hall' && station.type === 'bank') && hasBanking && <div className="scrollable-content"><BankingSection station={station} /></div>}
         {/* HALL SECTION */}
-        {section === 'hall' && (
+        {section === 'hall' && station.type !== 'bank' && (
           <HallSection
             station={station}
             ship={ship}
@@ -303,8 +311,6 @@ export function MarketPanel() {
             onBuy={buy}
             onSell={sell}
             onUpgrade={upgrade}
-            onPurchaseWeapon={purchaseWeapon}
-            onUpgradeWeapon={upgradeWeapon}
             onReplaceShip={replaceShip}
             hasIntel={hasIntel}
             avgCostByCommodity={avgCostByCommodity}

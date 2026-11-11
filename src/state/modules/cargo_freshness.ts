@@ -57,7 +57,7 @@ function isPerishable(commodityId: string): boolean {
  * @returns Updated ship with decayed freshness
  */
 export function updateCargoFreshness(ship: Ship, dt: number): Ship {
-  const cargoFreshness = ship.cargoFreshness ? { ...ship.cargoFreshness } : {};
+  const cargoFreshness = { ...ship.cargoFreshness };
   let hasChanges = false;
 
   for (const [commodityId, quantity] of Object.entries(ship.cargo)) {
@@ -77,7 +77,7 @@ export function updateCargoFreshness(ship: Ship, dt: number): Ship {
 
     // Decay: freshness decreases linearly from 1.0 to 0.0 over DECAY_TIME_SECONDS
     // At DECAY_TIME_SECONDS, freshness reaches 0% (worthless but still takes cargo space)
-    const decayRate = 1.0 / DECAY_TIME_SECONDS; // Decay from 1.0 to 0.0
+    const decayRate = ship.dockedStationId ? 0 : (ship.hasTempCargo ? 0.2 : 1) / DECAY_TIME_SECONDS; // Decay from 1.0 to 0.0
     freshness = Math.max(0.0, freshness - decayRate * dt);
 
     if (freshness !== (cargoFreshness[commodityId] ?? 1.0)) {

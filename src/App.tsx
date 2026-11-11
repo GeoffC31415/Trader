@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Stars, Environment } from '@react-three/drei';
+import { Stars, Environment, Lightformer } from '@react-three/drei';
 import * as THREE from 'three';
 import { SceneRoot } from './scene/scene_root';
 import { MarketPanel } from './ui/market_panel';
@@ -18,17 +18,17 @@ import { TutorialOverlay } from './ui/components/hud/TutorialOverlay';
 import { ObjectiveHUD } from './ui/components/hud/ObjectiveHUD';
 import { StarterShipSelector } from './ui/components/hud/StarterShipSelector';
 import { Notifications } from './ui/components/Notifications';
-import { useMusicController, initializeMusicOnInteraction } from './shared/audio/use_music';
+import { useMusicController } from './shared/audio/use_music';
 import { useMissionAudioController, preloadMissionAudio } from './shared/audio/use_mission_audio';
+import { DamageFeedback } from './ui/components/hud/DamageFeedback';
 import { TargetArrows } from './ui/components/target_arrows';
-import { StealthIndicator } from './ui/components/hud/StealthIndicator';
-import { DeathScreen } from './ui/components/hud/DeathScreen';
-import { DamageVignette } from './ui/components/hud/DamageVignette';
+import { MissionLog } from './ui/components/hud/MissionLog';
 import { TargetIndicator } from './ui/components/hud/TargetIndicator';
 
 export function App() {
   const [active, setActive] = useState<'market' | 'journal' | 'traders' | 'debug'>('market');
-  const hasNav = useGameStore(s => !!s.ship.hasNavigationArray);
+  const quality = useGameStore(s => s.graphicsQuality);
+  const hasNav = true; // Basic orientation is standard equipment; upgrades add intelligence.
   const hasChosenStarter = useGameStore(s => s.hasChosenStarter);
   const isTestMode = useGameStore(s => s.isTestMode);
   const chooseStarter = useGameStore(s => s.chooseStarter);
@@ -36,8 +36,6 @@ export function App() {
   const setTutorialActive = useGameStore(s => s.setTutorialActive);
   const tutorialStep = useGameStore(s => s.tutorialStep);
   const hasIntel = useGameStore(s => !!s.ship.hasMarketIntel);
-  const objectives = useGameStore(s => s.objectives || []);
-  const activeObjectiveId = useGameStore(s => s.activeObjectiveId);
   const trackedStationId = useGameStore(s => s.trackedStationId);
   const stations = useGameStore(s => s.stations);
   const setTrackedStation = useGameStore(s => s.setTrackedStation);
@@ -45,18 +43,7 @@ export function App() {
   const contracts = useGameStore(s => s.contracts || []);
   const npcTraders = useGameStore(s => s.npcTraders);
   const missions = useGameStore(s => s.missions);
-  const activeObj = (objectives.find(o => o.id === activeObjectiveId) || objectives.find(o => o.status === 'active'));
-  
-  // Get active story mission
-  const activeMissions = missions.filter(m => m.status === 'active');
-  const primaryMission = activeMissions[0]; // Show first active mission
-  
-  // Get active contract for progress display
-  const activeContract = activeObj?.kind === 'contract' 
-    ? contracts.find(c => c.id === activeObj.id.replace('obj:', ''))
-    : undefined;
-  
-  const activeEscorts = npcTraders.filter(n => n.isEscort && activeContract && n.escortingContract === activeContract.id);
+  const activeEscorts = npcTraders.filter(n => n.isEscort);
   
   // Initialize music system (call hook to manage music based on game state)
   useMusicController();
@@ -67,7 +54,6 @@ export function App() {
   // Initialize audio systems on first user interaction
   useEffect(() => {
     const handleFirstInteraction = () => {
-      initializeMusicOnInteraction();
       preloadMissionAudio();
     };
     
@@ -81,7 +67,7 @@ export function App() {
   }, []);
 
   const tabs = useMemo(() => {
-    const base = [
+    const base: Array<{ key: typeof active; label: string; icon?: 'tab_market' | 'tab_journal' | 'tab_traders'; disabled: boolean; title?: string }> = [
       { key: 'market' as const, label: 'Market', icon: 'tab_market' as const, disabled: false, title: undefined },
       { key: 'journal' as const, label: 'Journal', icon: 'tab_journal' as const, disabled: false, title: undefined },
       { key: 'traders' as const, label: 'Traders', icon: 'tab_traders' as const, disabled: !hasIntel, title: !hasIntel ? 'Requires Mercantile Data Nexus upgrade' : undefined },
@@ -135,11 +121,11 @@ export function App() {
   
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-        <div className={`ui-overlay${hasNav ? ' has-minimap' : ''}`}>
+        <div className={`ui-overlay${hasNav && active !== 'journal' ? ' has-minimap' : ''}`} style={{ zIndex: active === 'journal' ? 65 : 10 }}>
           <div
             ref={tabsRef}
             className="top-tabs"
-            role="tablist"
+            role="group"
             aria-label="Main panels"
           >
             <div
@@ -156,8 +142,7 @@ export function App() {
               <button
                 key={t.key}
                 ref={(el) => { tabButtonRefs.current[t.key] = el; }}
-                role="tab"
-                aria-selected={active === t.key}
+                aria-pressed={active === t.key}
                 data-active={active === t.key}
                 className="top-tab"
                 disabled={t.disabled}
@@ -196,25 +181,25 @@ export function App() {
         <Celebration />
         <MissionCelebration />
         <Notifications />
+        <MissionLog />
         <div className="vignette" />
-        <DamageVignette />
-        <DeathScreen />
         <TargetIndicator />
         <TargetArrows />
-        <StealthIndicator />
+        <DamageFeedback />
         
         {!hasChosenStarter && (
           <StarterShipSelector
             tutorialActive={tutorialActive}
             onSetTutorialActive={setTutorialActive}
             onChooseStarter={chooseStarter}
+            onLoad={useGameStore.getState().loadGame}
           />
         )}
         
         <Canvas
           camera={{ position: [0, 30, 60], fov: 60 }}
-          dpr={[1, 2]}
-          shadows
+          dpr={quality === 'low' ? 0.5 : quality === 'high' ? [1, 2] : [1, 1.5]}
+          shadows={quality === 'high'}
           onCreated={(state) => {
             state.gl.toneMapping = THREE.ACESFilmicToneMapping;
             state.gl.outputColorSpace = THREE.SRGBColorSpace;
@@ -222,19 +207,22 @@ export function App() {
         >
           <color attach="background" args={[0x03060b]} />
           <fog attach="fog" args={["#0a0e16", 300, 2200]} />
-          <ambientLight intensity={0.25} />
+          <ambientLight intensity={quality === 'low' ? 0.6 : 0.25} />
           <hemisphereLight args={["#cfe8ff", "#0b1020", 0.5]} />
           <directionalLight
             position={[-30, 40, 20]}
             intensity={1.2}
-            castShadow
-            shadow-mapSize-width={2048}
-            shadow-mapSize-height={2048}
+            castShadow={quality === 'high'}
+            shadow-mapSize-width={1024}
+            shadow-mapSize-height={1024}
             shadow-bias={-0.0005}
           />
           <pointLight position={[500, 500, 500]} intensity={0.9} distance={2000} />
-          <Environment preset="city" />
-          <Stars radius={2000} depth={500} count={4000} factor={4} saturation={0} fade speed={1} />
+          {quality !== 'low' && <Environment resolution={128}>
+            <Lightformer intensity={2} color="#80bbff" position={[0, 8, -6]} scale={15} />
+            <Lightformer intensity={1} color="#e8c9ff" position={[-8, 0, 4]} rotation={[0, Math.PI / 2, 0]} scale={10} />
+          </Environment>}
+          <Stars radius={2000} depth={500} count={quality === 'low' ? 300 : 2000} factor={4} saturation={0} fade speed={1} />
           <Suspense fallback={null}>
             <SceneRoot />
           </Suspense>
@@ -248,9 +236,8 @@ export function App() {
         
         {hasChosenStarter && (
           <ObjectiveHUD
-            activeObj={activeObj}
-            primaryMission={primaryMission}
-            activeContract={activeContract}
+            missions={missions}
+            contracts={contracts}
             activeEscorts={activeEscorts}
             trackedStationId={trackedStationId}
             stations={stations}

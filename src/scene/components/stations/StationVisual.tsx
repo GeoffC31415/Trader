@@ -5,6 +5,7 @@ import type { StationType } from '../../../domain/types/economy_types';
 
 // Map station types to GLB model files
 const stationModelPaths: Record<StationType, string> = {
+  bank: '/stations/station_solcity.glb',
   city: '/stations/station_solcity.glb',
   refinery: '/stations/station_refinery.glb',
   fabricator: '/stations/station_fabricator.glb',
@@ -52,13 +53,10 @@ export function StationVisual({ position, name, type, hideLabel = false }: { pos
     <group position={position as any}>
       <primitive object={clonedScene} scale={scale} />
       {!hideLabel && (
-        <Html center distanceFactor={50}><div style={{ fontSize: 14, opacity: 0.5 }}>{name}</div></Html>
+        <Html center distanceFactor={50} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}><div style={{ fontSize: 14, opacity: 0.5 }}>{name}</div></Html>
       )}
     </group>
   );
 }
 
-// Preload all station models for better performance
-Object.values(stationModelPaths).forEach((path) => {
-  useGLTF.preload(path);
-});
+// Models load through useGLTF when mounted, not in compatibility graphics.

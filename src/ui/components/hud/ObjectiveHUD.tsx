@@ -1,15 +1,12 @@
-import type { Objective } from '../../../domain/types/world_types';
-import type { Contract } from '../../../domain/types/world_types';
+import { useState } from 'react';
+import type { Contract, NpcTrader, Ship, Station } from '../../../domain/types/world_types';
 import type { Mission } from '../../../domain/types/mission_types';
-import type { Station } from '../../../domain/types/world_types';
-import type { Ship } from '../../../domain/types/world_types';
-import type { NpcTrader } from '../../../domain/types/world_types';
+import { contractUnitPayout } from '../../../state/modules/missions';
 import { formatNumber } from '../../utils/number_format';
 
 interface ObjectiveHUDProps {
-  activeObj?: Objective;
-  primaryMission?: Mission;
-  activeContract?: Contract;
+  missions: Mission[];
+  contracts: Contract[];
   activeEscorts: NpcTrader[];
   trackedStationId?: string;
   stations: Station[];
@@ -17,151 +14,57 @@ interface ObjectiveHUDProps {
   onSetTrackedStation: (id?: string) => void;
 }
 
-export function ObjectiveHUD({
-  activeObj,
-  primaryMission,
-  activeContract,
-  activeEscorts,
-  trackedStationId,
-  stations,
-  ship,
-  onSetTrackedStation,
-}: ObjectiveHUDProps) {
-  if (!trackedStationId && !activeObj && !primaryMission) return null;
-  
-  const escortCargo = activeEscorts.reduce((sum, e) => sum + (e.escortCargoUsed || 0), 0);
-  const totalEscortCapacity = activeEscorts.reduce((sum, e) => sum + (e.escortCargoCapacity || 0), 0);
-  
-  const trackedStation = trackedStationId ? stations.find(s => s.id === trackedStationId) : null;
-  const trackedDistance = trackedStation ? (() => {
-    const dx = trackedStation.position[0] - ship.position[0];
-    const dy = trackedStation.position[1] - ship.position[1];
-    const dz = trackedStation.position[2] - ship.position[2];
-    return Math.sqrt(dx*dx + dy*dy + dz*dz);
-  })() : null;
-  
-  return (
-    <div style={{ position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 25, maxWidth: 640 }}>
-      <div style={{ background: 'rgba(11,18,32,0.9)', color: '#e5e7eb', padding: 12, borderRadius: 10, border: '1px solid #1f2937', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}>
-        {/* Show active mission if present */}
-        {primaryMission && (
-          <div style={{ marginBottom: activeObj ? 12 : 0, paddingBottom: activeObj ? 12 : 0, borderBottom: activeObj ? '1px solid rgba(255,255,255,0.1)' : 'none' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 6 }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 14, color: '#a78bfa' }}>Story Mission</div>
-                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>
-                  {primaryMission.title}
-                </div>
-              </div>
-              <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
-                Stage {primaryMission.stage}
-              </div>
-            </div>
-            
-            {/* Mission objectives */}
-            <div style={{ fontSize: 12, marginTop: 8 }}>
-              {primaryMission.objectives.filter(obj => !obj.optional).map(obj => {
-                const isFailed = obj.failed === true;
-                const isCompleted = obj.completed && !isFailed;
-                const isResolved = isCompleted || isFailed;
-                
-                return (
-                  <div key={obj.id} style={{ 
-                    marginBottom: 4, 
-                    opacity: isResolved ? 0.6 : 1,
-                    textDecoration: isResolved ? 'line-through' : 'none',
-                    color: isFailed ? '#ef4444' : (isCompleted ? '#9ca3af' : 'inherit'),
-                  }}>
-                    <span style={{ color: isFailed ? '#ef4444' : (isCompleted ? '#4ade80' : '#ffc864') }}>
-                      {isFailed ? '✗' : (isCompleted ? '✓' : '○')}
-                    </span>{' '}
-                    {obj.description}
-                    {isFailed && <span style={{ color: '#ef4444', marginLeft: 6, fontWeight: 600 }}>(FAILED)</span>}
-                    {obj.quantity && obj.quantity > 1 && !isResolved && (
-                      <span style={{ marginLeft: 8, opacity: 0.8, fontFamily: 'monospace' }}>
-                        ({obj.current}/{obj.quantity})
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            
-            {/* Progress bar */}
-            <div style={{ marginTop: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
-              <div style={{
-                width: `${Math.min(100, (primaryMission.objectives.filter(o => o.completed).length / primaryMission.objectives.filter(o => !o.optional).length) * 100)}%`,
-                height: '100%',
-                background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)',
-                transition: 'width 0.3s ease',
-                boxShadow: '0 0 10px #8b5cf680'
-              }} />
-            </div>
-          </div>
-        )}
-        
-        {/* Contract objective */}
-        {activeObj && (
-          <div>
-            <div style={{ fontWeight: 700, marginBottom: 4 }}>Contract</div>
-            <div style={{ fontSize: 13 }}>
-              {activeObj.label}
-            </div>
-            {activeContract && (
-              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.9 }}>
-                Progress: {activeContract.deliveredUnits || 0} / {activeContract.units} {activeContract.commodityId.replace(/_/g, ' ')}
-                {activeEscorts.length > 0 && (
-                  <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>
-                    🚀 {activeEscorts.length} Escort{activeEscorts.length > 1 ? 's' : ''}: {escortCargo} / {totalEscortCapacity} cargo
-                  </div>
-                )}
-                <div style={{ marginTop: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
-                  <div style={{
-                    width: `${Math.min(100, ((activeContract.deliveredUnits || 0) / activeContract.units) * 100)}%`,
-                    height: '100%',
-                    background: 'linear-gradient(90deg, #10b981, #22c55e)',
-                    transition: 'width 0.3s ease'
-                  }} />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {/* Waypoint controls - shown for both contracts and missions */}
-        <div style={{ display: 'flex', gap: 8, marginTop: (activeObj || primaryMission) ? 8 : 0 }}>
-          <button
-            onClick={() => {
-              const target = activeObj?.targetStationId;
-              if (target) {
-                onSetTrackedStation(target);
-                return;
-              }
-              // Fallback: set nearest station if no active objective
-              let best: { id: string; d: number } | undefined;
-              for (const st of stations) {
-                const dx = st.position[0] - ship.position[0];
-                const dy = st.position[1] - ship.position[1];
-                const dz = st.position[2] - ship.position[2];
-                const d = Math.sqrt(dx*dx + dy*dy + dz*dz);
-                if (!best || d < best.d) best = { id: st.id, d };
-              }
-              if (best) onSetTrackedStation(best.id);
-            }}
-          >
-            Set waypoint
-          </button>
-          {trackedStationId && (
-            <button onClick={() => onSetTrackedStation(undefined)}>Clear waypoint</button>
-          )}
-        </div>
-        {trackedStation && trackedDistance !== null && (
-          <div style={{ marginTop: 6, fontSize: 12, opacity: 0.9 }}>
-            Waypoint: {trackedStation.name} — Distance: {formatNumber(trackedDistance)}
-          </div>
-        )}
-      </div>
-    </div>
-  );
+/** All live assignments share a compact, selectable tracker. Finished jobs never linger. */
+export function ObjectiveHUD({ missions, contracts, activeEscorts, trackedStationId, stations, ship, onSetTrackedStation }: ObjectiveHUDProps) {
+  const [selected, setSelected] = useState('');
+  const [minimized, setMinimized] = useState(false);
+  const [overview, setOverview] = useState(false);
+  const stories = missions.filter(m => m.status === 'active');
+  const deliveries = contracts.filter(c => c.status === 'accepted');
+  const assignments = [
+    ...stories.map(m => ({ id: m.id, title: m.title, target: m.objectives.find(o => !o.completed && !o.failed && o.type !== 'avoid_detection')?.targetStation ?? m.objectives.find(o => !o.completed && o.type === 'visit')?.target })),
+    ...deliveries.map(c => ({ id: c.id, title: `Deliver ${c.units} ${c.commodityId.replace(/_/g, ' ')} → ${stations.find(st => st.id === c.toId)?.name ?? c.toId}`, target: c.toId })),
+  ];
+  const current = assignments.find(a => a.id === selected) ?? assignments[0];
+  const mission = stories.find(m => m.id === current?.id);
+  const contract = deliveries.find(c => c.id === current?.id);
+  const waypoint = stations.find(st => st.id === trackedStationId);
+  const distance = waypoint ? Math.hypot(...waypoint.position.map((v, i) => v - ship.position[i])) : undefined;
+  if (!assignments.length && !waypoint) return null;
+  const select = (id: string) => {
+    setSelected(id); setOverview(false);
+    const target = assignments.find(a => a.id === id)?.target;
+    if (target) onSetTrackedStation(target);
+  };
+  return <section aria-label="Active assignments" style={{ position: 'absolute', bottom: 78, left: '50%', transform: 'translateX(-50%)', zIndex: 25, width: 'min(460px, calc(100vw - 32px))', color: '#e5e7eb' }}>
+    {minimized ? <button onClick={() => setMinimized(false)}>Show assignments ({assignments.length})</button> : <div style={{ background: '#0b1220ef', border: '1px solid #52647d', borderRadius: 10, padding: 12, maxHeight: '38vh', overflowY: 'auto' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+        <strong>{assignments.length ? `Active assignments (${assignments.length})` : 'Navigation'}</strong>
+        <button onClick={() => setMinimized(true)}>Hide objectives</button>
+      </header>
+      {assignments.length > 1 && <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <select aria-label="Tracked assignment" value={current.id} onChange={e => select(e.target.value)} style={{ minWidth: 0, flex: 1 }}>
+          {assignments.map(a => <option key={a.id} value={a.id}>{a.title}</option>)}
+        </select>
+        <button onClick={() => setOverview(!overview)}>{overview ? 'Details' : 'All assignments'}</button>
+      </div>}
+      {overview ? <ul>{assignments.map(a => <li key={a.id}><button onClick={() => select(a.id)}>{a.title}</button></li>)}</ul> : <>
+        {mission && <div>
+          <strong style={{ color: '#b9a4ff' }}>{mission.title}</strong>
+          <ul style={{ paddingLeft: 18, margin: '8px 0', fontSize: 12 }}>{mission.objectives.filter(o => !o.optional).map(o => <li key={o.id} style={{ opacity: o.completed ? 0.6 : 1 }}>
+            {o.failed ? '✗' : o.completed ? '✓' : '○'} {o.description} {o.quantity && o.quantity > 1 ? `(${Math.floor(o.current)}/${o.quantity})` : ''}
+          </li>)}</ul>
+        </div>}
+        {contract && <div>
+          <strong>Deliver {contract.units} {contract.commodityId.replace(/_/g, ' ')} to {stations.find(st => st.id === contract.toId)?.name ?? contract.toId}</strong>
+          <div style={{ margin: '8px 0', fontSize: 12 }}>Progress: {contract.deliveredUnits ?? 0} / {contract.units} delivered · Held: {(ship.cargo[contract.commodityId] ?? 0) + activeEscorts.filter(n => n.commodityId === contract.commodityId).reduce((q, n) => q + (n.escortCargoUsed ?? 0), 0)}</div>
+          <progress aria-label="Delivery progress" max={contract.units} value={contract.deliveredUnits ?? 0} style={{ width: '100%' }} />
+          <div style={{ fontSize: 11, opacity: 0.8 }}>Any legal supplier. Sell at the destination to fulfill this order.</div>
+          <div style={{ fontSize: 11, marginTop: 4, color: '#8dd6ff' }}>Fresh-cargo floor: {contractUnitPayout(contract).toLocaleString()} cr / unit · Completion bonus: {(contract.rewardBonus ?? 0).toLocaleString()} cr</div>
+        </div>}
+        {current?.target && <button style={{ marginTop: 8 }} onClick={() => onSetTrackedStation(current.target)}>Set waypoint</button>}
+      </>}
+      {waypoint && <div style={{ marginTop: 8, fontSize: 12 }}>Navigation waypoint: {waypoint.name} — {formatNumber(distance!)}m <button onClick={() => onSetTrackedStation(undefined)}>Clear waypoint</button></div>}
+    </div>}
+  </section>;
 }
-

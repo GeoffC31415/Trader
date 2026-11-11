@@ -42,6 +42,7 @@ export function updateNpcTraders(
   const escortNpcs = npcTraders.filter(n => n.isMissionEscort && n.hp > 0);
 
   const updatedNpcTraders = npcTraders.map((npc): NpcTrader => {
+    if (npc.role === 'turret' || (npc.isMissionEscort && (!npc.launched || npc.isDefendInPlace))) return npc;
     // Contract escorts follow the player ship in formation
     if (npc.isEscort) {
       return updateContractEscort(npc, playerShip, dt);
@@ -52,8 +53,12 @@ export function updateNpcTraders(
       return updateMissionEscort(npc, stationById, dt);
     }
 
+    if (npc.role === 'convoy') {
+      if (!npc.launched && distance(npc.position, playerShip.position) > 500) return npc;
+      return updateMissionEscort({ ...npc, launched: true }, stationById, dt);
+    }
     // Hostile pirates chase and attack escort ships
-    if (npc.isHostile && npc.isMissionTarget && npc.hp > 0) {
+    if (npc.isHostile && (npc.isMissionTarget || npc.role === 'defender') && npc.hp > 0) {
       return updateHostilePirate(npc, escortNpcs, playerShip, dt);
     }
 
@@ -329,7 +334,7 @@ function findStabilizingRoute(
       if (item.canBuy === false) continue; // Station doesn't buy this
       
       const currentStock = (item.stock || 0) + (stationStockDelta[destStation.id]?.[commodityId] || 0);
-      const targetStock = item.stock || 50;
+      const targetStock = getTargetStock(destStation.type, commodityId);
       const ratio = currentStock / Math.max(1, targetStock);
       
       // Only consider if stock is below 60% (getting low)
@@ -340,7 +345,7 @@ function findStabilizingRoute(
       if (!srcItem || srcItem.canSell === false) continue;
       
       const srcStock = (srcItem.stock || 0) + (stationStockDelta[currentStation.id]?.[commodityId] || 0);
-      const srcTarget = srcItem.stock || 50;
+      const srcTarget = getTargetStock(currentStation.type, commodityId);
       const srcRatio = srcStock / Math.max(1, srcTarget);
       
       // Only supply if source has surplus (>80% stock)
@@ -537,6 +542,8 @@ export function applyStockDeltas(
         stock: nextStock,
         buy: newPrices.buy,
         sell: newPrices.sell,
+        unmodifiedBuy: newPrices.buy,
+        unmodifiedSell: newPrices.sell,
       };
     }
 

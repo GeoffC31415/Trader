@@ -13,6 +13,7 @@ import type { StationConsumption } from '../../domain/types/economy_types';
  * Stations consume goods over time, creating natural demand
  */
 export const stationConsumption: Record<StationType, StationConsumption[]> = {
+  bank: [],
   city: [
     // Cities (especially Sol City) consume water rapidly - large population
     { commodityId: 'water', ratePerMinute: 5.0, criticalThreshold: 80 },

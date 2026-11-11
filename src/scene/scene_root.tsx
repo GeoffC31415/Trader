@@ -1,13 +1,19 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { isSimulationBlocked } from '../state/helpers/simulation_clock';
+import { dockingCandidate } from '../state/helpers/docking';
+import { canDockAtStation } from '../systems/reputation/faction_system';
+import { calculateLeadPosition } from '../systems/combat/weapon_systems';
 import { useGameStore } from '../state';
 import { Html, Sparkles } from '@react-three/drei';
 import type { StationType } from '../domain/types/economy_types';
+import { BankVisual } from './components/stations/BankVisual';
 import { FreighterModel } from './components/ships/FreighterModel';
 import { ClipperModel } from './components/ships/ClipperModel';
 import { MinerModel } from './components/ships/MinerModel';
 import { useGameInput } from '../input/use_game_input';
+import { useReducedMotion } from '../shared/hooks/use_reduced_motion';
 import { SCALE } from '../domain/constants/world_constants';
 import { DOCKING_RANGE_WORLD, MINING_RANGE_WORLD } from '../domain/constants/game_constants';
 const SHOW_ASTEROIDS = false; // Set to false to disable asteroid rendering for better performance
@@ -57,6 +63,7 @@ function colorFromCommodity(id: string): string {
 import { Planet } from './components/primitives/Planet';
 import { StationVisual } from './components/stations/StationVisual';
 import { MissionMarkers } from './components/MissionMarkers';
+import { CombatFeedback } from './components/CombatFeedback';
 
 // Projectile rendering component
 function Projectiles() {
@@ -79,12 +86,12 @@ function Projectiles() {
         }
         
         // Render as a stretched capsule or line
-        const length = proj.weaponKind === 'laser' ? 8 : 4;
-        const dir = new THREE.Vector3(proj.velocity[0], proj.velocity[1], proj.velocity[2]).normalize();
+        const length = proj.hitscan ? proj.range ?? 800 : 4;
+        const dir = new THREE.Vector3(...(proj.direction ?? proj.velocity)).normalize();
         const endPos = new THREE.Vector3(
-          proj.position[0] - dir.x * length,
-          proj.position[1] - dir.y * length,
-          proj.position[2] - dir.z * length
+          proj.position[0] + dir.x * length,
+          proj.position[1] + dir.y * length,
+          proj.position[2] + dir.z * length
         );
         
         return (
@@ -112,66 +119,18 @@ function Projectiles() {
   );
 }
 
-function Explosions() {
-  const explosions = useGameStore(s => s.explosions);
-  const now = Date.now();
-
-  return (
-    <>
-      {explosions.map(e => {
-        const age = now - e.startedAt;
-        const t = Math.max(0, Math.min(1, age / e.duration));
-        const radius = Math.max(0.05, e.maxRadius * t);
-        const opacity = (1 - t) * (e.kind === 'hit' ? 0.9 : 0.65);
-        const emissiveIntensity = e.kind === 'hit' ? 0.9 : 0.6;
-        const sparkCount = e.kind === 'hit' ? 4 : 14;
-
-        return (
-          <group key={e.id} position={e.position as any}>
-            <mesh>
-              <sphereGeometry args={[radius, 16, 16]} />
-              <meshBasicMaterial
-                color={e.color}
-                transparent
-                opacity={opacity}
-                depthWrite={false}
-              />
-            </mesh>
-            <Sparkles
-              count={sparkCount}
-              scale={e.kind === 'hit' ? 1.8 : 4.5}
-              size={e.kind === 'hit' ? 1.2 : 1.8}
-              speed={e.kind === 'hit' ? 0.4 : 1.1}
-              color={e.color}
-              opacity={opacity}
-            />
-            <mesh>
-              <sphereGeometry args={[Math.max(0.05, radius * 0.25), 10, 10]} />
-              <meshStandardMaterial
-                color={e.color}
-                emissive={new THREE.Color(e.color)}
-                emissiveIntensity={emissiveIntensity}
-                transparent
-                opacity={opacity}
-              />
-            </mesh>
-          </group>
-        );
-      })}
-    </>
-  );
-}
-
 function DebrisField() {
-  const debris = useGameStore(s => s.debris);
-  const now = Date.now();
+  const debris = useGameStore(s => s.debris ?? []);
+  const now = useGameStore(s => s.gameTime * 1000);
+  const quality = useGameStore(s => s.graphicsQuality);
+  const reduced = useReducedMotion();
 
   return (
     <>
       {debris.map(d => {
         const age = now - d.createdAt;
         const t = Math.max(0, Math.min(1, age / Math.max(1, d.lifetime)));
-        const bob = Math.sin((now / 1000) * 2 + (d.position[0] + d.position[2]) * 0.01) * 0.6;
+        const bob = reduced ? 0 : Math.sin((now / 1000) * 2 + (d.position[0] + d.position[2]) * 0.01) * 0.6;
         const opacity = Math.max(0.15, 1 - t);
         return (
           <group key={d.id} position={[d.position[0], d.position[1] + 1.0 + bob, d.position[2]] as any}>
@@ -196,7 +155,7 @@ function DebrisField() {
                 depthWrite={false}
               />
             </mesh>
-            <Sparkles count={10} scale={3.2} size={1.4} speed={0.35} color={'#fde68a'} opacity={opacity * 0.6} />
+            {!reduced && quality !== 'low' && <Sparkles count={10} scale={3.2} size={1.4} speed={0.35} color={'#fde68a'} opacity={opacity * 0.6} />}
           </group>
         );
       })}
@@ -206,6 +165,7 @@ function DebrisField() {
 
 function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; turnRight?: boolean }) {
   const ship = useGameStore(s => s.ship);
+  const lowDetail = useGameStore(s => s.graphicsQuality === 'low');
   const hasRig = ship.canMine;
   const hasNav = !!ship.hasNavigationArray;
   const groupRef = useRef<THREE.Group>(null);
@@ -227,6 +187,8 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
   });
   return (
     <group ref={groupRef} position={ship.position as any}>
+      {lowDetail && <mesh><boxGeometry args={[2, 1, 5]} /><meshStandardMaterial color="#e5ba58" /></mesh>}
+      {!lowDetail && <>
       {ship.kind === 'freighter' && (
         <FreighterModel power={power} hasRig={hasRig} />
       )}
@@ -245,6 +207,7 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
       {ship.kind === 'industrial_miner' && (
         <MinerModel power={power} />
       )}
+      </>}
       {/* Common nav dish */}
       {hasNav && (
         <group position={[1.5, 0.6, 1.2]} rotation={[0, Math.PI / 6, 0]}>
@@ -349,7 +312,7 @@ import { PlaneGrid } from './components/primitives/PlaneGrid';
 import { BeltRing } from './components/primitives/BeltRing';
 
 function TargetReticle() {
-  const targetedNpcId = useGameStore(s => s.targetedNpcId);
+  const targetedNpcId = useGameStore(s => s.selectedTargetId);
   const npcTraders = useGameStore(s => s.npcTraders);
   const ship = useGameStore(s => s.ship);
 
@@ -358,7 +321,7 @@ function TargetReticle() {
   if (!npc) return null;
 
   return (
-    <Html position={[npc.position[0], npc.position[1] + 2.0, npc.position[2]]} center distanceFactor={45}>
+    <Html position={[npc.position[0], npc.position[1] + 2.0, npc.position[2]]} center distanceFactor={45} zIndexRange={[7, 0]} style={{ pointerEvents: 'none' }}>
       <div
         style={{
           width: 42,
@@ -386,15 +349,21 @@ export function SceneRoot() {
   const setEngineTarget = useGameStore(s => s.setEngineTarget);
   const ship = useGameStore(s => s.ship);
   const trackedStationId = useGameStore(s => s.trackedStationId);
-  const { camera } = useThree();
+  const { camera, pointer, gl } = useThree();
+  const zoomRef = useRef(1);
+  const aimRay = useMemo(() => new THREE.Raycaster(), []);
+  const aimPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0)), []);
   const cameraTarget = useRef<THREE.Vector3>(new THREE.Vector3());
   const yawRef = useRef<number>(0);
   const isDragging = useRef<boolean>(false);
 
   const { pressed, lastFacingDir } = useGameInput();
+  const lowDetail = useGameStore(s => s.graphicsQuality === 'low');
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
+    const current = useGameStore.getState();
+    if (isSimulationBlocked(current)) return;
     // Movement input evaluated every frame: WSAD on station plane, RF vertical
     const up = new THREE.Vector3(0, 1, 0);
     const yaw = yawRef.current;
@@ -409,6 +378,24 @@ export function SceneRoot() {
     if (pressed['d']) dir.add(rightPlanar);
     if (pressed['r']) dir.add(up);
     if (pressed['f']) dir.addScaledVector(up, -1);
+    if (dir.lengthSq() > 0 && current.ship.autopilot) current.toggleAutopilot();
+    if (current.ship.autopilot && dir.lengthSq() === 0 && current.trackedStationId) {
+      const movingTarget = current.npcTraders.find(n => n.id === current.trackedStationId && n.isMissionEscort);
+      const destination = movingTarget ?? current.stations.find(st => st.id === current.trackedStationId) ?? (current.opportunity?.id === current.trackedStationId ? current.opportunity : undefined);
+      if (destination) {
+        dir.set(...destination.position).sub(new THREE.Vector3(...current.ship.position));
+        if (movingTarget) {
+          if (current.ship.cruise) current.toggleCruise();
+          if (dir.length() < 90) dir.set(0, 0, 0);
+        } else if (dir.length() < DOCKING_RANGE_WORLD * 0.9) {
+          if (destination.id !== current.opportunity?.id || current.opportunity.kind === 'procurement') {
+            current.tryDock('stationId' in destination ? destination.stationId : destination.id);
+          }
+          if (useGameStore.getState().ship.autopilot) current.toggleAutopilot();
+          dir.set(0, 0, 0);
+        }
+      } else current.toggleAutopilot();
+    }
     if (dir.lengthSq() > 0) {
       dir.normalize();
       thrust([dir.x, dir.y, dir.z], dt);
@@ -418,9 +405,18 @@ export function SceneRoot() {
     }
     
     tick(dt);
+    if (pressed[' ']) {
+      const latest = useGameStore.getState();
+      const target = latest.npcTraders.find(n => n.id === latest.selectedTargetId && n.hp > 0);
+      const aim = new THREE.Vector3();
+      aimPlane.constant = -latest.ship.position[1];
+      aimRay.setFromCamera(pointer, camera);
+      const hit = aimRay.ray.intersectPlane(aimPlane, aim);
+      latest.fireWeapon((target ? calculateLeadPosition(latest.ship.position, target.position, target.velocity ?? [0, 0, 0], latest.ship.weapon.projectileSpeed) : undefined) ?? (hit ? aim.toArray() as [number, number, number] : [latest.ship.position[0] + fwdPlanar.x * 800, latest.ship.position[1], latest.ship.position[2] + fwdPlanar.z * 800]));
+    }
 
     // Camera follow: keep ship in lower center by offsetting camera behind and above
-    const desiredOffset = new THREE.Vector3(0, 20, 35); // above and behind
+    const desiredOffset = new THREE.Vector3(0, 20, 35).multiplyScalar(zoomRef.current); // above and behind
     const offsetWorld = new THREE.Vector3()
       .addScaledVector(up, desiredOffset.y)
       .addScaledVector(fwdPlanar, -desiredOffset.z)
@@ -448,17 +444,24 @@ export function SceneRoot() {
       if (!isDragging.current) return;
       yawRef.current += (e.movementX || 0) * 0.005; // sensitivity
     };
-    window.addEventListener('mousedown', onMouseDown);
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); zoomRef.current = Math.max(0.5, Math.min(3, zoomRef.current * Math.exp(e.deltaY * 0.001))); };
+    const reset = () => { isDragging.current = false; };
+    gl.domElement.addEventListener('wheel', onWheel, { passive: false });
+    gl.domElement.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('blur', reset);
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('mousemove', onMouseMove);
     return () => {
-      window.removeEventListener('mousedown', onMouseDown);
+      gl.domElement.removeEventListener('wheel', onWheel);
+      gl.domElement.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('blur', reset);
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
     };
-  }, []);
+  }, [gl]);
 
   const dockIntroVisibleId = useGameStore(s => s.dockIntroVisibleId);
+  const nearDock = dockingCandidate(stations, ship.position);
   return (
     <group>
       <PlaneGrid />
@@ -475,7 +478,7 @@ export function SceneRoot() {
               ship.position[2]-b.position[2]
             ) - b.radius
             ) < MINING_RANGE_WORLD && !ship.dockedStationId && (
-            <Html position={[b.position[0], b.position[1]+3, b.position[2]]} center distanceFactor={60}>
+            <Html position={[b.position[0], b.position[1]+3, b.position[2]]} center distanceFactor={60} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
               <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6 }}>
                 <span style={{ fontSize: 12, opacity: 0.5 }}>
                   {ship.canMine ? 'Press M to Mine' : 'Dock at a shipyard to buy Mining Rig'}
@@ -487,22 +490,18 @@ export function SceneRoot() {
       ))}
       {stations.map(s => (
         <group key={s.id}>
-          <StationVisual position={s.position} name={s.name} type={s.type} hideLabel={!!dockIntroVisibleId} />
+          {s.type === 'bank' ? <BankVisual position={s.position} hideLabel={!!dockIntroVisibleId} /> : lowDetail ? <group position={s.position}><mesh><icosahedronGeometry args={[8, 0]} /><meshStandardMaterial color="#709bab" /></mesh>{!dockIntroVisibleId && <Html center distanceFactor={50} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}><div>{s.name}</div></Html>}</group> : <StationVisual position={s.position} name={s.name} type={s.type} hideLabel={!!dockIntroVisibleId} />}
           {/* Dock prompt when near */}
-          {Math.hypot(
-            ship.position[0]-s.position[0],
-            ship.position[1]-s.position[1],
-            ship.position[2]-s.position[2]
-            ) < MINING_RANGE_WORLD && !ship.dockedStationId && (
-            <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center distanceFactor={60}>
+          {nearDock?.id === s.id && !ship.dockedStationId && (
+            <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
               <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6 }}>
-                <span style={{ fontSize: 12, opacity: 0.5 }}>Press E to Dock</span>
+                <span style={{ fontSize: 12 }}>{canDockAtStation(s) ? `Press E to dock at ${s.name}` : `${s.name}: docking denied`}</span>
               </div>
             </Html>
           )}
           {/* Waypoint marker (visible while undocked for clarity) */}
           {trackedStationId === s.id && !ship.dockedStationId && (
-            <Html position={[s.position[0], s.position[1]+5, s.position[2]]} center>
+            <Html position={[s.position[0], s.position[1]+5, s.position[2]]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
               <div style={{ background:'rgba(34,197,94,0.15)', border: '1px solid #22c55e', padding: '4px 8px', borderRadius: 6, color: '#bbf7d0' }}>
                 Waypoint
               </div>
@@ -514,9 +513,9 @@ export function SceneRoot() {
       {npcTraders.filter(n => !n.isEscort).map(n => (
         <group key={n.id} position={n.position as any}>
           <mesh castShadow>
-            <sphereGeometry args={[0.6, 16, 16]} />
+            {n.role === 'turret' ? <boxGeometry args={[4, 4, 4]} /> : (n.role === 'convoy' || n.isMissionEscort) ? <boxGeometry args={[3, 2, 8]} /> : n.isHostile ? <coneGeometry args={[2, 5, 5]} /> : <sphereGeometry args={[0.6, 8, 8]} />}
             {/* Commodity color mapping via HSL from id hash for visual distinction; expensive goods slower already */}
-            <meshStandardMaterial color={new THREE.Color(colorFromCommodity(n.commodityId || 'fuel'))} metalness={0.2} roughness={0.6} />
+            <meshStandardMaterial color={new THREE.Color(n.isHostile ? '#ef5555' : n.isMissionEscort ? '#40de94' : colorFromCommodity(n.commodityId || 'fuel'))} metalness={0.2} roughness={0.6} />
           </mesh>
         </group>
       ))}
@@ -526,11 +525,8 @@ export function SceneRoot() {
       ))}
       {/* Projectiles */}
       <Projectiles />
-      {/* Explosions / hit sparks */}
-      <Explosions />
-      {/* Debris (cargo drops) */}
+      <CombatFeedback />
       <DebrisField />
-      {/* Target reticle */}
       <TargetReticle />
       {/* Mission markers */}
       <MissionMarkers />

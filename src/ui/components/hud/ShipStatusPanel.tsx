@@ -5,6 +5,11 @@ import type { Contract } from '../../../domain/types/world_types';
 import { UIIcon } from '../ui_icon';
 import { SHIP_STATUS_PANEL_TOP_WITH_NAV, SHIP_STATUS_PANEL_TOP_WITHOUT_NAV, SHIP_STATUS_PANEL_RIGHT, SHIP_STATUS_PANEL_MIN_WIDTH } from '../../constants/layout_constants';
 import { formatNumber } from '../../utils/number_format';
+import { useGameStore } from '../../../state';
+import { MISSION_TEMPLATES } from '../../../domain/constants/mission_constants';
+import { repairCost, FIRE_DAMAGE_PER_SECOND, FIRE_SUPPRESSION_SECONDS } from '../../../systems/combat/ship_fire';
+import { StealthIndicator } from './StealthIndicator';
+import { useReducedMotion } from '../../../shared/hooks/use_reduced_motion';
 
 interface ShipStatusPanelProps {
   ship: Ship;
@@ -47,6 +52,11 @@ function StatusBar({
         </span>
       </div>
       <div
+        role="progressbar"
+        aria-label={label === 'Energy' ? 'Weapon energy' : label}
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-valuenow={Math.max(0, Math.min(max, value))}
         style={{
           height: 8,
           borderRadius: 999,
@@ -72,6 +82,12 @@ function StatusBar({
 }
 
 export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatusPanelProps) {
+  const state = useGameStore();
+  const reduced = useReducedMotion();
+  const speed = Math.hypot(...ship.velocity);
+  const target = state.npcTraders.find(n => n.id === state.selectedTargetId);
+  const waypoint = stations.find(st => st.id === state.trackedStationId);
+  const distance = waypoint ? Math.hypot(...waypoint.position.map((v, i) => v - ship.position[i])) : undefined;
   const activeContractsCount = contracts.filter(c => c.status === 'accepted').length;
   const dockedStation = ship.dockedStationId ? stations.find(s => s.id === ship.dockedStationId) : null;
   const cargoUsed = Object.values(ship.cargo).reduce((a, b) => a + b, 0);
@@ -87,6 +103,7 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
     const to = ship.credits;
     if (from === to) return;
 
+    if (reduced) { displayCreditsRef.current = to; setDisplayCredits(to); return; }
     const durationMs = 320;
     const start = performance.now();
     let raf = 0;
@@ -102,7 +119,7 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [ship.credits]);
+  }, [ship.credits, reduced]);
 
   const prevStatsRef = useRef<{ credits: number; hp: number }>({ credits: ship.credits, hp: ship.hp });
   const flashTimeoutRef = useRef<number | null>(null);
@@ -117,18 +134,20 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
     else if (ship.credits < prev.credits) nextFlash = '#f59e0b';
 
     prevStatsRef.current = { credits: ship.credits, hp: ship.hp };
+    if (reduced) { setFlashColor(null); return; }
     if (!nextFlash) return;
 
     setFlashColor(nextFlash);
     if (flashTimeoutRef.current) window.clearTimeout(flashTimeoutRef.current);
     flashTimeoutRef.current = window.setTimeout(() => setFlashColor(null), 240);
-  }, [ship.credits, ship.hp]);
+    return () => { if (flashTimeoutRef.current) window.clearTimeout(flashTimeoutRef.current); };
+  }, [ship.credits, ship.hp, reduced]);
 
   const cargoPct = useMemo(() => clamp01(ship.maxCargo > 0 ? cargoUsed / ship.maxCargo : 0), [cargoUsed, ship.maxCargo]);
   const enginePct = useMemo(() => clamp01(ship.enginePower), [ship.enginePower]);
   
   return (
-    <div style={{
+    <div onPointerUp={e => { (e.target as HTMLElement).closest('button')?.blur(); }} style={{
       position: 'absolute',
       top: hasNav ? SHIP_STATUS_PANEL_TOP_WITH_NAV : SHIP_STATUS_PANEL_TOP_WITHOUT_NAV,
       right: SHIP_STATUS_PANEL_RIGHT,
@@ -138,6 +157,8 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
       borderRadius: 10,
       border: flashColor ? `2px solid ${flashColor}` : '2px solid rgba(59,130,246,0.3)',
       minWidth: SHIP_STATUS_PANEL_MIN_WIDTH,
+      maxHeight: 'calc(100vh - 400px)',
+      overflowY: 'auto',
       fontSize: 13,
       fontFamily: 'monospace',
       boxShadow: [
@@ -292,7 +313,7 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
           max={ship.maxHp}
           color={isHpDanger ? 'linear-gradient(90deg, #ef4444, #fb7185)' : 'linear-gradient(90deg, #ef4444, #f97316)'}
           background="rgba(239,68,68,0.12)"
-          isDanger={isHpDanger}
+          isDanger={isHpDanger && !reduced}
         />
         <StatusBar
           label="Energy"
@@ -303,6 +324,25 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
         />
       </div>
       
+      {ship.onFire && <div role="alert" style={{ marginTop: 12, padding: 10, border: '1px solid #fb923c', background: '#7c2d1233', color: '#fdba74' }}><strong>FIRE ALERT</strong><br />−{FIRE_DAMAGE_PER_SECOND} hull/s · Dock anywhere to extinguish.<br />{ship.hasFireSuppression ? `Auto-suppression in ${Math.max(0, FIRE_SUPPRESSION_SECONDS - (ship.fireSeconds ?? 0)).toFixed(1)}s` : 'No suppression system installed.'}</div>}
+      <StealthIndicator />
+      <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
+        <div>Weapon: {ship.weapon.kind} • Speed: {speed.toFixed(1)} m/s</div>
+        {state.gameTime < (state.recoveryGraceUntil ?? 0) && <div style={{ color: '#8dd6ff', fontSize: 12 }}>Recovery ceasefire: {Math.ceil(state.recoveryGraceUntil! - state.gameTime)}s — firing ends protection.</div>}
+        {distance !== undefined && <div>{waypoint!.name}: {Math.ceil(distance)}m • ETA {speed > 1 ? `${Math.ceil(distance / speed)}s` : '—'}</div>}
+        {state.missions.filter(m => m.status === 'active' && m.type === 'escort').map(m => <div key={m.id}>
+          {m.title}: waves {[...state.escortStates.values()].find(e => e.missionId === m.id)?.wavesCompleted ?? 0}/{MISSION_TEMPLATES[m.id].waves ?? 0}
+          {state.npcTraders.filter(n => n.missionId === m.id && n.isMissionEscort).map(n => <label key={n.id} style={{ display: 'block' }}>Escort {Math.ceil(n.hp)}/{n.maxHp}<progress aria-label="Escort hull" max={n.maxHp} value={n.hp} /><button onClick={() => { state.setTrackedStation(n.id); if (!state.ship.autopilot) state.toggleAutopilot(); }}>Follow escort</button></label>)}
+        </div>)}
+        {target && <div style={{ color: '#ffb48a' }}>Target: {target.role ?? 'ship'} • Hull {Math.ceil(target.hp)}/{target.maxHp}<br />Range {Math.round(Math.hypot(...target.position.map((v, i) => v - ship.position[i])))}m</div>}
+        {!ship.dockedStationId && <>
+          <button onClick={state.cycleTarget}>Target next (Tab)</button>
+          <button onClick={state.toggleCruise}>{ship.cruise ? `Cruise ${Math.min(3, ship.cruiseSpool ?? 0).toFixed(1)}s / 3s` : 'Cruise drive (C)'}</button>
+          <button onClick={state.toggleSilentRunning}>{ship.silentRunning ? 'Silent running ON — half speed, weapons off' : 'Silent running (H)'}</button>
+          <button onClick={state.toggleAutopilot}>{ship.autopilot ? 'Cancel waypoint pilot' : 'Waypoint pilot (T)'}</button>
+        </>}
+        {ship.dockedStationId && <button onClick={state.repairShip}>Repair & recharge ({repairCost(ship)} credits)</button>}
+      </div>
       {/* Active Contracts Indicator */}
       {activeContractsCount > 0 && (
         <div style={{

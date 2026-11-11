@@ -16,7 +16,7 @@ export function Planet({ position, radius, name, color = '#2b3b55', isStar = fal
       {isStar && (
         <pointLight args={[new THREE.Color(color), 1.5, 500, 2]} />
       )}
-      <Html center distanceFactor={40}><div style={{ fontSize: 28, opacity: 0.8 }}>{name}</div></Html>
+      <Html center distanceFactor={40} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}><div style={{ fontSize: 28, opacity: 0.8 }}>{name}</div></Html>
     </group>
   );
 }

@@ -1,6 +1,9 @@
+import type { FinanceState, FinanceAction } from './finance_types';
+import type { JournalData } from './journal_types';
 import type { Commodity, StationInventory } from '../types/economy_types';
 import type { StationType } from '../types/economy_types';
-import type { ShipWeapon, WeaponKind } from './combat_types';
+import type { ShipWeapon, WeaponKind, Projectile } from './combat_types';
+import type { EscortMissionState } from '../../systems/missions/escort_system';
 import type { Mission, MissionArc, NarrativeContext } from './mission_types';
 import type { ShipKind } from '../constants/ship_kinds';
 import type { CharacterMemory, DialogueLine } from './character_types';
@@ -39,6 +42,11 @@ export type Station = {
   isClosed?: boolean; // Station is permanently closed
   // Character memory - tracks player interactions for dialogue reactivity
   characterMemory?: CharacterMemory;
+  productionMultiplier?: number;
+  fabricationMultiplier?: number;
+  fabricationDisabled?: boolean;
+  defenseStrength?: number;
+  independentRefinery?: boolean;
 };
 
 export type Planet = {
@@ -65,8 +73,6 @@ export type Ship = {
   cargo: Record<Commodity['id'], number>;
   maxCargo: number;
   dockedStationId?: string;
-  lastDockedStationId?: string;
-  isDead?: boolean;
   canMine: boolean;
   enginePower: number;
   engineTarget: number;
@@ -82,7 +88,14 @@ export type Ship = {
     drag: number;
     vmax: number;
   };
+  cruise?: boolean;
+  cruiseSpool?: number;
+  silentRunning?: boolean;
+  autopilot?: boolean;
   // Combat properties
+  onFire?: boolean;
+  fireSeconds?: number;
+  hasFireSuppression?: boolean;
   weapon: ShipWeapon;
   hp: number;
   maxHp: number;
@@ -124,6 +137,19 @@ export type NpcTrader = {
   isAggressive?: boolean; // true if NPC attacks on sight
   isDefendInPlace?: boolean; // true if defending a location (stationary)
   kind?: 'freighter' | 'clipper' | 'miner'; // ship visual type
+  targetGroup?: string;
+  role?: 'raider' | 'convoy' | 'turret' | 'defender';
+  launched?: boolean;
+  despawnAt?: number;
+};
+
+export type Debris = {
+  id: string;
+  position: [number, number, number];
+  cargo: Record<string, number>;
+  unitCosts?: Record<string, number>; // Recovered owned-escort cargo retains known basis.
+  createdAt: number; // simulation milliseconds; transient, not checkpointed
+  lifetime: number;
 };
 
 export type TradeEntry = {
@@ -137,24 +163,8 @@ export type TradeEntry = {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-};
-
-export type ExplosionEffect = {
-  id: string;
-  kind: 'explosion' | 'hit';
-  position: [number, number, number];
-  color: string;
-  startedAt: number; // epoch ms
-  duration: number; // ms
-  maxRadius: number;
-};
-
-export type Debris = {
-  id: string;
-  position: [number, number, number];
-  cargo: Record<Commodity['id'], number>;
-  createdAt: number; // epoch ms
-  lifetime: number; // ms
+  simulationTime?: number;
+  realizedProfit?: number; // Sale revenue including order premiums, less recorded cost. Excludes bonuses.
 };
 
 export type RouteSuggestion = {
@@ -201,9 +211,12 @@ export type Contract = {
   // Economic reference values captured when generated
   unitBuy?: number;
   unitSell?: number;
+  unitPayout?: number; // Fresh-cargo purchase-order floor, locked at acceptance.
+  deliveredRevenue?: number;
+  deliveredCost?: number;
   rewardBonus?: number; // flat bonus on completion
   status: 'offered' | 'accepted' | 'completed' | 'failed';
-  expiresAt?: number; // epoch ms
+  expiresAt?: number; // simulation milliseconds
   // Mission metadata
   offeredById?: string; // station offering the mission
   requiredRep?: number; // min rep at offeredById to accept
@@ -230,12 +243,32 @@ export type AllyAssistToken = {
   consumed?: boolean;
 };
 
+export type TravelOpportunity = {
+  id: string;
+  kind: 'salvage' | 'distress' | 'procurement' | 'bounty';
+  position: [number, number, number];
+  stationId: string;
+  commodityId: string;
+  quantity: number;
+  reward: number;
+  expiresAt: number;
+  risky: boolean;
+};
+
 export type GameState = {
+  economyVersion?: 2;
+  journal?: JournalData;
   planets: Planet[];
   stations: Station[];
   belts: AsteroidBelt[];
   npcTraders: NpcTrader[];
   ship: Ship;
+  gameTime: number;
+  paused: boolean;
+  blockingDialog?: boolean;
+  graphicsQuality: 'low' | 'medium' | 'high';
+  selectedTargetId?: string;
+  debris?: Debris[];
   hasChosenStarter: boolean;
   isTestMode: boolean; // true when playing with test ship for dev/debug purposes
   tutorialActive: boolean;
@@ -286,19 +319,7 @@ export type GameState = {
     objectiveId: string;
     startTime: number; // timestamp in ms
   };
-  escortStates: Map<string, {
-    missionId: string;
-    escortNpcId: string;
-    escortHp: number;
-    escortMaxHp: number;
-    destinationStationId: string;
-    lastWaveTime: number;
-    waveCount: number;
-    wavesCompleted: number;
-    hasReachedDestination: boolean;
-    spawnedPirateIds: string[];
-    currentWavePirateIds: string[];
-  }>;
+  escortStates: Map<string, EscortMissionState>;
   // Mission choice system (Phase 5)
   permanentEffects?: Array<{
     type: 'price_discount' | 'fabrication_discount' | 'production_efficiency';
@@ -318,20 +339,18 @@ export type GameState = {
   }>;
   pirateAggressionMultiplier?: number;
   unlockedFeatures?: string[];
+  appliedEffects?: { id: string; appliedAt: number }[];
+  nextMarketEventAt?: number;
+  defenseCooldowns?: Record<string, number>;
+  opportunity?: TravelOpportunity;
+  nextOpportunityAt?: number;
+  nextBountyAt?: number;
   // Political compass - tracks player choices across mission arcs
   politicalProfile?: PlayerPoliticalProfile;
   // Combat state
-  projectiles: Array<{
-    id: string;
-    ownerId: string;
-    ownerType: 'player' | 'npc';
-    position: [number, number, number];
-    velocity: [number, number, number];
-    damage: number;
-    lifetime: number;
-    maxLifetime: number;
-    weaponKind: 'laser' | 'plasma' | 'railgun' | 'missile';
-  }>;
+  combatImpacts?: Array<{ id: string; targetId: string; position: [number, number, number]; damage: number; at: number }>;
+  recoveryGraceUntil?: number;
+  projectiles: Projectile[];
   lastFireTime: number; // player's last fire time
   npcLastFireTimes: Record<string, number>; // npcId -> last fire time
   npcAggression: Record<string, {
@@ -340,15 +359,11 @@ export type GameState = {
     targetId?: string;
     lastAttackedTime?: number;
   }>;
-  lastDamageTime: number; // epoch ms (used for vignette/feedback)
-  explosions: ExplosionEffect[]; // transient visual effects (explosions + hit sparks)
-  targetedNpcId: string | null;
-  debris: Debris[];
   getSuggestedRoutes: (opts?: { limit?: number; prioritizePerDistance?: boolean }) => RouteSuggestion[];
   tick: (dt: number) => void;
   thrust: (dir: [number, number, number], dt: number) => void;
   setEngineTarget: (target: number) => void;
-  tryDock: () => void;
+  tryDock: (stationId?: string) => void;
   undock: () => void;
   dismissDockIntro: () => void;
   mine: () => void;
@@ -365,6 +380,25 @@ export type GameState = {
   generateContracts: (opts?: { limit?: number }) => void;
   acceptContract: (id: string) => void;
   abandonContract: (id: string) => void;
+  retryMission: (missionId: string) => void;
+  launchMission: (missionId: string) => void;
+  finance?: FinanceState;
+  bankAction: (action: FinanceAction, amount: number, fundId?: string) => void;
+  transferWarehouse: (commodityId: string, quantity: number, direction: 'store' | 'retrieve') => void;
+  repairShip: () => void;
+  purchaseFireSuppression: () => void;
+  toggleCruise: () => void;
+  toggleSilentRunning: () => void;
+  toggleAutopilot: () => void;
+  togglePause: () => void;
+  setGraphicsQuality: (quality: 'low' | 'medium' | 'high') => void;
+  cycleTarget: () => void;
+  clearTarget: () => void;
+  collectDebris: () => void;
+  saveGame: () => void;
+  loadGame: () => void;
+  requestBounty: () => void;
+  resolveOpportunity: (action: 'complete' | 'decline' | 'relay') => void;
   // Mission arc actions
   acceptMission: (missionId: string) => void;
   abandonMission: (missionId: string) => void;
@@ -379,10 +413,6 @@ export type GameState = {
   fireWeapon: (targetPos?: [number, number, number]) => void;
   upgradeWeapon: (upgradeType: 'damage' | 'fireRate' | 'range', cost: number) => void;
   purchaseWeapon: (weaponKind: WeaponKind, cost: number) => void;
-  respawnPlayer: () => void;
-  cycleTarget: () => void;
-  clearTarget: () => void;
-  collectDebris: () => void;
   // Ally assists
   consumeAssist: (type: AllyAssistToken['type'], by?: string) => boolean;
   // Notifications

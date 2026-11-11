@@ -174,7 +174,7 @@ export function getActionPropagation(action: string): {
     },
   };
   
-  return propagationMap[action] ?? { allies: [], rivals: [], spreadsToAll: false };
+  return { ...(propagationMap[action] ?? { allies: [], rivals: [] }), spreadsToAll: false };
 }
 
 /**

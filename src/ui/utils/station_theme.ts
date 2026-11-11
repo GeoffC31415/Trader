@@ -1,6 +1,7 @@
 import type { StationType } from '../../domain/types/economy_types';
 
 export function getHallLabel(type: StationType): string {
+  if (type === 'bank') return 'Meridian Banking Hall';
   if (type === 'city') return 'Civic Exchange';
   if (type === 'refinery') return 'Refinery Office';
   if (type === 'fabricator') return 'Assembly Exchange';
@@ -16,6 +17,7 @@ export function getHallLabel(type: StationType): string {
 }
 
 export const stationTypeColors: Record<StationType, { primary: string; secondary: string; glow: string }> = {
+  bank: { primary: '#c49a46', secondary: '#f6dfa0', glow: '#c49a4680' },
   city: { primary: '#3b82f6', secondary: '#60a5fa', glow: '#3b82f680' },
   refinery: { primary: '#f59e0b', secondary: '#fbbf24', glow: '#f59e0b80' },
   fabricator: { primary: '#8b5cf6', secondary: '#a78bfa', glow: '#8b5cf680' },

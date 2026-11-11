@@ -47,7 +47,6 @@ export function MinerModel({ power }: { power: number }) {
   );
 }
 
-// Preload the model for better performance
-useGLTF.preload('/ships/general_ship.glb');
+// useGLTF loads on mount; compatibility graphics must not fetch this model.
 
 

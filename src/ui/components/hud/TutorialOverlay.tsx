@@ -9,10 +9,10 @@ export function TutorialOverlay({ tutorialActive, tutorialStep, onSetTutorialAct
   
   const tutorialText = {
     dock_city: 'Fly to Sol City (the large structure to the northeast) and press E to dock.',
-    accept_mission: 'Scroll down in the Market panel to "Hall Contracts" section. Find a mission to deliver Refined Fuel and click Accept.',
-    goto_refinery: 'Undock (press Q) and fly to Helios Refinery (south) where fuel is cheap. Dock there (press E when close).',
-    buy_fuel: 'In the Market panel, buy the Refined Fuel needed for your mission. The mission objective shows your progress.',
-    deliver_fuel: 'Undock and return to Sol City. Dock there, then sell your Refined Fuel in the Market to complete the mission!',
+    accept_mission: 'Open the station’s Missions tab. Under Hall Contracts, accept “First fuel run: Helios Refinery → Sol City”.',
+    goto_refinery: 'Undock (Q). Your waypoint now points to Helios Refinery. Use the waypoint pilot (T), or fly there and dock with E.',
+    buy_fuel: 'Open the Production tab. Set trade quantity to 10 and buy Refined Fuel. You need all ten units before returning.',
+    deliver_fuel: 'Undock and return to Sol City. Dock there, open Civic Exchange, then sell your Refined Fuel to complete the mission!',
     done: "Tutorial complete! You've completed your first contract. Keep trading, taking missions, and upgrading your ship.",
   };
   
@@ -24,7 +24,7 @@ export function TutorialOverlay({ tutorialActive, tutorialStep, onSetTutorialAct
           {tutorialText[tutorialStep]}
         </div>
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button onClick={() => onSetTutorialActive(false)} style={{ opacity: 0.9 }}>Skip tutorial</button>
+          <button onClick={() => onSetTutorialActive(false)} style={{ opacity: 0.9 }}>{tutorialStep === 'done' ? 'Close tutorial' : 'Skip tutorial'}</button>
         </div>
       </div>
     </div>

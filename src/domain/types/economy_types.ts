@@ -17,6 +17,8 @@ export type StationInventoryItem = {
   buy: number;
   sell: number;
   stock?: number;
+  unmodifiedBuy?: number;
+  unmodifiedSell?: number;
   // Whether the station will buy this item from the player (player can sell to station)
   canBuy?: boolean;
   // Whether the station will sell this item to the player (player can buy from station)

@@ -1,5 +1,4 @@
 import type { Ship } from '../../../domain/types/world_types';
-import type { WeaponKind } from '../../../domain/types/combat_types';
 import { stationTypeColors } from '../../utils/station_theme';
 import { SciFiPanel } from '../shared/SciFiPanel';
 import { SectionHeader } from '../shared/SectionHeader';
@@ -7,16 +6,16 @@ import { DataRow } from '../shared/DataRow';
 import { SciFiButton } from '../shared/SciFiButton';
 import { UIIcon } from '../ui_icon';
 import { formatNumber } from '../../utils/number_format';
-import { WEAPON_COSTS, WEAPON_UPGRADE_COSTS, WEAPON_UPGRADE_MAX_LEVELS } from '../../../domain/constants/weapon_constants';
-import { getWeaponStats } from '../../../systems/combat/weapon_systems';
+import { useGameStore } from '../../../state';
+import { WEAPON_COSTS, WEAPON_UPGRADE_COSTS, WEAPON_BASE_STATS } from '../../../domain/constants/weapon_constants';
+import { FIRE_SUPPRESSION_COST, repairCost } from '../../../systems/combat/ship_fire';
+import type { WeaponKind } from '../../../domain/types/combat_types';
 
 interface ShipyardSectionProps {
   stationType: 'shipyard';
   ship: Ship;
   hasIntel: boolean;
   onUpgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel' | 'ledger' | 'tempcargo' | 'shieldedcargo', amount: number, cost: number) => void;
-  onPurchaseWeapon: (weaponKind: WeaponKind, cost: number) => void;
-  onUpgradeWeapon: (upgradeType: 'damage' | 'fireRate' | 'range', cost: number) => void;
   onReplaceShip: (kind: Ship['kind'], cost: number) => void;
 }
 
@@ -25,17 +24,26 @@ export function ShipyardSection({
   ship,
   hasIntel,
   onUpgrade,
-  onPurchaseWeapon,
-  onUpgradeWeapon,
   onReplaceShip,
 }: ShipyardSectionProps) {
   const colors = stationTypeColors[stationType];
-  const weaponStats = getWeaponStats(ship.weapon);
-  const weaponKind = ship.weapon.kind;
-  const canAfford = (cost: number) => ship.credits >= cost;
+  const purchaseWeapon = useGameStore(s => s.purchaseWeapon);
+  const upgradeWeapon = useGameStore(s => s.upgradeWeapon);
+  const repairShip = useGameStore(s => s.repairShip);
+  const purchaseFireSuppression = useGameStore(s => s.purchaseFireSuppression);
   
   return (
     <SciFiPanel stationType={stationType}>
+      <SectionHeader stationType={stationType}>Hull Repair & Safety</SectionHeader>
+      <DataRow stationType={stationType}><div><strong>Hull repair & recharge</strong><p>{Math.ceil(ship.hp)}/{ship.maxHp} hull · Full repair, energy recharge and extinguishing.</p></div><SciFiButton stationType={stationType} onClick={repairShip} disabled={ship.credits < repairCost(ship)}>Repair ship ({repairCost(ship).toLocaleString()} cr)</SciFiButton></DataRow>
+      <DataRow stationType={stationType}><div><strong>Automatic fire suppression</strong><p>Extinguishes onboard fires after 3 simulation seconds. Docking anywhere also puts fires out for free; hull repairs are separate.</p></div><SciFiButton stationType={stationType} onClick={purchaseFireSuppression} disabled={!!ship.hasFireSuppression || ship.credits < FIRE_SUPPRESSION_COST}>{ship.hasFireSuppression ? 'Suppression installed' : `Install suppression (${FIRE_SUPPRESSION_COST.toLocaleString()} cr)`}</SciFiButton></DataRow>
+      <SectionHeader stationType={stationType}>Weapons & Combat Services</SectionHeader>
+      <p>Current weapon: {ship.weapon.kind}. Aim with the mouse or select a target with Tab, then hold Space. Cruise and silent running disable weapons.</p>
+      {(Object.keys(WEAPON_COSTS) as WeaponKind[]).map(kind => <DataRow key={kind} stationType={stationType}>
+        <span>{kind} • {WEAPON_BASE_STATS[kind].damage} damage • {WEAPON_BASE_STATS[kind].range}m range</span>
+        <button disabled={ship.credits < WEAPON_COSTS[kind] || (kind === 'missile' && !hasIntel)} onClick={() => purchaseWeapon(kind, WEAPON_COSTS[kind])}>Equip ({WEAPON_COSTS[kind].toLocaleString()} credits)</button>
+      </DataRow>)}
+      {(Object.keys(WEAPON_UPGRADE_COSTS) as ('damage' | 'fireRate' | 'range')[]).map(type => <button key={type} onClick={() => upgradeWeapon(type, WEAPON_UPGRADE_COSTS[type])}>Upgrade {type} ({WEAPON_UPGRADE_COSTS[type]})</button>)}
       <SectionHeader stationType={stationType}>Ship Upgrades & Services</SectionHeader>
       
       <div style={{ marginBottom: 16 }}>
@@ -117,7 +125,7 @@ export function ShipyardSection({
               Status: {ship.hasNavigationArray ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
             </div>
             <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
-              Enables the system minimap display
+              Adds advanced navigation intelligence to the standard system map
             </div>
           </div>
           <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$500</div>
@@ -203,126 +211,6 @@ export function ShipyardSection({
         </DataRow>
       </div>
 
-      <SectionHeader stationType={stationType} style={{ marginTop: 20 }}>Weapons Bay</SectionHeader>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ 
-          padding: 12,
-          background: `${colors.primary}10`,
-          border: `1px solid ${colors.primary}30`,
-          borderRadius: 8,
-          marginBottom: 12,
-        }}>
-          <div style={{ fontSize: 12, fontFamily: 'monospace', opacity: 0.9, marginBottom: 8 }}>
-            CURRENT WEAPON:{' '}
-            <span style={{ color: colors.secondary, fontWeight: 800 }}>
-              {weaponKind.toUpperCase()}
-            </span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontFamily: 'monospace', fontSize: 11, opacity: 0.9 }}>
-            <div>DMG: <span style={{ fontWeight: 800, color: '#fca5a5' }}>{formatNumber(weaponStats.damage)}</span></div>
-            <div>RATE: <span style={{ fontWeight: 800, color: '#bfdbfe' }}>{formatNumber(weaponStats.fireRate)}/s</span></div>
-            <div>RANGE: <span style={{ fontWeight: 800, color: '#a7f3d0' }}>{formatNumber(weaponStats.range)}</span></div>
-            <div>ENERGY: <span style={{ fontWeight: 800, color: '#93c5fd' }}>{formatNumber(ship.weapon.energyCost)}/shot</span></div>
-          </div>
-          <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-            <SciFiButton
-              stationType={stationType}
-              onClick={() => onUpgradeWeapon('damage', WEAPON_UPGRADE_COSTS.damage)}
-              disabled={ship.weapon.damageLevel >= WEAPON_UPGRADE_MAX_LEVELS.damage || !canAfford(WEAPON_UPGRADE_COSTS.damage)}
-              style={{ fontSize: 11, padding: '8px 10px' }}
-              title={`Damage level ${ship.weapon.damageLevel}/${WEAPON_UPGRADE_MAX_LEVELS.damage}`}
-            >
-              DMG {ship.weapon.damageLevel}/{WEAPON_UPGRADE_MAX_LEVELS.damage}
-            </SciFiButton>
-            <SciFiButton
-              stationType={stationType}
-              onClick={() => onUpgradeWeapon('fireRate', WEAPON_UPGRADE_COSTS.fireRate)}
-              disabled={ship.weapon.fireRateLevel >= WEAPON_UPGRADE_MAX_LEVELS.fireRate || !canAfford(WEAPON_UPGRADE_COSTS.fireRate)}
-              style={{ fontSize: 11, padding: '8px 10px' }}
-              title={`Fire rate level ${ship.weapon.fireRateLevel}/${WEAPON_UPGRADE_MAX_LEVELS.fireRate}`}
-            >
-              RATE {ship.weapon.fireRateLevel}/{WEAPON_UPGRADE_MAX_LEVELS.fireRate}
-            </SciFiButton>
-            <SciFiButton
-              stationType={stationType}
-              onClick={() => onUpgradeWeapon('range', WEAPON_UPGRADE_COSTS.range)}
-              disabled={ship.weapon.rangeLevel >= WEAPON_UPGRADE_MAX_LEVELS.range || !canAfford(WEAPON_UPGRADE_COSTS.range)}
-              style={{ fontSize: 11, padding: '8px 10px' }}
-              title={`Range level ${ship.weapon.rangeLevel}/${WEAPON_UPGRADE_MAX_LEVELS.range}`}
-            >
-              RNG {ship.weapon.rangeLevel}/{WEAPON_UPGRADE_MAX_LEVELS.range}
-            </SciFiButton>
-          </div>
-          <div style={{ marginTop: 8, fontSize: 10, opacity: 0.7, fontFamily: 'monospace' }}>
-            Upgrades cost: DMG ${WEAPON_UPGRADE_COSTS.damage.toLocaleString()} • RATE ${WEAPON_UPGRADE_COSTS.fireRate.toLocaleString()} • RNG ${WEAPON_UPGRADE_COSTS.range.toLocaleString()}
-          </div>
-        </div>
-
-        {(
-          [
-            {
-              kind: 'laser' as const,
-              title: 'Laser Cannon',
-              blurb: 'Reliable hitscan, low energy, fast cadence',
-              req: undefined as string | undefined,
-            },
-            {
-              kind: 'plasma' as const,
-              title: 'Plasma Burster',
-              blurb: 'High damage bolts, mid range, heavier energy draw',
-              req: undefined as string | undefined,
-            },
-            {
-              kind: 'railgun' as const,
-              title: 'Railgun',
-              blurb: 'Long-range precision shots with punch',
-              req: undefined as string | undefined,
-            },
-            {
-              kind: 'missile' as const,
-              title: 'Missile Launcher',
-              blurb: 'Heavy tracking payloads (requires Market Intel)',
-              req: 'Requires Mercantile Data Nexus (Market Intel)',
-            },
-          ] satisfies Array<{ kind: WeaponKind; title: string; blurb: string; req?: string }>
-        ).map(w => {
-          const isOwned = weaponKind === w.kind;
-          const cost = WEAPON_COSTS[w.kind];
-          const isLocked = w.kind === 'missile' && !hasIntel;
-          const canBuy = !isOwned && !isLocked && canAfford(cost);
-
-          return (
-            <DataRow key={w.kind} stationType={stationType}>
-              <div>
-                <div style={{ fontWeight: 700, marginBottom: 2, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <UIIcon name="system_sensors" size={18} />
-                  {w.title}
-                </div>
-                <div style={{ fontSize: 10, opacity: 0.65, marginTop: 2 }}>
-                  {w.blurb}
-                </div>
-                {w.req && isLocked && (
-                  <div style={{ fontSize: 10, opacity: 0.75, marginTop: 4, color: '#fbbf24', fontFamily: 'monospace' }}>
-                    {w.req}
-                  </div>
-                )}
-              </div>
-              <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>
-                ${cost.toLocaleString()}
-              </div>
-              <SciFiButton
-                stationType={stationType}
-                onClick={() => onPurchaseWeapon(w.kind, cost)}
-                disabled={!canBuy}
-                style={{ fontSize: 11, padding: '6px 12px' }}
-              >
-                {isOwned ? 'EQUIPPED' : isLocked ? 'LOCKED' : canAfford(cost) ? 'PURCHASE' : 'NEED CREDITS'}
-              </SciFiButton>
-            </DataRow>
-          );
-        })}
-      </div>
-
       <SectionHeader stationType={stationType} style={{ marginTop: 20 }}>Ship Replacement Services</SectionHeader>
       <div style={{
         padding: 12,
@@ -337,16 +225,14 @@ export function ShipyardSection({
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        {(
-          [
-            { kind: 'freighter', cargo: 300, acc: 10, vmax: 11, price: 20000 },
-            { kind: 'clipper', cargo: 60, acc: 18, vmax: 20, price: 20000 },
-            { kind: 'miner', cargo: 80, acc: 9, vmax: 11, price: 10000, mining: true },
-            { kind: 'heavy_freighter', cargo: 600, acc: 9, vmax: 12, price: 60000 },
-            { kind: 'racer', cargo: 40, acc: 24, vmax: 28, price: 50000 },
-            { kind: 'industrial_miner', cargo: 160, acc: 10, vmax: 12, price: 40000, mining: true },
-          ] as Array<{ kind: Ship['kind']; cargo: number; acc: number; vmax: number; price: number; mining?: boolean }>
-        ).map(s => (
+        {[
+          { kind: 'freighter', cargo: 300, acc: 10, vmax: 11, price: 20000 },
+          { kind: 'clipper', cargo: 60, acc: 18, vmax: 20, price: 20000 },
+          { kind: 'miner', cargo: 80, acc: 9, vmax: 11, price: 10000, mining: true },
+          { kind: 'heavy_freighter', cargo: 600, acc: 9, vmax: 12, price: 60000 },
+          { kind: 'racer', cargo: 40, acc: 24, vmax: 28, price: 50000 },
+          { kind: 'industrial_miner', cargo: 160, acc: 10, vmax: 12, price: 40000, mining: true },
+        ].map(s => (
           <div key={s.kind} style={{
             padding: 14,
             background: `${colors.primary}10`,
@@ -367,7 +253,7 @@ export function ShipyardSection({
               </div>
               <SciFiButton
                 stationType={stationType}
-                onClick={() => onReplaceShip(s.kind, s.price)}
+                onClick={() => onReplaceShip(s.kind as Ship['kind'], s.price)}
                 disabled={Object.values(ship.cargo).reduce((a,b)=>a+b,0) > 0}
                 style={{ fontSize: 11, padding: '6px 12px' }}
               >

@@ -20,17 +20,7 @@ describe('updateCombat', () => {
     hasMarketIntel: false,
     kind: 'freighter',
     stats: { acc: 10, drag: 1.0, vmax: 10 },
-    weapon: {
-      kind: 'laser',
-      damage: 10,
-      fireRate: 1,
-      range: 50,
-      projectileSpeed: 120,
-      energyCost: 5,
-      damageLevel: 0,
-      fireRateLevel: 0,
-      rangeLevel: 0,
-    },
+    weapon: { kind: 'laser', damage: 10, fireRate: 1, range: 50, projectileSpeed: 0, energyCost: 5, damageLevel: 0, fireRateLevel: 0, rangeLevel: 0 },
     hp: PLAYER_MAX_HP,
     maxHp: PLAYER_MAX_HP,
     energy: PLAYER_MAX_ENERGY,
@@ -120,7 +110,8 @@ describe('updateCombat', () => {
     );
 
     // Projectile should be removed after hit
-    expect(result.projectiles.length).toBeLessThan(1);
+    expect(result.projectiles.some(p => p.id === 'proj1')).toBe(false);
+    expect(result.npcTraders[0].hp).toBe(NPC_BASE_HP - 20);
   });
 });
 

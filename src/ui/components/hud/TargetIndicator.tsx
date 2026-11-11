@@ -12,7 +12,7 @@ function clamp01(value: number): number {
 export function TargetIndicator() {
   const ship = useGameStore(s => s.ship);
   const npcTraders = useGameStore(s => s.npcTraders);
-  const targetedNpcId = useGameStore(s => s.targetedNpcId);
+  const targetedNpcId = useGameStore(s => s.selectedTargetId);
   const clearTarget = useGameStore(s => s.clearTarget);
 
   const target = useMemo(() => {
@@ -20,7 +20,7 @@ export function TargetIndicator() {
     return npcTraders.find(n => n.id === targetedNpcId);
   }, [npcTraders, targetedNpcId]);
 
-  if (!target || ship.dockedStationId) return null;
+  if (!target || target.hp <= 0 || ship.hp <= 0 || ship.dockedStationId) return null;
 
   const dx = target.position[0] - ship.position[0];
   const dy = target.position[1] - ship.position[1];
@@ -35,7 +35,7 @@ export function TargetIndicator() {
         position: 'absolute',
         top: 88,
         left: 18,
-        zIndex: 60,
+        zIndex: 25,
         background: 'linear-gradient(135deg, rgba(11,18,32,0.92), rgba(15,23,42,0.92))',
         border: '1px solid rgba(239,68,68,0.35)',
         borderRadius: 10,

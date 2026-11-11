@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import type { Station, Ship } from '../../../domain/types/world_types';
+import type { Station } from '../../../domain/types/world_types';
+import type { Ship } from '../../../domain/types/world_types';
 import type { StationInventory } from '../../../domain/types/economy_types';
-import type { WeaponKind } from '../../../domain/types/combat_types';
 import { stationTypeColors } from '../../utils/station_theme';
 import { SciFiPanel } from '../shared/SciFiPanel';
 import { SectionHeader } from '../shared/SectionHeader';
@@ -20,8 +20,6 @@ interface HallSectionProps {
   onBuy: (id: string, qty: number) => void;
   onSell: (id: string, qty: number) => void;
   onUpgrade: (type: 'acc' | 'vmax' | 'cargo' | 'mining' | 'navigation' | 'union' | 'intel' | 'ledger' | 'tempcargo' | 'shieldedcargo', amount: number, cost: number) => void;
-  onPurchaseWeapon: (weaponKind: WeaponKind, cost: number) => void;
-  onUpgradeWeapon: (upgradeType: 'damage' | 'fireRate' | 'range', cost: number) => void;
   onReplaceShip: (kind: Ship['kind'], cost: number) => void;
   hasIntel: boolean;
   avgCostByCommodity: Record<string, number>;
@@ -35,8 +33,6 @@ export function HallSection({
   onBuy,
   onSell,
   onUpgrade,
-  onPurchaseWeapon,
-  onUpgradeWeapon,
   onReplaceShip,
   hasIntel,
   avgCostByCommodity,
@@ -72,8 +68,6 @@ export function HallSection({
           ship={ship}
           hasIntel={hasIntel}
           onUpgrade={onUpgrade}
-          onPurchaseWeapon={onPurchaseWeapon}
-          onUpgradeWeapon={onUpgradeWeapon}
           onReplaceShip={onReplaceShip}
         />
       )}
