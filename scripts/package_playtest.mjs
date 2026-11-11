@@ -40,7 +40,7 @@ try {
   assertClean();
   if (git('rev-parse', 'HEAD') !== revision) throw new Error('Revision changed during validation.');
   const dist = join(root, 'dist');
-  for (const doc of ['PLAYTEST.md', 'PLAYER_FEEDBACK_ALPHA_2.md', 'OPEN_WORLD_JOURNAL.md']) {
+  for (const doc of ['PLAYTEST.md', 'PLAYER_FEEDBACK_ALPHA_2.md', 'OPEN_WORLD_JOURNAL.md', 'WAREHOUSES_AND_FINANCE.md']) {
     await copyFile(join(root, 'docs', doc), join(dist, doc));
   }
   const files = {};

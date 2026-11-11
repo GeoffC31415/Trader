@@ -37,7 +37,8 @@ test('journal links real telemetry and charts; shipyard repair and suppression r
   await expect(journal.getByRole('table', { name: 'Cumulative totals by goods' })).toContainText('Refined Fuel');
   await journal.getByRole('combobox', { name: 'Ledger station' }).selectOption('sol-city');
   await journal.getByRole('button', { name: /Manufacturing/ }).click();
-  await journal.getByRole('searchbox', { name: 'Search manufacturing' }).fill('batteries');
+  await journal.getByRole('searchbox', { name: 'Search manufacturing', exact: true }).fill('batteries');
+  await journal.getByRole('button', { name: 'Refined Fuel to Batteries method' }).click();
   const ceres = journal.getByRole('article').filter({ has: page.getByText('Ceres Power Plant', { exact: true }) });
   await expect(ceres).toContainText('Refined Fuel'); await ceres.getByRole('button', { name: 'Track station', exact: true }).click();
   await page.screenshot({ path: test.info().outputPath('journal-manufacturing.png') });

@@ -30,7 +30,7 @@ The gameplay branches left pre-existing entry point/error-boundary work untouche
 - Purchases and mining emit acquisition events. Combat emits mission-scoped destruction events only for player-attributed lethal hits.
 - Event replay and simultaneous kills are handled without stale snapshots. Failure/deadline checks precede completion; rewards, arc advancement, political scores and world effects are applied once.
 - Failed/cancelled missions can be reset and accepted again at the issuer. Mission-owned NPCs, stealth/wave state and tagged enemy projectiles are cleaned up. Procurement grants are never paid twice.
-- Ship defeat fails active story missions before a simultaneous final kill can award completion. Insurance restores hull/energy at an accessible port, retains cargo and charges at most 1,000 credits. If every port is hostile, Freeport provides an emergency neutral recovery berth.
+- Ship defeat fails active story missions before a simultaneous final kill can award completion. Insurance restores hull/energy at an accessible port, retains cargo and now loses 50% of onboard cash; bank accounts, investments and warehouse goods remain protected (see the finance follow-up). If every port is hostile, Freeport provides an emergency neutral recovery berth.
 - A disabled player cannot thrust or fire before recovery.
 - Mission clocks use simulation seconds. Pausing, hiding the browser tab, or opening a blocking briefing/choice/celebration freezes the simulation; a background tab cannot silently exhaust deadlines.
 - Commodity contracts use simulation milliseconds, including offer expiry and a seven-minute accepted delivery deadline. Expiration cannot pay a late completion bonus or repeat its penalty. Loaded escort cargo remains owned and sellable after cancellation.
@@ -154,6 +154,16 @@ See [the eight-page journal, accounting/history rules, fire mechanics and retest
 - A responsive eight-page commander journal replaces the old presentation, with real political and public-price charts, keyboard/pointer readouts, manufacturing/production locations, ship systems, searchable archives and cosmetic ranks/milestones. Chart/UI refresh is sampled once per second, not every physics frame. The world continues unless explicitly paused.
 - Manufacturing transfers acquisition cost to output, mining/salvage weight free inventory correctly, and the UI does not advertise an ambiguous input conversion that the runtime cannot select. Fractional/overflow and prohibited covert manufacturing are rejected.
 - **205 tests in 20 files**, **six development Chromium smokes**, typecheck/build and the extended **UI-only production tutorial/checkpoint/journal test** pass. The new development journal/fire demonstration uses arranged campaign/price/world/travel prerequisites; production journal data comes from the real tutorial route. Neither is fresh-save human campaign completion or real-GPU certification.
+
+## Warehouses, Meridian finance and asset-journal follow-up
+
+See [the financial rules, local storage, NAV valuation and visual journal details](WAREHOUSES_AND_FINANCE.md). This branch follows the open-world journal pass; old Alpha 2 packets remain unchanged.
+
+- All stations have local secure warehouses. Transfers preserve quantities, weighted acquisition cost and freshness, respect equipment/capacity/covert restrictions, and do not create sales or mission payouts.
+- Meridian Reserve Bank has an independent gold/obsidian style, vault hull and Director Ada Voss persona. Accounts operate there and at Sol City/Freeport; new loans require Meridian. Savings and guaranteed bonds accrue prorated simulation-time returns; risk-tiered station funds can rise/fall. Interest-bearing capped loans survive death, require periodic interest payment and do not count as income.
+- Death now loses exactly half onboard cash, replacing the old capped insurance charge. Other assets and debt remain intact, with normal recovery/ceasefire behavior retained.
+- The journal adds consolidated NAV/history/warehouse inventory, an actual connected production graph with supporting-station tooltips, and annotated rotating hull-family models with a procedural compatibility fallback and reduced-motion controls.
+- **230 tests across 22 files**, **eight development Chromium tests**, typecheck/build and an extended **UI-only production tutorial/banking/checkpoint/NAV test** pass. Detailed-model rendering/rotation was separately checked for all three hull families. Bank travel, financial time advance and the fully upgraded visual configuration in the development smoke are arranged fixtures, not earned fresh-save progression. Economic tuning and hardware performance still need human retesting.
 
 ## Still requires human validation or a separate content iteration
 

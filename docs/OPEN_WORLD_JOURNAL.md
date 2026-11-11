@@ -2,6 +2,8 @@
 
 These changes follow Alpha 2 on the stacked `feat/open-world-journal` branch. The existing `playtest-alpha-2` archive is unchanged; use a build of this branch to test them. This is an implemented feature pass, not human certification of balance, accessibility, performance or a complete campaign.
 
+The subsequent [warehouses/banking/asset-journal pass](WAREHOUSES_AND_FINANCE.md) extends these pages and replaces the former capped insurance fee with 50% onboard-cash loss. The earlier verification counts below describe this original journal pass.
+
 ## Ship fires, repairs and suppression
 
 - Surviving combat damage ignites an onboard fire when hull is at or below **35%**. Low hull alone does not invent a new fire.

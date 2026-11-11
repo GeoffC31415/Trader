@@ -66,7 +66,7 @@ These assignments unlock through reputation and earlier stages; they are not all
 - [ ] At the political choice, read **all** consequences. Pick one branch; confirm the next assignment and world changes match what was promised. Do not assume neutral or cheaper options are consequence-free.
 - [ ] Try a combat assignment (Greenfields' later convoy battle is one route). Verify target identity/range, Tab selection and held Space fire; check hull/energy and completion feedback. Was target selection understandable? Did combat require meaningful decisions?
 - [ ] Reach a story escort, such as the **Sol City inspector** route. Undock, join the waiting convoy within 200m, explicitly launch it, then try **Follow escort**. Check escort hull, finite wave progress and actual arrival. An escort must not complete while you remain docked.
-- [ ] Test loss: let an escort be destroyed, abandon an assignment, or lose your own hull. Check the reason is intelligible and failure does not also pay success. Insurance should retain cargo, repair the ship at an accessible port and charge at most 1,000 credits. Verify the 45-simulation-second ceasefire clears incidental anger and prevents an immediate reattack; firing ends protection.
+- [ ] Test loss: let an escort be destroyed, abandon an assignment, or lose your own hull. Check the reason is intelligible and failure does not also pay success. Insurance should retain cargo, repair the ship at an accessible port and lose exactly 50% of onboard cash; savings/investments/stored goods remain protected and debt remains owed. Verify the 45-simulation-second ceasefire clears incidental anger and prevents an immediate reattack; firing ends protection.
 - [ ] Retry a failed/abandoned assignment at its issuer, then accept it again. Check for old enemies/shots, duplicate rewards, or a repeated procurement grant. Existing cargo remains yours, so avoid buying it twice unnecessarily.
 - [ ] Save/reload during an unfinished assignment and confirm objectives, deadline, cargo, escorts and consequences remain coherent. Expect transient projectiles to be cleared on load.
 
@@ -88,6 +88,19 @@ See [OPEN_WORLD_JOURNAL.md](OPEN_WORLD_JOURNAL.md) for mechanics, accounting and
 - [ ] Let simulation time advance to collect real **Market observatory** samples and a **World chronicle** event expiry. Pausing the journal pauses these clocks; merely opening it does not.
 - [ ] If combat leaves you burning, verify the alert and slow hull damage. Dock at an accessible station: fire should stop **without healing or charging**. Use Drydock's **Shipyard Office → Hull repair & safety** to repair and purchase suppression. Verify automatic extinguishing after three simulation seconds, including after checkpoint reload.
 - [ ] Try the journal at your normal and smaller window sizes, keyboard-focus chart nodes and search fields, and check that flight keys do not leak through focused journal controls. Note text, tooltip, color and scrolling problems. Ranks/milestones are cosmetic, not extra rewards.
+
+## Session E: warehouses, banking and asset diagrams
+
+Detailed rules: [WAREHOUSES_AND_FINANCE.md](WAREHOUSES_AND_FINANCE.md). These changes require a newer build, not the unchanged Alpha 2 archive.
+
+- [ ] Store and retrieve a measured cargo lot at two ports. Verify local quantities, no remote teleporting/sale, full-hold/equipment refusal, preserved freshness and cost basis after selling other holdings. Check remote warehouse inventory in the command deck.
+- [ ] Use **Banking** at Sol City/Freeport: deposit, withdraw, invest savings, redeem a partial amount and an entire holding. Compare before/after cash, savings and NAV; capital transfers should not be counted as profits.
+- [ ] Visit **Meridian Reserve Bank**, meet Director Ada Voss, borrow a small amount and inspect interest/due time. Repay from a terminal: interest first, then principal. Try a past-due loan without risking your main checkpoint; overdue interest blocks new borrowing, not ordinary trade/repayment.
+- [ ] Compare savings/guaranteed bonds against several station funds over real simulation time. Observe both gains and losses, pause/hidden-tab behavior and any political disruptions. Rates are provisional; no offline return is promised.
+- [ ] Test ship loss with some cash onboard and some savings/investments/goods stored. Verify precisely half onboard cash is lost, other assets remain, and loans are not forgiven. Save/reload and compare all balances.
+- [ ] In **Manufacturing**, follow Hydrogen → Refined Fuel → Batteries, inspect method tooltips and track a supporting station. Try branching metal chains and the recipe-list fallback.
+- [ ] In **Ship & systems**, check the rotating technical model and all eight callouts against actual equipment. Test rotation pause/manual step and reduced motion. Compatibility uses a procedural silhouette; balanced/high uses detailed existing hull families.
+- [ ] Read **Command deck → Net asset value**: compare the breakdown, loan subtraction and history to actual holdings. It is an estimated catalog/market equity figure, not guaranteed cash proceeds. Report confusing valuation jumps, missing assets, overlap or poor performance.
 
 ## Report template
 

@@ -67,6 +67,23 @@ test('fresh tutorial flies the fuel route, trades, completes, and reloads a chec
   await journal.getByRole('button', { name: /Market observatory/ }).click();
   await expect(journal.getByRole('figure', { name: 'Historical board prices' })).toBeVisible();
   await page.screenshot({ path: test.info().outputPath('journal-checkpoint.png') });
+  // Banking also runs against compiled production, using real UI and the same paused clock.
+  await page.getByRole('button', { name: /tab market Market/ }).click();
+  await page.getByRole('button', { name: 'Banking', exact: true }).click();
+  await page.getByRole('spinbutton', { name: 'Bank transaction amount' }).fill('500');
+  await page.getByRole('button', { name: 'Deposit to savings', exact: true }).click();
+  await page.getByRole('spinbutton', { name: 'Bank transaction amount' }).fill('100');
+  await page.getByRole('button', { name: 'Withdraw to ship', exact: true }).click();
+  expect(Number((await creditText()).replace(/[^0-9.-]/g, ''))).toBe(Number(completedCredits.replace(/[^0-9.-]/g, '')) - 400);
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.reload(); await page.getByRole('button', { name: 'Load saved campaign', exact: true }).click();
+  await page.getByRole('button', { name: 'Banking', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Meridian banking services' }).getByText('400.00 cr', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /tab journal Journal/ }).click();
+  const assets = journal.getByRole('region', { name: 'Net asset value overview' });
+  await expect(assets.getByRole('figure', { name: 'Net asset value over time' })).toBeVisible();
+  await expect(assets.getByText('400 cr', { exact: true })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath('banked-assets-checkpoint.png') });
   expect(errors).toEqual([]);
   expect(failedAssets).toEqual([]);
   expect(modelRequests, 'Compatibility mode must not download unused detailed models').toEqual([]);
