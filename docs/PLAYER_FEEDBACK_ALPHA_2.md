@@ -4,7 +4,7 @@ This is the follow-up to `playtest-alpha-1`, on the stacked branch `fix/alpha-pl
 
 ## Critical finding: ordinary sales did not credit their revenue
 
-`sellCommodity` consumed goods, updated inventory, calculated profit and produced a sale receipt, but returned the ship without adding the sale revenue to its credits. Contract bonuses were paid separately, which hid the defect in earlier tests focused on mission completion and cargo/stock changes. This was a correctness defect, not just unfavorable balance. Sales now credit their actual revenue exactly once. Regressions check cash balances, partial deliveries, receipts and repeated attempts to sell an empty hold.
+`sellCommodity` consumed goods, updated inventory, calculated profit and produced a sale receipt, but returned the ship without adding the sale revenue to its credits. Contract bonuses were paid separately, which hid the defect in earlier tests focused on mission completion and cargo/stock changes. This was a correctness defect, not just unfavorable balance. Sales now credit their actual revenue exactly once. Regressions check cash balances, partial deliveries, receipts and repeated attempts to sell an empty hold. Partial sales from owned cargo escorts also retain the remaining goods' cost basis, so later profit/procurement calculations do not mistakenly treat them as free.
 
 The earlier readiness document's small tutorial loss was initially treated as a possible balance concern. That assessment was incomplete: the missing sale credit was a concrete underlying cause. Fresh tutorial testing now also checks the repaired flow; further human balance feedback is still needed.
 
@@ -49,7 +49,7 @@ The checkpoint format remains version 1, with an optional economy-ledger marker:
 
 ## Verification
 
-- **174 unit/DOM/integration tests across 17 files** cover every live mission's existing contract paths plus new cash-credit, fixed-price/partial/multiple-order settlement, unaffordable offers, purchase rejection, procurement funding, inspection, ceasefire, checkpoint migration, HUD/search/styling, music startup/retry/races, close docking and damage-event/scaling/expiry regressions.
+- **175 unit/DOM/integration tests across 17 files** cover every live mission's existing contract paths plus new cash-credit, fixed-price/partial/multiple-order settlement, unaffordable offers, purchase rejection, procurement funding, inspection, ceasefire, checkpoint migration, HUD/search/styling, music startup/retry/races, close docking and damage-event/scaling/expiry regressions.
 - **Five development Chromium smoke tests** cover real music playback after starter selection, held flight/fire, mission controls, search, multi-assignment tracking, close prompts, themed offer alignment, cargo turn-in and checkpoint load. Actual incoming projectile damage drives the hit UI in the combat smoke test; some campaign locations/offers/weapon preconditions are deliberately arranged.
 - The **UI-only production tutorial/checkpoint test** remains separate: ordinary Freighter, real flight/trade actions, no arranged cargo/location or accelerated clock. Production build/typechecking and a clean revision-labelled alpha packet are checked with `npm run playtest:package`.
 - Screenshot inspection covers the themed story cards and incoming hit feedback. These checks do not establish subjective combat quality, audible quality on a tester's sound setup, hardware FPS, accessibility completeness, or full fresh-save campaign feasibility.

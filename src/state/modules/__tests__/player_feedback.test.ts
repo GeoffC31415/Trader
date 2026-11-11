@@ -46,6 +46,19 @@ it('credits actual market-sale revenue without needing a contract or a completio
   useGameStore.getState().sell('refined_fuel', 5);
   expect(useGameStore.getState().ship.credits).toBe(10100);
 });
+it('preserves owned escort cargo cost basis across partial sales until all owned units are sold', () => {
+  setup(); const s = useGameStore.getState();
+  useGameStore.setState({ ship: { ...s.ship, cargo: {} }, contracts: [], avgCostByCommodity: { refined_fuel: 100 },
+    npcTraders: [{ id: 'owned-cargo', fromId: 'sol-city', toId: 'sol-city', position: [0, 0, 0], hp: 100, maxHp: 100, isEscort: true, commodityId: 'refined_fuel', escortCargoUsed: 4, escortCargoCapacity: 4 }] });
+  price('sol-city', 150, 150);
+  useGameStore.getState().sell('refined_fuel', 1);
+  expect(useGameStore.getState().avgCostByCommodity.refined_fuel).toBe(100);
+  expect(useGameStore.getState().npcTraders[0].escortCargoUsed).toBe(3);
+  useGameStore.getState().sell('refined_fuel', 3);
+  const end = useGameStore.getState();
+  expect(end.avgCostByCommodity.refined_fuel).toBe(0);
+  expect(end.profitByCommodity.refined_fuel).toBeCloseTo(end.tradeLog.reduce((sum, t) => sum + t.totalPrice, 0) - 400);
+});
 it('locks profitable delivery payment, accepts another supplier and pays partial deliveries despite a market crash', () => {
   setup(); useGameStore.setState({ contracts: [fuelOrder()] });
   useGameStore.getState().acceptContract('fuel');

@@ -143,7 +143,7 @@ See [the item-by-item fixes, financial rules, legacy checkpoint recovery and ver
 - Story cards use station-themed controls and a right-aligned offer action. Locked previews honor the chosen branch and display station names. Goods grids support text search. The HUD supports multiple live assignments, explicit delivery destinations, an overview and minimize/reopen; completed jobs disappear.
 - Initial exploration music begins after the starter gesture, with retryable autoplay failure and cancellable transitions. Docking/prompt/navigation share a close 15m berth; only the nearest prompt appears. Recovery clears anger and provides 45 simulation seconds of ceasefire, ending if the player fires.
 - Real damage drives bounded impact/spark/number feedback, a player-hit HUD cue, and persistent smoke/fire by hull severity. Reduced-motion and compatibility graphics have quieter effects. These are visual cues, not changes to collision/damage balance.
-- **174 tests across 17 unit/DOM/integration files**, **five development Chromium smoke tests** and the **UI-only production tutorial/checkpoint test** pass, along with typechecking/build and clean-checkout packet generation. No human campaign completion or real-GPU performance claim is implied.
+- **175 tests across 17 unit/DOM/integration files**, **five development Chromium smoke tests** and the **UI-only production tutorial/checkpoint test** pass, along with typechecking/build and clean-checkout packet generation. No human campaign completion or real-GPU performance claim is implied.
 
 ## Still requires human validation or a separate content iteration
 

@@ -578,7 +578,7 @@ export function sellCommodity(
   const profit = { ...profitByCommodity } as Record<string, number>;
   profit[commodityId] = (profit[commodityId] || 0) + realized;
 
-  if ((cargo[commodityId] || 0) === 0) {
+  if (totalAvailable === qty) {
     avgMap[commodityId] = 0;
   }
 
