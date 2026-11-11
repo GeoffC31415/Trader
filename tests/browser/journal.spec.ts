@@ -6,6 +6,7 @@ test('journal links real telemetry and charts; shipyard repair and suppression r
   await page.addInitScript(() => localStorage.setItem('trader.graphics', 'low'));
   await page.route('https://**/*', route => route.abort());
   await page.goto('/'); await page.getByRole('button', { name: 'Select Freighter', exact: true }).click();
+  await expect(page.getByText('Press E to dock at Sol City', { exact: true })).toBeVisible();
   await page.keyboard.press('e'); await page.getByRole('button', { name: /Enter Station/ }).click();
   // Populate a readable demonstration with real store trades and journal transactions.
   // Political/world/price preconditions and later shipyard travel are arranged, not earned campaign access.

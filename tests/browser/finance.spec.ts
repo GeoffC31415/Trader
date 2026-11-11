@@ -6,6 +6,7 @@ test('banking, local warehouses, loans, actual defeat losses and asset history p
   await page.addInitScript(() => localStorage.setItem('trader.graphics', 'low'));
   await page.route('https://**/*', route => route.abort());
   await page.goto('/'); await page.getByRole('button', { name: 'Select Freighter', exact: true }).click();
+  await expect(page.getByText('Press E to dock at Sol City', { exact: true })).toBeVisible();
   await page.keyboard.press('e'); await page.getByRole('button', { name: /Enter Station/ }).click();
   const data = () => page.evaluate(async () => { const path = '/src/state/store.ts'; const s = (await import(path)).useGameStore.getState(); return { ship: s.ship, finance: s.finance, time: s.gameTime }; });
   await page.getByRole('button', { name: 'Banking', exact: true }).click();
