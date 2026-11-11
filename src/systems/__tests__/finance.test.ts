@@ -122,7 +122,8 @@ it('banking rates and market marks freeze when simulation is paused or blocked',
 });
 it('values a final capped upgrade as a complete purchased upgrade step', () => {
   setup('drydock'); const before = netAssetValue(useGameStore.getState()).total;
-  for (let i = 0; i < 3; i++) useGameStore.getState().upgrade('acc', 3, 1000);
+  for (let i = 0; i < 2; i++) useGameStore.getState().upgrade('acc', 3, 1000);
+  useGameStore.getState().upgrade('acc', 2, 1000); // Explicit partial-step service request, not the UI's +3 button.
   expect(useGameStore.getState().ship.stats.acc).toBe(18); expect(netAssetValue(useGameStore.getState()).modules).toBe(3000);
   expect(netAssetValue(useGameStore.getState()).total).toBeCloseTo(before);
 });
