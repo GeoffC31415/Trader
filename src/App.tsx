@@ -34,8 +34,6 @@ export function App() {
   const setTutorialActive = useGameStore(s => s.setTutorialActive);
   const tutorialStep = useGameStore(s => s.tutorialStep);
   const hasIntel = useGameStore(s => !!s.ship.hasMarketIntel);
-  const objectives = useGameStore(s => s.objectives || []);
-  const activeObjectiveId = useGameStore(s => s.activeObjectiveId);
   const trackedStationId = useGameStore(s => s.trackedStationId);
   const stations = useGameStore(s => s.stations);
   const setTrackedStation = useGameStore(s => s.setTrackedStation);
@@ -43,18 +41,7 @@ export function App() {
   const contracts = useGameStore(s => s.contracts || []);
   const npcTraders = useGameStore(s => s.npcTraders);
   const missions = useGameStore(s => s.missions);
-  const activeObj = (objectives.find(o => o.id === activeObjectiveId) || objectives.find(o => o.status === 'active'));
-  
-  // Get active story mission
-  const activeMissions = missions.filter(m => m.status === 'active');
-  const primaryMission = activeMissions[0]; // Show first active mission
-  
-  // Get active contract for progress display
-  const activeContract = activeObj?.kind === 'contract' 
-    ? contracts.find(c => c.id === activeObj.id.replace('obj:', ''))
-    : undefined;
-  
-  const activeEscorts = npcTraders.filter(n => n.isEscort && activeContract && n.escortingContract === activeContract.id);
+  const activeEscorts = npcTraders.filter(n => n.isEscort);
   
   // Initialize music system (call hook to manage music based on game state)
   useMusicController();
@@ -171,9 +158,8 @@ export function App() {
         
         {hasChosenStarter && (
           <ObjectiveHUD
-            activeObj={activeObj}
-            primaryMission={primaryMission}
-            activeContract={activeContract}
+            missions={missions}
+            contracts={contracts}
             activeEscorts={activeEscorts}
             trackedStationId={trackedStationId}
             stations={stations}

@@ -69,6 +69,16 @@ it('locks profitable delivery payment, accepts another supplier and pays partial
   expect(done.celebrationBuyCost).toBe(400); expect(done.celebrationSellRevenue).toBe(4 * payout);
   done.sell('refined_fuel', 2); expect(useGameStore.getState().ship.credits).toBe(done.ship.credits);
 });
+it('allocates one bulk sale across multiple matching orders without selling the remainder at an unprotected market rate', () => {
+  setup(); useGameStore.setState({ contracts: [fuelOrder(), { ...fuelOrder(), id: 'second' }] });
+  useGameStore.getState().acceptContract('fuel'); useGameStore.getState().acceptContract('second');
+  dock('sol-refinery'); price('sol-refinery', 100, 1); useGameStore.getState().buy('refined_fuel', 8);
+  dock('sol-city'); price('sol-city', 1, 1); useGameStore.getState().sell('refined_fuel', 8);
+  const done = useGameStore.getState(); const payout = contractUnitPayout(done.contracts![0]);
+  expect(done.contracts!.every(c => c.status === 'completed')).toBe(true);
+  expect(done.ship.credits).toBe(10000 - 800 + 8 * payout + 400);
+  expect(done.tradeLog.slice(-1)[0].totalPrice).toBe(8 * payout);
+});
 it('rejects a loss-making contract purchase before spending credits or taking cargo', () => {
   setup(); useGameStore.setState({ contracts: [fuelOrder()] }); useGameStore.getState().acceptContract('fuel');
   dock('sol-refinery'); price('sol-refinery', 500, 1);

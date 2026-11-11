@@ -125,6 +125,7 @@ export function MarketPanel() {
       if (arc.status === 'locked' || arc.status === 'completed') continue;
       const templates = getMissionTemplatesByStage(arc.id, arc.currentStage)
         .filter(t => t.availableAt.includes(station.id))
+        .filter(t => !t.branch || Object.values(arc.choicesMade).includes(t.branch))
         .filter(t => !activeIds.has(t.id) && !arc.completedMissions.includes(t.id));
 
       const lockedCandidates = templates.map(t => {

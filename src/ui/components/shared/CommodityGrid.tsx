@@ -1,4 +1,4 @@
-import { Fragment, useMemo } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import type { StationType } from '../../../domain/types/economy_types';
 import type { StationInventory } from '../../../domain/types/economy_types';
 import type { Ship } from '../../../domain/types/world_types';
@@ -35,6 +35,8 @@ export function CommodityGrid({
   avgCostByCommodity = {},
 }: CommodityGridProps) {
   const colors = stationTypeColors[station.type];
+  const [query, setQuery] = useState('');
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   const canTrade = (id: string) => canTradeCommodity(ship, id);
   
   // Split items into cargo (items player has) and other items
@@ -44,6 +46,8 @@ export function CommodityGrid({
     
     for (const item of items) {
       const [id] = item;
+      const name = `${id.replace(/_/g, ' ')} ${commodityById[id]?.name ?? ''}`.toLowerCase();
+      if (!terms.every(term => name.includes(term))) continue;
       if ((ship.cargo[id] || 0) > 0) {
         inCargo.push(item);
       } else {
@@ -52,7 +56,7 @@ export function CommodityGrid({
     }
     
     return { cargoItems: inCargo, otherItems: notInCargo };
-  }, [items, ship.cargo]);
+  }, [items, ship.cargo, query]);
   
   // Check if there's anything to sell
   const hasCargoToSell = cargoItems.some(([id, p]) => 
@@ -159,6 +163,12 @@ export function CommodityGrid({
           cursor: not-allowed;
         }
       `}</style>
+      <label style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12, color: colors.secondary, fontSize: 12 }}>
+        Search goods
+        <input type="search" aria-label="Search goods" placeholder="Name or part of a name…" value={query} onChange={e => setQuery(e.target.value)} style={{ minWidth: 0, flex: 1, padding: '8px 12px', background: '#0b1220', border: `1px solid ${colors.primary}`, borderRadius: 6, color: '#e5e7eb' }} />
+        {query && <button onClick={() => setQuery('')}>Clear search</button>}
+      </label>
+      {!cargoItems.length && !otherItems.length && <p role="status">No goods match “{query}”.</p>}
       <div className="commodity-grid">
         <div className="commodity-grid-header"></div>
         <div className="commodity-grid-header">COMMODITY</div>

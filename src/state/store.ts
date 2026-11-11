@@ -150,17 +150,21 @@ export const useGameStore = create<GameState>((set, get) => ({
     const result = sellCommodity(s.ship, s.stations, s.npcTraders, s.profitByCommodity, s.avgCostByCommodity, commodityId, quantity, escorts);
     if (!result) return notice(s, 'Sale unavailable: check cargo, destination demand and required equipment', 'warning');
     s = { ...s, ship: result.ship, stations: recordStationInteraction(result.stations, result.trade.stationId, s.gameTime, result.trade.totalPrice), npcTraders: result.npcTraders, profitByCommodity: result.profitByCommodity, avgCostByCommodity: result.avgCostByCommodity, tradeLog: [...s.tradeLog, result.trade].slice(-500) };
-    const contract = s.contracts?.find(c => c.status === 'accepted' && c.toId === s.ship.dockedStationId && c.commodityId === commodityId);
-    if (contract) {
-      const delivered = Math.min(quantity, contract.units - (contract.deliveredUnits ?? 0));
+    const contracts = s.contracts?.filter(c => c.status === 'accepted' && c.toId === s.ship.dockedStationId && c.commodityId === commodityId) ?? [];
+    let remainingSold = quantity;
+    for (const contract of contracts) {
+      const delivered = Math.min(remainingSold, contract.units - (contract.deliveredUnits ?? 0));
+      if (delivered <= 0) continue;
+      remainingSold -= delivered;
       const total = (contract.deliveredUnits ?? 0) + delivered;
       const complete = total >= contract.units;
-      const unitPrice = Math.max(result.unitSellPrice * (contract.sellMultiplier ?? 1), contractUnitPayout(contract) * freshness);
+      const unitPrice = Math.max(result.unitSellPrice, result.unitSellPrice * (contract.sellMultiplier ?? 1), contractUnitPayout(contract) * freshness);
       const premium = Math.round(delivered * (unitPrice - result.unitSellPrice));
       const extra = premium + (complete ? contract.rewardBonus ?? 0 : 0);
       const deliveredRevenue = (contract.deliveredRevenue ?? 0) + delivered * result.unitSellPrice + premium;
       const deliveredCost = (contract.deliveredCost ?? 0) + delivered * costBasis;
-      const receipt = { ...result.trade, totalPrice: result.trade.totalPrice + premium, unitPrice: (result.trade.totalPrice + premium) / quantity };
+      const previousReceipt = s.tradeLog[s.tradeLog.length - 1];
+      const receipt = { ...previousReceipt, totalPrice: previousReceipt.totalPrice + premium, unitPrice: (previousReceipt.totalPrice + premium) / quantity };
       s = { ...s, ship: { ...s.ship, credits: s.ship.credits + Math.round(extra) },
         contracts: s.contracts!.map(c => c.id === contract.id ? { ...c, deliveredUnits: total, deliveredRevenue, deliveredCost, status: complete ? 'completed' : 'accepted' } : c),
         tradeLog: [...s.tradeLog.slice(0, -1), receipt],

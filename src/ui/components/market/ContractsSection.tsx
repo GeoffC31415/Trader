@@ -1,4 +1,5 @@
 import { useGameStore } from '../../../state';
+import { contractUnitPayout } from '../../../state/modules/missions';
 import type { Station } from '../../../domain/types/world_types';
 import type { Contract } from '../../../domain/types/world_types';
 import { stationTypeColors } from '../../utils/station_theme';
@@ -82,7 +83,7 @@ export function ContractsSection({
           fontSize: 12,
           opacity: 0.9,
         }}>
-          ℹ Accept delivery contracts for goods needed at this station. Market prices can change; the listed completion bonus is fixed. Accepted contracts allow seven simulation minutes for delivery.
+          Deliver from any legal supplier. Acceptance locks a fresh-cargo payment floor plus the completion bonus; lower market prices cannot erase it. Spoiled goods are discounted. Offers are sized to your working capital. Purchases above an active order's floor are blocked to prevent accidental losses. Deliveries allow seven simulation minutes.
         </div>
 
         {stationContracts.length === 0 ? (
@@ -115,9 +116,11 @@ export function ContractsSection({
                       </div>
                       {fromStation && (
                         <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
-                          SOURCE: {fromStation.name}
+                          SUGGESTED SUPPLIER (optional): {fromStation.name}
                         </div>
                       )}
+                      <div style={{ fontSize: 12, marginTop: 8 }}>DELIVER TO: {stations.find(st => st.id === c.toId)?.name ?? c.toId}</div>
+                      <div style={{ color: '#8dd6ff', fontSize: 12, marginTop: 6 }}>Fresh cargo: at least {contractUnitPayout(c).toLocaleString()} cr / unit + completion bonus. Estimated procurement: {Math.ceil((c.unitBuy ?? 0) * c.units).toLocaleString()} cr.</div>
                       {c.requiredRep && c.requiredRep > 0 && (
                         <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace', color: reqRepOk ? '#10b981' : '#ef4444', marginTop: 4 }}>
                           {reqRepOk ? '✓' : '✗'} REQUIRES {c.requiredRep} REPUTATION
@@ -125,7 +128,7 @@ export function ContractsSection({
                       )}
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 4, fontFamily: 'monospace' }}>REWARD</div>
+                      <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 4, fontFamily: 'monospace' }}>COMPLETION BONUS</div>
                       <div style={{ fontSize: 22, fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>
                         ${(c.rewardBonus || 0).toLocaleString()}
                       </div>
@@ -193,7 +196,7 @@ export function ContractsSection({
                       </div>
                       {c.expiresAt !== undefined && <div role="timer">Remaining: {Math.max(0, Math.ceil(c.expiresAt / 1000 - gameTime))} seconds</div>}
                       <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
-                        DESTINATION: {destStation?.name || c.toId}
+                        DESTINATION: {destStation?.name || c.toId} · Fresh-cargo payment floor: {contractUnitPayout(c).toLocaleString()} cr / unit · Bonus: {(c.rewardBonus ?? 0).toLocaleString()} cr
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, marginLeft: 16 }}>
