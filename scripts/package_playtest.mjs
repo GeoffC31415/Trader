@@ -40,7 +40,9 @@ try {
   assertClean();
   if (git('rev-parse', 'HEAD') !== revision) throw new Error('Revision changed during validation.');
   const dist = join(root, 'dist');
-  await copyFile(join(root, 'docs/PLAYTEST.md'), join(dist, 'PLAYTEST.md'));
+  for (const doc of ['PLAYTEST.md', 'PLAYER_FEEDBACK_ALPHA_2.md']) {
+    await copyFile(join(root, 'docs', doc), join(dist, doc));
+  }
   const files = {};
   for (const file of await listFiles(dist)) files[file] = await digest(join(dist, file));
   const { version } = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));

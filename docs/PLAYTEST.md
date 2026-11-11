@@ -19,13 +19,21 @@ The archive filename identifies the revision. `playtest-build.json` contains the
 - Loading restores **paused**. Press Resume when ready. Browser storage clearing, changing browser/profile/host/port or blocking storage can make a save unavailable.
 - Pause before leaving a session. Pause, hidden tabs and blocking briefings/choices/celebrations freeze the simulation and deadlines; merely opening the mission log does not.
 
+## Changes for returning Alpha 1 testers
+
+Detailed change and verification notes: [PLAYER_FEEDBACK_ALPHA_2.md](PLAYER_FEEDBACK_ALPHA_2.md).
+
+Alpha 2 repairs a missing-sale-revenue bug. Loading an older checkpoint restores missing sale credits from its retained trade ledger once; a notification explains the amount. This cannot reconstruct discarded older trades or unrecorded past story-procurement losses. Existing progress remains, and manual/autosave still share one slot. Use the same browser profile and origin as before.
+
+Story cards now distinguish procurement budgets/reimbursement from completion fees. Normal delivery orders accept any legal supplier, show their exact destination, lock a fresh-cargo payment floor and prevent purchases above that floor. Ordinary trading and spoiled cargo can still lose money. The objectives tracker now supports multiple assignments and can be minimized. Please specifically retest these, first-start music, 15m docking, recovery ceasefire and combat damage effects.
+
 ## Essential controls
 
 | Action | Control |
 | --- | --- |
 | Move on the flight plane | W / A / S / D |
 | Move vertically | R / F |
-| Dock within 60m / undock | E / Q |
+| Dock within 15m / undock | E / Q |
 | Aim / fire continuously | Mouse / hold Space |
 | Cycle nearby targets | Tab while flight has focus |
 | Cruise (three-second spool, weapons disabled) | C, clear of stations and aggressive ships |
@@ -58,7 +66,7 @@ These assignments unlock through reputation and earlier stages; they are not all
 - [ ] At the political choice, read **all** consequences. Pick one branch; confirm the next assignment and world changes match what was promised. Do not assume neutral or cheaper options are consequence-free.
 - [ ] Try a combat assignment (Greenfields' later convoy battle is one route). Verify target identity/range, Tab selection and held Space fire; check hull/energy and completion feedback. Was target selection understandable? Did combat require meaningful decisions?
 - [ ] Reach a story escort, such as the **Sol City inspector** route. Undock, join the waiting convoy within 200m, explicitly launch it, then try **Follow escort**. Check escort hull, finite wave progress and actual arrival. An escort must not complete while you remain docked.
-- [ ] Test loss: let an escort be destroyed, abandon an assignment, or lose your own hull. Check the reason is intelligible and failure does not also pay success. Insurance should retain cargo, repair the ship at an accessible port and charge at most 1,000 credits.
+- [ ] Test loss: let an escort be destroyed, abandon an assignment, or lose your own hull. Check the reason is intelligible and failure does not also pay success. Insurance should retain cargo, repair the ship at an accessible port and charge at most 1,000 credits. Verify the 45-simulation-second ceasefire clears incidental anger and prevents an immediate reattack; firing ends protection.
 - [ ] Retry a failed/abandoned assignment at its issuer, then accept it again. Check for old enemies/shots, duplicate rewards, or a repeated procurement grant. Existing cargo remains yours, so avoid buying it twice unnecessarily.
 - [ ] Save/reload during an unfinished assignment and confirm objectives, deadline, cargo, escorts and consequences remain coherent. Expect transient projectiles to be cleared on load.
 

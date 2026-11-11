@@ -16,6 +16,7 @@ The branches are deliberately stacked, not independent alternatives. The final v
 | `fix/playability-integration` | Commodity contracts, cargo ownership, defeat priority, bounties, character history, graphics controls and browser tests |
 | `test/playability-verification` | Cross-system regressions, every choice branch, validated checkpoints for every live mission, route-paced escort waves and final integration fixes |
 | `chore/playtest-readiness` | Integrate the existing error boundary, fix fresh-start tutorial/navigation issues, avoid compatibility-model preloads, and package a checked alpha build |
+| `fix/alpha-player-feedback` | Credit sale revenue, restore legacy sale credits, protect contract finance, theme/search/track assignments, start music correctly and add close docking/recovery/damage feedback |
 
 The gameplay branches left pre-existing entry point/error-boundary work untouched. The readiness pass integrates and tests that boundary with explicit children typing. The unrelated `tsconfig.json` and `run_trader.sh` work remains separate.
 
@@ -43,7 +44,7 @@ There are **29 live templates**. The obsolete generic fabrication-stage-3 protot
 - Fabrication procurement specifies copper/silicon purchases and real turn-ins. Its one-time grant is 4,000 credits.
 - Both fabrication finales accept an explicit basket of 50 fabricated units, including partial deliveries; empty-hold completion is impossible.
 - The Ceres finale requires 50 purchased fuel units and their actual handover, with a one-time 5,000-credit budget.
-- The initial Greenfields luxury assignment has a one-time 7,000-credit procurement budget; its completion reward is separate.
+- The initial Greenfields luxury assignment has a minimum one-time 7,000-credit procurement budget; its completion reward is separate. Alpha 2 adjusts funded procurement budgets to legal supplier quotes and reimburses recorded turn-in cost above that working budget.
 - The Greenfields food finale requires refrigerated cargo equipment before acceptance. Refrigeration meaningfully slows spoilage; docked goods do not spoil.
 - Covert downloads/installations are resumable timed interactions, not precision mouse-release tests. They progress while docked, or under silent running within 100m. Moving away pauses the operation. Documents and research contacts have local liaison access even when docking is denied.
 - Suspicion applies to the actual covert assignments, including the Aurum and Ceres operations. Friendly docking does not build suspicion. The security radius is reduced from the reviewed overlapping zone.
@@ -128,9 +129,21 @@ The player-facing instructions, session checklist, save warning and bug-report t
 - `npm run playtest:check` runs typechecks, unit tests, build and both browser suites. `npm run playtest:package` requires a clean revision, repeats those checks without reusing stale servers, and bundles `dist/`, the checklist, revision/toolchain/file-hash metadata and an archive SHA-256 checksum. See the checklist for extraction and HTTP serving. This is not a byte-identical archive guarantee.
 - Existing dependency advisories remain **19** (1 low, 4 moderate, 11 high, 3 critical); the critical entries include development tooling (`vitest`, `@vitest/ui`, `tinypool`). Do not expose development/test UI servers publicly. Distribute the compiled static packet for this private alpha. Large chunks/assets still need release-hardening work.
 
-Screenshot inspection also identified non-blocking feedback items: completed contract information remains on the HUD, some target markers overlap mission panels, and sampled tutorial runs ended roughly 150–200 credits below the initial balance despite the 1,000-credit completion bonus. Actual market prices vary; this is a balance/quote-feedback concern, not an inability to finish the contract. Record these in player feedback rather than claiming the first route is guaranteed profitable.
+At Alpha 1, screenshot inspection identified completed contract information remaining on the HUD, target markers overlapping panels, and tutorial runs ending roughly 150–200 credits below the initial balance despite the completion bonus. The loss was initially treated as a possible balance concern. **Alpha 2 investigation found an actual cash-credit defect:** ordinary sale revenue was calculated/logged but never added to the ship. This is repaired and covered by cash-balance tests, with limited legacy-ledger recovery. See the follow-up below; the earlier assessment was incomplete.
 
 These are scripted browser exercises plus screenshot inspection, **not a human playtest**, hardware FPS measurement or proof of fresh-save completion of every campaign branch. No speculative balance changes were made in the readiness pass.
+
+## Alpha 2: first player-feedback follow-up
+
+See [the item-by-item fixes, financial rules, legacy checkpoint recovery and verification limits](PLAYER_FEEDBACK_ALPHA_2.md).
+
+- Ordinary sales now pay actual revenue once. Older checkpoints recover the missing revenue from retained sale receipts, mark the economy ledger migrated, and do not replay bonuses or purchases. Unlogged/discarded history cannot be reconstructed.
+- Delivery orders are sized to working capital, accept any legal supplier, lock a fresh-cargo payment floor, prevent purchases above active payment floors, and pay partial/bulk-multiple-order deliveries correctly. Their receipts include the order premium; completion bonuses remain separate.
+- Funded story deliveries use quote-adjusted working budgets and recorded-cost reimbursement. Greenfields' covert order cannot purchase luxury goods at Sol City, and docking there with the cargo exposes the assignment. Briefings now describe real mechanics instead of promising nonexistent confiscation.
+- Story cards use station-themed controls and a right-aligned offer action. Locked previews honor the chosen branch and display station names. Goods grids support text search. The HUD supports multiple live assignments, explicit delivery destinations, an overview and minimize/reopen; completed jobs disappear.
+- Initial exploration music begins after the starter gesture, with retryable autoplay failure and cancellable transitions. Docking/prompt/navigation share a close 15m berth; only the nearest prompt appears. Recovery clears anger and provides 45 simulation seconds of ceasefire, ending if the player fires.
+- Real damage drives bounded impact/spark/number feedback, a player-hit HUD cue, and persistent smoke/fire by hull severity. Reduced-motion and compatibility graphics have quieter effects. These are visual cues, not changes to collision/damage balance.
+- **174 tests across 17 unit/DOM/integration files**, **five development Chromium smoke tests** and the **UI-only production tutorial/checkpoint test** pass, along with typechecking/build and clean-checkout packet generation. No human campaign completion or real-GPU performance claim is implied.
 
 ## Still requires human validation or a separate content iteration
 

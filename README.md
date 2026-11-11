@@ -2,7 +2,7 @@
 
 Systems-driven 3D space trading game with a dynamic economy, narrative-driven mission arcs, and faction-based politics. Buy low, sell high, fabricate goods, complete story missions, engage in combat, and optimize routes across a small star system.
 
-**Focused alpha:** see the [player checklist, build instructions and feedback template](docs/PLAYTEST.md). This is not yet a human-validated full campaign or a polished release.
+**Focused alpha:** see the [player checklist, build instructions and feedback template](docs/PLAYTEST.md), plus the [Alpha 2 player-feedback fixes and checkpoint recovery notes](docs/PLAYER_FEEDBACK_ALPHA_2.md). This is not yet a human-validated full campaign or a polished release.
 
 See [playability implementation and verification](docs/PLAYABILITY_IMPLEMENTATION.md) for the current mission contracts, branch stack, checkpoint policy and remaining playtest work.
 
