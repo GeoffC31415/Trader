@@ -295,10 +295,10 @@ export function SceneRoot() {
     if (pressed['f']) dir.addScaledVector(up, -1);
     if (dir.lengthSq() > 0 && current.ship.autopilot) current.toggleAutopilot();
     if (current.ship.autopilot && dir.lengthSq() === 0 && current.trackedStationId) {
-      const destination = current.stations.find(st => st.id === current.trackedStationId);
+      const destination = current.stations.find(st => st.id === current.trackedStationId) ?? (current.opportunity?.id === current.trackedStationId ? current.opportunity : undefined);
       if (destination) {
         dir.set(...destination.position).sub(new THREE.Vector3(...current.ship.position));
-        if (dir.length() < 55) { current.tryDock(); if (useGameStore.getState().ship.autopilot) current.toggleAutopilot(); dir.set(0, 0, 0); }
+        if (dir.length() < 55) { if (destination.id !== current.opportunity?.id) current.tryDock(); if (useGameStore.getState().ship.autopilot) current.toggleAutopilot(); dir.set(0, 0, 0); }
       }
     }
     if (dir.lengthSq() > 0) {

@@ -20,6 +20,15 @@ export function MissionLog() {
       <button onClick={() => { if (!s.hasChosenStarter || window.confirm('Replace current progress with the saved campaign?')) s.loadGame(); }}>Load</button>
       <button onClick={s.togglePause}>{s.paused ? 'Resume' : 'Pause (P)'}</button>
     </div>
+    {s.opportunity && <aside aria-label="Optional travel opportunity" style={{ position: 'absolute', top: 80, left: '50%', transform: 'translateX(-50%)', width: 320, padding: 12, background: '#102333ee', color: 'white', border: '1px solid #709da9', zIndex: 40 }}>
+      <strong>Optional: {s.opportunity.kind}</strong> • {Math.ceil(s.opportunity.expiresAt - s.gameTime)}s left
+      <p>{s.opportunity.kind === 'salvage' ? `Recover ${s.opportunity.quantity} alloys. ${s.opportunity.risky ? 'WARNING: a raider is monitoring this cache.' : 'No hostile activity detected.'}` : `Supply ${s.opportunity.quantity} ${s.opportunity.commodityId.replace(/_/g, ' ')} for ${s.opportunity.reward} credits and local reputation.`}</p>
+      <p>{Math.ceil(Math.hypot(...s.opportunity.position.map((v, i) => v - s.ship.position[i])))}m • {s.opportunity.kind === 'procurement' ? 'Dock at requesting station' : 'Approach within 100m'}</p>
+      <button onClick={() => s.setTrackedStation(s.opportunity!.id)}>Set waypoint (T to pilot)</button>
+      <button onClick={() => s.resolveOpportunity('complete')}>Complete</button>
+      <button onClick={() => s.resolveOpportunity('relay')}>Relay coordinates</button>
+      <button onClick={() => s.resolveOpportunity('decline')}>Ignore</button>
+    </aside>}
     {s.paused && <div style={{ position: 'absolute', top: '45%', left: '45%', zIndex: 45, background: '#07111eee', padding: 20 }}>Paused — deadlines and simulation frozen. <button onClick={s.togglePause}>Resume</button></div>}
     {open && <div role="dialog" aria-label="Mission log" style={{ position: 'absolute', top: 70, left: 12, bottom: 65, width: 'min(560px, 92vw)', overflowY: 'auto', padding: 16, background: '#091422fa', border: '1px solid #738bad', zIndex: 60, color: 'white' }}>
       <button onClick={() => setOpen(false)}>Close log</button>

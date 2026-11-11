@@ -135,6 +135,7 @@ export type NpcTrader = {
   targetGroup?: string;
   role?: 'raider' | 'convoy' | 'turret' | 'defender';
   launched?: boolean;
+  despawnAt?: number;
 };
 
 export type TradeEntry = {
@@ -223,6 +224,18 @@ export type AllyAssistToken = {
   consumed?: boolean;
 };
 
+export type TravelOpportunity = {
+  id: string;
+  kind: 'salvage' | 'distress' | 'procurement';
+  position: [number, number, number];
+  stationId: string;
+  commodityId: string;
+  quantity: number;
+  reward: number;
+  expiresAt: number;
+  risky: boolean;
+};
+
 export type GameState = {
   planets: Planet[];
   stations: Station[];
@@ -305,6 +318,8 @@ export type GameState = {
   appliedEffects?: { id: string; appliedAt: number }[];
   nextMarketEventAt?: number;
   defenseCooldowns?: Record<string, number>;
+  opportunity?: TravelOpportunity;
+  nextOpportunityAt?: number;
   // Political compass - tracks player choices across mission arcs
   politicalProfile?: PlayerPoliticalProfile;
   // Combat state
@@ -348,6 +363,7 @@ export type GameState = {
   cycleTarget: () => void;
   saveGame: () => void;
   loadGame: () => void;
+  resolveOpportunity: (action: 'complete' | 'decline' | 'relay') => void;
   // Mission arc actions
   acceptMission: (missionId: string) => void;
   abandonMission: (missionId: string) => void;

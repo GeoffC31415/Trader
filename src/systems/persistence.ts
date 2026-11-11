@@ -8,6 +8,7 @@ const schema = z.object({
   version: z.literal(1),
   data: z.object({
     gameTime: nonnegative,
+    opportunity: z.object({ id: z.string(), kind: z.enum(['distress', 'salvage', 'procurement']), position: vec, stationId: z.string(), commodityId: z.string(), quantity: nonnegative, reward: nonnegative, expiresAt: nonnegative, risky: z.boolean() }).optional(),
     ship: z.object({ position: vec, velocity: vec, credits: nonnegative, cargo: z.record(nonnegative), maxCargo: nonnegative,
       hp: nonnegative, maxHp: nonnegative, energy: nonnegative, maxEnergy: nonnegative,
       kind: z.enum(['freighter', 'clipper', 'miner', 'heavy_freighter', 'racer', 'industrial_miner']),
@@ -22,10 +23,10 @@ const schema = z.object({
     missionArcs: z.array(z.object({ id: z.string(), currentStage: finite.int().positive(), choicesMade: z.record(z.string()), completedMissions: z.array(z.string()) }).passthrough()),
     npcTraders: z.array(z.object({ id: z.string(), position: vec, hp: nonnegative, maxHp: nonnegative }).passthrough()),
     stealthStates: z.array(z.tuple([z.string(), z.object({ stationId: z.string(), suspicionLevel: nonnegative, detected: z.boolean() })])),
-    escortStates: z.array(z.tuple([z.string(), z.object({ missionId: z.string(), escortNpcId: z.string(), escortHp: nonnegative, escortMaxHp: nonnegative, destinationStationId: z.string(), lastWaveTime: nonnegative, hasReachedDestination: z.boolean(), waveCount: nonnegative, wavesCompleted: nonnegative, spawnedPirateIds: z.array(z.string()), currentWavePirateIds: z.array(z.string()) }).passthrough()])),
+    escortStates: z.array(z.tuple([z.string(), z.object({ missionId: z.string(), escortNpcId: z.string(), escortHp: nonnegative, escortMaxHp: nonnegative, destinationStationId: z.string(), lastWaveTime: finite, hasReachedDestination: z.boolean(), waveCount: nonnegative, wavesCompleted: nonnegative, spawnedPirateIds: z.array(z.string()), currentWavePirateIds: z.array(z.string()) }).passthrough()])),
   }).passthrough(),
 });
-const keys = ['gameTime', 'ship', 'stations', 'missions', 'missionArcs', 'npcTraders', 'contracts', 'objectives', 'tradeLog', 'profitByCommodity', 'avgCostByCommodity', 'relationships', 'allyAssistTokens', 'politicalProfile', 'marketEvents', 'nextMarketEventAt', 'appliedEffects', 'unlockedFeatures', 'pirateAggressionMultiplier', 'hasChosenStarter', 'isTestMode', 'tutorialActive', 'tutorialStep', 'trackedStationId', 'defenseCooldowns'] as const;
+const keys = ['gameTime', 'ship', 'stations', 'missions', 'missionArcs', 'npcTraders', 'contracts', 'objectives', 'tradeLog', 'profitByCommodity', 'avgCostByCommodity', 'relationships', 'allyAssistTokens', 'politicalProfile', 'marketEvents', 'nextMarketEventAt', 'appliedEffects', 'unlockedFeatures', 'pirateAggressionMultiplier', 'hasChosenStarter', 'isTestMode', 'tutorialActive', 'tutorialStep', 'trackedStationId', 'defenseCooldowns', 'opportunity', 'nextOpportunityAt'] as const;
 export function serializeGame(s: GameState): string {
   const data = Object.fromEntries(keys.map(key => [key, s[key]]));
   return JSON.stringify({ version: 1, data: { ...data, stealthStates: [...s.stealthStates], escortStates: [...s.escortStates] } });

@@ -23,6 +23,7 @@ import { generateMarketEvent, getActiveEvents } from '../systems/economy/market_
 import { generateContracts, acceptContractAction, abandonContractAction } from './modules/missions';
 import { createNotification } from './modules/notifications';
 import { SAVE_KEY, serializeGame, deserializeGame } from '../systems/persistence';
+import { tickOpportunities, resolveOpportunity } from '../systems/travel_opportunities';
 import { acceptStoryMission, retryStoryMission, chooseStoryPath, dispatchMissionEvents, settleMissions, failMission, refreshMissions, interactMission, tickStoryMissions, missionBlocker } from './modules/mission_runtime';
 
 function notice(s: GameState, message: string, type: Notification['type'] = 'info'): GameState {
@@ -43,7 +44,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     dt = Math.min(dt, 0.1);
     let s: GameState = { ...state, gameTime: state.gameTime + dt };
     s = settleMissions(s);
-    s = { ...s, ...projectWorldEffects(s) };
+    s = { ...s, npcTraders: s.npcTraders.filter(n => n.despawnAt === undefined || n.despawnAt > s.gameTime), ...projectWorldEffects(s) };
     const cruiseUnsafe = s.stations.some(st => distance(st.position, s.ship.position) < 150) || s.npcTraders.some(n => n.isHostile && distance(n.position, s.ship.position) < 750);
     if (s.ship.cruise && cruiseUnsafe) s = { ...s, ship: { ...s.ship, cruise: false, cruiseSpool: 0 } };
     let ship = updateCargoFreshness(updatePhysics(s.ship, dt), dt);
@@ -73,6 +74,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       ship = { ...s.ship, hp: s.ship.maxHp, energy: s.ship.maxEnergy, position: [...home.position], velocity: [0, 0, 0], dockedStationId: home.id, cruise: false, cruiseSpool: 0, autopilot: false, credits: Math.max(0, s.ship.credits - Math.min(1000, s.ship.credits * 0.1)) };
       s = notice({ ...s, ship, projectiles: [], dockIntroVisibleId: home.id }, 'Ship recovered by insurance. Cargo retained; repairs cost up to 1,000 credits. Failed missions can be retried.', 'warning');
     }
+    s = tickOpportunities(s);
     const snapshots = recordPriceHistory(s.stations, now, s.lastPriceSnapshotTime);
     return { ...s, priceHistory: snapshots.priceHistory ? mergePriceHistory(s.priceHistory ?? {}, snapshots.priceHistory) : s.priceHistory, lastPriceSnapshotTime: snapshots.lastSnapshotTime };
   }),
@@ -230,6 +232,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     try { const text = localStorage.getItem(SAVE_KEY); if (!text) { set(s => notice(s, 'No saved campaign found', 'warning')); return; } set(deserializeGame(text)); }
     catch { set(s => notice(s, 'Save is invalid or from an unsupported version; current game was not changed', 'error')); }
   },
+  resolveOpportunity: action => set(s => resolveOpportunity(s, action)),
   consumeAssist: (type, by) => {
     const s = get(); const token = s.allyAssistTokens?.find(t => !t.consumed && t.type === type && (!by || t.by === by));
     if (!token) return false;

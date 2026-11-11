@@ -8,7 +8,8 @@ export function useGameInput() {
   useEffect(() => {
     const clear = () => { for (const key of Object.keys(pressed.current)) pressed.current[key] = false; };
     const onKeyDown = (e: KeyboardEvent) => {
-      const element = e.target as HTMLElement | null;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const element = e.target instanceof HTMLElement ? e.target : null;
       if (element?.closest('input, textarea, select, button, [contenteditable="true"], [role="dialog"]')) return;
       const key = e.key.toLowerCase();
       const state = useGameStore.getState();

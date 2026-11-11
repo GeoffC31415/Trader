@@ -15,6 +15,7 @@ import {
   REP_LOSS_PER_HIT,
   WEAPON_BASE_STATS,
   WEAPON_UPGRADE_MAX_LEVELS,
+  NPC_WEAPON_RANGE,
 } from '../../domain/constants/weapon_constants';
 import { HOSTILE_EFFECTS } from '../../domain/constants/faction_constants';
 import { isStationHostile } from '../../systems/reputation/faction_system';
@@ -153,7 +154,8 @@ export function updateCombat(
   }
 
   // Limit simultaneous attackers on a trader; escorts remain the explicit priority for raiders.
-  let playerAttackers = 0;
+  const playerFiringSlots = new Set(npcTraders.filter(n => n.hp > 0 && (n.isHostile || n.isAggressive || npcAggression[n.id]?.isAggressive) && distance(n.position, ship.position) <= NPC_WEAPON_RANGE * (ship.silentRunning ? 0.35 : 1))
+    .sort((a, b) => distance(a.position, ship.position) - distance(b.position, ship.position)).slice(0, 2).map(n => n.id));
   // NPC combat AI - fire back when aggressive
   for (const npc of npcTraders) {
     if (npc.hp <= 0) continue;
@@ -162,13 +164,12 @@ export function updateCombat(
     const lastFire = npcLastFireTimes[npc.id] || 0;
 
     const escort = npcTraders.find(n => n.isMissionEscort && n.missionId === npc.missionId && n.hp > 0);
-    if (!escort && playerAttackers >= 2) continue;
+    if (!escort && !playerFiringSlots.has(npc.id)) continue;
     const target = escort ? { ...ship, position: escort.position, velocity: escort.velocity ?? [0, 0, 0] as [number, number, number], dockedStationId: undefined, silentRunning: false } : ship;
     if (shouldNpcFire(npc, npc.hp, target, aggressionState, lastFire, currentTime)) {
       const npcProjectile = npcFireAtPlayer(npc, target);
       projectiles.push(npcProjectile);
       npcLastFireTimes[npc.id] = currentTime;
-      if (!escort) playerAttackers += 1;
     }
   }
 
