@@ -619,7 +619,7 @@ export function sellCommodity(
   });
 
   return {
-    ship: { ...ship, cargo } as Ship,
+    ship: { ...ship, cargo, credits: ship.credits + revenue } as Ship,
     stations: updatedStations,
     npcTraders: updatedNpcTraders,
     profitByCommodity: profit,

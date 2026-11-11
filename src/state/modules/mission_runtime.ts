@@ -10,6 +10,7 @@ import { recordMissionHistory } from '../helpers/character_history';
 import { createNotification } from './notifications';
 import { applyMissionToProfile } from './politics_module';
 import { distance } from '../../shared/math/vec3';
+import { procurementBudget } from '../helpers/procurement_budget';
 import { DETECTION_RADIUS, updateSuspicionLevel, shouldDetectShip } from '../../systems/missions/stealth_system';
 import { planNpcPath } from '../npc';
 import { setTrust, defaultAssistForStation, grantAssist, hasUnconsumedToken } from '../relationships';
@@ -108,12 +109,14 @@ export function acceptStoryMission(s: GameState, id: string): GameState {
   const original = s.missions.find(m => m.id === id)!;
   if (original.type === 'choice') return s;
   const t = MISSION_TEMPLATES[id];
+  const budget = original.procurementBudget ?? (original.fundingGranted ? t.advance ?? 0 : procurementBudget(s, original));
   const m: Mission = { ...createMissionFromTemplate(t), status: 'active', acceptedAt: s.gameTime,
+    procurementBudget: budget, procurementValue: original.procurementValue, procurementReimbursed: original.procurementReimbursed,
     attempt: (original.attempt ?? 0) + 1, fundingGranted: original.fundingGranted || !!t.advance, items: {}, launched: t.type !== 'escort',
   };
   for (const o of m.objectives.filter(o => o.missionItem && o.target)) m.items![o.target!] = (m.items![o.target!] ?? 0) + (o.quantity ?? 1);
   s = replace(s, m);
-  s = { ...s, ship: { ...s.ship, credits: s.ship.credits + (!original.fundingGranted ? t.advance ?? 0 : 0) },
+  s = { ...s, ship: { ...s.ship, credits: s.ship.credits + (!original.fundingGranted ? budget : 0) },
     missionArcs: s.missionArcs.map(a => a.id === m.arcId ? { ...a, status: 'in_progress', choicesMade: t.id.startsWith('fabrication_wars_') && t.stage === 1 ? { ...a.choicesMade, stage_1_choice: t.id.includes('_aurum_') ? 'aurum' : 'drydock' } : a.choicesMade } : a),
   };
   if (m.type === 'combat') {
@@ -150,7 +153,7 @@ export function retryStoryMission(s: GameState, id: string): GameState {
   const m = s.missions.find(m => m.id === id);
   if (!m || !['failed', 'cancelled'].includes(m.status)) return s;
   const fresh = createMissionFromTemplate(MISSION_TEMPLATES[id]);
-  return replace(cleanMission(s, id), { ...fresh, attempt: m.attempt, fundingGranted: m.fundingGranted });
+  return replace(cleanMission(s, id), { ...fresh, attempt: m.attempt, fundingGranted: m.fundingGranted, procurementBudget: m.procurementBudget, procurementValue: m.procurementValue, procurementReimbursed: m.procurementReimbursed });
 }
 export function chooseStoryPath(s: GameState, id: string, choiceId: string): GameState {
   if (missionBlocker(s, id)) return s;
@@ -188,6 +191,7 @@ export function interactMission(input: GameState, id: string, objectiveId: strin
   } else {
     const cargo = { ...s.ship.cargo };
     const stock: Record<string, number> = {};
+    let suppliedValue = 0;
     let npcs = s.npcTraders;
     for (const item of o.basket ?? (o.target ? [o.target] : [])) {
       let needed = (o.quantity ?? 1) - o.current - quantity;
@@ -200,7 +204,12 @@ export function interactMission(input: GameState, id: string, objectiveId: strin
         return { ...n, escortCargoUsed: (n.escortCargoUsed ?? 0) - supplied };
       });
     }
-    s = { ...s, npcTraders: npcs, ship: { ...s.ship, cargo }, stations: applyStockDeltas(stripPriceModifiers(s.stations), { [station.id]: stock }) };
+    for (const [item, units] of Object.entries(stock)) suppliedValue += units * (s.avgCostByCommodity[item] ?? 0);
+    const budget = m.procurementBudget ?? MISSION_TEMPLATES[m.id].advance ?? 0;
+    const value = (m.procurementValue ?? 0) + suppliedValue;
+    const reimbursement = budget > 0 ? Math.max(0, value - budget - (m.procurementReimbursed ?? 0)) : 0;
+    m = { ...m, procurementBudget: budget, procurementValue: value, procurementReimbursed: (m.procurementReimbursed ?? 0) + reimbursement };
+    s = { ...s, npcTraders: npcs, ship: { ...s.ship, cargo, credits: s.ship.credits + reimbursement }, stations: applyStockDeltas(stripPriceModifiers(s.stations), { [station.id]: stock }) };
     s = { ...s, ...projectWorldEffects(s) };
   }
   if (quantity <= 0) return s;
@@ -223,7 +232,8 @@ export function tickStoryMissions(input: GameState, dt: number, kills: { npcId: 
       const station = s.stations.find(st => st.id === o.target)!;
       const key = `${m.id}:${station.id}`;
       const previous = s.stealthStates.get(key)?.suspicionLevel ?? 0;
-      const level = updateSuspicionLevel(previous, distance(s.ship.position, station.position) < DETECTION_RADIUS, !s.ship.dockedStationId && shouldDetectShip(s.ship, m, o), dt * (s.ship.silentRunning ? 0.25 : 1));
+      const inspectedContraband = m.id === 'greenfields_stage_1' && s.ship.dockedStationId === station.id && shouldDetectShip(s.ship, m, o);
+      const level = inspectedContraband ? 100 : updateSuspicionLevel(previous, distance(s.ship.position, station.position) < DETECTION_RADIUS, !s.ship.dockedStationId && shouldDetectShip(s.ship, m, o), dt * (s.ship.silentRunning ? 0.25 : 1));
       const stealthStates = new Map(s.stealthStates).set(key, { stationId: station.id, suspicionLevel: level, detected: level >= 100 });
       s = { ...s, stealthStates };
       if (level >= 100) s = dispatchMissionEvents(s, [{ type: 'detection_triggered', stationId: station.id, missionId: m.id }]);

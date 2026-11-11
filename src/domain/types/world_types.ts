@@ -195,6 +195,9 @@ export type Contract = {
   // Economic reference values captured when generated
   unitBuy?: number;
   unitSell?: number;
+  unitPayout?: number; // Fresh-cargo purchase-order floor, locked at acceptance.
+  deliveredRevenue?: number;
+  deliveredCost?: number;
   rewardBonus?: number; // flat bonus on completion
   status: 'offered' | 'accepted' | 'completed' | 'failed';
   expiresAt?: number; // simulation milliseconds
@@ -326,6 +329,8 @@ export type GameState = {
   // Political compass - tracks player choices across mission arcs
   politicalProfile?: PlayerPoliticalProfile;
   // Combat state
+  combatImpacts?: Array<{ id: string; targetId: string; position: [number, number, number]; damage: number; at: number }>;
+  recoveryGraceUntil?: number;
   projectiles: Projectile[];
   lastFireTime: number; // player's last fire time
   npcLastFireTimes: Record<string, number>; // npcId -> last fire time

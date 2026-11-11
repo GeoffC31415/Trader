@@ -36,7 +36,8 @@ export function buildMissionCatalog(legacy: Record<string, MissionTemplate>): Re
   }
   catalog.fabrication_wars_stage_3.deprecated = true;
   catalog.greenfields_stage_1.advance = 7000;
-  catalog.greenfields_stage_1.description += ' A one-time 7,000 credit procurement grant covers the luxury cargo; the completion reward is separate.';
+  catalog.greenfields_stage_1.description = 'Procure 10 luxury goods outside Sol City and hand them over to Greenfields. Sol City will not supply this covert order; docking there with the goods exposes the assignment. Avoid its inspection zone or use silent running to limit suspicion. Cargo is handed over, not sold at market: a one-time procurement budget is paid on acceptance, excess recorded procurement cost is reimbursed at turn-in, and the 2,000-credit completion reward is separate. Cargo is retained if the assignment fails.';
+  catalog.greenfields_stage_1.objectiveTemplates.find(o => o.type === 'avoid_detection')!.description = 'Avoid Sol City inspections; do not dock there with luxury goods';
   for (const side of ['aurum', 'drydock']) {
     const t = catalog[`fabrication_wars_stage_2_${side}`];
     t.branch = side; t.advance = 4000;

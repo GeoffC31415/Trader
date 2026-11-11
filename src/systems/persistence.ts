@@ -24,6 +24,7 @@ const mission = z.object({
   status: z.enum(['offered', 'active', 'completed', 'failed', 'cancelled']), objectives: z.array(objective), rewards,
   availableAt: strings, requiredRep: z.record(finite).optional(), acceptedAt: amount.optional(), timeLimit: amount.optional(),
   items: amounts.optional(), seenEvents: strings.optional(), fundingGranted: z.boolean().optional(), attempt: amount.optional(), launched: z.boolean().optional(),
+  procurementBudget: amount.optional(), procurementValue: amount.optional(), procurementReimbursed: amount.optional(),
   interaction: z.object({ objectiveId: z.string(), elapsed: amount }).optional(),
   choiceOptions: z.array(z.object({ id: z.string(), label: z.string(), description: z.string(), consequences: strings, rewards, nextMissionId: z.string().optional() })).optional(),
 }).passthrough().refine(m => {
@@ -60,7 +61,7 @@ const schema = z.object({
     }).passthrough()),
     stealthStates: z.array(z.tuple([z.string(), z.object({ stationId: z.string(), suspicionLevel: amount, detected: z.boolean() })])),
     escortStates: z.array(z.tuple([z.string(), z.object({ missionId: z.string(), escortNpcId: z.string(), escortHp: amount, escortMaxHp: amount, destinationStationId: z.string(), lastWaveTime: finite, hasReachedDestination: z.boolean(), waveCount: amount, wavesCompleted: amount, spawnedPirateIds: strings, currentWavePirateIds: strings })])),
-    contracts: z.array(z.object({ id: z.string(), toId: z.string(), commodityId: z.string(), units: amount.positive(), status: z.enum(['offered', 'accepted', 'completed', 'failed']), deliveredUnits: amount.optional(), expiresAt: amount.optional() }).passthrough()).default([]),
+    contracts: z.array(z.object({ id: z.string(), toId: z.string(), commodityId: z.string(), units: amount.positive(), status: z.enum(['offered', 'accepted', 'completed', 'failed']), deliveredUnits: amount.optional(), expiresAt: amount.optional(), unitPayout: amount.optional(), deliveredRevenue: amount.optional(), deliveredCost: amount.optional() }).passthrough()).default([]),
     objectives: z.array(z.object({ id: z.string(), targetStationId: z.string().optional(), label: z.string(), kind: z.enum(['tutorial', 'contract', 'milestone']), status: z.enum(['active', 'completed', 'failed', 'offered']) }).passthrough()).default([]),
     tradeLog: z.array(z.object({ id: z.string(), time: amount, stationId: z.string(), commodityId: z.string(), quantity: amount, unitPrice: amount, totalPrice: amount }).passthrough()).default([]),
     profitByCommodity: z.record(finite).default({}), avgCostByCommodity: amounts.default({}),
@@ -72,13 +73,14 @@ const schema = z.object({
     appliedEffects: z.array(z.object({ id: z.string().refine(id => !!WORLD_EFFECTS[id]), appliedAt: amount })).default([]),
     pirateAggressionMultiplier: amount.optional(), unlockedFeatures: strings.default([]), defenseCooldowns: amounts.optional(), nextMarketEventAt: amount.optional(), nextOpportunityAt: amount.optional(), nextBountyAt: amount.optional(),
     opportunity: z.object({ id: z.string(), kind: z.enum(['distress', 'salvage', 'procurement', 'bounty']), position: vec, stationId: z.string(), commodityId: z.string(), quantity: amount, reward: amount, expiresAt: amount, risky: z.boolean() }).optional(),
+    recoveryGraceUntil: amount.optional(),
     trackedStationId: z.string().optional(), activeObjectiveId: z.string().optional(),
     hasChosenStarter: z.boolean(), isTestMode: z.boolean(), tutorialActive: z.boolean(), tutorialStep: z.enum(['dock_city', 'accept_mission', 'goto_refinery', 'buy_fuel', 'deliver_fuel', 'done']),
     priceHistory: z.record(z.record(z.array(z.object({ time: amount, buy: amount, sell: amount })))).optional(), lastPriceSnapshotTime: amount.optional(),
   }).refine(data => initialStations.every(st => data.stations.some(saved => saved.id === st.id && Object.keys(st.inventory).every(id => id in saved.inventory))) && Object.keys(MISSION_ARCS).every(id => data.missionArcs.some(a => a.id === id)), 'World topology or mission arcs are incomplete'),
 });
 // Never serialize methods or transient UI state; loading cannot replace store actions.
-const keys = ['gameTime', 'ship', 'stations', 'missions', 'missionArcs', 'npcTraders', 'contracts', 'objectives', 'tradeLog', 'profitByCommodity', 'avgCostByCommodity', 'relationships', 'allyAssistTokens', 'politicalProfile', 'marketEvents', 'nextMarketEventAt', 'appliedEffects', 'unlockedFeatures', 'pirateAggressionMultiplier', 'hasChosenStarter', 'isTestMode', 'tutorialActive', 'tutorialStep', 'trackedStationId', 'defenseCooldowns', 'opportunity', 'nextOpportunityAt', 'nextBountyAt', 'activeObjectiveId', 'pendingAssist', 'priceHistory', 'lastPriceSnapshotTime'] as const;
+const keys = ['gameTime', 'ship', 'stations', 'missions', 'missionArcs', 'npcTraders', 'contracts', 'objectives', 'tradeLog', 'profitByCommodity', 'avgCostByCommodity', 'relationships', 'allyAssistTokens', 'politicalProfile', 'marketEvents', 'nextMarketEventAt', 'appliedEffects', 'unlockedFeatures', 'pirateAggressionMultiplier', 'hasChosenStarter', 'isTestMode', 'tutorialActive', 'tutorialStep', 'trackedStationId', 'defenseCooldowns', 'opportunity', 'nextOpportunityAt', 'nextBountyAt', 'recoveryGraceUntil', 'activeObjectiveId', 'pendingAssist', 'priceHistory', 'lastPriceSnapshotTime'] as const;
 export function serializeGame(s: GameState): string {
   const data = Object.fromEntries(keys.map(key => [key, s[key]]));
   return JSON.stringify({ version: 1, data: { ...data, stealthStates: [...s.stealthStates], escortStates: [...s.escortStates] } });
@@ -87,7 +89,7 @@ export function deserializeGame(text: string): Partial<GameState> {
   const { data } = schema.parse(JSON.parse(text));
   const values = Object.fromEntries(keys.map(key => [key, data[key]]));
   return { ...values, stealthStates: new Map(data.stealthStates), escortStates: new Map(data.escortStates),
-    paused: true, blockingDialog: false, selectedTargetId: undefined, projectiles: [], npcAggression: {}, npcLastFireTimes: {}, lastFireTime: -Infinity,
+    paused: true, blockingDialog: false, selectedTargetId: undefined, combatImpacts: [], projectiles: [], npcAggression: {}, npcLastFireTimes: {}, lastFireTime: -Infinity,
     notifications: [], missionIntroVisibleId: undefined, celebrationVisible: undefined,
     dockIntroVisibleId: undefined, missionCelebrationData: undefined, missionInstallState: undefined,
   } as Partial<GameState>;

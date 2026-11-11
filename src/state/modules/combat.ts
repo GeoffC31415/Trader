@@ -64,12 +64,13 @@ export function updateCombat(
     lastFireTime: number;
     stations: Station[];
     now?: number;
+    suppressNpcFire?: boolean;
   },
   dt: number
 ): CombatUpdateResult {
   let ship = { ...state.ship };
   let npcTraders = [...state.npcTraders];
-  let projectiles = [...state.projectiles];
+  let projectiles = state.projectiles.filter(p => !state.suppressNpcFire || p.ownerType === 'player');
   const npcAggression = { ...state.npcAggression };
   const npcLastFireTimes = { ...state.npcLastFireTimes };
   const reputationChanges: Array<{ stationId: string; delta: number }> = [];
@@ -159,7 +160,7 @@ export function updateCombat(
     .sort((a, b) => distance(a.position, ship.position) - distance(b.position, ship.position)).slice(0, 2).map(n => n.id));
   // NPC combat AI - fire back when aggressive
   for (const npc of npcTraders) {
-    if (npc.hp <= 0) continue;
+    if (npc.hp <= 0 || state.suppressNpcFire) continue;
 
     const aggressionState = npcAggression[npc.id];
     const lastFire = npcLastFireTimes[npc.id] || 0;

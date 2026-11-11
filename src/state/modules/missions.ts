@@ -3,7 +3,12 @@ import type { Contract, GameState, NpcTrader, Objective, Ship, Station } from '.
 import { getSuggestedRoutes } from './economy';
 import { createNotification } from './notifications';
 import { getContractMultiplierBonus, getEscortCount } from '../helpers/reputation_helpers';
+import { applyReputationToBuyPrice, applyReputationToSellPrice } from './reputation';
 import { applyReputationWithPropagation, canDockAtStation } from '../../systems/reputation/faction_system';
+
+export function contractUnitPayout(c: Contract): number {
+  return c.unitPayout ?? Math.ceil(Math.max((c.unitBuy ?? 0) * 1.15, (c.unitSell ?? 0) * (c.sellMultiplier ?? 1)));
+}
 
 export function settleContracts(input: GameState): GameState {
   let s = input;
@@ -21,10 +26,16 @@ export function generateContracts(stations: Station[], existing: Contract[], shi
   for (const station of stations.filter(canDockAtStation)) {
     const picks = routes.filter(r => r.toId === station.id && r.kind === 'direct').slice(0, Math.min(5, limit));
     picks.forEach((r, i) => {
-      const units = Math.max(1, Math.min(40, Math.floor(r.maxUnits), ship.maxCargo));
+      const source = stations.find(st => st.id === r.fromId)!;
+      const unitBuy = applyReputationToBuyPrice(r.unitBuy, source.reputation ?? 0);
+      const unitSell = applyReputationToSellPrice(r.unitSell, station.reputation ?? 0);
+      const owned = ship.cargo[r.inputId] ?? 0;
+      const affordable = owned + Math.floor(ship.credits * 0.8 / Math.max(1, unitBuy));
+      const units = Math.min(40, Math.floor(r.maxUnits), ship.maxCargo, affordable);
+      if (units < 1) return;
       contracts.push({ id: `contract:${station.id}:${i}:${now}:${Math.random().toString(36).slice(2)}`, title: `Supply ${units} ${r.inputId.replace(/_/g, ' ')}`,
         status: 'offered', fromId: r.fromId, toId: r.toId, offeredById: station.id, commodityId: r.inputId,
-        units, deliveredUnits: 0, unitBuy: r.unitBuy, unitSell: r.unitSell, requiredRep: i * 10,
+        units, deliveredUnits: 0, unitBuy, unitSell, requiredRep: i * 10,
         sellMultiplier: 1.12 + getContractMultiplierBonus(station.reputation ?? 0),
         rewardBonus: Math.max(200, Math.round(units * r.unitBuy * 0.25)), tag: i === 0 ? 'standard' : 'rush', expiresAt: now + 180000,
       });
@@ -46,14 +57,15 @@ export function acceptContractAction(id: string, contracts: Contract[], objectiv
   if (!c) return { contracts, objectives, npcTraders: npcs };
   const station = stations.find(s => s.id === c.offeredById)!;
   const held = (ship.cargo[c.commodityId] ?? 0) + npcs.filter(n => n.isEscort && n.commodityId === c.commodityId).reduce((q, n) => q + (n.escortCargoUsed ?? 0), 0);
-  const target = held >= c.units ? c.toId : c.fromId ?? c.toId;
+  // Delivery is supplier-independent. Only the guided tutorial suggests a procurement waypoint.
+  const target = c.id === 'tutorial:fuel' && held < c.units ? c.fromId ?? c.toId : c.toId;
   const escorts: NpcTrader[] = Array.from({ length: getEscortCount(station.reputation ?? 0) }, (_, i) => ({
     id: `escort:${id}:${i}`, isEscort: true, escortingContract: id, fromId: station.id, toId: c.toId, commodityId: c.commodityId,
     position: [...ship.position], velocity: [0, 0, 0], hp: 100, maxHp: 100, speed: 25, escortCargoCapacity: Math.floor(ship.maxCargo / 2), escortCargoUsed: 0, kind: 'clipper',
   }));
   return {
-    contracts: contracts.map(x => x.id === id ? { ...x, status: 'accepted', expiresAt: now + 420000 } : x),
-    objectives: [...objectives, { id: `obj:${id}`, targetStationId: target, label: `Deliver ${c.units} ${c.commodityId.replace(/_/g, ' ')}`, kind: 'contract', status: 'active' }],
+    contracts: contracts.map(x => x.id === id ? { ...x, status: 'accepted', unitPayout: contractUnitPayout(c), expiresAt: now + 420000 } : x),
+    objectives: [...objectives, { id: `obj:${id}`, targetStationId: target, label: `Deliver ${c.units} ${c.commodityId.replace(/_/g, ' ')} to ${stations.find(st => st.id === c.toId)?.name ?? c.toId}`, kind: 'contract', status: 'active' }],
     npcTraders: [...npcs, ...escorts], activeObjectiveId: `obj:${id}`, trackedStationId: target,
   };
 }

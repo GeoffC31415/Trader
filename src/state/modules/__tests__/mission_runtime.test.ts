@@ -71,7 +71,7 @@ describe('every live mission contract', () => {
         }
       }
       expect(s.missions.find(m => m.id === t.id)?.status).toBe('completed');
-      expect(s.ship.credits).toBe(before + (t.advance ?? 0) + t.rewards.credits);
+      expect(s.ship.credits).toBe(before + (s.missions.find(m => m.id === t.id)?.procurementBudget ?? t.advance ?? 0) + t.rewards.credits);
       expect(s.npcTraders.some(n => n.missionId === t.id)).toBe(false);
       expect(settleMissions(s).ship.credits).toBe(s.ship.credits);
     });

@@ -65,6 +65,9 @@ export type Mission = {
   items?: Record<string, number>;
   failureReason?: string;
   fundingGranted?: boolean;
+  procurementBudget?: number;
+  procurementValue?: number;
+  procurementReimbursed?: number;
   interaction?: { objectiveId: string; elapsed: number };
   launched?: boolean;
   seenEvents?: string[];
