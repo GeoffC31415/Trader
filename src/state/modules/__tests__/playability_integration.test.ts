@@ -178,9 +178,15 @@ it('rejects incomplete world topology and corrupted contract collections', () =>
   expect(() => deserializeGame(JSON.stringify(snapshot))).toThrow();
 });
 it('guides the tutorial to its actual supplier, waits for the full cargo, then tracks the destination', () => {
-  const s = fixture('greenfields_stage_1');
-  useGameStore.setState({ ...s, tutorialActive: true, tutorialStep: 'accept_mission', ship: { ...s.ship, dockedStationId: 'sol-city' } });
-  useGameStore.getState().generateContracts(); useGameStore.getState().acceptContract('tutorial:fuel');
+  const s = useGameStore.getInitialState();
+  useGameStore.setState(s, true);
+  // Match the real mounted UI: random contracts exist before choosing a starter.
+  useGameStore.getState().generateContracts();
+  useGameStore.getState().chooseStarter('freighter', { tutorial: true });
+  useGameStore.getState().tryDock();
+  expect(useGameStore.getState().contracts?.filter(c => c.status === 'offered').map(c => c.id)).toEqual(['tutorial:fuel']);
+  useGameStore.getState().dismissDockIntro();
+  useGameStore.getState().acceptContract('tutorial:fuel');
   expect(useGameStore.getState().trackedStationId).toBe('sol-refinery');
   useGameStore.getState().undock();
   const refinery = s.stations.find(st => st.id === 'sol-refinery')!;
@@ -191,6 +197,26 @@ it('guides the tutorial to its actual supplier, waits for the full cargo, then t
   useGameStore.getState().buy('refined_fuel', 9);
   expect(useGameStore.getState().tutorialStep).toBe('deliver_fuel'); expect(useGameStore.getState().trackedStationId).toBe('sol-city');
   expect(useGameStore.getState().objectives?.find(o => o.id === 'obj:tutorial:fuel')?.targetStationId).toBe('sol-city');
+  useGameStore.getState().undock();
+  const city = s.stations.find(st => st.id === 'sol-city')!;
+  useGameStore.setState({ ship: { ...useGameStore.getState().ship, position: [...city.position] } });
+  useGameStore.getState().tryDock(); useGameStore.getState().dismissDockIntro();
+  useGameStore.getState().sell('refined_fuel', 10);
+  expect(useGameStore.getState().contracts?.find(c => c.id === 'tutorial:fuel')?.status).toBe('completed');
+  expect(useGameStore.getState().tutorialStep).toBe('done');
+  expect(useGameStore.getState().tutorialActive).toBe(true); // Keep the completion message visible until explicitly closed.
+});
+it('docks at an explicit navigation destination rather than a closer overlapping station', () => {
+  const initial = useGameStore.getInitialState();
+  useGameStore.setState({ ...initial, hasChosenStarter: true, ship: { ...initial.ship, position: [493, 0, -47], dockedStationId: undefined } }, true);
+  useGameStore.getState().tryDock();
+  expect(useGameStore.getState().ship.dockedStationId).toBe('greenfields');
+  useGameStore.getState().undock();
+  useGameStore.getState().tryDock('sol-refinery');
+  expect(useGameStore.getState().ship.dockedStationId).toBe('sol-refinery');
+  useGameStore.getState().undock();
+  useGameStore.getState().tryDock('sol-city');
+  expect(useGameStore.getState().ship.dockedStationId).toBeUndefined(); // Explicit targets still require range.
 });
 it('stock repricing does not accidentally discard a permanent discount after buying', () => {
   let s = fixture('greenfields_stage_1'); s = { ...s, ...applyChoicePermanentEffects(s, ['greenfields_food_discount']) };

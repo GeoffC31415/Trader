@@ -9,8 +9,7 @@ const asteroidModels = [
   '/asteroids/asteroid_ore.glb',
 ];
 
-// Preload asteroid models
-asteroidModels.forEach(path => useGLTF.preload(path));
+// Asteroid models load on mount, not while compatibility graphics hides them.
 
 function AsteroidField({ radius }: { radius: number }) {
   // Load all asteroid models

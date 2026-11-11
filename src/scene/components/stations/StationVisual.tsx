@@ -58,7 +58,4 @@ export function StationVisual({ position, name, type, hideLabel = false }: { pos
   );
 }
 
-// Preload all station models for better performance
-Object.values(stationModelPaths).forEach((path) => {
-  useGLTF.preload(path);
-});
+// Models load through useGLTF when mounted, not in compatibility graphics.

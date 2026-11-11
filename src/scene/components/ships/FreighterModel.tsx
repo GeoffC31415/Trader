@@ -54,7 +54,6 @@ export function FreighterModel({ power, hasRig }: { power: number; hasRig: boole
   );
 }
 
-// Preload the model for better performance
-useGLTF.preload('/ships/freighter_ship.glb');
+// useGLTF loads on mount; compatibility graphics must not fetch this model.
 
 

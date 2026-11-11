@@ -1,0 +1,55 @@
+import { test, expect } from '@playwright/test';
+
+// UI-only: also runs against the compiled production build. No store imports,
+// arranged cargo/locations, developer starter, or accelerated simulation clock.
+test('fresh tutorial flies the fuel route, trades, completes, and reloads a checkpoint', async ({ page }) => {
+  test.setTimeout(240000);
+  const errors: string[] = [], failedAssets: string[] = [], modelRequests: string[] = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('response', response => { if (response.status() >= 400) failedAssets.push(`${response.status()} ${response.url()}`); });
+  page.on('request', request => { if (/\.glb(?:\?|$)/.test(request.url())) modelRequests.push(request.url()); });
+  await page.addInitScript(() => localStorage.setItem('trader.graphics', 'low'));
+  await page.route('https://**/*', route => route.abort());
+  await page.goto('/');
+  await page.getByRole('checkbox', { name: 'Start with tutorial' }).check();
+  await page.getByRole('button', { name: 'Select Freighter', exact: true }).click();
+  await expect(page.locator('canvas[data-engine]')).toBeVisible();
+  await page.keyboard.press('e');
+  await page.getByRole('button', { name: /Enter Station/ }).click();
+  await page.getByRole('button', { name: /Missions/ }).click();
+  // Tutorial generation replaces random offers with one explicit fuel contract.
+  await page.getByRole('button', { name: 'ACCEPT', exact: true }).click();
+  await expect(page.getByText(/Your waypoint now points to Helios Refinery/)).toBeVisible();
+  await page.keyboard.press('q');
+  await page.getByRole('button', { name: 'Waypoint pilot (T)', exact: true }).click();
+  await page.getByRole('button', { name: /Enter Station/ }).click({ timeout: 90000 });
+  await expect(page.getByText('HELIOS REFINERY', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Production/ }).click();
+  await page.getByRole('spinbutton').fill('10');
+  // The CSS grid has flat cells (commodity, price, stock, held, actions),
+  // not semantic rows; scope the action to fuel rather than another product.
+  const fuelActions = page.locator('.commodity-grid > div').filter({ has: page.getByText('refined fuel', { exact: true }) }).locator('xpath=following-sibling::div[4]');
+  await fuelActions.getByRole('button', { name: 'BUY 10', exact: true }).click();
+  await expect(page.getByText(/Undock and return to Sol City/)).toBeVisible();
+  await page.keyboard.press('q');
+  await page.getByRole('button', { name: 'Waypoint pilot (T)', exact: true }).click();
+  await page.getByRole('button', { name: /Enter Station/ }).click({ timeout: 90000 });
+  await expect(page.getByText('SOL CITY', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: /Civic Exchange/ }).click();
+  await page.getByRole('spinbutton').fill('10');
+  await fuelActions.getByRole('button', { name: 'SELL 10', exact: true }).click();
+  await expect(page.getByText('Contract Completed!', { exact: true })).toBeVisible();
+  await expect(page.getByText('Mission Reward: +$1,000', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue', exact: true }).click();
+  await expect(page.getByText(/Tutorial complete! You've completed your first contract/)).toBeVisible();
+  await page.getByRole('button', { name: 'Pause (P)', exact: true }).click();
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await page.reload();
+  await page.getByRole('button', { name: 'Load saved campaign', exact: true }).click();
+  await expect(page.getByText('Paused — deadlines and simulation frozen.')).toBeVisible();
+  await expect(page.getByText(/Tutorial complete! You've completed your first contract/)).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath('tutorial-checkpoint.png') });
+  expect(errors).toEqual([]);
+  expect(failedAssets).toEqual([]);
+  expect(modelRequests, 'Compatibility mode must not download unused detailed models').toEqual([]);
+});

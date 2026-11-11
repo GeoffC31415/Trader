@@ -311,7 +311,9 @@ export function SceneRoot() {
           if (current.ship.cruise) current.toggleCruise();
           if (dir.length() < 90) dir.set(0, 0, 0);
         } else if (dir.length() < 55) {
-          if (destination.id !== current.opportunity?.id || current.opportunity.kind === 'procurement') current.tryDock();
+          if (destination.id !== current.opportunity?.id || current.opportunity.kind === 'procurement') {
+            current.tryDock('stationId' in destination ? destination.stationId : destination.id);
+          }
           if (useGameStore.getState().ship.autopilot) current.toggleAutopilot();
           dir.set(0, 0, 0);
         }

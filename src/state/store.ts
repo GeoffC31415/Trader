@@ -20,7 +20,7 @@ import { updateStationProduction } from './modules/economy_production';
 import { updateCargoFreshness } from './modules/cargo_freshness';
 import { recordPriceHistory, mergePriceHistory } from './modules/price_history';
 import { generateMarketEvent, getActiveEvents } from '../systems/economy/market_events';
-import { generateContracts, acceptContractAction, abandonContractAction, settleContracts } from './modules/missions';
+import { generateContractOffers, acceptContractAction, abandonContractAction, settleContracts } from './modules/missions';
 import { createNotification } from './modules/notifications';
 import { isSimulationBlocked } from './helpers/simulation_clock';
 import { recordStationInteraction } from './helpers/character_history';
@@ -90,13 +90,16 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
   thrust: (dir, dt) => set(s => isSimulationBlocked(s) || s.ship.dockedStationId || s.ship.hp <= 0 ? s : { ship: applyThrust(s.ship, dir, dt) }),
   setEngineTarget: target => set(s => ({ ship: engineTarget(s.ship, target, !!s.ship.dockedStationId) })),
-  tryDock: () => set(s => {
+  tryDock: stationId => set(s => {
     if (!s.hasChosenStarter || s.ship.dockedStationId || s.ship.hp <= 0) return s;
-    const near = s.stations.filter(st => distance(st.position, s.ship.position) < 60).sort((a, b) => distance(a.position, s.ship.position) - distance(b.position, s.ship.position))[0];
+    const near = s.stations.filter(st => (!stationId || st.id === stationId) && distance(st.position, s.ship.position) < 60).sort((a, b) => distance(a.position, s.ship.position) - distance(b.position, s.ship.position))[0];
     if (!near) return notice(s, 'Move within 60m of a station to dock', 'warning');
     if (!canDockAtStation(near)) return notice(s, 'Docking denied. Mission documents and research contacts can use a local liaison within 100m.', 'warning');
     s = { ...s, stations: recordStationInteraction(s.stations, near.id, s.gameTime), ship: { ...s.ship, dockedStationId: near.id, velocity: [0, 0, 0], cruise: false, cruiseSpool: 0, autopilot: false }, dockIntroVisibleId: near.id };
-    if (s.tutorialActive && s.tutorialStep === 'dock_city' && near.id === 'sol-city') s = { ...s, tutorialStep: 'accept_mission' };
+    if (s.tutorialActive && s.tutorialStep === 'dock_city' && near.id === 'sol-city') {
+      s = { ...s, tutorialStep: 'accept_mission' };
+      s = { ...s, contracts: generateContractOffers(s) };
+    }
     if (s.tutorialActive && s.tutorialStep === 'goto_refinery' && near.id === 'sol-refinery') s = { ...s, tutorialStep: 'buy_fuel' };
     return dispatchMissionEvents(refreshMissions(s), [{ type: 'station_docked', stationId: near.id }]);
   }),
@@ -148,7 +151,6 @@ export const useGameStore = create<GameState>((set, get) => ({
         contracts: s.contracts!.map(c => c.id === contract.id ? { ...c, deliveredUnits: total, status: complete ? 'completed' : 'accepted' } : c),
         objectives: s.objectives?.map(o => o.id === `obj:${contract.id}` && complete ? { ...o, status: 'completed' } : o),
         ...(complete ? { celebrationVisible: Date.now(), celebrationBonusReward: contract.rewardBonus ?? 0, celebrationBuyCost: (contract.unitBuy ?? 0) * contract.units, celebrationSellRevenue: result.unitSellPrice * contract.units,
-          tutorialActive: s.tutorialActive && s.tutorialStep === 'deliver_fuel' ? false : s.tutorialActive,
           tutorialStep: s.tutorialActive && s.tutorialStep === 'deliver_fuel' ? 'done' as const : s.tutorialStep } : {}),
       };
     }
@@ -181,15 +183,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     knownActions: [], visitCount: 0, totalTradeVolume: 0, missionsOffered: [], missionsCompleted: [], missionsFailed: [], ...st.characterMemory,
     recentDialogueIds: [...lineIds, ...(st.characterMemory?.recentDialogueIds ?? []).filter(id => !lineIds.includes(id))].slice(0, 15),
   } }) })),
-  generateContracts: opts => set(s => {
-    const contracts = generateContracts(s.stations, s.contracts ?? [], s.ship, opts?.limit, s.gameTime * 1000);
-    if (s.tutorialActive && s.tutorialStep === 'accept_mission' && s.ship.dockedStationId === 'sol-city') return { contracts: [...contracts.filter(c => c.status !== 'offered'), {
-      id: 'tutorial:fuel', title: 'First fuel run: Helios Refinery → Sol City', status: 'offered', fromId: 'sol-refinery', toId: 'sol-city', offeredById: 'sol-city', commodityId: 'refined_fuel', units: 10, deliveredUnits: 0,
-      unitBuy: s.stations.find(st => st.id === 'sol-refinery')!.inventory.refined_fuel.buy, unitSell: s.stations.find(st => st.id === 'sol-city')!.inventory.refined_fuel.sell,
-      requiredRep: 0, rewardBonus: 1000, sellMultiplier: 1.1, tag: 'standard', expiresAt: s.gameTime * 1000 + 180000,
-    }] };
-    return { contracts };
-  }),
+  generateContracts: opts => set(s => ({ contracts: generateContractOffers(s, opts?.limit) })),
   acceptContract: id => set(input => {
     const s = settleContracts(input);
     const c = s.contracts?.find(c => c.id === id && c.status === 'offered');

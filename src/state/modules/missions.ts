@@ -32,6 +32,15 @@ export function generateContracts(stations: Station[], existing: Contract[], shi
   }
   return contracts;
 }
+export function generateContractOffers(s: GameState, limit = 5): Contract[] {
+  const contracts = generateContracts(s.stations, s.contracts ?? [], s.ship, limit, s.gameTime * 1000);
+  if (!s.tutorialActive || s.tutorialStep !== 'accept_mission' || s.ship.dockedStationId !== 'sol-city') return contracts;
+  return [...contracts.filter(c => c.status !== 'offered'), {
+    id: 'tutorial:fuel', title: 'First fuel run: Helios Refinery → Sol City', status: 'offered', fromId: 'sol-refinery', toId: 'sol-city', offeredById: 'sol-city', commodityId: 'refined_fuel', units: 10, deliveredUnits: 0,
+    unitBuy: s.stations.find(st => st.id === 'sol-refinery')!.inventory.refined_fuel.buy, unitSell: s.stations.find(st => st.id === 'sol-city')!.inventory.refined_fuel.sell,
+    requiredRep: 0, rewardBonus: 1000, sellMultiplier: 1.1, tag: 'standard', expiresAt: s.gameTime * 1000 + 180000,
+  }];
+}
 export function acceptContractAction(id: string, contracts: Contract[], objectives: Objective[], npcs: NpcTrader[], stations: Station[], ship: Ship, now = 0): Pick<GameState, 'contracts' | 'objectives' | 'npcTraders' | 'activeObjectiveId' | 'trackedStationId'> {
   const c = contracts.find(c => c.id === id && c.status === 'offered');
   if (!c) return { contracts, objectives, npcTraders: npcs };

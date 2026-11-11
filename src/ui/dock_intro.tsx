@@ -15,7 +15,7 @@ import type { DialogueContext, DialogueResult } from '../domain/types/character_
 import { preloadManifest } from '../shared/audio/dialogue_audio';
 
 // Import all generated avatars as URLs via Vite's glob import
-const avatarModules = import.meta.glob('../../generated_avatars/*.png', { eager: true, as: 'url' }) as Record<string, string>;
+const avatarModules = import.meta.glob('../../generated_avatars/*.png', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
 
 function toSafeFilename(name: string): string {
   return name.replace(/[^a-z0-9-_\.\s]/gi, '_').replace(/\s+/g, ' ').trim();
