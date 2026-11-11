@@ -1,3 +1,4 @@
+import type { JournalData } from './journal_types';
 import type { Commodity, StationInventory } from '../types/economy_types';
 import type { StationType } from '../types/economy_types';
 import type { ShipWeapon, WeaponKind, Projectile } from './combat_types';
@@ -91,6 +92,9 @@ export type Ship = {
   silentRunning?: boolean;
   autopilot?: boolean;
   // Combat properties
+  onFire?: boolean;
+  fireSeconds?: number;
+  hasFireSuppression?: boolean;
   weapon: ShipWeapon;
   hp: number;
   maxHp: number;
@@ -149,6 +153,8 @@ export type TradeEntry = {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  simulationTime?: number;
+  realizedProfit?: number; // Sale revenue including order premiums, less recorded cost. Excludes bonuses.
 };
 
 export type RouteSuggestion = {
@@ -241,6 +247,7 @@ export type TravelOpportunity = {
 
 export type GameState = {
   economyVersion?: 2;
+  journal?: JournalData;
   planets: Planet[];
   stations: Station[];
   belts: AsteroidBelt[];
@@ -365,6 +372,7 @@ export type GameState = {
   retryMission: (missionId: string) => void;
   launchMission: (missionId: string) => void;
   repairShip: () => void;
+  purchaseFireSuppression: () => void;
   toggleCruise: () => void;
   toggleSilentRunning: () => void;
   toggleAutopilot: () => void;

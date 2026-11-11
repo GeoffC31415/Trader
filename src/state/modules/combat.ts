@@ -5,6 +5,7 @@
  * hostile defenders, and weapon systems.
  */
 
+import { FIRE_HULL_THRESHOLD } from '../../systems/combat/ship_fire';
 import { distance } from '../../shared/math/vec3';
 import {
   PLAYER_MAX_HP,
@@ -118,6 +119,10 @@ export function updateCombat(
       position: [...target.position], damage: Math.min(event.damage, target.hp), at: currentTime / 1000 });
     if (event.targetType === 'player') {
       ship.hp = Math.max(0, ship.hp - event.damage);
+      if (!ship.dockedStationId && ship.hp > 0 && ship.hp / ship.maxHp <= FIRE_HULL_THRESHOLD && !ship.onFire) {
+        ship.onFire = true;
+        ship.fireSeconds = 0;
+      }
     } else {
       // Damage to NPC
       npcTraders = npcTraders.map(npc => {

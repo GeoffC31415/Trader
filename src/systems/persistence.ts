@@ -1,3 +1,4 @@
+import { journalSchema, createJournal } from './journal';
 import { z } from 'zod';
 import type { GameState } from '../domain/types/world_types';
 import { stations as initialStations } from '../state/world';
@@ -37,6 +38,7 @@ const schema = z.object({
   data: z.object({
     gameTime: amount,
     economyVersion: z.literal(2).optional(),
+    journal: journalSchema.optional(),
     ship: z.object({
       position: vec, velocity: vec, credits: amount, cargo: amounts, maxCargo: amount,
       hp: amount, maxHp: amount.positive(), energy: amount, maxEnergy: amount.positive(),
@@ -46,6 +48,7 @@ const schema = z.object({
       dockedStationId: z.string().optional(), cruise: z.boolean().optional(), autopilot: z.boolean().optional(), silentRunning: z.boolean().optional(), cruiseSpool: amount.optional(),
       hasNavigationArray: z.boolean().optional(), hasUnionMembership: z.boolean().optional(), hasMarketIntel: z.boolean().optional(), hasTradeLedger: z.boolean().optional(), hasTempCargo: z.boolean().optional(), hasShieldedCargo: z.boolean().optional(),
       cargoFreshness: amounts.optional(),
+      onFire: z.boolean().optional(), fireSeconds: amount.optional(), hasFireSuppression: z.boolean().optional(),
     }).passthrough(),
     stations: z.array(z.object({
       id: z.string(), name: z.string(), type: stationType, position: vec, reputation: finite.optional(),
@@ -65,12 +68,12 @@ const schema = z.object({
     escortStates: z.array(z.tuple([z.string(), z.object({ missionId: z.string(), escortNpcId: z.string(), escortHp: amount, escortMaxHp: amount, destinationStationId: z.string(), lastWaveTime: finite, hasReachedDestination: z.boolean(), waveCount: amount, wavesCompleted: amount, spawnedPirateIds: strings, currentWavePirateIds: strings })])),
     contracts: z.array(z.object({ id: z.string(), toId: z.string(), commodityId: z.string(), units: amount.positive(), status: z.enum(['offered', 'accepted', 'completed', 'failed']), deliveredUnits: amount.optional(), expiresAt: amount.optional(), unitPayout: amount.optional(), deliveredRevenue: amount.optional(), deliveredCost: amount.optional() }).passthrough()).default([]),
     objectives: z.array(z.object({ id: z.string(), targetStationId: z.string().optional(), label: z.string(), kind: z.enum(['tutorial', 'contract', 'milestone']), status: z.enum(['active', 'completed', 'failed', 'offered']) }).passthrough()).default([]),
-    tradeLog: z.array(z.object({ id: z.string(), time: amount, stationId: z.string(), commodityId: z.string(), quantity: amount, unitPrice: amount, totalPrice: amount, type: z.enum(['buy', 'sell']).optional() }).passthrough()).default([]),
+    tradeLog: z.array(z.object({ id: z.string(), time: amount, stationId: z.string(), commodityId: z.string(), quantity: amount, unitPrice: amount, totalPrice: amount, type: z.enum(['buy', 'sell']).optional(), simulationTime: amount.optional(), realizedProfit: finite.optional() }).passthrough()).default([]),
     profitByCommodity: z.record(finite).default({}), avgCostByCommodity: amounts.default({}),
     relationships: z.record(z.object({ score: finite, tier: z.union([z.literal(-2), z.literal(-1), z.literal(0), z.literal(1), z.literal(2)]) }).passthrough()).default({}),
     allyAssistTokens: z.array(z.object({ id: z.string(), by: z.string(), type: z.enum(['escort', 'discount', 'waiver', 'refuel', 'repair', 'fabrication_rush']), description: z.string(), consumed: z.boolean().optional() }).passthrough()).default([]),
     pendingAssist: z.object({ by: z.string(), type: z.enum(['discount', 'waiver', 'refuel']), multiplier: amount, commodityId: z.string().optional() }).optional(),
-    politicalProfile: z.object({ score: z.object({ freedom: finite, labor: finite }), quadrant: z.enum(['free_worker', 'union_builder', 'libertarian', 'corporate_loyalist']), history: z.array(z.object({ missionId: z.string(), choiceId: z.string(), description: z.string(), freedomDelta: finite, laborDelta: finite, timestamp: amount })) }).optional(),
+    politicalProfile: z.object({ score: z.object({ freedom: finite, labor: finite }), quadrant: z.enum(['free_worker', 'union_builder', 'libertarian', 'corporate_loyalist']), history: z.array(z.object({ missionId: z.string(), choiceId: z.string(), description: z.string(), freedomDelta: finite, laborDelta: finite, timestamp: amount, simulationTime: amount.optional() })) }).optional(),
     marketEvents: z.array(z.object({ id: z.string(), title: z.string(), description: z.string(), startedAt: amount, duration: amount, effects: z.array(z.object({ stationId: z.string().optional(), commodityId: z.string().optional(), commodityCategory: z.string().optional(), priceMultiplier: amount })) })).default([]),
     appliedEffects: z.array(z.object({ id: z.string().refine(id => !!WORLD_EFFECTS[id]), appliedAt: amount })).default([]),
     pirateAggressionMultiplier: amount.optional(), unlockedFeatures: strings.default([]), defenseCooldowns: amounts.optional(), nextMarketEventAt: amount.optional(), nextOpportunityAt: amount.optional(), nextBountyAt: amount.optional(),
@@ -82,7 +85,7 @@ const schema = z.object({
   }).refine(data => initialStations.every(st => data.stations.some(saved => saved.id === st.id && Object.keys(st.inventory).every(id => id in saved.inventory))) && Object.keys(MISSION_ARCS).every(id => data.missionArcs.some(a => a.id === id)), 'World topology or mission arcs are incomplete'),
 });
 // Never serialize methods or transient UI state; loading cannot replace store actions.
-const keys = ['economyVersion', 'gameTime', 'ship', 'stations', 'missions', 'missionArcs', 'npcTraders', 'contracts', 'objectives', 'tradeLog', 'profitByCommodity', 'avgCostByCommodity', 'relationships', 'allyAssistTokens', 'politicalProfile', 'marketEvents', 'nextMarketEventAt', 'appliedEffects', 'unlockedFeatures', 'pirateAggressionMultiplier', 'hasChosenStarter', 'isTestMode', 'tutorialActive', 'tutorialStep', 'trackedStationId', 'defenseCooldowns', 'opportunity', 'nextOpportunityAt', 'nextBountyAt', 'recoveryGraceUntil', 'activeObjectiveId', 'pendingAssist', 'priceHistory', 'lastPriceSnapshotTime'] as const;
+const keys = ['journal', 'economyVersion', 'gameTime', 'ship', 'stations', 'missions', 'missionArcs', 'npcTraders', 'contracts', 'objectives', 'tradeLog', 'profitByCommodity', 'avgCostByCommodity', 'relationships', 'allyAssistTokens', 'politicalProfile', 'marketEvents', 'nextMarketEventAt', 'appliedEffects', 'unlockedFeatures', 'pirateAggressionMultiplier', 'hasChosenStarter', 'isTestMode', 'tutorialActive', 'tutorialStep', 'trackedStationId', 'defenseCooldowns', 'opportunity', 'nextOpportunityAt', 'nextBountyAt', 'recoveryGraceUntil', 'activeObjectiveId', 'pendingAssist', 'priceHistory', 'lastPriceSnapshotTime'] as const;
 export function serializeGame(s: GameState): string {
   const data = Object.fromEntries(keys.map(key => [key, s[key]]));
   return JSON.stringify({ version: 1, data: { ...data, stealthStates: [...s.stealthStates], escortStates: [...s.escortStates] } });
@@ -95,11 +98,13 @@ export function deserializeGame(text: string): Partial<GameState> {
   const recoveredSales = data.economyVersion === undefined ? data.tradeLog.filter(t => t.type === 'sell').reduce((sum, t) => sum + t.totalPrice, 0) : 0;
   const credits = data.ship.credits + recoveredSales;
   if (!Number.isFinite(credits)) throw new Error('Invalid recovered credit balance');
-  return { ...values, economyVersion: 2, ship: { ...data.ship, credits },
+  const restored = { ...values, economyVersion: 2, ship: { ...data.ship, credits, onFire: data.ship.dockedStationId ? false : data.ship.onFire, fireSeconds: data.ship.dockedStationId ? 0 : data.ship.fireSeconds },
     missions: data.missions.map(m => ({ ...m, description: MISSION_TEMPLATES[m.id].description })), stealthStates: new Map(data.stealthStates), escortStates: new Map(data.escortStates),
     paused: true, blockingDialog: false, selectedTargetId: undefined, combatImpacts: [], projectiles: [], npcAggression: {}, npcLastFireTimes: {}, lastFireTime: -Infinity,
     notifications: recoveredSales > 0 ? [createNotification('info', `Recovered ${recoveredSales.toLocaleString()} missing sale credits from your previous-build trade ledger.`, 15000)] : [], missionIntroVisibleId: undefined, celebrationVisible: undefined,
     dockIntroVisibleId: undefined, missionCelebrationData: undefined, missionInstallState: undefined,
   } as Partial<GameState>;
+  restored.journal = data.journal ?? createJournal(restored as GameState, true);
+  return restored;
 }
 export const SAVE_KEY = 'trader.campaign.v1';

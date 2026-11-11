@@ -56,7 +56,11 @@ export function resolveOpportunity(input: GameState, action: 'complete' | 'decli
   } else cargo[o.commodityId] -= o.quantity;
   let stations = input.stations;
   if (o.kind !== 'salvage') stations = applyReputationWithPropagation(stations.map(st => st.id === o.stationId && st.inventory[o.commodityId] ? { ...st, inventory: { ...st.inventory, [o.commodityId]: { ...st.inventory[o.commodityId], stock: (st.inventory[o.commodityId].stock ?? 0) + o.quantity } } } : st), o.stationId, o.kind === 'distress' ? 4 : 2);
-  let s = clearOpportunity({ ...input, stations, ship: { ...input.ship, cargo, credits: input.ship.credits + (o.kind === 'salvage' ? 0 : o.reward) } });
+  const owned = (input.ship.cargo[o.commodityId] ?? 0) + input.npcTraders.filter(n => n.isEscort && n.commodityId === o.commodityId).reduce((sum, n) => sum + (n.escortCargoUsed ?? 0), 0);
+  const avgCostByCommodity = { ...input.avgCostByCommodity };
+  if (o.kind === 'salvage') avgCostByCommodity[o.commodityId] = (avgCostByCommodity[o.commodityId] ?? 0) * owned / (owned + o.quantity);
+  else if (owned === o.quantity) avgCostByCommodity[o.commodityId] = 0;
+  let s = clearOpportunity({ ...input, stations, avgCostByCommodity, ship: { ...input.ship, cargo, credits: input.ship.credits + (o.kind === 'salvage' ? 0 : o.reward) } });
   if (o.risky) {
     const station = stations.find(st => st.id === o.stationId)!;
     const pirate = { id: `${o.id}:pirate`, kind: 'clipper' as const, fromId: station.id, toId: station.id, position: [o.position[0] + 180, o.position[1], o.position[2]] as [number, number, number],

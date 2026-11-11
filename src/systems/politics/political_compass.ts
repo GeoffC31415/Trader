@@ -25,6 +25,7 @@ export type PoliticalScoreContribution = {
   freedomDelta: number;
   laborDelta: number;
   timestamp: number;
+  simulationTime?: number;
 };
 
 export type PoliticalQuadrant = 
@@ -372,7 +373,8 @@ export function applyMissionContribution(
   profile: PlayerPoliticalProfile,
   missionId: string,
   choiceId: string | null,
-  multiplier: number = 1.0
+  multiplier: number = 1.0,
+  simulationTime?: number,
 ): PlayerPoliticalProfile {
   const key = choiceId ? `${missionId}:${choiceId}` : `${missionId}:complete`;
   const scoreData = MISSION_SCORES[key];
@@ -395,6 +397,7 @@ export function applyMissionContribution(
     freedomDelta: adjustedFreedomDelta,
     laborDelta: adjustedLaborDelta,
     timestamp: Date.now(),
+    simulationTime,
   };
   
   const newScore: PoliticalScore = {

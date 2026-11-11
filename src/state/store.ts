@@ -6,6 +6,7 @@ import { shipCaps } from '../domain/constants/ship_constants';
 import { WEAPON_BASE_STATS, WEAPON_COSTS, WEAPON_UPGRADE_COSTS } from '../domain/constants/weapon_constants';
 import { planets, stations as initialStations, belts } from './world';
 import { spawnNpcTraders } from './npc';
+import { FIRE_SUPPRESSION_COST, repairCost, updateShipFire } from '../systems/combat/ship_fire';
 import { distance } from '../shared/math/vec3';
 import { DOCKING_RANGE_WORLD } from '../domain/constants/game_constants';
 import { dockingCandidate } from './helpers/docking';
@@ -22,11 +23,13 @@ import { updateStationProduction } from './modules/economy_production';
 import { updateCargoFreshness } from './modules/cargo_freshness';
 import { recordPriceHistory, mergePriceHistory } from './modules/price_history';
 import { generateMarketEvent, getActiveEvents } from '../systems/economy/market_events';
+import { findRecipeForStation } from '../systems/economy/recipes';
 import { getFreshnessMultiplier } from './modules/cargo_freshness';
 import { generateContractOffers, contractUnitPayout, acceptContractAction, abandonContractAction, settleContracts } from './modules/missions';
 import { createNotification } from './modules/notifications';
 import { isSimulationBlocked } from './helpers/simulation_clock';
 import { recordStationInteraction } from './helpers/character_history';
+import { recordJournalTransition } from '../systems/journal';
 import { SAVE_KEY, serializeGame, deserializeGame } from '../systems/persistence';
 import { tickOpportunities, resolveOpportunity, requestBounty } from '../systems/travel_opportunities';
 import { acceptStoryMission, retryStoryMission, chooseStoryPath, dispatchMissionEvents, settleMissions, failMission, refreshMissions, interactMission, tickStoryMissions, missionBlocker } from './modules/mission_runtime';
@@ -42,7 +45,15 @@ function initialGraphicsQuality(): GameState['graphicsQuality'] {
   try { const value = localStorage.getItem('trader.graphics'); if (value === 'low' || value === 'high') return value; } catch { /* Storage may be unavailable. */ }
   return 'medium';
 }
-export const useGameStore = create<GameState>((set, get) => ({
+export const useGameStore = create<GameState>((rawSet, get) => {
+  const set = (update: Partial<GameState> | ((s: GameState) => Partial<GameState>)) => rawSet(before => {
+    const change = typeof update === 'function' ? update(before) : update;
+    if (change === before) return before;
+    const next = { ...before, ...change };
+    if (before.ship.onFire && !next.ship.onFire) next.notifications = next.notifications?.filter(n => !n.message.startsWith('FIRE ALERT'));
+    return recordJournalTransition(before, next);
+  });
+  return {
   economyVersion: 2,
   planets, stations: initialStations, belts, npcTraders: spawnNpcTraders(initialStations, 24),
   ship: createShip('freighter', [512, 0, 68]), gameTime: 0, paused: false, graphicsQuality: initialGraphicsQuality(),
@@ -80,19 +91,21 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (event) s = notice({ ...s, marketEvents: [...events, { ...event, startedAt: now }] }, `${event.title}: ${event.description}`);
       s = { ...s, nextMarketEventAt: s.gameTime + 300 + Math.random() * 300 };
     }
-    s = { ...s, ...projectWorldEffects(s) };
+    s = { ...s, ...projectWorldEffects(s), ship: updateShipFire(s.ship, dt) };
+    if (!state.ship.onFire && s.ship.onFire) s = notice(s, 'FIRE ALERT — losing 0.5 hull/s. Dock at any accessible station to extinguish, or let installed suppression activate.', 'warning');
+    if (state.ship.onFire && !s.ship.onFire && s.ship.hp > 0 && !s.ship.dockedStationId) s = notice(s, 'Automatic fire suppression activated. Fire extinguished.', 'success');
     if (s.ship.hp > 0) s = tickStoryMissions(s, dt, combat.missionNpcDestroyedEvents);
     if (s.ship.hp <= 0) {
       for (const m of s.missions.filter(m => m.status === 'active')) s = failMission(s, m.id, 'Ship disabled; insurance recovery');
       const home = s.stations.find(st => canDockAtStation(st)) ?? s.stations.find(st => st.id === 'freeport') ?? s.stations[0];
       if (!canDockAtStation(home)) s = { ...s, stations: s.stations.map(st => st.id === home.id ? { ...st, reputation: 0, isHostile: false, isClosed: false } : st) };
-      ship = { ...s.ship, hp: s.ship.maxHp, energy: s.ship.maxEnergy, position: [...home.position], velocity: [0, 0, 0], dockedStationId: home.id, cruise: false, cruiseSpool: 0, autopilot: false, credits: Math.max(0, s.ship.credits - Math.min(1000, s.ship.credits * 0.1)) };
+      ship = { ...s.ship, onFire: false, fireSeconds: 0, hp: s.ship.maxHp, energy: s.ship.maxEnergy, position: [...home.position], velocity: [0, 0, 0], dockedStationId: home.id, cruise: false, cruiseSpool: 0, autopilot: false, credits: Math.max(0, s.ship.credits - Math.min(1000, s.ship.credits * 0.1)) };
       s = notice({ ...s, ship, projectiles: [], combatImpacts: [], npcAggression: {}, npcLastFireTimes: {},
         npcTraders: s.npcTraders.map(n => ({ ...n, isAggressive: false })), recoveryGraceUntil: s.gameTime + 45, dockIntroVisibleId: home.id }, 'Ship recovered. Cargo retained; repairs cost up to 1,000 credits. Ships stand down for 45 simulation seconds, unless you fire first. Failed missions can be retried.', 'warning');
     }
     s = tickOpportunities(s, Math.random, combat.missionNpcDestroyedEvents);
     const snapshots = recordPriceHistory(s.stations, now, s.lastPriceSnapshotTime);
-    return { ...s, priceHistory: snapshots.priceHistory ? mergePriceHistory(s.priceHistory ?? {}, snapshots.priceHistory) : s.priceHistory, lastPriceSnapshotTime: snapshots.lastSnapshotTime };
+    return { ...s, priceHistory: Object.keys(snapshots.priceHistory).length ? mergePriceHistory(s.priceHistory ?? {}, snapshots.priceHistory) : s.priceHistory, lastPriceSnapshotTime: snapshots.lastSnapshotTime };
   }),
   thrust: (dir, dt) => set(s => isSimulationBlocked(s) || s.ship.dockedStationId || s.ship.hp <= 0 ? s : { ship: applyThrust(s.ship, dir, dt) }),
   setEngineTarget: target => set(s => ({ ship: engineTarget(s.ship, target, !!s.ship.dockedStationId) })),
@@ -101,7 +114,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const near = dockingCandidate(s.stations, s.ship.position, stationId);
     if (!near) return notice(s, `Move within ${DOCKING_RANGE_WORLD}m of a station to dock`, 'warning');
     if (!canDockAtStation(near)) return notice(s, 'Docking denied. Mission documents and research contacts can use a local liaison within 100m.', 'warning');
-    s = { ...s, stations: recordStationInteraction(s.stations, near.id, s.gameTime), ship: { ...s.ship, dockedStationId: near.id, velocity: [0, 0, 0], cruise: false, cruiseSpool: 0, autopilot: false }, dockIntroVisibleId: near.id };
+    s = { ...s, stations: recordStationInteraction(s.stations, near.id, s.gameTime), ship: { ...s.ship, onFire: false, fireSeconds: 0, dockedStationId: near.id, velocity: [0, 0, 0], cruise: false, cruiseSpool: 0, autopilot: false }, dockIntroVisibleId: near.id };
     if (s.tutorialActive && s.tutorialStep === 'dock_city' && near.id === 'sol-city') {
       s = { ...s, tutorialStep: 'accept_mission' };
       s = { ...s, contracts: generateContractOffers(s) };
@@ -122,7 +135,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     const roll = Math.random();
     const ore = roll < 0.4 ? 'iron_ore' : roll < 0.7 ? 'copper_ore' : roll < 0.9 ? 'silicon' : 'rare_minerals';
     const quantity = Math.min(room, ore === 'rare_minerals' ? 1 : 3);
-    return dispatchMissionEvents({ ...s, ship: { ...s.ship, cargo: { ...s.ship.cargo, [ore]: (s.ship.cargo[ore] ?? 0) + quantity } } }, [{ type: 'commodity_acquired', commodityId: ore, quantity }]);
+    const owned = (s.ship.cargo[ore] ?? 0) + s.npcTraders.filter(n => n.isEscort && n.commodityId === ore).reduce((sum, n) => sum + (n.escortCargoUsed ?? 0), 0);
+    return dispatchMissionEvents({ ...s, avgCostByCommodity: { ...s.avgCostByCommodity, [ore]: (s.avgCostByCommodity[ore] ?? 0) * owned / (owned + quantity) }, ship: { ...s.ship, cargo: { ...s.ship.cargo, [ore]: (s.ship.cargo[ore] ?? 0) + quantity } } }, [{ type: 'commodity_acquired', commodityId: ore, quantity }]);
   }),
   buy: (commodityId, quantity) => set(input => {
     const s = settleMissions(settleContracts(input));
@@ -141,7 +155,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       pendingAssist: multiplier !== undefined ? undefined : s.pendingAssist,
       objectives: ready ? s.objectives?.map(o => o.id === `obj:${contract.id}` ? { ...o, targetStationId: contract.toId } : o) : s.objectives,
       trackedStationId: ready && s.trackedStationId === contract.fromId ? contract.toId : s.trackedStationId,
-      tradeLog: [...s.tradeLog, result.trade].slice(-500), tutorialStep: s.tutorialActive && s.tutorialStep === 'buy_fuel' && contract?.id === 'tutorial:fuel' && ready ? 'deliver_fuel' : s.tutorialStep,
+      tradeLog: [...s.tradeLog, { ...result.trade, simulationTime: s.gameTime }].slice(-500), tutorialStep: s.tutorialActive && s.tutorialStep === 'buy_fuel' && contract?.id === 'tutorial:fuel' && ready ? 'deliver_fuel' : s.tutorialStep,
     }, [{ type: 'commodity_acquired', commodityId, quantity, stationId: s.ship.dockedStationId }]);
     return { ...next, ...projectWorldEffects(next) };
   }),
@@ -153,7 +167,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const costBasis = s.avgCostByCommodity[commodityId] ?? 0;
     const result = sellCommodity(s.ship, s.stations, s.npcTraders, s.profitByCommodity, s.avgCostByCommodity, commodityId, quantity, escorts);
     if (!result) return notice(s, 'Sale unavailable: check cargo, destination demand and required equipment', 'warning');
-    s = { ...s, ship: result.ship, stations: recordStationInteraction(result.stations, result.trade.stationId, s.gameTime, result.trade.totalPrice), npcTraders: result.npcTraders, profitByCommodity: result.profitByCommodity, avgCostByCommodity: result.avgCostByCommodity, tradeLog: [...s.tradeLog, result.trade].slice(-500) };
+    s = { ...s, ship: result.ship, stations: recordStationInteraction(result.stations, result.trade.stationId, s.gameTime, result.trade.totalPrice), npcTraders: result.npcTraders, profitByCommodity: result.profitByCommodity, avgCostByCommodity: result.avgCostByCommodity, tradeLog: [...s.tradeLog, { ...result.trade, simulationTime: s.gameTime, realizedProfit: s.avgCostByCommodity[commodityId] === undefined ? undefined : (result.profitByCommodity[commodityId] ?? 0) - (s.profitByCommodity[commodityId] ?? 0) }].slice(-500) };
     const contracts = s.contracts?.filter(c => c.status === 'accepted' && c.toId === s.ship.dockedStationId && c.commodityId === commodityId) ?? [];
     let remainingSold = quantity;
     for (const contract of contracts) {
@@ -168,7 +182,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       const deliveredRevenue = (contract.deliveredRevenue ?? 0) + delivered * result.unitSellPrice + premium;
       const deliveredCost = (contract.deliveredCost ?? 0) + delivered * costBasis;
       const previousReceipt = s.tradeLog[s.tradeLog.length - 1];
-      const receipt = { ...previousReceipt, totalPrice: previousReceipt.totalPrice + premium, unitPrice: (previousReceipt.totalPrice + premium) / quantity };
+      const receipt = { ...previousReceipt, realizedProfit: previousReceipt.realizedProfit === undefined ? undefined : previousReceipt.realizedProfit + premium, totalPrice: previousReceipt.totalPrice + premium, unitPrice: (previousReceipt.totalPrice + premium) / quantity };
       s = { ...s, ship: { ...s.ship, credits: s.ship.credits + Math.round(extra) },
         contracts: s.contracts!.map(c => c.id === contract.id ? { ...c, deliveredUnits: total, deliveredRevenue, deliveredCost, status: complete ? 'completed' : 'accepted' } : c),
         tradeLog: [...s.tradeLog.slice(0, -1), receipt],
@@ -184,8 +198,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     return { ...next, ...projectWorldEffects(next) };
   }),
   process: (inputId, outputs) => set(s => {
+    const station = s.stations.find(st => st.id === s.ship.dockedStationId);
+    const recipe = station && findRecipeForStation(station.type, inputId);
+    if (station?.id === 'sol-city' && recipe?.outputId === 'luxury_goods' && s.missions.some(m => m.id === 'greenfields_stage_1' && m.status === 'active')) return notice(s, 'Sol City cannot manufacture supplies for this covert order. Use another station.', 'warning');
     const ship = processCommodity(s.ship, s.ship.dockedStationId, s.stations, inputId, outputs);
-    return ship ? { ship } : notice(s, 'Fabrication unavailable: check inputs, equipment, membership and hold capacity', 'warning');
+    if (!ship || !recipe) return notice(s, 'Fabrication unavailable: check inputs, equipment, membership and hold capacity', 'warning');
+    const produced = (ship.cargo[recipe.outputId] ?? 0) - (s.ship.cargo[recipe.outputId] ?? 0);
+    const consumed = (s.ship.cargo[inputId] ?? 0) - (ship.cargo[inputId] ?? 0);
+    const owned = (s.ship.cargo[recipe.outputId] ?? 0) + s.npcTraders.filter(n => n.isEscort && n.commodityId === recipe.outputId).reduce((sum, n) => sum + (n.escortCargoUsed ?? 0), 0);
+    const avgCostByCommodity = { ...s.avgCostByCommodity, [recipe.outputId]: ((s.avgCostByCommodity[recipe.outputId] ?? 0) * owned + (s.avgCostByCommodity[inputId] ?? 0) * consumed) / (owned + produced) };
+    if (!(ship.cargo[inputId] ?? 0) && !s.npcTraders.some(n => n.isEscort && n.commodityId === inputId && (n.escortCargoUsed ?? 0) > 0)) avgCostByCommodity[inputId] = 0;
+    return dispatchMissionEvents({ ...s, ship, avgCostByCommodity }, [{ type: 'commodity_acquired', commodityId: recipe.outputId, quantity: produced, stationId: station!.id }]);
   }),
   upgrade: (type, amount, cost) => set(s => {
     const ship = upgradeShip(s.ship, s.ship.dockedStationId, s.stations, type, amount, cost);
@@ -193,7 +216,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
   replaceShip: (kind, cost) => set(s => {
     if (s.stations.find(st => st.id === s.ship.dockedStationId)?.type !== 'shipyard' || s.ship.credits < cost || Object.values(s.ship.cargo).some(q => q > 0)) return notice(s, 'Ship replacement requires an empty hold, credits and a shipyard', 'warning');
-    return { ship: createShip(kind, s.ship.position, { credits: s.ship.credits - cost, dockedStationId: s.ship.dockedStationId, weapon: s.ship.weapon, hasNavigationArray: s.ship.hasNavigationArray, hasUnionMembership: s.ship.hasUnionMembership, hasMarketIntel: s.ship.hasMarketIntel, hasTradeLedger: s.ship.hasTradeLedger, hasTempCargo: s.ship.hasTempCargo, hasShieldedCargo: s.ship.hasShieldedCargo }) };
+    return { ship: createShip(kind, s.ship.position, { credits: s.ship.credits - cost, dockedStationId: s.ship.dockedStationId, weapon: s.ship.weapon, hasNavigationArray: s.ship.hasNavigationArray, hasUnionMembership: s.ship.hasUnionMembership, hasMarketIntel: s.ship.hasMarketIntel, hasTradeLedger: s.ship.hasTradeLedger, hasTempCargo: s.ship.hasTempCargo, hasShieldedCargo: s.ship.hasShieldedCargo, hasFireSuppression: s.ship.hasFireSuppression }) };
   }),
   chooseStarter: (kind, opts) => set(s => {
     if (s.hasChosenStarter) return s;
@@ -255,8 +278,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
   repairShip: () => set(s => {
     if (!s.ship.dockedStationId) return s;
-    const cost = Math.ceil((s.ship.maxHp - s.ship.hp) * 5);
-    return s.ship.credits >= cost ? { ship: { ...s.ship, hp: s.ship.maxHp, energy: s.ship.maxEnergy, credits: s.ship.credits - cost } } : notice(s, 'Insufficient repair credits', 'warning');
+    const cost = repairCost(s.ship);
+    return s.ship.credits >= cost ? { ship: { ...s.ship, onFire: false, fireSeconds: 0, hp: s.ship.maxHp, energy: s.ship.maxEnergy, credits: s.ship.credits - cost } } : notice(s, 'Insufficient repair credits', 'warning');
+  }),
+  purchaseFireSuppression: () => set(s => {
+    if (s.stations.find(st => st.id === s.ship.dockedStationId)?.type !== 'shipyard' || s.ship.hasFireSuppression || s.ship.credits < FIRE_SUPPRESSION_COST) return notice(s, 'Fire suppression requires a shipyard, sufficient credits and an uninstalled system', 'warning');
+    return { ship: { ...s.ship, hasFireSuppression: true, credits: s.ship.credits - FIRE_SUPPRESSION_COST, onFire: false, fireSeconds: 0 } };
   }),
   togglePause: () => set(s => ({ paused: !s.paused })),
   setGraphicsQuality: graphicsQuality => { set({ graphicsQuality }); try { localStorage.setItem('trader.graphics', graphicsQuality); } catch { /* Keep the session preference. */ } },
@@ -277,7 +304,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     catch { set(s => notice(s, 'Save failed: browser storage is unavailable', 'error')); }
   },
   loadGame: () => {
-    try { const text = localStorage.getItem(SAVE_KEY); if (!text) { set(s => notice(s, 'No saved campaign found', 'warning')); return; } set(deserializeGame(text)); }
+    try { const text = localStorage.getItem(SAVE_KEY); if (!text) { set(s => notice(s, 'No saved campaign found', 'warning')); return; } rawSet(deserializeGame(text)); }
     catch { set(s => notice(s, 'Save is invalid or from an unsupported version; current game was not changed', 'error')); }
   },
   requestBounty: () => set(s => requestBounty(s)),
@@ -302,4 +329,5 @@ export const useGameStore = create<GameState>((set, get) => ({
   debugSetMissionArcStage: (id, currentStage, status = 'in_progress') => set(s => s.isTestMode ? { missionArcs: s.missionArcs.map(a => a.id === id ? { ...a, currentStage, status } : a) } : s),
   debugCompleteMission: id => set(s => s.isTestMode ? settleMissions({ ...s, missions: s.missions.map(m => m.id === id ? { ...m, objectives: m.objectives.map(o => ({ ...o, completed: true })) } : m) }) : s),
   debugFailMission: id => set(s => s.isTestMode ? failMission(s, id, 'Developer failure') : s),
-}));
+  } satisfies GameState;
+});

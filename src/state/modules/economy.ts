@@ -648,7 +648,7 @@ export function processCommodity(
   inputId: string,
   outputs: number
 ): Ship | null {
-  if (!dockedStationId || outputs <= 0) return null;
+  if (!dockedStationId || !Number.isInteger(outputs) || outputs <= 0) return null;
 
   const station = stations.find(s => s.id === dockedStationId);
   if (!station) return null;
@@ -672,6 +672,7 @@ export function processCommodity(
   const newCargo = { ...ship.cargo };
   newCargo[inputId] = have - Math.ceil(outCount * recipe.inputPerOutput);
   newCargo[recipe.outputId] = (newCargo[recipe.outputId] || 0) + outCount;
+  if (Object.values(newCargo).reduce((sum, qty) => sum + qty, 0) > ship.maxCargo) return null;
 
   return { ...ship, cargo: newCargo };
 }
