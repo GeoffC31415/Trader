@@ -68,9 +68,11 @@ export function recordJournalTransition(before: GameState, next: GameState): Gam
     journal = { ...journal, ledger: recordTrade(journal.ledger, t) };
     pending.push({ kind: 'trade', title: `${t.type === 'buy' ? 'Bought' : 'Sold'} ${t.quantity} ${humanize(t.commodityId)}`, detail: `${t.stationName} · ${t.totalPrice.toLocaleString()} cr · ${t.type === 'buy' ? 'Inventory acquired' : t.realizedProfit === undefined ? 'Historical cost unavailable' : `Realized profit ${t.realizedProfit.toFixed(0)} cr (bonuses separate)`}` });
   }
+  const financeEntries = (next.finance?.entries ?? []).filter(e => e.id >= (before.finance?.sequence ?? 0));
+  for (const e of financeEntries) pending.push({ kind: 'finance', title: 'Banking & storage', detail: e.message });
   const creditsDelta = next.ship.credits - before.ship.credits;
   const tradeCash = newTrades.reduce((sum, t) => sum + (t.type === 'buy' ? -t.totalPrice : t.totalPrice), 0);
-  const otherCash = creditsDelta - tradeCash;
+  const otherCash = creditsDelta - tradeCash - financeEntries.reduce((sum, e) => sum + (e.cashDelta ?? 0), 0);
   if (otherCash !== 0) journal = { ...journal, otherIncome: journal.otherIncome + Math.max(0, otherCash), otherSpending: journal.otherSpending + Math.max(0, -otherCash) };
   const equipment = shipChanges(before.ship, next.ship);
   if (equipment.length) pending.push({ kind: 'ship', title: 'Ship configuration changed', detail: `${equipment.join(' · ')}${otherCash < 0 ? ` · ${(-otherCash).toLocaleString()} cr spent` : ''}` });
@@ -105,7 +107,7 @@ const n = z.number().finite(), positive = n.nonnegative();
 const totalsSchema = z.object({ transactions: positive.int(), bought: positive, sold: positive, spent: positive, revenue: positive, knownProfit: n, unknownCostSales: positive.int() });
 export const journalSchema = z.object({
   version: z.literal(1), startedAt: positive, legacy: z.boolean(), sequence: positive.int(), otherIncome: positive, otherSpending: positive,
-  ledger: z.record(z.record(totalsSchema)), events: z.array(z.object({ id: positive.int(), at: positive, kind: z.enum(['milestone', 'trade', 'reputation', 'politics', 'ship', 'mission', 'world', 'safety', 'industry']), title: z.string(), detail: z.string(),
+  ledger: z.record(z.record(totalsSchema)), events: z.array(z.object({ id: positive.int(), at: positive, kind: z.enum(['milestone', 'trade', 'reputation', 'politics', 'ship', 'mission', 'world', 'safety', 'industry', 'finance']), title: z.string(), detail: z.string(),
     reputation: z.array(z.object({ stationId: z.string(), before: n, after: n })).optional(), factions: z.record(n).optional(), political: z.object({ freedom: n.min(-100).max(100), labor: n.min(-100).max(100) }).optional(),
   })).max(JOURNAL_EVENT_LIMIT),
 }).refine(j => j.events.every((e, i) => e.id < j.sequence && (i === 0 || e.id > j.events[i - 1].id) && (i === 0 || e.at >= j.events[i - 1].at)), 'Journal sequence is invalid');

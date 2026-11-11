@@ -5,6 +5,7 @@
  */
 
 export const STATION_TYPES = [
+  'bank',
   'refinery',
   'fabricator',
   'power_plant',

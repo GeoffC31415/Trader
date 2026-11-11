@@ -4,6 +4,7 @@ import { createMissionFromTemplate } from '../missions/mission_generator';
 import { useGameStore } from '../../state/store';
 import { createJournal, recordJournalTransition, JOURNAL_EVENT_LIMIT } from '../journal';
 import { summarizeLedger, manufacturingDirectory } from '../journal_analysis';
+import { tickFinance } from '../finance';
 import { serializeGame, deserializeGame } from '../persistence';
 import { recordPriceHistory, mergePriceHistory } from '../../state/modules/price_history';
 import { applyMissionContribution, createInitialProfile } from '../politics/political_compass';
@@ -42,7 +43,7 @@ it('keeps cumulative station/goods totals after receipt and event windows roll o
   let s = setup();
   for (let i = 0; i < 710; i++) {
     const trade: TradeEntry = { id: `sale:${i}`, time: 1, simulationTime: i, stationId: i % 2 ? 'sol-city' : 'freeport', stationName: 'Port', stationType: 'city', commodityId: 'refined_fuel', type: 'sell', quantity: 1, unitPrice: 5, totalPrice: 5, realizedProfit: 2 };
-    s = recordJournalTransition(s, { ...s, gameTime: i, ship: { ...s.ship, credits: s.ship.credits + 5 }, tradeLog: [...s.tradeLog, trade].slice(-500) });
+    s = recordJournalTransition(s, tickFinance({ ...s, gameTime: i, ship: { ...s.ship, credits: s.ship.credits + 5 }, tradeLog: [...s.tradeLog, trade].slice(-500) }));
   }
   expect(s.journal!.events.length).toBe(JOURNAL_EVENT_LIMIT); expect(s.tradeLog.length).toBe(500);
   expect(summarizeLedger(s.journal!).total.transactions).toBe(710);

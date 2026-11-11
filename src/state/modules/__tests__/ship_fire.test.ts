@@ -50,7 +50,7 @@ it('shipyard repairs restore hull/energy at the quoted price and cannot overdraw
 it('insurance recovery clears lethal fire without leaving damage ticking at the recovery port', () => {
   setup(); useGameStore.setState(s => ({ ship: { ...s.ship, hp: .01 } })); useGameStore.getState().tick(.1);
   const s = useGameStore.getState(); expect(s.ship.hp).toBe(s.ship.maxHp); expect(s.ship.onFire).toBe(false);
-  expect(s.ship.dockedStationId).toBeTruthy(); expect(s.ship.credits).toBe(9000);
+  expect(s.ship.dockedStationId).toBeTruthy(); expect(s.ship.credits).toBe(5000);
 });
 it('retains an installed suppression system through ship replacement', () => {
   setup(); useGameStore.setState(s => ({ ship: { ...s.ship, dockedStationId: 'drydock', credits: 30000, hasFireSuppression: true } }));

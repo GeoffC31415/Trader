@@ -22,6 +22,7 @@ function toSafeFilename(name: string): string {
 }
 
 const stationTypeColors: Record<StationType, { primary: string; secondary: string; glow: string }> = {
+  bank: { primary: '#c49a46', secondary: '#f6dfa0', glow: '#c49a4680' },
   city: { primary: '#3b82f6', secondary: '#60a5fa', glow: '#3b82f680' },
   refinery: { primary: '#f59e0b', secondary: '#fbbf24', glow: '#f59e0b80' },
   fabricator: { primary: '#8b5cf6', secondary: '#a78bfa', glow: '#8b5cf680' },
@@ -36,6 +37,7 @@ const stationTypeColors: Record<StationType, { primary: string; secondary: strin
 };
 
 const stationTypeIcons: Record<StationType, string> = {
+  bank: '◈',
   city: '🏙️',
   refinery: '⚗️',
   fabricator: '⚙️',

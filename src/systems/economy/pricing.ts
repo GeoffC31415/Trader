@@ -138,6 +138,7 @@ export function getTargetStock(stationType: StationType, commodityId: string): n
 }
 
 const rulesByType: Record<StationType, StationPriceRules> = {
+  bank: { cheap: [], expensive: [], stockBoost: {} },
   refinery: {
     cheap: ['hydrogen'],
     expensive: ['electronics', 'microchips', 'luxury_goods'],

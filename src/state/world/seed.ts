@@ -15,6 +15,14 @@ export const planets: Planet[] = [
   { id: 'ceres', name: 'Ceres', position: sp([-45, 0, 78]), radius: 2 * SCALE, color: '#7a8fa6' },
 ];
 
+export const MERIDIAN_BANK: Station = { id: 'meridian-bank', name: 'Meridian Reserve Bank', type: 'bank', position: sp([20, 0, 42]), inventory: {}, persona: {
+    id: 'meridian-rep', name: 'Director Ada Voss', title: 'Custodian of the Meridian Reserve',
+    vibe: 'measured, discreet, reassuring; obsidian marble and brushed gold',
+    avatarPrompt: 'silver-haired interstellar banker in an obsidian uniform with gold geometric trim, warm vault lighting',
+    lines: ['Welcome to Meridian. Your reserves need not share your ship’s risks.', 'We lend liquidity, not immunity. Interest is due every ten simulation minutes.', 'A station fund can fall. Our reserve bond cannot. Read the distinction before signing.'],
+    tips: ['Sol City and Freeport host our account terminals. New loans require a visit here.', 'Savings earn 0.1% each simulation minute. Reserve bonds earn a guaranteed 0.15%.', 'Ship loss takes half your onboard cash. Your account and investments remain untouched.'],
+  } };
+
 const baseStations: Station[] = [
   { id: 'sol-city', name: 'Sol City', type: 'city', position: sp([52, 0, 6]), inventory: {} as StationInventory, persona: {
     id: 'sol-city-rep',
@@ -200,6 +208,7 @@ const baseStations: Station[] = [
       'Contracts from Hidden Cove pay well. Just... don\'t ask questions.',
     ],
   } },
+  MERIDIAN_BANK,
 ];
 
 /**
@@ -243,8 +252,8 @@ function randomizeStockAndRecalculatePrices(
 }
 
 export const stations: Station[] = baseStations.map((base) => {
-  const meta = baseStations.map(s => ({ id: s.id, type: s.type, position: s.position }));
-  const inv = priceForStation(base.type, commodities, base.position, meta, base.id);
+  const meta = baseStations.filter(s => s.type !== 'bank').map(s => ({ id: s.id, type: s.type, position: s.position }));
+  const inv = base.type === 'bank' ? {} : priceForStation(base.type, commodities, base.position, meta, base.id);
   const randomizedInv = randomizeStockAndRecalculatePrices(inv, base.type, base.position, meta);
   return { ...base, inventory: randomizedInv, reputation: 0 } as Station;
 });

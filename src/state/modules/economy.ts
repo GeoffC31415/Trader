@@ -329,7 +329,8 @@ export function buyCommodity(
   commodityId: string,
   quantity: number,
   activeContract: any,
-  priceMultiplier?: number
+  priceMultiplier?: number,
+  stored: Record<string, number> = {}
 ): BuyResult | null {
   if (!ship.dockedStationId || quantity <= 0) return null;
   if (!canTradeCommodity(ship, commodityId)) return null;
@@ -423,7 +424,7 @@ export function buyCommodity(
 
   const avgMap = { ...avgCostByCommodity } as Record<string, number>;
   const oldAvg = avgMap[commodityId] || 0;
-  const previouslyOwned = prevQty + npcTraders.filter(n => n.isEscort && n.commodityId === commodityId).reduce((sum, n) => sum + (n.escortCargoUsed ?? 0), 0);
+  const previouslyOwned = (stored[commodityId] ?? 0) + prevQty + npcTraders.filter(n => n.isEscort && n.commodityId === commodityId).reduce((sum, n) => sum + (n.escortCargoUsed ?? 0), 0);
   const newQty = previouslyOwned + quantity;
   const newAvg = newQty > 0 ? (oldAvg * previouslyOwned + unitBuyPrice * quantity) / newQty : 0;
   avgMap[commodityId] = newAvg;
@@ -486,7 +487,8 @@ export function sellCommodity(
   avgCostByCommodity: Record<string, number>,
   commodityId: string,
   quantity: number,
-  escorts: NpcTrader[]
+  escorts: NpcTrader[],
+  stored: Record<string, number> = {}
 ): SellBaseResult | null {
   if (!ship.dockedStationId || quantity <= 0) return null;
   if (!canTradeCommodity(ship, commodityId)) return null;
@@ -578,7 +580,7 @@ export function sellCommodity(
   const profit = { ...profitByCommodity } as Record<string, number>;
   profit[commodityId] = (profit[commodityId] || 0) + realized;
 
-  if (totalAvailable === qty) {
+  if (totalAvailable + (stored[commodityId] ?? 0) === qty) {
     avgMap[commodityId] = 0;
   }
 

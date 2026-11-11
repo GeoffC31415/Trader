@@ -1,3 +1,4 @@
+import type { FinanceState, FinanceAction } from './finance_types';
 import type { JournalData } from './journal_types';
 import type { Commodity, StationInventory } from '../types/economy_types';
 import type { StationType } from '../types/economy_types';
@@ -371,6 +372,9 @@ export type GameState = {
   abandonContract: (id: string) => void;
   retryMission: (missionId: string) => void;
   launchMission: (missionId: string) => void;
+  finance?: FinanceState;
+  bankAction: (action: FinanceAction, amount: number, fundId?: string) => void;
+  transferWarehouse: (commodityId: string, quantity: number, direction: 'store' | 'retrieve') => void;
   repairShip: () => void;
   purchaseFireSuppression: () => void;
   toggleCruise: () => void;

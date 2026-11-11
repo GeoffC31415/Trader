@@ -1,4 +1,4 @@
-export type JournalKind = 'milestone' | 'trade' | 'reputation' | 'politics' | 'ship' | 'mission' | 'world' | 'safety' | 'industry';
+export type JournalKind = 'milestone' | 'trade' | 'reputation' | 'politics' | 'ship' | 'mission' | 'world' | 'safety' | 'industry' | 'finance';
 export type JournalEvent = {
   id: number;
   at: number; // simulation seconds, never wall clock

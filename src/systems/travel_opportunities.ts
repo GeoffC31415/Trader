@@ -1,3 +1,4 @@
+import { ownedQuantity } from './inventory_ownership';
 import type { GameState, TravelOpportunity, NpcTrader } from '../domain/types/world_types';
 import { canDockAtStation, applyReputationWithPropagation } from './reputation/faction_system';
 import { getTargetStock } from './economy/pricing';
@@ -56,7 +57,7 @@ export function resolveOpportunity(input: GameState, action: 'complete' | 'decli
   } else cargo[o.commodityId] -= o.quantity;
   let stations = input.stations;
   if (o.kind !== 'salvage') stations = applyReputationWithPropagation(stations.map(st => st.id === o.stationId && st.inventory[o.commodityId] ? { ...st, inventory: { ...st.inventory, [o.commodityId]: { ...st.inventory[o.commodityId], stock: (st.inventory[o.commodityId].stock ?? 0) + o.quantity } } } : st), o.stationId, o.kind === 'distress' ? 4 : 2);
-  const owned = (input.ship.cargo[o.commodityId] ?? 0) + input.npcTraders.filter(n => n.isEscort && n.commodityId === o.commodityId).reduce((sum, n) => sum + (n.escortCargoUsed ?? 0), 0);
+  const owned = ownedQuantity(input, o.commodityId);
   const avgCostByCommodity = { ...input.avgCostByCommodity };
   if (o.kind === 'salvage') avgCostByCommodity[o.commodityId] = (avgCostByCommodity[o.commodityId] ?? 0) * owned / (owned + o.quantity);
   else if (owned === o.quantity) avgCostByCommodity[o.commodityId] = 0;

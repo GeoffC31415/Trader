@@ -1,3 +1,5 @@
+import { financeSchema, createFinance, BANK_ID } from './finance';
+import { commodityById } from '../state/world';
 import { journalSchema, createJournal } from './journal';
 import { z } from 'zod';
 import type { GameState } from '../domain/types/world_types';
@@ -11,7 +13,7 @@ const amount = finite.nonnegative();
 const vec = z.tuple([finite, finite, finite]);
 const strings = z.array(z.string());
 const amounts = z.record(amount);
-const stationType = z.enum(['city', 'refinery', 'fabricator', 'power_plant', 'trading_post', 'shipyard', 'pirate', 'mine', 'farm', 'research', 'orbital_hab']);
+const stationType = z.enum(['city', 'refinery', 'fabricator', 'power_plant', 'trading_post', 'shipyard', 'pirate', 'mine', 'farm', 'research', 'orbital_hab', 'bank']);
 const weaponKind = z.enum(['laser', 'plasma', 'railgun', 'missile']);
 const rewards = z.object({ credits: amount, reputationChanges: z.record(finite), unlocks: strings.optional(), permanentEffects: z.array(z.string().refine(id => !!WORLD_EFFECTS[id])).optional() });
 const memory = z.object({ knownActions: strings, visitCount: amount, totalTradeVolume: amount, missionsOffered: strings, missionsCompleted: strings, missionsFailed: strings, recentDialogueIds: strings }).passthrough();
@@ -39,6 +41,7 @@ const schema = z.object({
     gameTime: amount,
     economyVersion: z.literal(2).optional(),
     journal: journalSchema.optional(),
+    finance: financeSchema.optional(),
     ship: z.object({
       position: vec, velocity: vec, credits: amount, cargo: amounts, maxCargo: amount,
       hp: amount, maxHp: amount.positive(), energy: amount, maxEnergy: amount.positive(),
@@ -82,16 +85,24 @@ const schema = z.object({
     trackedStationId: z.string().optional(), activeObjectiveId: z.string().optional(),
     hasChosenStarter: z.boolean(), isTestMode: z.boolean(), tutorialActive: z.boolean(), tutorialStep: z.enum(['dock_city', 'accept_mission', 'goto_refinery', 'buy_fuel', 'deliver_fuel', 'done']),
     priceHistory: z.record(z.record(z.array(z.object({ time: amount, buy: amount, sell: amount })))).optional(), lastPriceSnapshotTime: amount.optional(),
-  }).refine(data => initialStations.every(st => data.stations.some(saved => saved.id === st.id && Object.keys(st.inventory).every(id => id in saved.inventory))) && Object.keys(MISSION_ARCS).every(id => data.missionArcs.some(a => a.id === id)), 'World topology or mission arcs are incomplete'),
+  }).refine(data => !data.finance || (
+    data.finance.lastAccrualAt <= data.gameTime && data.gameTime - data.finance.lastAccrualAt < 60.1 && data.finance.lastInterestAt >= data.finance.lastAccrualAt && data.finance.lastInterestAt <= data.gameTime && data.finance.lastNavAt <= data.gameTime &&
+    data.finance.navHistory.every(p => p.at <= data.gameTime) && data.finance.entries.every(e => e.at <= data.gameTime) &&
+    Object.keys(data.finance.funds).length === data.stations.length && data.stations.every(st => data.finance!.funds[st.id]) &&
+    Object.entries(data.finance.warehouses).every(([id, w]) => data.stations.some(st => st.id === id) && Object.keys(w.goods).every(g => !!commodityById[g]) && Object.keys(w.freshness).every(g => g in w.goods))
+  ), 'Invalid finance topology or simulation clock').refine(data => initialStations.every(st => data.stations.some(saved => saved.id === st.id && Object.keys(st.inventory).every(id => id in saved.inventory))) && Object.keys(MISSION_ARCS).every(id => data.missionArcs.some(a => a.id === id)), 'World topology or mission arcs are incomplete'),
 });
 // Never serialize methods or transient UI state; loading cannot replace store actions.
-const keys = ['journal', 'economyVersion', 'gameTime', 'ship', 'stations', 'missions', 'missionArcs', 'npcTraders', 'contracts', 'objectives', 'tradeLog', 'profitByCommodity', 'avgCostByCommodity', 'relationships', 'allyAssistTokens', 'politicalProfile', 'marketEvents', 'nextMarketEventAt', 'appliedEffects', 'unlockedFeatures', 'pirateAggressionMultiplier', 'hasChosenStarter', 'isTestMode', 'tutorialActive', 'tutorialStep', 'trackedStationId', 'defenseCooldowns', 'opportunity', 'nextOpportunityAt', 'nextBountyAt', 'recoveryGraceUntil', 'activeObjectiveId', 'pendingAssist', 'priceHistory', 'lastPriceSnapshotTime'] as const;
+const keys = ['finance', 'journal', 'economyVersion', 'gameTime', 'ship', 'stations', 'missions', 'missionArcs', 'npcTraders', 'contracts', 'objectives', 'tradeLog', 'profitByCommodity', 'avgCostByCommodity', 'relationships', 'allyAssistTokens', 'politicalProfile', 'marketEvents', 'nextMarketEventAt', 'appliedEffects', 'unlockedFeatures', 'pirateAggressionMultiplier', 'hasChosenStarter', 'isTestMode', 'tutorialActive', 'tutorialStep', 'trackedStationId', 'defenseCooldowns', 'opportunity', 'nextOpportunityAt', 'nextBountyAt', 'recoveryGraceUntil', 'activeObjectiveId', 'pendingAssist', 'priceHistory', 'lastPriceSnapshotTime'] as const;
 export function serializeGame(s: GameState): string {
   const data = Object.fromEntries(keys.map(key => [key, s[key]]));
   return JSON.stringify({ version: 1, data: { ...data, stealthStates: [...s.stealthStates], escortStates: [...s.escortStates] } });
 }
 export function deserializeGame(text: string): Partial<GameState> {
-  const { data } = schema.parse(JSON.parse(text));
+  const input = JSON.parse(text);
+  // Older worlds have no bank. Add only that new station, not missing old topology.
+  if (input?.version === 1 && input.data && !input.data.finance && Array.isArray(input.data.stations) && !input.data.stations.some((st: { id?: string }) => st?.id === BANK_ID)) input.data.stations.push(initialStations.find(st => st.id === BANK_ID));
+  const { data } = schema.parse(input);
   const values = Object.fromEntries(keys.map(key => [key, data[key]]));
   // Alpha 1 recorded sale revenue but omitted it from credits. Recover only the
   // retained sale ledger, never guesses about unlogged trades or story rewards.
@@ -104,6 +115,7 @@ export function deserializeGame(text: string): Partial<GameState> {
     notifications: recoveredSales > 0 ? [createNotification('info', `Recovered ${recoveredSales.toLocaleString()} missing sale credits from your previous-build trade ledger.`, 15000)] : [], missionIntroVisibleId: undefined, celebrationVisible: undefined,
     dockIntroVisibleId: undefined, missionCelebrationData: undefined, missionInstallState: undefined,
   } as Partial<GameState>;
+  restored.finance = data.finance ?? createFinance(data.stations as GameState['stations'], data.gameTime);
   restored.journal = data.journal ?? createJournal(restored as GameState, true);
   return restored;
 }

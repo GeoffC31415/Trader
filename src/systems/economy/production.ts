@@ -18,6 +18,7 @@ export type StationProduction = {
  * Stations produce goods over time, creating natural supply
  */
 export const stationProduction: Record<StationType, StationProduction[]> = {
+  bank: [],
   refinery: [
     // Refineries produce refined fuel and steel rapidly
     { commodityId: 'refined_fuel', ratePerMinute: 8.0, maxStock: 400 },

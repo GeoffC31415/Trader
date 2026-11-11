@@ -5,6 +5,7 @@ import type { StationType } from '../../../domain/types/economy_types';
 
 // Map station types to GLB model files
 const stationModelPaths: Record<StationType, string> = {
+  bank: '/stations/station_solcity.glb',
   city: '/stations/station_solcity.glb',
   refinery: '/stations/station_refinery.glb',
   fabricator: '/stations/station_fabricator.glb',

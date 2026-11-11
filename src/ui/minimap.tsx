@@ -158,7 +158,7 @@ export function Minimap() {
     // stations
     for (const s of stations) {
       const p2 = projectTo2D(s.position, worldCenter, scale);
-      ctx.fillStyle = s.type === 'shipyard' ? '#34d399' : '#7dd3fc';
+      ctx.fillStyle = s.type === 'bank' ? '#e9c67d' : s.type === 'shipyard' ? '#34d399' : '#7dd3fc';
       ctx.fillRect(p2.x - 2, p2.y - 2, 4, 4);
     }
     

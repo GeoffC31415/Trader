@@ -85,7 +85,7 @@ describe('actual action-pipeline integration', () => {
     useGameStore.setState(s); useGameStore.getState().tick(0.1);
     expect(useGameStore.getState().missions[0].status).toBe('failed');
     expect(useGameStore.getState().ship.hp).toBe(100);
-    expect(useGameStore.getState().ship.credits).toBe(99000);
+    expect(useGameStore.getState().ship.credits).toBe(50000);
     expect(useGameStore.getState().ship.dockedStationId).toBe('freeport');
   });
   it('consumes real turn-in goods and increases actual destination stock', () => {

@@ -8,6 +8,7 @@ import { calculateLeadPosition } from '../systems/combat/weapon_systems';
 import { useGameStore } from '../state';
 import { Html, Sparkles } from '@react-three/drei';
 import type { StationType } from '../domain/types/economy_types';
+import { BankVisual } from './components/stations/BankVisual';
 import { FreighterModel } from './components/ships/FreighterModel';
 import { ClipperModel } from './components/ships/ClipperModel';
 import { MinerModel } from './components/ships/MinerModel';
@@ -416,7 +417,7 @@ export function SceneRoot() {
       ))}
       {stations.map(s => (
         <group key={s.id}>
-          {lowDetail ? <group position={s.position}><mesh><icosahedronGeometry args={[8, 0]} /><meshStandardMaterial color="#709bab" /></mesh>{!dockIntroVisibleId && <Html center distanceFactor={50} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}><div>{s.name}</div></Html>}</group> : <StationVisual position={s.position} name={s.name} type={s.type} hideLabel={!!dockIntroVisibleId} />}
+          {s.type === 'bank' ? <BankVisual position={s.position} hideLabel={!!dockIntroVisibleId} /> : lowDetail ? <group position={s.position}><mesh><icosahedronGeometry args={[8, 0]} /><meshStandardMaterial color="#709bab" /></mesh>{!dockIntroVisibleId && <Html center distanceFactor={50} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}><div>{s.name}</div></Html>}</group> : <StationVisual position={s.position} name={s.name} type={s.type} hideLabel={!!dockIntroVisibleId} />}
           {/* Dock prompt when near */}
           {nearDock?.id === s.id && !ship.dockedStationId && (
             <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
