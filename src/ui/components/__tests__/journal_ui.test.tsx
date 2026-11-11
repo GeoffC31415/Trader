@@ -52,6 +52,7 @@ it('renders actual price samples and keeps chart keyboard navigation out of flig
 it('searches manufacturing transformations and tracks a real manufacturing station', () => {
   setup(); render(<JournalPanel />); fireEvent.click(screen.getByRole('button', { name: /Manufacturing/ }));
   fireEvent.change(screen.getByRole('searchbox', { name: 'Search manufacturing' }), { target: { value: 'batteries' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Refined Fuel to Batteries method' }));
   const recipe = screen.getAllByRole('article').find(a => within(a).queryByText('Ceres Power Plant', { exact: true }))!;
   expect(within(recipe).getByText('Refined Fuel')).toBeTruthy();
   fireEvent.click(within(recipe).getByRole('button', { name: 'Track station' })); expect(useGameStore.getState().trackedStationId).toBe('ceres-pp');

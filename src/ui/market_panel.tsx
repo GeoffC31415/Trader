@@ -8,6 +8,9 @@ import { getMissionTemplatesByStage } from '../domain/constants/mission_constant
 import { UIIcon } from './components/ui_icon';
 import { stationTypeColors, getHallLabel } from './utils/station_theme';
 import { MarketHeader } from './components/market/MarketHeader';
+import { BANK_PORTS } from '../systems/finance';
+import { WarehouseSection } from './components/market/WarehouseSection';
+import { BankingSection } from './components/market/BankingSection';
 import { HallSection } from './components/market/HallSection';
 import { FabricationSection } from './components/market/FabricationSection';
 import { ProductionSection } from './components/market/ProductionSection';
@@ -81,6 +84,7 @@ export function MarketPanel() {
   const isPirate = station?.type === 'pirate';
   const hallLabel = station ? getHallLabel(station.type) : 'Trading Hall';
 
+  const hasBanking = BANK_PORTS.includes(ship.dockedStationId ?? '');
   const hasFabrication = recipes.length > 0;
   const hasProduction = producedItems.length > 0;
   const stationContracts = useMemo(() => 
@@ -174,14 +178,15 @@ export function MarketPanel() {
     [contracts]
   );
 
-  const [section, setSection] = useState<'hall' | 'fabrication' | 'production' | 'missions'>('hall');
+  const [section, setSection] = useState<'hall' | 'fabrication' | 'production' | 'missions' | 'warehouse' | 'banking'>('hall');
   useEffect(() => {
     setSection('hall');
   }, [stationId]);
   useEffect(() => {
     if (section === 'fabrication' && !hasFabrication) setSection('hall');
     if (section === 'production' && !hasProduction) setSection('hall');
-  }, [section, hasFabrication, hasProduction]);
+    if (section === 'banking' && !hasBanking) setSection('hall');
+  }, [section, hasFabrication, hasProduction, hasBanking]);
 
   const colors = station ? stationTypeColors[station.type] : stationTypeColors.city;
 
@@ -253,7 +258,7 @@ export function MarketPanel() {
         />
 
         {/* Section Tabs */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
           <SciFiButton 
             stationType={station.type}
             variant={section === 'hall' ? 'active' : 'default'}
@@ -290,10 +295,14 @@ export function MarketPanel() {
             <UIIcon name="tab_missions" size={16} style={{ marginRight: 6 }} />
             Missions {stationContracts.length > 0 && `(${stationContracts.length})`}
           </SciFiButton>
+          <SciFiButton stationType={station.type} variant={section === 'warehouse' ? 'active' : 'default'} onClick={() => setSection('warehouse')}>Warehouse</SciFiButton>
+          {hasBanking && station.type !== 'bank' && <SciFiButton stationType={station.type} variant={section === 'banking' ? 'active' : 'default'} onClick={() => setSection('banking')}>Banking</SciFiButton>}
         </div>
 
+        {section === 'warehouse' && <div className="scrollable-content"><WarehouseSection station={station} /></div>}
+        {(section === 'banking' || section === 'hall' && station.type === 'bank') && hasBanking && <div className="scrollable-content"><BankingSection station={station} /></div>}
         {/* HALL SECTION */}
-        {section === 'hall' && (
+        {section === 'hall' && station.type !== 'bank' && (
           <HallSection
             station={station}
             ship={ship}
