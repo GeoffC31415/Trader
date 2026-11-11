@@ -53,6 +53,16 @@ test('fresh tutorial flies the fuel route, trades, completes, and reloads a chec
   await expect(page.getByText(/Tutorial complete! You've completed your first contract/)).toBeVisible();
   expect(await creditText()).toBe(completedCredits);
   await page.screenshot({ path: test.info().outputPath('tutorial-checkpoint.png') });
+  await page.getByRole('button', { name: 'Close tutorial', exact: true }).click();
+  await page.getByRole('button', { name: /tab journal Journal/ }).click();
+  const journal = page.getByRole('region', { name: 'Commander journal' });
+  await expect(journal.getByRole('heading', { name: 'Your system footprint', exact: true })).toBeVisible();
+  await journal.getByRole('button', { name: /Trade ledger/ }).click();
+  await expect(journal.getByRole('table', { name: 'Cumulative totals by goods' })).toContainText('Refined Fuel');
+  await expect(journal.getByRole('table', { name: 'Cumulative totals by goods' })).toContainText('10 / 10');
+  await journal.getByRole('button', { name: /Market observatory/ }).click();
+  await expect(journal.getByRole('figure', { name: 'Historical board prices' })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath('journal-checkpoint.png') });
   expect(errors).toEqual([]);
   expect(failedAssets).toEqual([]);
   expect(modelRequests, 'Compatibility mode must not download unused detailed models').toEqual([]);

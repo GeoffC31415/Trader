@@ -78,6 +78,17 @@ These assignments unlock through reputation and earlier stages; they are not all
 - [ ] Try keyboard-only UI use, smaller windows, readable targets, graphics changes and audio volume/mute. Report overlap, focus traps, unreadable colors/text, unexpected audio or input leaking through dialogs.
 - [ ] If continuing into another story arc, note access conflicts, reputation recovery, supplier affordability and deadline pressure. A full fresh-save campaign is **not yet human-validated**.
 
+## Session D: journal and ship safety (post-Alpha-2 builds)
+
+See [OPEN_WORLD_JOURNAL.md](OPEN_WORLD_JOURNAL.md) for mechanics, accounting and history limits. The old Alpha 2 archive is unchanged.
+
+- [ ] Compare a normal buy/sell invoice with **Journal → Trade ledger**, including station/goods quantities, known profit versus cashflow, order premiums and separate bonuses. Save/reload and compare again.
+- [ ] Inspect **Allegiances** after a trade/mission/choice. Focus or hover the political nodes and verify the action and resulting coordinates. Check faction and station changes against actual outcomes.
+- [ ] Follow a **Manufacturing** station waypoint, obtain the required goods/equipment/access, perform a conversion and inspect its recorded inputs/outputs and transferred cost basis. Passive station production is not player crafting.
+- [ ] Let simulation time advance to collect real **Market observatory** samples and a **World chronicle** event expiry. Pausing the journal pauses these clocks; merely opening it does not.
+- [ ] If combat leaves you burning, verify the alert and slow hull damage. Dock at an accessible station: fire should stop **without healing or charging**. Use Drydock's **Shipyard Office → Hull repair & safety** to repair and purchase suppression. Verify automatic extinguishing after three simulation seconds, including after checkpoint reload.
+- [ ] Try the journal at your normal and smaller window sizes, keyboard-focus chart nodes and search fields, and check that flight keys do not leak through focused journal controls. Note text, tooltip, color and scrolling problems. Ranks/milestones are cosmetic, not extra rewards.
+
 ## Report template
 
 ```text

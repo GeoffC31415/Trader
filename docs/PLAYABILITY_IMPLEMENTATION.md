@@ -145,6 +145,16 @@ See [the item-by-item fixes, financial rules, legacy checkpoint recovery and ver
 - Real damage drives bounded impact/spark/number feedback, a player-hit HUD cue, and persistent smoke/fire by hull severity. Reduced-motion and compatibility graphics have quieter effects. These are visual cues, not changes to collision/damage balance.
 - **175 tests across 17 unit/DOM/integration files**, **five development Chromium smoke tests** and the **UI-only production tutorial/checkpoint test** pass, along with typechecking/build and clean-checkout packet generation. No human campaign completion or real-GPU performance claim is implied.
 
+## Open-world journal and ship safety
+
+See [the eight-page journal, accounting/history rules, fire mechanics and retest notes](OPEN_WORLD_JOURNAL.md). This follow-up is stacked on Alpha 2; the old Alpha 2 packet does not change.
+
+- Actual low-hull combat hits can ignite persistent fires: 0.5 hull/second, extinguished by successful docking, paid repairs or a shipyard suppression system (3,500 credits; three-second automatic response). Saved timers use simulation time and recovery clears lethal fires.
+- Authoritative store transitions record trades, faction/station influence, political history, engineering, crafting and world consequences. Bounded event/receipt windows have separate cumulative station/goods trade totals; legacy gaps are disclosed rather than invented.
+- A responsive eight-page commander journal replaces the old presentation, with real political and public-price charts, keyboard/pointer readouts, manufacturing/production locations, ship systems, searchable archives and cosmetic ranks/milestones. Chart/UI refresh is sampled once per second, not every physics frame. The world continues unless explicitly paused.
+- Manufacturing transfers acquisition cost to output, mining/salvage weight free inventory correctly, and the UI does not advertise an ambiguous input conversion that the runtime cannot select. Fractional/overflow and prohibited covert manufacturing are rejected.
+- **205 tests in 20 files**, **six development Chromium smokes**, typecheck/build and the extended **UI-only production tutorial/checkpoint/journal test** pass. The new development journal/fire demonstration uses arranged campaign/price/world/travel prerequisites; production journal data comes from the real tutorial route. Neither is fresh-save human campaign completion or real-GPU certification.
+
 ## Still requires human validation or a separate content iteration
 
 1. Play the actual complete campaign branches from fresh starter saves, including legal supplier access, reputation recovery, operation approaches, cargo financing, every loss/retry and mixed-arc access conflicts.
