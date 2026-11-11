@@ -15,8 +15,9 @@ The branches are deliberately stacked, not independent alternatives. The final v
 | `feat/contextual-travel-encounters` | Optional salvage, distress and procurement opportunities; DOM/input tests |
 | `fix/playability-integration` | Commodity contracts, cargo ownership, defeat priority, bounties, character history, graphics controls and browser tests |
 | `test/playability-verification` | Cross-system regressions, every choice branch, validated checkpoints for every live mission, route-paced escort waves and final integration fixes |
+| `chore/playtest-readiness` | Integrate the existing error boundary, fix fresh-start tutorial/navigation issues, avoid compatibility-model preloads, and package a checked alpha build |
 
-No changes to the pre-existing `src/main.tsx`, `tsconfig.json`, `run_trader.sh` or `src/components/` work are included.
+The gameplay branches left pre-existing entry point/error-boundary work untouched. The readiness pass integrates and tests that boundary with explicit children typing. The unrelated `tsconfig.json` and `run_trader.sh` work remains separate.
 
 ## Mission engine
 
@@ -102,7 +103,7 @@ npx playwright install chromium
 npm run test:browser
 ```
 
-At this implementation checkpoint:
+At the original gameplay implementation checkpoint (before the readiness pass below):
 
 - **140 unit/DOM/integration tests** across eleven files pass.
 - All 29 live templates have a successful contract-path test and a validated checkpoint round-trip test.
@@ -111,8 +112,25 @@ At this implementation checkpoint:
 - Contract-path tests deliberately arrange cargo/location to isolate mission rules. Combat/escort integration also positions the player to model aiming/following. They do **not** prove that a human can complete every entire campaign route from a fresh save without grinding.
 - Two Chromium browser tests pass with external HTTPS assets blocked: WebGL startup, held movement, pause, checkpoint reload, flight-log access, and a funded courier through actual purchase plus UI acceptance/turn-in/progression. The courier test arranges locations; it does not fly its full route.
 - The browser tests use software WebGL and compatibility graphics. They are smoke tests, not an FPS benchmark or a subjective handling assessment.
-- The committed tree builds/typechecks in a clean worktree. The user's existing ErrorBoundary work still causes two type errors in the original working tree (`children` props); it was deliberately left untouched.
+- The committed gameplay tree built/typechecked in a clean worktree. The original working-tree ErrorBoundary props blocker is resolved by the subsequent readiness pass below.
 - The production build still warns about the large application chunk. The existing dependency tree reports 19 npm audit advisories; no breaking major-version toolchain migration was attempted as part of gameplay work.
+
+## Alpha readiness pass
+
+The player-facing instructions, session checklist, save warning and bug-report template are in [PLAYTEST.md](PLAYTEST.md).
+
+- Integrated the existing React error boundary and entry-point wrapper, fixed `children` typing and explicit empty fallbacks, and added six render/recovery tests. The actual working tree now typechecks/builds, not just a separate clean checkout.
+- A UI-only fresh-start check found a tutorial bug missed by the earlier arranged-state test: contracts generated before starter selection were not replaced on the first Sol City docking. The docking transaction now creates the promised ten-fuel offer immediately; the regression models pre-existing random offers.
+- The same check caught waypoint docking at a closer overlapping berth (Greenfields instead of Helios). Navigation now requests its intended station explicitly; manual E docking still selects the nearest berth. Explicit docking targets cannot bypass the 60m range/access rules. Procurement opportunities retain their requesting station as the docking target.
+- Updated tutorial instructions to the actual Missions, Production and exchange tabs, and kept the authored completion message visible until Close tutorial is selected (it previously disappeared immediately). Removed eager GLB preloads so compatibility graphics does not fetch detailed ship/station/asteroid models, and migrated the deprecated Vite asset-glob option.
+- **147 unit/DOM/integration tests across twelve files**, **four development Chromium browser smoke tests**, and **one UI-only production browser smoke test** pass. The added controls smoke arranges late-campaign offers and checks launch rejection while docked, actual escort launch, abandonment cleanup/reset/reacceptance, target selection and held fire causing real damage. It does not fly a complete escort battle.
+- The fresh tutorial browser check uses only normal UI controls and real-time flight: normal Freighter, initial docking, contract acceptance, waypoint flight to Helios, ten-unit purchase, return flight, fuel sale/completion, save, page reload and paused restoration. No store imports, cargo/location injection, developer ship or accelerated clock are used in that test. It also asserts no failed HTTP assets, page errors or compatibility-mode GLB downloads.
+- `npm run playtest:check` runs typechecks, unit tests, build and both browser suites. `npm run playtest:package` requires a clean revision, repeats those checks without reusing stale servers, and bundles `dist/`, the checklist, revision/toolchain/file-hash metadata and an archive SHA-256 checksum. See the checklist for extraction and HTTP serving. This is not a byte-identical archive guarantee.
+- Existing dependency advisories remain **19** (1 low, 4 moderate, 11 high, 3 critical); the critical entries include development tooling (`vitest`, `@vitest/ui`, `tinypool`). Do not expose development/test UI servers publicly. Distribute the compiled static packet for this private alpha. Large chunks/assets still need release-hardening work.
+
+Screenshot inspection also identified non-blocking feedback items: completed contract information remains on the HUD, some target markers overlap mission panels, and sampled tutorial runs ended roughly 150–200 credits below the initial balance despite the 1,000-credit completion bonus. Actual market prices vary; this is a balance/quote-feedback concern, not an inability to finish the contract. Record these in player feedback rather than claiming the first route is guaranteed profitable.
+
+These are scripted browser exercises plus screenshot inspection, **not a human playtest**, hardware FPS measurement or proof of fresh-save completion of every campaign branch. No speculative balance changes were made in the readiness pass.
 
 ## Still requires human validation or a separate content iteration
 

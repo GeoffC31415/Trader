@@ -2,6 +2,8 @@
 
 Systems-driven 3D space trading game with a dynamic economy, narrative-driven mission arcs, and faction-based politics. Buy low, sell high, fabricate goods, complete story missions, engage in combat, and optimize routes across a small star system.
 
+**Focused alpha:** see the [player checklist, build instructions and feedback template](docs/PLAYTEST.md). This is not yet a human-validated full campaign or a polished release.
+
 See [playability implementation and verification](docs/PLAYABILITY_IMPLEMENTATION.md) for the current mission contracts, branch stack, checkpoint policy and remaining playtest work.
 
 ### Contents
@@ -82,6 +84,9 @@ npm run dev
 - Type checking: `npm run typecheck`
 - Run unit/DOM/integration tests: `npm test -- --run`
 - Browser smoke tests: `npx playwright install chromium`, then `npm run test:browser`
+- Production tutorial/checkpoint smoke: `npm run build && npm run test:preview`
+- Full alpha validation: `npm run playtest:check`
+- Revision-labelled alpha packet (clean checkout required): `npm run playtest:package` → `artifacts/`
 - Save/load: the flight toolbar and starter dialog use a browser-local checkpoint; autosave runs every 30 seconds in the same slot. Loading restores paused.
 - Graphics: select compatibility, balanced or high from the starter dialog or flight toolbar.
 
@@ -173,10 +178,6 @@ src/
       reputation_helpers.ts    # Reputation-based bonus calculations
       mission_helpers.ts       # Mission progression, unlocking logic
       character_memory.ts      # Track player interactions for dialogue
-    actions/
-      economy/
-        buy_action.ts          # Buy commodity action
-        sell_action.ts         # Sell commodity action
     relationships.ts           # Character relationship management
     world.ts                   # Re-exports of commodities/planets/stations/belts
     npc.ts                     # NPC spawn and path planning utilities
