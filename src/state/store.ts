@@ -121,9 +121,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     const multiplier = assist?.by === s.ship.dockedStationId && (assist?.type === 'discount' || assist?.type === 'waiver' || (assist?.type === 'refuel' && commodityId === 'refined_fuel')) ? assist.multiplier : undefined;
     const result = buyCommodity(s.ship, s.stations, s.npcTraders, s.avgCostByCommodity, commodityId, quantity, contract, multiplier);
     if (!result) return notice(s, 'Purchase unavailable: check stock, credits, cargo space and required cargo equipment', 'warning');
+    const held = (result.ship.cargo[commodityId] ?? 0) + result.npcTraders.filter(n => n.isEscort && n.commodityId === commodityId).reduce((q, n) => q + (n.escortCargoUsed ?? 0), 0);
+    const ready = contract && held >= contract.units - (contract.deliveredUnits ?? 0);
     const next = dispatchMissionEvents({ ...s, ship: result.ship, stations: recordStationInteraction(result.stations, result.trade.stationId, s.gameTime, result.trade.totalPrice), npcTraders: result.npcTraders, avgCostByCommodity: result.avgCostByCommodity,
       pendingAssist: multiplier !== undefined ? undefined : s.pendingAssist,
-      tradeLog: [...s.tradeLog, result.trade].slice(-500), tutorialStep: s.tutorialActive && s.tutorialStep === 'buy_fuel' && commodityId === 'refined_fuel' ? 'deliver_fuel' : s.tutorialStep,
+      objectives: ready ? s.objectives?.map(o => o.id === `obj:${contract.id}` ? { ...o, targetStationId: contract.toId } : o) : s.objectives,
+      trackedStationId: ready && s.trackedStationId === contract.fromId ? contract.toId : s.trackedStationId,
+      tradeLog: [...s.tradeLog, result.trade].slice(-500), tutorialStep: s.tutorialActive && s.tutorialStep === 'buy_fuel' && contract?.id === 'tutorial:fuel' && ready ? 'deliver_fuel' : s.tutorialStep,
     }, [{ type: 'commodity_acquired', commodityId, quantity, stationId: s.ship.dockedStationId }]);
     return { ...next, ...projectWorldEffects(next) };
   }),
@@ -190,7 +194,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const s = settleContracts(input);
     const c = s.contracts?.find(c => c.id === id && c.status === 'offered');
     if (!c || c.expiresAt! <= s.gameTime * 1000 || c.offeredById !== s.ship.dockedStationId || (s.stations.find(st => st.id === c.offeredById)?.reputation ?? 0) < (c.requiredRep ?? 0)) return notice(s, 'Contract unavailable or reputation too low', 'warning');
-    return { ...acceptContractAction(id, s.contracts!, s.objectives ?? [], s.npcTraders, s.stations, s.ship, s.gameTime * 1000), tutorialStep: s.tutorialActive ? 'goto_refinery' : s.tutorialStep };
+    return { ...acceptContractAction(id, s.contracts!, s.objectives ?? [], s.npcTraders, s.stations, s.ship, s.gameTime * 1000), tutorialStep: s.tutorialActive && c.id === 'tutorial:fuel' ? 'goto_refinery' : s.tutorialStep };
   }),
   abandonContract: id => set(s => abandonContractAction(id, s.contracts ?? [], s.stations, s.objectives ?? [], s.npcTraders, s.activeObjectiveId)),
   acceptMission: id => set(s => {

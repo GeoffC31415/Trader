@@ -36,14 +36,16 @@ export function acceptContractAction(id: string, contracts: Contract[], objectiv
   const c = contracts.find(c => c.id === id && c.status === 'offered');
   if (!c) return { contracts, objectives, npcTraders: npcs };
   const station = stations.find(s => s.id === c.offeredById)!;
+  const held = (ship.cargo[c.commodityId] ?? 0) + npcs.filter(n => n.isEscort && n.commodityId === c.commodityId).reduce((q, n) => q + (n.escortCargoUsed ?? 0), 0);
+  const target = held >= c.units ? c.toId : c.fromId ?? c.toId;
   const escorts: NpcTrader[] = Array.from({ length: getEscortCount(station.reputation ?? 0) }, (_, i) => ({
     id: `escort:${id}:${i}`, isEscort: true, escortingContract: id, fromId: station.id, toId: c.toId, commodityId: c.commodityId,
     position: [...ship.position], velocity: [0, 0, 0], hp: 100, maxHp: 100, speed: 25, escortCargoCapacity: Math.floor(ship.maxCargo / 2), escortCargoUsed: 0, kind: 'clipper',
   }));
   return {
     contracts: contracts.map(x => x.id === id ? { ...x, status: 'accepted', expiresAt: now + 420000 } : x),
-    objectives: [...objectives, { id: `obj:${id}`, targetStationId: c.toId, label: `Deliver ${c.units} ${c.commodityId.replace(/_/g, ' ')}`, kind: 'contract', status: 'active' }],
-    npcTraders: [...npcs, ...escorts], activeObjectiveId: `obj:${id}`, trackedStationId: c.toId,
+    objectives: [...objectives, { id: `obj:${id}`, targetStationId: target, label: `Deliver ${c.units} ${c.commodityId.replace(/_/g, ' ')}`, kind: 'contract', status: 'active' }],
+    npcTraders: [...npcs, ...escorts], activeObjectiveId: `obj:${id}`, trackedStationId: target,
   };
 }
 export function abandonContractAction(id: string, contracts: Contract[], stations: Station[], objectives: Objective[], npcs: NpcTrader[], activeObjectiveId?: string): Partial<GameState> {

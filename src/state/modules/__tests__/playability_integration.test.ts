@@ -177,6 +177,21 @@ it('rejects incomplete world topology and corrupted contract collections', () =>
   snapshot.data.contracts = []; snapshot.data.stations = snapshot.data.stations.slice(1);
   expect(() => deserializeGame(JSON.stringify(snapshot))).toThrow();
 });
+it('guides the tutorial to its actual supplier, waits for the full cargo, then tracks the destination', () => {
+  const s = fixture('greenfields_stage_1');
+  useGameStore.setState({ ...s, tutorialActive: true, tutorialStep: 'accept_mission', ship: { ...s.ship, dockedStationId: 'sol-city' } });
+  useGameStore.getState().generateContracts(); useGameStore.getState().acceptContract('tutorial:fuel');
+  expect(useGameStore.getState().trackedStationId).toBe('sol-refinery');
+  useGameStore.getState().undock();
+  const refinery = s.stations.find(st => st.id === 'sol-refinery')!;
+  useGameStore.setState({ ship: { ...useGameStore.getState().ship, position: [...refinery.position] } });
+  useGameStore.getState().tryDock(); useGameStore.getState().dismissDockIntro();
+  useGameStore.getState().buy('refined_fuel', 1);
+  expect(useGameStore.getState().tutorialStep).toBe('buy_fuel');
+  useGameStore.getState().buy('refined_fuel', 9);
+  expect(useGameStore.getState().tutorialStep).toBe('deliver_fuel'); expect(useGameStore.getState().trackedStationId).toBe('sol-city');
+  expect(useGameStore.getState().objectives?.find(o => o.id === 'obj:tutorial:fuel')?.targetStationId).toBe('sol-city');
+});
 it('stock repricing does not accidentally discard a permanent discount after buying', () => {
   let s = fixture('greenfields_stage_1'); s = { ...s, ...applyChoicePermanentEffects(s, ['greenfields_food_discount']) };
   useGameStore.setState(s); useGameStore.getState().buy('grain', 10);

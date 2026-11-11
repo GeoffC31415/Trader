@@ -50,7 +50,7 @@ There are **29 live templates**. The obsolete generic fabrication-stage-3 protot
 - Story escorts wait for explicit launch. Launch requires the player to undock and join the convoy within 200m. Fuel escorts share the same destination, require two survivors, and face four finite waves. The inspector requires one survivor and three waves; the peace conference requires one survivor and two waves.
 - Escort attacks are spaced by route progress and a minimum breather, rather than spawning every remaining wave immediately after the first fight. Station defense retains time-based breathing room. Waves never replace unfinished wave tracking.
 - Union Crisis requires Union membership and two completed arcs. Later document contacts remain possible after Hidden Cove closure.
-- The optional tutorial offers a specific refinery-to-Sol-City fuel contract instead of relying on whichever generated commodity contract happens to appear first.
+- The optional tutorial offers a specific refinery-to-Sol-City fuel contract instead of relying on whichever generated commodity contract happens to appear first. Contract navigation initially points at the supplier, switches to the destination when the required cargo is held, and the tutorial waits for all ten fuel units rather than advancing after one purchase.
 
 ## Combat, controls and feedback
 
@@ -104,7 +104,7 @@ npm run test:browser
 
 At this implementation checkpoint:
 
-- **139 unit/DOM/integration tests** across eleven files pass.
+- **140 unit/DOM/integration tests** across eleven files pass.
 - All 29 live templates have a successful contract-path test and a validated checkpoint round-trip test.
 - Every authored choice option has branch-offer and exactly-once payout checks.
 - Integration coverage includes real projectile damage and moving convoy/escort NPCs, hostile fire and loss, simultaneous defeat/final kill priority, enemy kill attribution, actual cargo/stock changes, covert operation interruption, grant-preserving retries, contract deadlines, retained escort cargo, bounty attribution and noncompounding price changes.
