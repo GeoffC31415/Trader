@@ -6,6 +6,7 @@ import { SHIP_STATUS_PANEL_TOP_WITH_NAV, SHIP_STATUS_PANEL_TOP_WITHOUT_NAV, SHIP
 import { formatNumber } from '../../utils/number_format';
 import { useGameStore } from '../../../state';
 import { MISSION_TEMPLATES } from '../../../domain/constants/mission_constants';
+import { repairCost, FIRE_DAMAGE_PER_SECOND, FIRE_SUPPRESSION_SECONDS } from '../../../systems/combat/ship_fire';
 import { StealthIndicator } from './StealthIndicator';
 
 interface ShipStatusPanelProps {
@@ -135,6 +136,7 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
         </div>
       </div>
       
+      {ship.onFire && <div role="alert" style={{ marginTop: 12, padding: 10, border: '1px solid #fb923c', background: '#7c2d1233', color: '#fdba74' }}><strong>FIRE ALERT</strong><br />−{FIRE_DAMAGE_PER_SECOND} hull/s · Dock anywhere to extinguish.<br />{ship.hasFireSuppression ? `Auto-suppression in ${Math.max(0, FIRE_SUPPRESSION_SECONDS - (ship.fireSeconds ?? 0)).toFixed(1)}s` : 'No suppression system installed.'}</div>}
       <StealthIndicator />
       <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
         <label>Hull {Math.ceil(ship.hp)}/{ship.maxHp}<progress aria-label="Hull" max={ship.maxHp} value={ship.hp} /></label>
@@ -153,7 +155,7 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
           <button onClick={state.toggleSilentRunning}>{ship.silentRunning ? 'Silent running ON — half speed, weapons off' : 'Silent running (H)'}</button>
           <button onClick={state.toggleAutopilot}>{ship.autopilot ? 'Cancel waypoint pilot' : 'Waypoint pilot (T)'}</button>
         </>}
-        {ship.dockedStationId && <button onClick={state.repairShip}>Repair & recharge ({Math.ceil((ship.maxHp - ship.hp) * 5)} credits)</button>}
+        {ship.dockedStationId && <button onClick={state.repairShip}>Repair & recharge ({repairCost(ship)} credits)</button>}
       </div>
       {/* Active Contracts Indicator */}
       {activeContractsCount > 0 && (

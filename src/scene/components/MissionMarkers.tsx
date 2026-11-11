@@ -1,10 +1,14 @@
 // Mission Markers - Highlight mission targets in 3D space
 
 import { useGameStore } from '../../state';
-import { Html } from '@react-three/drei';
+import { Html as SceneHtml } from '@react-three/drei';
+import type { ComponentProps } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { useState, useMemo } from 'react';
 import * as THREE from 'three';
+
+// Keep world annotations underneath cockpit panels and the journal.
+function Html(props: ComponentProps<typeof SceneHtml>) { return <SceneHtml {...props} zIndexRange={[7, 0]} />; }
 
 // Check if a combat mission has pending (not yet spawned) targets
 function getPendingTargetCount(mission: any, missionNpcs: any[]): number {

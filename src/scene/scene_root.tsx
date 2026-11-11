@@ -404,7 +404,7 @@ export function SceneRoot() {
               ship.position[2]-b.position[2]
             ) - b.radius
             ) < MINING_RANGE_WORLD && !ship.dockedStationId && (
-            <Html position={[b.position[0], b.position[1]+3, b.position[2]]} center distanceFactor={60} style={{ pointerEvents: 'none' }}>
+            <Html position={[b.position[0], b.position[1]+3, b.position[2]]} center distanceFactor={60} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
               <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6 }}>
                 <span style={{ fontSize: 12, opacity: 0.5 }}>
                   {ship.canMine ? 'Press M to Mine' : 'Dock at a shipyard to buy Mining Rig'}
@@ -416,10 +416,10 @@ export function SceneRoot() {
       ))}
       {stations.map(s => (
         <group key={s.id}>
-          {lowDetail ? <group position={s.position}><mesh><icosahedronGeometry args={[8, 0]} /><meshStandardMaterial color="#709bab" /></mesh>{!dockIntroVisibleId && <Html center distanceFactor={50} style={{ pointerEvents: 'none' }}><div>{s.name}</div></Html>}</group> : <StationVisual position={s.position} name={s.name} type={s.type} hideLabel={!!dockIntroVisibleId} />}
+          {lowDetail ? <group position={s.position}><mesh><icosahedronGeometry args={[8, 0]} /><meshStandardMaterial color="#709bab" /></mesh>{!dockIntroVisibleId && <Html center distanceFactor={50} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}><div>{s.name}</div></Html>}</group> : <StationVisual position={s.position} name={s.name} type={s.type} hideLabel={!!dockIntroVisibleId} />}
           {/* Dock prompt when near */}
           {nearDock?.id === s.id && !ship.dockedStationId && (
-            <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center style={{ pointerEvents: 'none' }}>
+            <Html position={[s.position[0], s.position[1]+3, s.position[2]]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
               <div style={{ background:'rgba(0,0,0,0.6)', padding: '6px 10px', borderRadius: 6 }}>
                 <span style={{ fontSize: 12 }}>{canDockAtStation(s) ? `Press E to dock at ${s.name}` : `${s.name}: docking denied`}</span>
               </div>
@@ -427,7 +427,7 @@ export function SceneRoot() {
           )}
           {/* Waypoint marker (visible while undocked for clarity) */}
           {trackedStationId === s.id && !ship.dockedStationId && (
-            <Html position={[s.position[0], s.position[1]+5, s.position[2]]} center style={{ pointerEvents: 'none' }}>
+            <Html position={[s.position[0], s.position[1]+5, s.position[2]]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
               <div style={{ background:'rgba(34,197,94,0.15)', border: '1px solid #22c55e', padding: '4px 8px', borderRadius: 6, color: '#bbf7d0' }}>
                 Waypoint
               </div>

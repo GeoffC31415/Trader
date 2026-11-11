@@ -11,7 +11,7 @@ export function CombatFeedback() {
   const npcs = useGameStore(s => s.npcTraders);
   const low = useGameStore(s => s.graphicsQuality === 'low');
   const reduced = useReducedMotion();
-  const entities = [{ id: 'player', ...ship }, ...npcs].filter(n => n.hp > 0 && hullSeverity(n.hp, n.maxHp) > 0.3);
+  const entities = [{ id: 'player', ...ship }, ...npcs].filter(n => n.hp > 0 && (hullSeverity(n.hp, n.maxHp) > 0.3 || ('onFire' in n && n.onFire)));
   return <group>
     {impacts.slice(low ? -8 : -20).map(hit => {
       const age = Math.max(0, time - hit.at);
@@ -32,8 +32,8 @@ export function CombatFeedback() {
       </group>;
     })}
     {entities.map(entity => {
-      const severity = hullSeverity(entity.hp, entity.maxHp);
-      const burning = severity > 0.65;
+      const severity = Math.max(hullSeverity(entity.hp, entity.maxHp), 'onFire' in entity && entity.onFire ? 0.7 : 0);
+      const burning = entity.id === 'player' ? !!ship.onFire : severity > 0.65;
       const count = reduced ? 1 : low ? 3 : 7;
       const velocity = entity.velocity ?? [0, 0, 0];
       const speed = Math.max(1, Math.hypot(...velocity));

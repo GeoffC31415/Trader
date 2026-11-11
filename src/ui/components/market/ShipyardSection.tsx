@@ -8,6 +8,7 @@ import { UIIcon } from '../ui_icon';
 import { formatNumber } from '../../utils/number_format';
 import { useGameStore } from '../../../state';
 import { WEAPON_COSTS, WEAPON_UPGRADE_COSTS, WEAPON_BASE_STATS } from '../../../domain/constants/weapon_constants';
+import { FIRE_SUPPRESSION_COST, repairCost } from '../../../systems/combat/ship_fire';
 import type { WeaponKind } from '../../../domain/types/combat_types';
 
 interface ShipyardSectionProps {
@@ -28,9 +29,14 @@ export function ShipyardSection({
   const colors = stationTypeColors[stationType];
   const purchaseWeapon = useGameStore(s => s.purchaseWeapon);
   const upgradeWeapon = useGameStore(s => s.upgradeWeapon);
+  const repairShip = useGameStore(s => s.repairShip);
+  const purchaseFireSuppression = useGameStore(s => s.purchaseFireSuppression);
   
   return (
     <SciFiPanel stationType={stationType}>
+      <SectionHeader stationType={stationType}>Hull Repair & Safety</SectionHeader>
+      <DataRow stationType={stationType}><div><strong>Hull repair & recharge</strong><p>{Math.ceil(ship.hp)}/{ship.maxHp} hull · Full repair, energy recharge and extinguishing.</p></div><SciFiButton stationType={stationType} onClick={repairShip} disabled={ship.credits < repairCost(ship)}>Repair ship ({repairCost(ship).toLocaleString()} cr)</SciFiButton></DataRow>
+      <DataRow stationType={stationType}><div><strong>Automatic fire suppression</strong><p>Extinguishes onboard fires after 3 simulation seconds. Docking anywhere also puts fires out for free; hull repairs are separate.</p></div><SciFiButton stationType={stationType} onClick={purchaseFireSuppression} disabled={!!ship.hasFireSuppression || ship.credits < FIRE_SUPPRESSION_COST}>{ship.hasFireSuppression ? 'Suppression installed' : `Install suppression (${FIRE_SUPPRESSION_COST.toLocaleString()} cr)`}</SciFiButton></DataRow>
       <SectionHeader stationType={stationType}>Weapons & Combat Services</SectionHeader>
       <p>Current weapon: {ship.weapon.kind}. Aim with the mouse or select a target with Tab, then hold Space. Cruise and silent running disable weapons.</p>
       {(Object.keys(WEAPON_COSTS) as WeaponKind[]).map(kind => <DataRow key={kind} stationType={stationType}>
@@ -119,7 +125,7 @@ export function ShipyardSection({
               Status: {ship.hasNavigationArray ? '✓ INSTALLED' : '✗ NOT INSTALLED'}
             </div>
             <div style={{ fontSize: 10, opacity: 0.6, marginTop: 2 }}>
-              Enables the system minimap display
+              Adds advanced navigation intelligence to the standard system map
             </div>
           </div>
           <div style={{ fontFamily: 'monospace', color: '#10b981', fontWeight: 700 }}>$500</div>

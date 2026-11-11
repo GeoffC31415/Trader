@@ -1,574 +1,122 @@
-import { useEffect, useMemo, useState, Fragment } from 'react';
-import { usePoll } from '../shared/hooks/use_poll';
+import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { useGameStore } from '../state';
-import { commodityById } from '../state/world';
-import { UIIcon } from './components/ui_icon';
-import { PoliticalCompass } from './components/political_compass';
-import { formatNumber } from './utils/number_format';
+import { usePoll } from '../shared/hooks/use_poll';
+import { FACTIONS, type FactionId } from '../domain/constants/faction_constants';
+import { getAllFactionReputations, getFactionStanding, getFactionStandingDisplay, canDockAtStation } from '../systems/reputation/faction_system';
+import { createJournal, humanize, SHIP_SYSTEMS, worldEffectDescription } from '../systems/journal';
+import { manufacturingDirectory, stationProductionDirectory, summarizeLedger } from '../systems/journal_analysis';
+import type { JournalEvent, TradeTotals } from '../domain/types/journal_types';
+import { HistoryChart, CompassJourney, simTime } from './components/journal/JournalCharts';
+import { WORLD_EFFECTS } from '../systems/missions/choice_system';
+import { FIRE_SUPPRESSION_SECONDS, repairCost } from '../systems/combat/ship_fire';
+import './components/journal/journal.css';
 
-const primaryColor = '#3b82f6';
-const secondaryColor = '#60a5fa';
-const glowColor = '#3b82f680';
+const tabs = [ ['overview', '01', 'Command deck'], ['influence', '02', 'Allegiances'], ['trades', '03', 'Trade ledger'], ['ship', '04', 'Ship & systems'], ['craft', '05', 'Manufacturing'], ['prices', '06', 'Market observatory'], ['world', '07', 'World chronicle'], ['routes', '08', 'Trade routes'] ] as const;
+type Tab = typeof tabs[number][0];
+const money = (v: number) => `${v.toLocaleString(undefined, { maximumFractionDigits: 0 })} cr`;
+function Card({ title, children, className = '' }: { title: string; children: ReactNode; className?: string }) { return <section className={`j-card ${className}`}><h3>{title}</h3>{children}</section>; }
+function Stat({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) { return <div className="j-stat" title={hint}><small>{label}</small><strong>{value}</strong>{hint && <span>{hint}</span>}</div>; }
+function TotalsTable({ rows, heading }: { rows: Array<[string, TradeTotals]>; heading: string }) {
+  return <div className="j-table-wrap"><table><caption>{heading}</caption><thead><tr><th>Account</th><th>Bought / sold</th><th>Purchase outlay</th><th>Sale revenue</th><th>Known realized P&L</th></tr></thead><tbody>{rows.map(([name, t]) => <tr key={name}><th>{name}</th><td>{t.bought} / {t.sold}</td><td>{money(t.spent)}</td><td>{money(t.revenue)}</td><td className={t.knownProfit < 0 ? 'j-loss' : 'j-gain'}>{money(t.knownProfit)}{t.unknownCostSales > 0 && <small className="j-muted">{t.unknownCostSales} sale(s) with unknown historical cost</small>}</td></tr>)}</tbody></table>{!rows.length && <p className="j-empty">No trades in this selection yet.</p>}</div>;
+}
+function EventFeed({ events, label = 'Archive events' }: { events: JournalEvent[]; label?: string }) {
+  const [page, setPage] = useState(0); const [query, setQuery] = useState('');
+  const rows = [...events].reverse().filter(e => `${e.title} ${e.detail}`.toLowerCase().includes(query.toLowerCase()));
+  const lastPage = Math.max(0, Math.ceil(rows.length / 15) - 1), current = Math.min(page, lastPage);
+  return <section aria-label={label} className="j-feed"><div className="j-toolbar"><input aria-label={`Search ${label.toLowerCase()}`} type="search" placeholder="Search actions, stations, consequences…" value={query} onChange={e => { setQuery(e.target.value); setPage(0); }} /><span>{rows.length} entries</span></div>
+    <ol>{rows.slice(current * 15, (current + 1) * 15).map(e => <li key={e.id}><time>{simTime(e.at)}</time><div><span className={`j-tag j-${e.kind}`}>{e.kind}</span><strong>{e.title}</strong><p>{e.detail}</p>{e.reputation?.map(r => <span className="j-delta" key={r.stationId}>{humanize(r.stationId)} <b className={r.after < r.before ? 'j-loss' : 'j-gain'}>{r.after >= r.before ? '+' : ''}{(r.after - r.before).toFixed(2)}</b></span>)}</div></li>)}</ol>
+    {!rows.length && <p className="j-empty">No matching events. Actions you take will populate this timeline.</p>}
+    {lastPage > 0 && <div className="j-toolbar"><button disabled={current === 0} onClick={() => setPage(current - 1)}>Newer events</button><span>Page {current + 1} / {lastPage + 1}</span><button disabled={current >= lastPage} onClick={() => setPage(current + 1)}>Older events</button></div>}
+  </section>;
+}
 
 export function JournalPanel() {
-  const ship = useGameStore(s => s.ship);
-  const stations = useGameStore(s => s.stations);
-  const tradeLog = useGameStore(s => s.tradeLog);
-  const profitByCommodity = useGameStore(s => s.profitByCommodity);
-  const getSuggestedRoutes = useGameStore(s => s.getSuggestedRoutes);
-  const routesPoll = usePoll(2000);
-  const hasIntel = useGameStore(s => !!s.ship.hasMarketIntel);
-
-  const [tab, setTab] = useState<'ship' | 'trades' | 'routes' | 'compass'>('ship');
-  const [page, setPage] = useState<number>(1);
-  const pageSize = 10;
-
-  const cargoCount = useMemo(() => Object.values(ship.cargo).reduce((a,b)=>a+b,0), [ship.cargo]);
-  const cargoEntries = useMemo(() => Object.entries(ship.cargo)
-    .filter(([,q]) => (q||0) > 0)
-    .sort((a,b) => a[0].localeCompare(b[0]))
-  , [ship.cargo]);
-
-  const reversed = useMemo(() => tradeLog.slice().reverse(), [tradeLog]);
-  const pageCount = Math.max(1, Math.ceil(reversed.length / pageSize));
-  useEffect(() => { if (page > pageCount) setPage(pageCount); }, [page, pageCount]);
-  const start = (page - 1) * pageSize;
-  const pageRows = reversed.slice(start, start + pageSize);
-
-  return (
-    <>
-      <style>{`
-        .journal-panel {
-          background: linear-gradient(135deg, rgba(10,15,25,0.95) 0%, rgba(15,20,30,0.98) 100%);
-          border: 2px solid ${primaryColor};
-          border-radius: 8px;
-          padding: 16px;
-          position: relative;
-          overflow: hidden;
-          box-shadow: 0 8px 32px ${glowColor}, inset 0 1px 0 rgba(255,255,255,0.1);
-          margin-bottom: 12px;
-        }
-        .journal-panel::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          height: 2px;
-          background: linear-gradient(90deg, transparent, ${primaryColor}, transparent);
-          animation: scanline-journal 3s linear infinite;
-        }
-        .journal-panel::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background: repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 2px,
-            rgba(0,0,0,0.1) 2px,
-            rgba(0,0,0,0.1) 4px
-          );
-          pointer-events: none;
-          opacity: 0.3;
-        }
-        @keyframes scanline-journal {
-          from { transform: translateY(-100%); }
-          to { transform: translateY(100%); }
-        }
-        .journal-button {
-          padding: 8px 16px;
-          background: linear-gradient(135deg, ${primaryColor}30, ${primaryColor}20);
-          border: 1px solid ${primaryColor};
-          border-radius: 6px;
-          color: #e5e7eb;
-          cursor: pointer;
-          font-weight: 600;
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          transition: all 0.2s ease;
-          font-family: monospace;
-        }
-        .journal-button:hover:not(:disabled) {
-          background: linear-gradient(135deg, ${primaryColor}50, ${primaryColor}30);
-          box-shadow: 0 0 20px ${glowColor};
-          transform: translateY(-1px);
-        }
-        .journal-button:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-          background: linear-gradient(135deg, rgba(100,100,100,0.2), rgba(100,100,100,0.1));
-          border-color: rgba(100,100,100,0.3);
-        }
-        .journal-button.active {
-          background: linear-gradient(135deg, ${primaryColor}, ${secondaryColor});
-          color: #000;
-          font-weight: 700;
-          box-shadow: 0 0 20px ${glowColor};
-        }
-        .section-header-journal {
-          font-size: 11px;
-          font-family: monospace;
-          letter-spacing: 0.1em;
-          color: ${secondaryColor};
-          margin-bottom: 12px;
-          text-transform: uppercase;
-          border-bottom: 1px solid ${primaryColor}40;
-          padding-bottom: 8px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-        .section-header-journal::before {
-          content: '◢';
-          color: ${primaryColor};
-        }
-        .data-grid-journal {
-          display: grid;
-          gap: 8px;
-          font-family: monospace;
-          font-size: 13px;
-        }
-        .stat-row-journal {
-          display: grid;
-          grid-template-columns: 1fr auto;
-          padding: 10px 14px;
-          background: ${primaryColor}10;
-          border: 1px solid ${primaryColor}30;
-          border-left: 3px solid ${primaryColor};
-          border-radius: 6px;
-          transition: all 0.2s ease;
-        }
-        .stat-row-journal:hover {
-          background: ${primaryColor}15;
-          border-left-color: ${secondaryColor};
-        }
-        .scrollable-content-journal {
-          max-height: calc(100vh - 200px);
-          overflow-y: auto;
-          padding-right: 8px;
-        }
-        .scrollable-content-journal::-webkit-scrollbar {
-          width: 10px;
-        }
-        .scrollable-content-journal::-webkit-scrollbar-track {
-          background: rgba(0,0,0,0.3);
-          border-radius: 5px;
-        }
-        .scrollable-content-journal::-webkit-scrollbar-thumb {
-          background: ${primaryColor};
-          border-radius: 5px;
-          border: 2px solid rgba(0,0,0,0.3);
-        }
-        .scrollable-content-journal::-webkit-scrollbar-thumb:hover {
-          background: ${secondaryColor};
-          box-shadow: 0 0 10px ${glowColor};
-        }
-      `}</style>
-
-      <div className="panel">
-        {/* Tab Buttons */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-          <button onClick={() => setTab('ship')} className={`journal-button ${tab === 'ship' ? 'active' : ''}`}>
-            <UIIcon name="tab_ship" size={16} style={{ marginRight: 6 }} />
-            Ship Status
-          </button>
-          <button onClick={() => setTab('trades')} className={`journal-button ${tab === 'trades' ? 'active' : ''}`}>
-            <UIIcon name="tab_journal" size={16} style={{ marginRight: 6 }} />
-            Trading Log
-          </button>
-          <button
-            onClick={() => setTab('routes')}
-            disabled={!hasIntel}
-            title={!hasIntel ? 'Requires Mercantile Data Nexus upgrade' : undefined}
-            className={`journal-button ${tab === 'routes' ? 'active' : ''}`}
-          >
-            <UIIcon name="tab_routes" size={16} style={{ marginRight: 6 }} />
-            Routes
-          </button>
-          <button
-            onClick={() => setTab('compass')}
-            className={`journal-button ${tab === 'compass' ? 'active' : ''}`}
-          >
-            <UIIcon name="tab_compass" size={16} style={{ marginRight: 6 }} />
-            Compass
-          </button>
-        </div>
-
-        {/* SHIP TAB */}
-        {tab === 'ship' && (
-          <div className="scrollable-content-journal">
-            <div className="journal-panel">
-              <div className="section-header-journal">Pilot Statistics</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-                <div style={{
-                  padding: '16px 20px',
-                  background: `${primaryColor}15`,
-                  border: `2px solid ${primaryColor}`,
-                  borderRadius: 8,
-                  textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 6, fontFamily: 'monospace' }}>ACCOUNT BALANCE</div>
-                  <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'monospace', color: '#10b981' }}>
-                    ${ship.credits.toLocaleString()}
-                  </div>
-                </div>
-                <div style={{
-                  padding: '16px 20px',
-                  background: `${primaryColor}15`,
-                  border: `2px solid ${primaryColor}`,
-                  borderRadius: 8,
-                  textAlign: 'center',
-                }}>
-                  <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 6, fontFamily: 'monospace' }}>CARGO UTILIZATION</div>
-                  <div style={{ fontSize: 24, fontWeight: 700, fontFamily: 'monospace', color: secondaryColor }}>
-                    {cargoCount} / {ship.maxCargo}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="journal-panel">
-              <div className="section-header-journal">Ship Systems</div>
-              <div className="stat-row-journal">
-                <div style={{ fontWeight: 600 }}>ACCELERATION</div>
-                <div style={{ color: secondaryColor, fontWeight: 700 }}>{formatNumber(ship.stats.acc)}</div>
-              </div>
-              <div className="stat-row-journal">
-                <div style={{ fontWeight: 600 }}>MAX VELOCITY</div>
-                <div style={{ color: secondaryColor, fontWeight: 700 }}>{formatNumber(ship.stats.vmax)}</div>
-              </div>
-              <div className="stat-row-journal">
-                <div style={{ fontWeight: 600 }}>DRAG COEFFICIENT</div>
-                <div style={{ color: secondaryColor, fontWeight: 700 }}>{formatNumber(ship.stats.drag)}</div>
-              </div>
-              <div className="stat-row-journal">
-                <div style={{ fontWeight: 600 }}>CARGO CAPACITY</div>
-                <div style={{ color: secondaryColor, fontWeight: 700 }}>{ship.maxCargo} units</div>
-              </div>
-            </div>
-
-            <div className="journal-panel">
-              <div className="section-header-journal">Cargo Manifest</div>
-              {cargoEntries.length === 0 ? (
-                <div style={{
-                  textAlign: 'center',
-                  padding: 24,
-                  opacity: 0.7,
-                  fontFamily: 'monospace',
-                  fontSize: 13,
-                }}>
-                  ⚠ CARGO HOLD EMPTY
-                </div>
-              ) : (
-                <div className="data-grid-journal">
-                  {cargoEntries.map(([id, q]) => {
-                    const commodity = commodityById[id];
-                    return (
-                      <div key={id} className="stat-row-journal">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          {commodity?.icon && (
-                            <img 
-                              src={commodity.icon} 
-                              alt={commodity.name}
-                              style={{ 
-                                width: 28, 
-                                height: 28, 
-                                objectFit: 'contain',
-                                filter: 'drop-shadow(0 0 4px rgba(0,0,0,0.5))'
-                              }}
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                            />
-                          )}
-                          <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
-                            {id.replace(/_/g, ' ')}
-                          </div>
-                        </div>
-                        <div style={{ color: secondaryColor, fontWeight: 700 }}>{q} units</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TRADES TAB */}
-        {tab === 'trades' && (
-          <div className="scrollable-content-journal">
-            <div className="journal-panel">
-              <div className="section-header-journal">Transaction History</div>
-              {pageRows.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 24, opacity: 0.7, fontFamily: 'monospace' }}>
-                  NO TRANSACTIONS RECORDED
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {pageRows.map(t => (
-                    <div key={t.id} style={{
-                      padding: 12,
-                      background: `${primaryColor}10`,
-                      border: `1px solid ${primaryColor}30`,
-                      borderLeft: `3px solid ${t.type === 'buy' ? '#3b82f6' : '#f59e0b'}`,
-                      borderRadius: 6,
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
-                          {new Date(t.time).toLocaleTimeString()}
-                        </div>
-                        <div style={{
-                          fontSize: 11,
-                          fontWeight: 700,
-                          color: t.type === 'buy' ? '#3b82f6' : '#f59e0b',
-                          fontFamily: 'monospace',
-                        }}>
-                          {t.type.toUpperCase()}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ fontWeight: 600, textTransform: 'capitalize', marginBottom: 2 }}>
-                            {t.commodityId.replace(/_/g, ' ')}
-                          </div>
-                          <div style={{ fontSize: 11, opacity: 0.8, fontFamily: 'monospace' }}>
-                            {t.stationName}
-                          </div>
-                        </div>
-                        <div style={{ textAlign: 'right', fontFamily: 'monospace' }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: secondaryColor }}>
-                            {t.quantity} @ ${t.unitPrice}
-                          </div>
-                          <div style={{ fontSize: 11, opacity: 0.8 }}>
-                            = ${t.totalPrice}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 12,
-                marginTop: 12,
-                padding: 12,
-                background: `${primaryColor}10`,
-                borderRadius: 6,
-              }}>
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1} className="journal-button">
-                  ← PREV
-                </button>
-                <div style={{ fontFamily: 'monospace', fontWeight: 700, color: secondaryColor }}>
-                  PAGE {page} / {pageCount}
-                </div>
-                <button onClick={() => setPage(p => Math.min(pageCount, p + 1))} disabled={page >= pageCount} className="journal-button">
-                  NEXT →
-                </button>
-              </div>
-            </div>
-
-            <div className="journal-panel">
-              <div className="section-header-journal">Commodity Profit Analysis</div>
-              <div className="data-grid-journal">
-                {Object.entries(profitByCommodity).sort((a,b)=> (b[1]||0)-(a[1]||0)).map(([id, p]) => (
-                  <div key={id} className="stat-row-journal">
-                    <div style={{ textTransform: 'capitalize', fontWeight: 600 }}>
-                      {id.replace(/_/g, ' ')}
-                    </div>
-                    <div style={{
-                      color: (p || 0) >= 0 ? '#10b981' : '#ef4444',
-                      fontWeight: 700,
-                      fontFamily: 'monospace',
-                    }}>
-                      {(p || 0) >= 0 ? '+' : ''}${formatNumber(p || 0)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ROUTES TAB */}
-        {tab === 'routes' && (
-          <div className="scrollable-content-journal">
-            {hasIntel ? (
-              <div className="journal-panel">
-                <div className="section-header-journal">Optimal Trade Routes</div>
-                <div style={{
-                  padding: 12,
-                  background: `${primaryColor}10`,
-                  border: `1px solid ${primaryColor}30`,
-                  borderRadius: 6,
-                  marginBottom: 16,
-                  fontSize: 12,
-                  opacity: 0.9,
-                }}>
-                  ℹ Routes calculated based on current market conditions and cargo capacity
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {routesPoll && getSuggestedRoutes({ limit: 10, prioritizePerDistance: true }).map((r, idx) => (
-                    <div key={r.id} style={{
-                      padding: 16,
-                      background: `${primaryColor}10`,
-                      border: `2px solid ${primaryColor}40`,
-                      borderLeft: `4px solid ${primaryColor}`,
-                      borderRadius: 8,
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'between', marginBottom: 12 }}>
-                        <div style={{
-                          fontSize: 11,
-                          fontFamily: 'monospace',
-                          color: secondaryColor,
-                          fontWeight: 700,
-                        }}>
-                          ROUTE #{idx + 1}
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12, lineHeight: 1.6 }}>
-                        {r.kind === 'direct'
-                          ? `Buy ${formatNumber(r.maxUnits)} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Sell at ${r.toName}`
-                          : (() => {
-                              const inputUnits = Math.ceil(r.maxUnits * r.inputPerOutput);
-                              return `Buy ${formatNumber(inputUnits)} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Process at ${r.viaName} → Sell ${formatNumber(r.maxUnits)} ${r.outputId.replace(/_/g, ' ')} at ${r.toName}`;
-                            })()
-                        }
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-                        <div>
-                          <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 4, fontFamily: 'monospace' }}>UNITS</div>
-                          <div style={{ fontSize: 16, fontWeight: 700, color: secondaryColor, fontFamily: 'monospace' }}>
-                            {formatNumber(r.maxUnits)}
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 4, fontFamily: 'monospace' }}>MARGIN/UNIT</div>
-                          <div style={{ fontSize: 16, fontWeight: 700, color: '#06b6d4', fontFamily: 'monospace' }}>
-                            ${formatNumber(r.unitMargin)}
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 10, opacity: 0.7, marginBottom: 4, fontFamily: 'monospace' }}>EST. PROFIT</div>
-                          <div style={{ fontSize: 16, fontWeight: 700, color: '#10b981', fontFamily: 'monospace' }}>
-                            ${formatNumber(r.estProfit)}
-                          </div>
-                        </div>
-                      </div>
-                      <div style={{
-                        marginTop: 12,
-                        padding: 10,
-                        background: 'rgba(0,0,0,0.3)',
-                        borderRadius: 6,
-                        fontSize: 11,
-                        opacity: 0.9,
-                        fontFamily: 'monospace',
-                      }}>
-                        {r.kind === 'direct' ? (
-                          <>
-                            <span style={{ textTransform: 'capitalize' }}>{r.inputId.replace(/_/g, ' ')}</span>
-                            {` per unit: buy @ $${formatNumber(r.unitBuy)} → sell @ $${formatNumber(r.unitSell)}`}
-                          </>
-                        ) : (
-                          (() => {
-                            const inputUnits = Math.ceil(r.maxUnits * r.inputPerOutput);
-                            const inputName = r.inputId.replace(/_/g, ' ');
-                            const outputName = r.outputId.replace(/_/g, ' ');
-                            return (
-                              <>
-                                <span style={{ textTransform: 'capitalize' }}>{inputName}</span>
-                                {` → ${outputName}: buy ${formatNumber(inputUnits)} @ $${formatNumber(r.unitBuy)} at ${r.fromName} → process ${r.inputPerOutput}:1 at ${r.viaName} → sell ${formatNumber(r.maxUnits)} @ $${formatNumber(r.unitSell)} at ${r.toName}`}
-                              </>
-                            );
-                          })()
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="journal-panel">
-                <div className="section-header-journal">Trade Route Analysis</div>
-                <div style={{
-                  padding: 20,
-                  background: `rgba(239,68,68,0.1)`,
-                  border: `2px solid rgba(239,68,68,0.3)`,
-                  borderRadius: 8,
-                  textAlign: 'center',
-                  marginBottom: 16,
-                }}>
-                  <div style={{ fontSize: 32, marginBottom: 12 }}>🔒</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>
-                    SYSTEM LOCKED
-                  </div>
-                  <div style={{ fontSize: 12, opacity: 0.9 }}>
-                    Requires ship upgrade: <strong>Mercantile Data Nexus</strong>
-                  </div>
-                  <div style={{ fontSize: 11, opacity: 0.7, marginTop: 6, fontFamily: 'monospace' }}>
-                    Available at Shipyard stations
-                  </div>
-                </div>
-
-                <div style={{ opacity: 0.6 }}>
-                  <div style={{ fontSize: 11, fontFamily: 'monospace', marginBottom: 8, opacity: 0.7 }}>
-                    BASIC ROUTE RECOMMENDATION:
-                  </div>
-                  {(routesPoll ? getSuggestedRoutes({ limit: 1, prioritizePerDistance: true }) : []).map(r => (
-                    <div key={r.id} style={{
-                      padding: 16,
-                      background: `${primaryColor}10`,
-                      border: `1px solid ${primaryColor}30`,
-                      borderRadius: 8,
-                    }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>
-                        {r.kind === 'direct'
-                          ? `Buy ${formatNumber(r.maxUnits)} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Sell at ${r.toName}`
-                          : (() => {
-                              const inputUnits = Math.ceil(r.maxUnits * r.inputPerOutput);
-                              return `Buy ${formatNumber(inputUnits)} ${r.inputId.replace(/_/g, ' ')} at ${r.fromName} → Process at ${r.viaName} → Sell ${formatNumber(r.maxUnits)} ${r.outputId.replace(/_/g, ' ')} at ${r.toName}`;
-                            })()
-                        }
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, fontFamily: 'monospace', fontSize: 12 }}>
-                        <div>Units: <strong>{formatNumber(r.maxUnits)}</strong></div>
-                        <div>Margin: <strong>${formatNumber(r.unitMargin)}</strong></div>
-                        <div>Profit: <strong>${formatNumber(r.estProfit)}</strong></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* COMPASS TAB */}
-        {tab === 'compass' && (
-          <div className="scrollable-content-journal">
-            <div className="journal-panel">
-              <div className="section-header-journal">Political Alignment</div>
-              <div style={{
-                padding: 12,
-                background: `${primaryColor}10`,
-                border: `1px solid ${primaryColor}30`,
-                borderRadius: 6,
-                marginBottom: 16,
-                fontSize: 12,
-                opacity: 0.9,
-              }}>
-                ℹ Your choices across mission arcs shape your political alignment in the system
-              </div>
-              <PoliticalCompass showOtherPlayers={true} showTrail={true} size={320} />
-            </div>
-          </div>
-        )}
-      </div>
-    </>
-  );
+  // Sample telemetry, rather than rebuilding SVGs/tables on every physics frame.
+  const poll = usePoll(1000); const s = useMemo(() => useGameStore.getState(), [poll]);
+  const journal = useMemo(() => s.journal ?? createJournal(s, s.hasChosenStarter), [s.journal, s.hasChosenStarter]);
+  const [tab, setTab] = useState<Tab>('overview');
+  const [faction, setFaction] = useState<FactionId>('workers');
+  const [stationFilter, setStationFilter] = useState(''), [goodsFilter, setGoodsFilter] = useState('');
+  const [priceStation, setPriceStation] = useState('sol-city'), [priceGood, setPriceGood] = useState('refined_fuel');
+  const [craftQuery, setCraftQuery] = useState('');
+  const [receiptPage, setReceiptPage] = useState(0);
+  const summary = useMemo(() => summarizeLedger(journal, stationFilter, goodsFilter), [journal.ledger, stationFilter, goodsFilter]);
+  const lifetime = useMemo(() => summarizeLedger(journal).total, [journal.ledger]);
+  const standings = getAllFactionReputations(s.stations), factionInfo = FACTIONS[faction];
+  const receipts = [...s.tradeLog].reverse().filter(t => (!stationFilter || t.stationId === stationFilter) && (!goodsFilter || t.commodityId === goodsFilter));
+  const receiptLast = Math.max(0, Math.ceil(receipts.length / 15) - 1), receiptCurrent = Math.min(receiptPage, receiptLast);
+  const goods = [...new Set(s.stations.flatMap(st => Object.keys(st.inventory)))].sort();
+  const completed = s.missions.filter(m => m.status === 'completed').length;
+  const realized = Object.values(s.profitByCommodity).reduce((sum, v) => sum + v, 0);
+  const rank = lifetime.transactions >= 150 ? 'SYSTEM MAGNATE' : lifetime.transactions >= 50 ? 'TRADE BROKER' : lifetime.transactions >= 10 ? 'FREIGHT OPERATOR' : 'INDEPENDENT CADET';
+  const snapshots = s.priceHistory?.[priceStation]?.[priceGood] ?? [];
+  const crafting = manufacturingDirectory(s).filter(r => `${r.station.name} ${humanize(r.inputId)} ${humanize(r.outputId)}`.toLowerCase().includes(craftQuery.toLowerCase()));
+  const production = stationProductionDirectory(s.stations).filter(p => `${p.station.name} ${humanize(p.commodityId)}`.toLowerCase().includes(craftQuery.toLowerCase()));
+  const factionCards = <div className="j-factions">{Object.values(FACTIONS).map(f => { const standing = getFactionStandingDisplay(getFactionStanding(standings[f.id])); return <article key={f.id} style={{ borderTopColor: f.color }}><small>{f.name}</small><strong style={{ color: f.color }}>{standings[f.id] > 0 ? '+' : ''}{standings[f.id]}</strong><progress aria-label={`${f.name} reputation`} max={200} value={standings[f.id] + 100} style={{ accentColor: f.color }} /><span style={{ color: standing.color }}>{standing.name}</span></article>; })}</div>;
+  return <section className="captains-journal panel" aria-label="Commander journal" onKeyDown={e => e.stopPropagation()}>
+    <header className="j-header"><div><div className="j-kicker">PERSONAL ARCHIVE // {s.paused ? 'SIMULATION PAUSED' : 'LIVE TELEMETRY · 1s REFRESH'}</div><h1>Commander’s <em>Journal</em></h1><p>Your choices leave a signature across the system.</p></div><div className="j-header-right"><span className="j-rank" title="Cosmetic rank based on recorded transaction count; no hidden gameplay bonus.">{rank}</span><button onClick={s.togglePause}>{s.paused ? 'Resume simulation' : 'Pause simulation'}</button></div></header>
+    {s.ship.onFire && <div className="j-fire" role="alert"><strong>FIRE ALERT</strong> · −0.5 hull/s. Dock at any accessible station to extinguish. {s.ship.hasFireSuppression ? `Suppression in ${Math.max(0, FIRE_SUPPRESSION_SECONDS - (s.ship.fireSeconds ?? 0)).toFixed(1)}s.` : 'No automatic suppression installed.'}</div>}
+    <div className="j-vitals"><Stat label="Liquid credits" value={money(s.ship.credits)} /><Stat label="Realized trade P&L" value={<span className={realized < 0 ? 'j-loss' : 'j-gain'}>{money(realized)}</span>} /><Stat label="Transactions recorded" value={lifetime.transactions} /><Stat label="Hull integrity" value={<span className={s.ship.hp / s.ship.maxHp <= .35 ? 'j-loss' : ''}>{Math.ceil(s.ship.hp)} / {s.ship.maxHp}</span>} /></div>
+    <div className="j-body"><nav aria-label="Journal pages" className="j-nav">{tabs.map(([id, code, title]) => <button key={id} aria-current={tab === id ? 'page' : undefined} onClick={() => setTab(id)}><span>{code}</span>{title}</button>)}<div className="j-recording">ARCHIVE WINDOW<br /><strong>{journal.events.length} / 600 events</strong><br />Recording since {simTime(journal.startedAt)}<br />{journal.legacy ? 'Earlier history is incomplete.' : 'Cumulative commerce retained.'}</div></nav>
+    <div className="j-content" key={tab}>
+      {journal.legacy && <p className="j-notice">Legacy checkpoint: earlier reputation/world history was not recorded. Commerce starts with retained receipts; missing historical costs are marked unknown, not guessed.</p>}
+      {tab === 'overview' && <>
+        <div className="j-section-heading"><h2>Your system footprint</h2><span>{completed} STORIES · {simTime(s.gameTime)} SIM</span></div>{factionCards}
+        <div className="j-two"><Card title="Political signature"><CompassJourney profile={s.politicalProfile} /></Card><Card title="Operational milestones"><p className="j-muted">Current milestones are cosmetic; no invented XP or extra rewards.</p>{[
+          ['First exchange', lifetime.transactions > 0, 'Complete a market transaction'], ['Supply network', lifetime.transactions >= 25, 'Record 25 transactions'], ['Makers guild', !!s.ship.hasUnionMembership, 'Acquire Union membership'], ['Fire-ready vessel', !!s.ship.hasFireSuppression, 'Install automatic suppression'], ['System ally', Object.values(standings).some(v => v >= 70), 'Reach allied faction standing'], ['Story maker', completed > 0, 'Complete a story contract'],
+        ].map(([name, done, hint]) => <div key={String(name)} className={`j-milestone ${done ? 'earned' : ''}`}><b>{done ? '◆' : '◇'}</b><div><strong>{name}</strong><small>{hint}</small></div><span>{done ? 'MET' : 'OPEN'}</span></div>)}</Card></div>
+        <Card title="Recent command history"><EventFeed events={journal.events.slice(-8)} label="Recent actions" /></Card>
+      </>}
+      {tab === 'influence' && <>
+        <div className="j-section-heading"><h2>Allegiances & ideological drift</h2><span>CHOICES HAVE WEIGHT</span></div>{factionCards}
+        <Card title="Faction reputation history"><label>Faction <select aria-label="History faction" value={faction} onChange={e => setFaction(e.target.value as FactionId)}>{Object.values(FACTIONS).map(f => <option key={f.id} value={f.id}>{f.name}</option>)}</select></label><HistoryChart label={`${factionInfo.name} standing over time`} range={[-100, 100]} series={[{ name: factionInfo.name, color: factionInfo.color, points: journal.events.filter(e => e.factions?.[faction] !== undefined).map(e => ({ x: e.at, y: e.factions![faction], label: `${simTime(e.at)} · ${e.title} · ${e.factions![faction]} rep · ${e.detail}` })) }]} /><p className="j-muted">Faction standing is the rounded mean of member-station reputation. Small station changes may not move the faction number immediately. Hover/focus nodes for their actions.</p></Card>
+        <div className="j-two"><CompassJourney profile={s.politicalProfile} /><Card title="Station relationships"><div className="j-table-wrap"><table><thead><tr><th>Station</th><th>Reputation</th><th>Access</th></tr></thead><tbody>{s.stations.map(st => <tr key={st.id}><th>{st.name}</th><td className={(st.reputation ?? 0) < 0 ? 'j-loss' : 'j-gain'}>{(st.reputation ?? 0).toFixed(2)}</td><td>{canDockAtStation(st) ? 'Open' : st.isClosed ? 'Closed' : 'Denied'}</td></tr>)}</tbody></table></div></Card></div>
+        <Card title="Influence audit trail"><EventFeed events={journal.events.filter(e => e.reputation?.length || e.political)} label="Influence history" /></Card>
+      </>}
+      {tab === 'trades' && <>
+        <div className="j-section-heading"><h2>Commerce intelligence</h2><span>FOLLOW THE CREDITS</span></div>
+        <div className="j-toolbar"><label>Station <select aria-label="Ledger station" value={stationFilter} onChange={e => { setStationFilter(e.target.value); setReceiptPage(0); }}><option value="">All stations</option>{s.stations.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}</select></label><label>Goods <select aria-label="Ledger goods" value={goodsFilter} onChange={e => { setGoodsFilter(e.target.value); setReceiptPage(0); }}><option value="">All goods</option>{goods.map(id => <option key={id} value={id}>{humanize(id)}</option>)}</select></label></div>
+        <div className="j-vitals"><Stat label="Purchase outlay" value={money(summary.total.spent)} /><Stat label="Sale revenue" value={money(summary.total.revenue)} /><Stat label="Net trade cashflow" value={money(summary.total.revenue - summary.total.spent)} /><Stat label="Known realized P&L" value={money(summary.total.knownProfit)} /></div>
+        <p className="j-notice">Cashflow is not profit: unsold inventory costs cash, but is not a realized loss. Realized trade P&L includes order premiums and recorded acquisition/manufacturing costs, not completion bonuses. Historical sales with missing cost basis are flagged.</p>
+        <Card title="Station performance"><TotalsTable heading="Cumulative totals by station" rows={Object.entries(summary.byStation).map(([id, value]) => [s.stations.find(st => st.id === id)?.name ?? humanize(id), value])} /></Card>
+        <Card title="Commodity performance"><TotalsTable heading="Cumulative totals by goods" rows={Object.entries(summary.byCommodity).map(([id, value]) => [humanize(id), value])} /></Card>
+        <Card title="Other cash movements"><div className="j-two"><Stat label="Non-trade income" value={money(journal.otherIncome)} hint="Bonuses, mission fees, procurement advances/reimbursements and other credit awards since recording began." /><Stat label="Non-trade spending" value={money(journal.otherSpending)} hint="Repairs, upgrades, replacement ships, insurance and other credit charges since recording began." /></div></Card>
+        <Card title="Transaction receipts"><p className="j-muted">Latest 500 receipts; cumulative aggregates above survive receipt trimming. Legacy receipts use their original wall-clock timestamps.</p><div className="j-table-wrap"><table><thead><tr><th>Time</th><th>Station / goods</th><th>Side / units</th><th>Cash</th><th>Realized P&L</th></tr></thead><tbody>{receipts.slice(receiptCurrent * 15, (receiptCurrent + 1) * 15).map(t => <tr key={t.id}><td>{t.simulationTime !== undefined ? simTime(t.simulationTime) : new Date(t.time).toLocaleTimeString()}</td><th>{t.stationName}<small>{humanize(t.commodityId)}</small></th><td>{t.type} ×{t.quantity}</td><td>{money(t.totalPrice)}</td><td>{t.type === 'buy' ? 'Inventory acquired' : t.realizedProfit === undefined ? 'Cost unknown' : money(t.realizedProfit)}</td></tr>)}</tbody></table></div>{!receipts.length && <p className="j-empty">No receipts in this selection.</p>}{receiptLast > 0 && <div className="j-toolbar"><button disabled={!receiptCurrent} onClick={() => setReceiptPage(receiptCurrent - 1)}>Newer receipts</button><span>{receiptCurrent + 1} / {receiptLast + 1}</span><button disabled={receiptCurrent >= receiptLast} onClick={() => setReceiptPage(receiptCurrent + 1)}>Older receipts</button></div>}</Card>
+      </>}
+      {tab === 'ship' && <>
+        <div className="j-section-heading"><h2>{humanize(s.ship.kind)} · systems dossier</h2><span>{SHIP_SYSTEMS.filter(([id]) => s.ship[id]).length} / {SHIP_SYSTEMS.length} SYSTEMS</span></div>
+        <div className="j-vitals"><Stat label="Hull integrity" value={`${Math.ceil(s.ship.hp)} / ${s.ship.maxHp}`} /><Stat label="Energy" value={`${Math.floor(s.ship.energy)} / ${s.ship.maxEnergy}`} /><Stat label="Cargo hold" value={`${Object.values(s.ship.cargo).reduce((a, b) => a + b, 0)} / ${s.ship.maxCargo}`} /><Stat label="Weapon" value={humanize(s.ship.weapon.kind)} /></div>
+        <Card title="Engineering telemetry"><div className="j-two"><Stat label="Drive acceleration" value={s.ship.stats.acc} /><Stat label="Base top speed" value={s.ship.stats.vmax} /><Stat label="Weapon damage / range" value={`${s.ship.weapon.damage} / ${s.ship.weapon.range}m`} /><Stat label="Fire suppression" value={s.ship.hasFireSuppression ? 'AUTOMATIC · 3s' : 'NOT INSTALLED'} /></div><p>Hull repairs cost {money(repairCost(s.ship))} at current damage. Dock at any accessible port to extinguish fires for free. Repairs/recharge are also available at the shipyard.</p></Card>
+        <div className="j-system-grid">{SHIP_SYSTEMS.map(([id, label]) => <article key={id} className={s.ship[id] ? 'installed' : ''}><span>{s.ship[id] ? '◈' : '◇'}</span><div><strong>{label}</strong><small>{s.ship[id] ? 'ONLINE / OWNED' : 'NOT INSTALLED'}</small></div></article>)}</div>
+        <Card title="Cargo manifest"><div className="j-manifest">{Object.entries(s.ship.cargo).filter(([, q]) => q > 0).map(([id, q]) => <span key={id}>{humanize(id)} <b>×{q}</b></span>)}{!Object.values(s.ship.cargo).some(q => q > 0) && <p className="j-empty">Main hold empty.</p>}{s.npcTraders.filter(n => n.isEscort && (n.escortCargoUsed ?? 0) > 0).map(n => <span key={n.id}>Escort · {humanize(n.commodityId ?? 'cargo')} <b>×{n.escortCargoUsed}</b></span>)}</div></Card>
+        <Card title="Engineering & safety history"><EventFeed events={journal.events.filter(e => e.kind === 'ship' || e.kind === 'safety')} label="Engineering history" /></Card>
+      </>}
+      {tab === 'craft' && <>
+        <div className="j-section-heading"><h2>Industrial network</h2><span>RAW MATERIAL → VALUE</span></div>
+        <div className="j-toolbar"><input type="search" aria-label="Search manufacturing" placeholder="Find goods or a manufacturing station…" value={craftQuery} onChange={e => setCraftQuery(e.target.value)} /><span>{crafting.length} transformations</span></div>
+        <p className="j-notice">Executable player fabrication recipes, not hypothetical chains. Quantities below are for one output and include current station modifiers. Bulk rounding can differ. Bring inputs to the station’s Fabrication service; Union membership is required except at Hidden Cove. Cargo equipment still applies.</p>
+        <div className="j-recipes">{crafting.map(r => <article key={`${r.station.id}:${r.inputId}`}><div className="j-chain"><span><small>{r.input} UNITS</small>{humanize(r.inputId)}</span><b>⟶</b><span><small>1 UNIT</small>{humanize(r.outputId)}</span></div><footer><div><strong>{r.station.name}</strong><small>{r.requirements.length ? r.requirements.join(' · ') : 'Service accessible · bring inputs'}</small></div><button onClick={() => s.setTrackedStation(r.station.id)}>Track station</button></footer></article>)}</div>{!crafting.length && <p className="j-empty">No matching transformations.</p>}
+        <Card title="Automatic station production"><p className="j-muted">Separate from player fabrication: these are actual passive station outputs, with current production multipliers and storage caps. They replenish markets without consuming your cargo.</p><div className="j-table-wrap"><table><thead><tr><th>Producer</th><th>Goods</th><th>Units / sim min</th><th>Stock / cap</th></tr></thead><tbody>{production.map(p => <tr key={`${p.station.id}:${p.commodityId}`}><th>{p.station.name}</th><td>{humanize(p.commodityId)}</td><td>{p.ratePerMinute.toFixed(1)}</td><td>{Math.floor(p.station.inventory[p.commodityId]?.stock ?? 0)} / {p.maxStock}</td></tr>)}</tbody></table></div></Card>
+      </>}
+      {tab === 'prices' && <>
+        <div className="j-section-heading"><h2>Market observatory</h2><span>PUBLIC QUOTE TELEMETRY</span></div>
+        <div className="j-toolbar"><label>Station <select aria-label="Price station" value={priceStation} onChange={e => { setPriceStation(e.target.value); const station = s.stations.find(st => st.id === e.target.value)!; if (!station.inventory[priceGood]) setPriceGood(Object.keys(station.inventory)[0]); }}>{s.stations.map(st => <option key={st.id} value={st.id}>{st.name}</option>)}</select></label><label>Goods <select aria-label="Price goods" value={priceGood} onChange={e => setPriceGood(e.target.value)}>{Object.keys(s.stations.find(st => st.id === priceStation)?.inventory ?? {}).sort().map(id => <option key={id} value={id}>{humanize(id)}</option>)}</select></label></div>
+        <Card title={`${s.stations.find(st => st.id === priceStation)?.name} / ${humanize(priceGood)}`}><HistoryChart label="Historical board prices" series={[{ name: 'Buy from station', color: '#60a5fa', points: snapshots.map(p => ({ x: p.time / 1000, y: p.buy, label: `${simTime(p.time / 1000)} · ${money(p.buy)}` })) }, { name: 'Sell to station', color: '#34d399', points: snapshots.map(p => ({ x: p.time / 1000, y: p.sell, label: `${simTime(p.time / 1000)} · ${money(p.sell)}` })) }]} />{snapshots.length > 0 && <div className="j-two"><Stat label="Latest board purchase quote" value={money(snapshots[snapshots.length - 1].buy)} /><Stat label="Latest board sale quote" value={money(snapshots[snapshots.length - 1].sell)} /></div>}</Card>
+        <p className="j-notice">Samples every 30 simulation seconds; latest 60 points per station/goods (about 30 minutes). Public board quotes exclude your reputation discount, freshness penalty and contract payment floors. They are not guaranteed executable trade profits. Pausing also pauses sampling.</p>
+        <Card title="Market-moving events"><EventFeed events={journal.events.filter(e => e.kind === 'world').slice(-8)} label="Market events" /></Card>
+      </>}
+      {tab === 'world' && <>
+        <div className="j-section-heading"><h2>The living system</h2><span>CAUSE · EFFECT · CONSEQUENCE</span></div>
+        <Card title="Active market conditions">{(s.marketEvents ?? []).map(e => <article className="j-condition" key={e.id}><div><strong>{e.title}</strong><span>{Math.max(0, Math.ceil((e.startedAt + e.duration) / 1000 - s.gameTime))}s remaining</span></div><p>{e.description}</p><progress aria-label={`${e.title} remaining duration`} max={e.duration} value={Math.max(0, e.startedAt + e.duration - s.gameTime * 1000)} /></article>)}{!s.marketEvents?.length && <p className="j-empty">No active market disruption. New events enter the archive when they occur—not as placeholder news.</p>}</Card>
+        <Card title="Enacted campaign consequences">{(s.appliedEffects ?? []).map(e => { const duration = WORLD_EFFECTS[e.id]?.duration; const remaining = duration === undefined ? undefined : Math.max(0, Math.ceil(e.appliedAt + duration - s.gameTime)); return <article className="j-condition" key={e.id}><div><strong>{humanize(e.id)}</strong><span>{remaining === undefined ? 'Permanent / one-shot' : remaining ? `${remaining}s window` : 'Window ended'}</span></div><p>{worldEffectDescription(e.id, s.stations)}</p></article>; })}{!s.appliedEffects?.length && <p className="j-empty">No campaign world consequences enacted yet.</p>}<p className="j-muted">Temporary modifiers expire; immediate stock adjustments are not undone. Normal production and trading continue to change supply.</p></Card>
+        <Card title="World event archive"><EventFeed events={journal.events.filter(e => e.kind === 'world')} label="World history" /></Card>
+        <Card title="Complete command chronicle"><EventFeed events={journal.events} label="Command history" /></Card>
+      </>}
+      {tab === 'routes' && <>
+        <div className="j-section-heading"><h2>Trade route intelligence</h2><span>LIVE QUOTES · NOT ORDERS</span></div>
+        {!s.ship.hasMarketIntel ? <Card title="Data Nexus required"><p>Install market intelligence at a shipyard to compare current direct and manufacturing routes. Your own ledger, charts and journal remain available without it.</p></Card> : <><p className="j-notice">Estimates use current public board prices and hold capacity. Reputation, price movement, access, spoilage and active order guarantees can change actual results.</p>{s.getSuggestedRoutes({ limit: 12, prioritizePerDistance: true }).map(r => <Card key={r.id} title={`${humanize(r.inputId)}${r.kind === 'process' ? ` → ${humanize(r.outputId)}` : ''}`}><div className="j-chain"><span>{r.fromName}</span><b>⟶</b><span>{r.viaName ? `${r.viaName} → ` : ''}{r.toName}</span></div><p>{r.maxUnits} output units · Estimated gross margin {money(r.estProfit)} · {Math.ceil(r.tripDistance)}m</p><div className="j-toolbar"><button onClick={() => s.setTrackedStation(r.fromId)}>Track supplier</button><button onClick={() => s.setTrackedStation(r.toId)}>Track destination</button></div></Card>)}</>}
+      </>}
+    </div></div>
+  </section>;
 }
