@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useGameStore } from '../state';
-import { processRecipes } from '../systems/economy/recipes';
+import { processRecipes, findRecipeForStation } from '../systems/economy/recipes';
 import { CONTRACT_REFRESH_INTERVAL } from '../domain/constants/contract_constants';
 import { MissionChoiceDialog } from './components/mission_choice_dialog';
 import type { Mission } from '../domain/types/mission_types';
@@ -72,7 +72,7 @@ export function MarketPanel() {
   }, [allyAssistTokens, stationId]);
 
   const items = station ? Object.entries(station.inventory) : [];
-  const recipes = station ? (processRecipes[station.type] || []) : [];
+  const recipes = station ? (processRecipes[station.type] || []).filter(recipe => findRecipeForStation(station.type, recipe.inputId) === recipe) : [];
   const outputSet = new Set(recipes.map(r => r.outputId));
   const visibleItems = items.filter(([_, p]) => (p.canSell !== false) || (p.canBuy !== false));
   const producedItems = visibleItems.filter(([id, _]) => outputSet.has(id));
