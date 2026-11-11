@@ -40,11 +40,13 @@ it('Meridian has a distinct persona and an operational loan facility', () => {
 });
 it('command deck presents consolidated NAV and real historical observations including liabilities', () => {
   const s = setup(); const value = netAssetValue(s).total;
-  useGameStore.setState({ finance: { ...s.finance!, loan: { principal: 1000, interest: 5, dueAt: 600 }, navHistory: [{ at: 0, value }, { at: 30, value: value - 1005 }], lastNavAt: 30 }, gameTime: 30 });
+  useGameStore.setState({ finance: { ...s.finance!, loan: { principal: 1000, interest: 40000, dueAt: 600 }, navHistory: [{ at: 0, value }, { at: 30, value: value - 41000 }], lastNavAt: 30 }, gameTime: 30 });
   render(<JournalPanel />);
   const overview = screen.getByRole('region', { name: 'Net asset value overview' });
   expect(within(overview).getByText('Loan liability')).toBeTruthy(); expect(within(overview).getByText('Station warehouses')).toBeTruthy();
   const chart = within(overview).getByRole('figure', { name: 'Net asset value over time' }); expect(chart.querySelectorAll('circle')).toHaveLength(2);
+  expect([...chart.querySelectorAll('circle')].every(node => Number(node.getAttribute('cy')) >= 0 && Number(node.getAttribute('cy')) <= 240)).toBe(true);
+  expect(within(chart).getAllByRole('img').some(node => node.getAttribute('aria-label')!.includes('−') || node.getAttribute('aria-label')!.includes('-'))).toBe(true);
 });
 it('uses actual linked methods, including hydrogen to fuel to batteries and branching metal fabrication', () => {
   const s = setup(), chains = productionChains(manufacturingDirectory(s));

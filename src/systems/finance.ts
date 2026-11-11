@@ -132,7 +132,7 @@ export function netAssetValue(s: GameState) {
   const valueGoods = (goods: Record<string, number>, freshness: Record<string, number> = {}) => Object.entries(goods).reduce((sum, [id, quantity]) => sum + quantity * (quotes[id] ?? 0) * (freshness[id] ?? 1), 0);
   const hull = HULL_VALUES[ship.kind] * Math.min(1, ship.hp / ship.maxHp);
   const modules = Object.entries(MODULE_VALUES).reduce((sum, [key, value]) => sum + (ship[key as keyof typeof MODULE_VALUES] && !(key === 'canMine' && ['miner', 'industrial_miner'].includes(ship.kind)) ? value : 0), 0)
-    + Math.max(0, (ship.stats.acc - base.acc) / 3) * 1000 + Math.max(0, (ship.stats.vmax - base.vmax) / 3) * 1000 + Math.max(0, (ship.maxCargo - base.cargo) / 50) * 1200
+    + Math.ceil(Math.max(0, (ship.stats.acc - base.acc) / 3)) * 1000 + Math.ceil(Math.max(0, (ship.stats.vmax - base.vmax) / 3)) * 1000 + Math.ceil(Math.max(0, (ship.maxCargo - base.cargo) / 50)) * 1200
     + WEAPON_COSTS[ship.weapon.kind] + ship.weapon.damageLevel * WEAPON_UPGRADE_COSTS.damage + ship.weapon.fireRateLevel * WEAPON_UPGRADE_COSTS.fireRate + ship.weapon.rangeLevel * WEAPON_UPGRADE_COSTS.range;
   const cargo = valueGoods(ship.cargo, ship.cargoFreshness) + s.npcTraders.filter(n => n.isEscort).reduce((sum, n) => sum + (n.escortCargoUsed ?? 0) * (quotes[n.commodityId ?? ''] ?? 0), 0);
   const stored = Object.values(f?.warehouses ?? {}).reduce((sum, warehouse) => sum + valueGoods(warehouse.goods, warehouse.freshness), 0);

@@ -120,6 +120,12 @@ it('banking rates and market marks freeze when simulation is paused or blocked',
   useGameStore.setState({ paused: true, gameTime: 60 }); const before = useGameStore.getState().finance;
   useGameStore.getState().tick(.1); expect(useGameStore.getState().finance).toBe(before);
 });
+it('values a final capped upgrade as a complete purchased upgrade step', () => {
+  setup('drydock'); const before = netAssetValue(useGameStore.getState()).total;
+  for (let i = 0; i < 3; i++) useGameStore.getState().upgrade('acc', 3, 1000);
+  expect(useGameStore.getState().ship.stats.acc).toBe(18); expect(netAssetValue(useGameStore.getState()).modules).toBe(3000);
+  expect(netAssetValue(useGameStore.getState()).total).toBeCloseTo(before);
+});
 it('NAV includes goods in all locations, upgrades, investments and loan liabilities without double counting', () => {
   let s = setup(BANK_ID); s = financeAction(s, 'deposit', 2000); s = financeAction(s, 'invest', 1000, BANK_ID); s = financeAction(s, 'borrow', 500);
   const v = netAssetValue(s); expect(v.total).toBeCloseTo(v.cash + v.savings + v.investments + v.hull + v.modules + v.cargo + v.stored - v.debt);
