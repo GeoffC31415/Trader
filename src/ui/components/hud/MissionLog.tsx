@@ -16,7 +16,7 @@ export function MissionLog() {
   }, []);
   const station = s.stations.find(st => st.id === s.ship.dockedStationId) ?? s.stations[0];
   return <>
-    <div style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 50, display: 'flex', gap: 6 }}>
+    <div onPointerUp={e => { (e.target as HTMLElement).closest('button')?.blur(); }} style={{ position: 'absolute', bottom: 12, right: 12, zIndex: 50, display: 'flex', gap: 6 }}>
       <GraphicsQualityControl />
       <button onClick={() => setOpen(!open)}>Mission log</button>
       <button onClick={s.saveGame} disabled={!s.hasChosenStarter}>Save</button>
@@ -36,7 +36,7 @@ export function MissionLog() {
     {open && <div role="dialog" aria-label="Mission log" style={{ position: 'absolute', top: 70, left: 12, bottom: 65, width: 'min(560px, 92vw)', overflowY: 'auto', padding: 16, background: '#091422fa', border: '1px solid #738bad', zIndex: 60, color: 'white' }}>
       <button onClick={() => setOpen(false)}>Close log</button>
       {s.unlockedFeatures?.includes('bounty_hunting') && <button onClick={s.requestBounty}>Request Sol City bounty (180s cooldown)</button>}
-      <p>Flight: WASD / R F • E dock • Q undock • Space fire • Tab target • C cruise • H silent running • T waypoint pilot • P pause. Planning in flight does not pause unless you choose Pause.</p>
+      <p>Flight: WASD / R F • Middle-drag orbit / wheel zoom • E dock • Q undock • Space fire • Tab target • C cruise • H silent running • T waypoint pilot • P pause. Planning in flight does not pause unless you choose Pause.</p>
       <MissionsSection station={station} stations={s.stations} missionArcs={s.missionArcs}
         stationMissions={s.missions.filter(m => m.status === 'offered' && m.availableAt.includes(s.ship.dockedStationId ?? ''))}
         activeMissions={s.missions.filter(m => m.status === 'active')}

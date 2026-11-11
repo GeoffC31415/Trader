@@ -244,6 +244,7 @@ export type GameState = {
   ship: Ship;
   gameTime: number;
   paused: boolean;
+  blockingDialog?: boolean;
   graphicsQuality: 'low' | 'medium' | 'high';
   selectedTargetId?: string;
   hasChosenStarter: boolean;

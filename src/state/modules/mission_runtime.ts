@@ -28,7 +28,7 @@ function applyTrust(s: GameState, mission: Mission, choiceId?: string): GameStat
     }
   }
   return { ...s, relationships, allyAssistTokens: tokens, stations: recordMissionHistory(s.stations, mission, false, choiceId),
-    notifications: [...(s.notifications ?? []), createNotification('success', `${mission.title} completed: ${mission.rewards.credits.toLocaleString()} credits`, 8000)].slice(-30) }; 
+    notifications: [...(s.notifications ?? []), createNotification('success', `${mission.title} completed: ${mission.rewards.credits.toLocaleString()} credits`, 8000)].slice(-30) };
 }
 import { createEscortState, generatePirateWave, addSpawnedPirateIds, checkWaveComplete, markWaveCompleted } from '../../systems/missions/escort_system';
 
@@ -246,11 +246,17 @@ export function tickStoryMissions(input: GameState, dt: number, kills: { npcId: 
       s = { ...s, escortStates: new Map(s.escortStates).set(key, escort) };
       s = dispatchMissionEvents(s, [{ type: 'wave_survived', missionId: m.id, waveNumber: escort.wavesCompleted, eventId: `${m.id}:wave:${escort.wavesCompleted}` }]);
     }
-    if (escort.currentWavePirateIds.length === 0 && escort.waveCount < (template.waves ?? 0) && s.gameTime - escort.lastWaveTime >= 5) {
-      const escortNpc = s.npcTraders.find(n => n.id === living[0].target)!;
+    const escortNpc = s.npcTraders.find(n => n.id === living[0].target)!;
+    const origin = s.stations.find(st => st.id === escortNpc.fromId)!;
+    const destination = s.stations.find(st => st.id === escortNpc.toId)!;
+    const routeLength = distance(origin.position, destination.position);
+    const routeProgress = routeLength > 0 ? 1 - distance(escortNpc.position, destination.position) / routeLength : 1;
+    const nextWaveProgress = (escort.waveCount + 1) / ((template.waves ?? 0) + 1);
+    if (routeProgress >= nextWaveProgress && escort.currentWavePirateIds.length === 0 && escort.waveCount < (template.waves ?? 0) && s.gameTime - escort.lastWaveTime >= 5) {
       const wave = generatePirateWave(m.id, escort.waveCount + 1, escortNpc.position, s.gameTime).map(n => ({ ...n, role: 'raider' as const, hp: 45, maxHp: 45 }));
       escort = addSpawnedPirateIds({ ...escort, waveCount: escort.waveCount + 1, lastWaveTime: s.gameTime }, wave.map(n => n.id));
-      s = { ...s, npcTraders: [...s.npcTraders, ...wave], escortStates: new Map(s.escortStates).set(key, escort) };
+      s = { ...s, npcTraders: [...s.npcTraders, ...wave], escortStates: new Map(s.escortStates).set(key, escort),
+        notifications: [...(s.notifications ?? []), createNotification('warning', `Ambush wave ${escort.waveCount}/${template.waves}: ${wave.length} raiders approaching the convoy`, 6000)].slice(-30) };
     }
     if (escort.wavesCompleted >= (template.waves ?? 0)) {
       const arrived = living.filter(o => {

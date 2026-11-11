@@ -1,5 +1,7 @@
 # Playability review
 
+> Historical baseline review. Gameplay has since changed substantially; see [implementation status and validation limits](PLAYABILITY_IMPLEMENTATION.md) for the current behavior. The findings and timing estimates below describe the pre-implementation code.
+
 ## Scope and verdict
 
 Reviewed all **30 mission templates**, mission generation/progression, player actions, combat and projectile resolution, stealth, escort movement/waves, mission UI, flight/input, and relevant economy/relationship integration.

@@ -1,6 +1,7 @@
 // Mission choice dialog UI - presents player with branching mission choices
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useGameStore } from '../../state';
 import type { Mission, MissionChoice } from '../../domain/types/mission_types';
 import { formatChoiceConsequences } from '../../systems/missions/choice_system';
 
@@ -11,6 +12,7 @@ interface MissionChoiceDialogProps {
 }
 
 export function MissionChoiceDialog({ mission, onChoose, onCancel }: MissionChoiceDialogProps) {
+  useEffect(() => { useGameStore.setState({ blockingDialog: true }); return () => useGameStore.setState({ blockingDialog: false }); }, []);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [confirmWarning, setConfirmWarning] = useState(false);
   
@@ -34,7 +36,7 @@ export function MissionChoiceDialog({ mission, onChoose, onCancel }: MissionChoi
   };
   
   return (
-    <div 
+    <div role="dialog" aria-label="Mission choice"
       style={{
         position: 'fixed',
         top: 0,
@@ -217,7 +219,7 @@ export function MissionChoiceDialog({ mission, onChoose, onCancel }: MissionChoi
                         fontSize: 13,
                         color: '#fbbf24',
                       }}>
-                        {consequences.slice(0, 5).map((consequence, idx) => (
+                        {consequences.map((consequence, idx) => (
                           <li key={idx} style={{ marginBottom: 4 }}>
                             {consequence}
                           </li>

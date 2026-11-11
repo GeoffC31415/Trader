@@ -59,6 +59,8 @@ describe('every live mission contract', () => {
           s = tickStoryMissions({ ...s, gameTime: s.gameTime + o.quantity! }, o.quantity!, []);
         } else if (o.type === 'escort' || o.type === 'defend') {
           s = { ...s, missions: s.missions.map(x => x.id === t.id ? { ...x, launched: true } : x) };
+          // The contract driver places ships at the destination; real route/weapon integration is tested separately.
+          s = { ...s, npcTraders: s.npcTraders.map(n => n.isMissionEscort ? { ...n, position: [...s.stations.find(st => st.id === n.toId)!.position] } : n) };
           for (let wave = 0; wave < (t.waves ?? 0) + 2; wave++) {
             s = tickStoryMissions({ ...s, gameTime: s.gameTime + 6 }, 0.1, []);
             s = { ...s, npcTraders: s.npcTraders.filter(n => !n.isMissionTarget) };

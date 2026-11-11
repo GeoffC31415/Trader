@@ -2,6 +2,8 @@
 
 Systems-driven 3D space trading game with a dynamic economy, narrative-driven mission arcs, and faction-based politics. Buy low, sell high, fabricate goods, complete story missions, engage in combat, and optimize routes across a small star system.
 
+See [playability implementation and verification](docs/PLAYABILITY_IMPLEMENTATION.md) for the current mission contracts, branch stack, checkpoint policy and remaining playtest work.
+
 ### Contents
 - Purpose and gameplay overview
 - Functional and non-functional requirements
@@ -69,8 +71,8 @@ Core loop:
 ## Build and run
 
 ```bash
-# Requirements: Node.js 18+ and npm 9+
-npm install
+# Recommended: Node.js 22 LTS and npm 9+
+npm ci
 npm run dev
 ```
 
@@ -78,7 +80,10 @@ npm run dev
 - Production build: `npm run build` (outputs to `dist/`)
 - Preview built app: `npm run preview`
 - Type checking: `npm run typecheck`
-- Run tests: `npm test`
+- Run unit/DOM/integration tests: `npm test -- --run`
+- Browser smoke tests: `npx playwright install chromium`, then `npm run test:browser`
+- Save/load: the flight toolbar and starter dialog use a browser-local checkpoint; autosave runs every 30 seconds in the same slot. Loading restores paused.
+- Graphics: select compatibility, balanced or high from the starter dialog or flight toolbar.
 
 ## Architecture and folder structure
 
@@ -157,7 +162,8 @@ src/
     modules/
       combat.ts                # Combat state management
       economy.ts               # Economy state management
-      missions.ts              # Mission state management
+      missions.ts              # Commodity contracts and simulation-clock deadlines
+      mission_runtime.ts       # Authoritative ordered/retryable story mission lifecycle
       notifications.ts         # Notification system
       npc.ts                   # NPC state management
       physics.ts               # Physics calculations
@@ -317,11 +323,11 @@ Actions at one station affect other stations in the same faction (+50% of rep ch
 - `store.ts` exposes actions: `tick`, `thrust`, `setEngineTarget`, `tryDock`, `undock`, `dismissDockIntro`, `mine`, `buy`, `sell`, `process`, `upgrade`, `replaceShip`, `chooseStarter`, combat actions (`fireWeapon`, `purchaseWeapon`, `upgradeWeapon`), mission actions (`acceptMission`, `completeMission`, `makeMissionChoice`), and more.
 - `tick(dt)` applies drag, moves ship and NPCs, processes projectiles, jitters station prices slightly, advances NPCs along paths, adjusts station stock on NPC delivery, spawns new NPCs, checks mission objectives, and progresses contract escorts.
 - `getSuggestedRoutes` computes profitable direct and process routes with gating considered.
-- Mission state tracked in `GameState.missionArcs` and `GameState.activeMission`.
+- Story state is tracked in `GameState.missionArcs`, `GameState.missions`, and mission-scoped stealth/escort Maps.
 
 ### Scene and input
 - WASD to move on the XZ plane; R/F for vertical; E to dock; Q to undock; M to mine (when near belt ring).
-- **Spacebar** fires weapon at nearest target (or forward if no target).
+- Hold **Spacebar** to fire toward the mouse aim point or selected target; **Tab** selects a nearby hostile/mission target.
 - Camera follows ship with smooth lerp and yaw drag with middle mouse.
 
 ### UI panels
@@ -341,10 +347,16 @@ Actions at one station affect other stations in the same faction (+50% of rep ch
 - **E** - Dock at nearby station (when in range)
 - **Q** - Undock from current station
 - **M** - Mine asteroids (when near belt ring and has Mining Rig)
-- **Spacebar** - Fire weapon / Dismiss celebration overlay
+- **Spacebar** - Hold to fire at mouse aim/selected target; dismiss celebration overlays
+- **Tab** - Select the next nearby hostile/mission target (normal Tab navigation is retained on focused UI buttons)
+- **C** - Toggle cruise (three-second spool; requires clearance from stations and aggressive ships)
+- **H** - Toggle silent running (half speed and reduced signature; weapons off)
+- **T** - Toggle waypoint pilot; manual movement cancels it
+- **P** - Pause/resume simulation; deadlines freeze. Blocking briefings, choices and celebrations also freeze simulation.
 
 ### Mouse
 - **Middle mouse drag** - Rotate camera yaw around ship
+- **Wheel over canvas** - Zoom camera; wheel over UI panels scrolls those panels
 - **Click** - UI interactions (trade, accept contracts, upgrades, etc.)
 
 ## 3D Assets

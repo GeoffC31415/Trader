@@ -377,14 +377,8 @@ export function applyMissionContribution(
   const key = choiceId ? `${missionId}:${choiceId}` : `${missionId}:complete`;
   const scoreData = MISSION_SCORES[key];
   
-  // Debug logging
-  console.log('[PoliticalCompass] Looking for key:', key);
-  console.log('[PoliticalCompass] Found score data:', scoreData);
-  console.log('[PoliticalCompass] Multiplier:', multiplier);
-  
   if (!scoreData) {
     // No score mapping for this mission/choice
-    console.log('[PoliticalCompass] No score mapping found for:', key);
     return profile;
   }
   
@@ -407,14 +401,6 @@ export function applyMissionContribution(
     freedom: clampScore(profile.score.freedom + adjustedFreedomDelta),
     labor: clampScore(profile.score.labor + adjustedLaborDelta),
   };
-  
-  console.log('[PoliticalCompass] Applied score change:', {
-    key,
-    originalDelta: { freedom: scoreData.freedomDelta, labor: scoreData.laborDelta },
-    adjustedDelta: { freedom: adjustedFreedomDelta, labor: adjustedLaborDelta },
-    multiplier,
-    newScore,
-  });
   
   return {
     score: newScore,

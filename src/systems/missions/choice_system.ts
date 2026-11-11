@@ -101,6 +101,29 @@ export function applyChoicePermanentEffects(s: GameState, ids: string[]): Partia
   }
   return { appliedEffects: next.appliedEffects, ...projectWorldEffects(next) };
 }
+export function describeWorldEffect(id: string): string[] {
+  const e = WORLD_EFFECTS[id];
+  if (!e) return [`Unknown effect: ${id}`];
+  const where = e.station ?? e.stations?.join(', ') ?? 'all stations';
+  const duration = e.duration ? ` for ${e.duration} simulation seconds` : '';
+  const percent = (n: number) => `${n >= 1 ? '+' : ''}${Math.round((n - 1) * 100)}%`;
+  const result: string[] = [];
+  if (e.hostile) result.push(`${where}: hostile; docking denied and defenders respond to approaches`);
+  if (e.closed) result.push(`${where}: closed; document contacts remain available through the local liaison`);
+  if (e.lock) result.push(`${where}: fabrication disabled${duration}`);
+  if (e.price) result.push(`${where}: ${e.commodity ?? e.category ?? 'goods'} prices ${percent(e.price)}${duration}`);
+  if (e.production) result.push(`${where}: production ${percent(e.production)}${duration}`);
+  if (e.fabrication) result.push(`${where}: fabrication input costs ${percent(e.fabrication)}${duration}`);
+  if (e.stock) result.push(`${where}: immediate stock adjustment ${percent(e.stock)}; normal supply replenishes stock`);
+  if (e.aggression) result.push(`Optional salvage raider risk ${percent(e.aggression)}`);
+  if (e.refinery) result.push(`${where}: fuel refinery produces 12 units per minute`);
+  if (e.defense === 0) result.push(`${where}: no new station defenders`);
+  if (e.feature === 'bounty_hunting') result.push('Unlock the Sol City bounty terminal in the mission log');
+  return result;
+}
 export function formatChoiceConsequences(choice: MissionChoice): string[] {
-  return [...choice.consequences, ...Object.entries(choice.rewards.reputationChanges).map(([id, change]) => `${change >= 0 ? '+' : ''}${change} reputation at ${id}`)];
+  return [...(choice.rewards.permanentEffects ?? []).flatMap(describeWorldEffect),
+    ...Object.entries(choice.rewards.reputationChanges).map(([id, change]) => `${change >= 0 ? '+' : ''}${change} reputation at ${id}`),
+    ...(choice.nextMissionId ? [`Next assignment: ${choice.nextMissionId.replace(/_/g, ' ')}`] : []),
+  ];
 }

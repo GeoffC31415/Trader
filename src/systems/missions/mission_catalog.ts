@@ -18,7 +18,10 @@ export function buildMissionCatalog(legacy: Record<string, MissionTemplate>): Re
     t.branch = branch[t.id];
     if (t.type === 'choice') {
       t.description = `Choose the political direction of ${t.title}. This is a commitment, not a cargo or combat assignment. Review the consequences before confirming; the following mission carries out your chosen policy.`;
-      for (const c of t.choiceOptions ?? []) c.description = `Commit to ${c.label}. Apply the listed political consequences and unlock this route. No unlisted delivery, raid, or timed boycott is required.`;
+      for (const c of t.choiceOptions ?? []) {
+        c.description = `Commit to ${c.label}. Apply the listed political consequences and unlock this route. No unlisted delivery, raid, or timed boycott is required.`;
+        c.nextMissionId ??= c.rewards.unlocks?.find(id => catalog[id]?.arcId === t.arcId && catalog[id].stage === t.stage + 1);
+      }
     }
     for (const o of t.objectiveTemplates) {
       if (o.type === 'deliver' && o.target && !commodities.has(o.target)) {

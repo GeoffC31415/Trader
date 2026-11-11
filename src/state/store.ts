@@ -22,6 +22,7 @@ import { recordPriceHistory, mergePriceHistory } from './modules/price_history';
 import { generateMarketEvent, getActiveEvents } from '../systems/economy/market_events';
 import { generateContracts, acceptContractAction, abandonContractAction, settleContracts } from './modules/missions';
 import { createNotification } from './modules/notifications';
+import { isSimulationBlocked } from './helpers/simulation_clock';
 import { recordStationInteraction } from './helpers/character_history';
 import { SAVE_KEY, serializeGame, deserializeGame } from '../systems/persistence';
 import { tickOpportunities, resolveOpportunity, requestBounty } from '../systems/travel_opportunities';
@@ -31,6 +32,9 @@ function notice(s: GameState, message: string, type: Notification['type'] = 'inf
   return { ...s, notifications: [...(s.notifications ?? []).slice(-19), createNotification(type, message, 6000)] };
 }
 
+function cruiseBlocked(s: GameState): boolean {
+  return s.stations.some(st => distance(st.position, s.ship.position) < 150) || s.npcTraders.some(n => (n.isHostile || n.isAggressive || s.npcAggression[n.id]?.isAggressive) && distance(n.position, s.ship.position) < 750);
+}
 function initialGraphicsQuality(): GameState['graphicsQuality'] {
   try { const value = localStorage.getItem('trader.graphics'); if (value === 'low' || value === 'high') return value; } catch { /* Storage may be unavailable. */ }
   return 'medium';
@@ -45,12 +49,12 @@ export const useGameStore = create<GameState>((set, get) => ({
   relationships: {}, allyAssistTokens: [], notifications: [], marketEvents: [],
   getSuggestedRoutes: opts => getSuggestedRoutes(get().stations, get().ship, opts),
   tick: dt => set(state => {
-    if (!state.hasChosenStarter || state.paused || !Number.isFinite(dt) || dt <= 0) return state;
+    if (isSimulationBlocked(state) || !Number.isFinite(dt) || dt <= 0) return state;
     dt = Math.min(dt, 0.1);
     let s: GameState = { ...state, gameTime: state.gameTime + dt };
     s = settleMissions(settleContracts(s));
     s = { ...s, npcTraders: s.npcTraders.filter(n => n.despawnAt === undefined || n.despawnAt > s.gameTime), ...projectWorldEffects(s) };
-    const cruiseUnsafe = s.stations.some(st => distance(st.position, s.ship.position) < 150) || s.npcTraders.some(n => n.isHostile && distance(n.position, s.ship.position) < 750);
+    const cruiseUnsafe = cruiseBlocked(s);
     if (s.ship.cruise && cruiseUnsafe) s = { ...s, ship: { ...s.ship, cruise: false, cruiseSpool: 0 } };
     let ship = updateCargoFreshness(updatePhysics(s.ship, dt), dt);
     const now = s.gameTime * 1000;
@@ -84,7 +88,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     const snapshots = recordPriceHistory(s.stations, now, s.lastPriceSnapshotTime);
     return { ...s, priceHistory: snapshots.priceHistory ? mergePriceHistory(s.priceHistory ?? {}, snapshots.priceHistory) : s.priceHistory, lastPriceSnapshotTime: snapshots.lastSnapshotTime };
   }),
-  thrust: (dir, dt) => set(s => !s.hasChosenStarter || s.paused || s.ship.dockedStationId || s.ship.hp <= 0 ? s : { ship: applyThrust(s.ship, dir, dt) }),
+  thrust: (dir, dt) => set(s => isSimulationBlocked(s) || s.ship.dockedStationId || s.ship.hp <= 0 ? s : { ship: applyThrust(s.ship, dir, dt) }),
   setEngineTarget: target => set(s => ({ ship: engineTarget(s.ship, target, !!s.ship.dockedStationId) })),
   tryDock: () => set(s => {
     if (!s.hasChosenStarter || s.ship.dockedStationId || s.ship.hp <= 0) return s;
@@ -168,7 +172,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   }),
   setTutorialActive: tutorialActive => set({ tutorialActive }),
   setTutorialStep: tutorialStep => set({ tutorialStep }),
-  setTrackedStation: trackedStationId => set({ trackedStationId }),
+  setTrackedStation: trackedStationId => set(s => ({ trackedStationId, ship: trackedStationId ? s.ship : { ...s.ship, autopilot: false } })),
   recordDialogueShown: (stationId, lineIds) => set(s => ({ stations: s.stations.map(st => st.id !== stationId ? st : { ...st, characterMemory: {
     knownActions: [], visitCount: 0, totalTradeVolume: 0, missionsOffered: [], missionsCompleted: [], missionsFailed: [], ...st.characterMemory,
     recentDialogueIds: [...lineIds, ...(st.characterMemory?.recentDialogueIds ?? []).filter(id => !lineIds.includes(id))].slice(0, 15),
@@ -212,7 +216,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   startInstallDevice: (id, objective) => set(s => interactMission(s, id, objective)),
   stopInstallDevice: () => set(s => ({ missions: s.missions.map(m => m.interaction ? { ...m, interaction: undefined } : m), missionInstallState: undefined })),
   fireWeapon: target => set(s => {
-    if (s.paused || s.ship.silentRunning || s.ship.cruise) return s;
+    if (isSimulationBlocked(s) || s.ship.silentRunning || s.ship.cruise) return s;
     const result = firePlayerWeapon(s.ship, s.lastFireTime, target ?? null, s.gameTime * 1000);
     return result ? { ship: result.ship, projectiles: [...s.projectiles, { ...result.projectile, targetId: s.selectedTargetId, missionId: s.npcTraders.find(n => n.id === s.selectedTargetId)?.missionId }], lastFireTime: s.gameTime * 1000 } : s;
   }),
@@ -235,7 +239,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   setGraphicsQuality: graphicsQuality => { set({ graphicsQuality }); try { localStorage.setItem('trader.graphics', graphicsQuality); } catch { /* Keep the session preference. */ } },
   toggleCruise: () => set(s => {
     if (s.paused || s.ship.dockedStationId) return s;
-    if (!s.ship.cruise && (s.stations.some(st => distance(st.position, s.ship.position) < 150) || s.npcTraders.some(n => n.isHostile && distance(n.position, s.ship.position) < 750))) return notice(s, 'Cruise requires 150m station clearance and no nearby hostiles', 'warning');
+    if (!s.ship.cruise && cruiseBlocked(s)) return notice(s, 'Cruise requires 150m station clearance and no nearby hostiles', 'warning');
     return { ship: { ...s.ship, cruise: !s.ship.cruise, cruiseSpool: 0, silentRunning: false } };
   }),
   toggleSilentRunning: () => set(s => ({ ship: { ...s.ship, silentRunning: !s.ship.silentRunning, cruise: false, cruiseSpool: 0 } })),

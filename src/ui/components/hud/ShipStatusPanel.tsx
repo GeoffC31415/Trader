@@ -26,7 +26,7 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
   const cargoUsed = Object.values(ship.cargo).reduce((a, b) => a + b, 0);
   
   return (
-    <div style={{
+    <div onPointerUp={e => { (e.target as HTMLElement).closest('button')?.blur(); }} style={{
       position: 'absolute',
       top: hasNav ? SHIP_STATUS_PANEL_TOP_WITH_NAV : SHIP_STATUS_PANEL_TOP_WITHOUT_NAV,
       right: SHIP_STATUS_PANEL_RIGHT,
@@ -143,7 +143,7 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
         {distance !== undefined && <div>{waypoint!.name}: {Math.ceil(distance)}m • ETA {speed > 1 ? `${Math.ceil(distance / speed)}s` : '—'}</div>}
         {state.missions.filter(m => m.status === 'active' && m.type === 'escort').map(m => <div key={m.id}>
           {m.title}: waves {[...state.escortStates.values()].find(e => e.missionId === m.id)?.wavesCompleted ?? 0}/{MISSION_TEMPLATES[m.id].waves ?? 0}
-          {state.npcTraders.filter(n => n.missionId === m.id && n.isMissionEscort).map(n => <label key={n.id} style={{ display: 'block' }}>Escort {Math.ceil(n.hp)}/{n.maxHp}<progress aria-label="Escort hull" max={n.maxHp} value={n.hp} /></label>)}
+          {state.npcTraders.filter(n => n.missionId === m.id && n.isMissionEscort).map(n => <label key={n.id} style={{ display: 'block' }}>Escort {Math.ceil(n.hp)}/{n.maxHp}<progress aria-label="Escort hull" max={n.maxHp} value={n.hp} /><button onClick={() => { state.setTrackedStation(n.id); if (!state.ship.autopilot) state.toggleAutopilot(); }}>Follow escort</button></label>)}
         </div>)}
         {target && <div style={{ color: '#ffb48a' }}>Target: {target.role ?? 'ship'} • Hull {Math.ceil(target.hp)}/{target.maxHp}<br />Range {Math.round(Math.hypot(...target.position.map((v, i) => v - ship.position[i])))}m</div>}
         {!ship.dockedStationId && <>

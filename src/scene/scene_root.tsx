@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { isSimulationBlocked } from '../state/helpers/simulation_clock';
 import { calculateLeadPosition } from '../systems/combat/weapon_systems';
 import { useGameStore } from '../state';
 import { Html, Sparkles } from '@react-three/drei';
@@ -271,7 +272,8 @@ export function SceneRoot() {
   const setEngineTarget = useGameStore(s => s.setEngineTarget);
   const ship = useGameStore(s => s.ship);
   const trackedStationId = useGameStore(s => s.trackedStationId);
-  const { camera, pointer } = useThree();
+  const { camera, pointer, gl } = useThree();
+  const zoomRef = useRef(1);
   const aimRay = useMemo(() => new THREE.Raycaster(), []);
   const aimPlane = useMemo(() => new THREE.Plane(new THREE.Vector3(0, 1, 0)), []);
   const cameraTarget = useRef<THREE.Vector3>(new THREE.Vector3());
@@ -284,7 +286,7 @@ export function SceneRoot() {
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
     const current = useGameStore.getState();
-    if (current.paused) return;
+    if (isSimulationBlocked(current)) return;
     // Movement input evaluated every frame: WSAD on station plane, RF vertical
     const up = new THREE.Vector3(0, 1, 0);
     const yaw = yawRef.current;
@@ -301,11 +303,19 @@ export function SceneRoot() {
     if (pressed['f']) dir.addScaledVector(up, -1);
     if (dir.lengthSq() > 0 && current.ship.autopilot) current.toggleAutopilot();
     if (current.ship.autopilot && dir.lengthSq() === 0 && current.trackedStationId) {
-      const destination = current.stations.find(st => st.id === current.trackedStationId) ?? (current.opportunity?.id === current.trackedStationId ? current.opportunity : undefined);
+      const movingTarget = current.npcTraders.find(n => n.id === current.trackedStationId && n.isMissionEscort);
+      const destination = movingTarget ?? current.stations.find(st => st.id === current.trackedStationId) ?? (current.opportunity?.id === current.trackedStationId ? current.opportunity : undefined);
       if (destination) {
         dir.set(...destination.position).sub(new THREE.Vector3(...current.ship.position));
-        if (dir.length() < 55) { if (destination.id !== current.opportunity?.id || current.opportunity.kind === 'procurement') current.tryDock(); if (useGameStore.getState().ship.autopilot) current.toggleAutopilot(); dir.set(0, 0, 0); }
-      }
+        if (movingTarget) {
+          if (current.ship.cruise) current.toggleCruise();
+          if (dir.length() < 90) dir.set(0, 0, 0);
+        } else if (dir.length() < 55) {
+          if (destination.id !== current.opportunity?.id || current.opportunity.kind === 'procurement') current.tryDock();
+          if (useGameStore.getState().ship.autopilot) current.toggleAutopilot();
+          dir.set(0, 0, 0);
+        }
+      } else current.toggleAutopilot();
     }
     if (dir.lengthSq() > 0) {
       dir.normalize();
@@ -327,7 +337,7 @@ export function SceneRoot() {
     }
 
     // Camera follow: keep ship in lower center by offsetting camera behind and above
-    const desiredOffset = new THREE.Vector3(0, 20, 35); // above and behind
+    const desiredOffset = new THREE.Vector3(0, 20, 35).multiplyScalar(zoomRef.current); // above and behind
     const offsetWorld = new THREE.Vector3()
       .addScaledVector(up, desiredOffset.y)
       .addScaledVector(fwdPlanar, -desiredOffset.z)
@@ -355,15 +365,21 @@ export function SceneRoot() {
       if (!isDragging.current) return;
       yawRef.current += (e.movementX || 0) * 0.005; // sensitivity
     };
-    window.addEventListener('mousedown', onMouseDown);
+    const onWheel = (e: WheelEvent) => { e.preventDefault(); zoomRef.current = Math.max(0.5, Math.min(3, zoomRef.current * Math.exp(e.deltaY * 0.001))); };
+    const reset = () => { isDragging.current = false; };
+    gl.domElement.addEventListener('wheel', onWheel, { passive: false });
+    gl.domElement.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('blur', reset);
     window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('mousemove', onMouseMove);
     return () => {
-      window.removeEventListener('mousedown', onMouseDown);
+      gl.domElement.removeEventListener('wheel', onWheel);
+      gl.domElement.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('blur', reset);
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
     };
-  }, []);
+  }, [gl]);
 
   const dockIntroVisibleId = useGameStore(s => s.dockIntroVisibleId);
   return (
@@ -421,7 +437,7 @@ export function SceneRoot() {
       {npcTraders.filter(n => !n.isEscort).map(n => (
         <group key={n.id} position={n.position as any}>
           <mesh castShadow>
-            {n.role === 'turret' ? <boxGeometry args={[4, 4, 4]} /> : n.role === 'convoy' ? <boxGeometry args={[3, 2, 8]} /> : n.isHostile ? <coneGeometry args={[2, 5, 5]} /> : <sphereGeometry args={[0.6, 8, 8]} />}
+            {n.role === 'turret' ? <boxGeometry args={[4, 4, 4]} /> : (n.role === 'convoy' || n.isMissionEscort) ? <boxGeometry args={[3, 2, 8]} /> : n.isHostile ? <coneGeometry args={[2, 5, 5]} /> : <sphereGeometry args={[0.6, 8, 8]} />}
             {/* Commodity color mapping via HSL from id hash for visual distinction; expensive goods slower already */}
             <meshStandardMaterial color={new THREE.Color(n.isHostile ? '#ef5555' : n.isMissionEscort ? '#40de94' : colorFromCommodity(n.commodityId || 'fuel'))} metalness={0.2} roughness={0.6} />
           </mesh>

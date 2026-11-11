@@ -39,6 +39,7 @@ export function MissionCelebration() {
       if (e.code === 'Space') {
         e.preventDefault();
         setVisible(false);
+        clearCelebration({ missionCelebrationData: undefined });
       }
     };
 
@@ -51,10 +52,7 @@ export function MissionCelebration() {
 
   const handleContinue = () => {
     setVisible(false);
-    // Clear celebration data after a short delay
-    setTimeout(() => {
-      clearCelebration({ missionCelebrationData: undefined });
-    }, 300);
+    clearCelebration({ missionCelebrationData: undefined });
   };
 
   if (!visible || !missionCelebrationData) return null;

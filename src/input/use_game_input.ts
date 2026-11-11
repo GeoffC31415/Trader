@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '../state';
+import { hasBlockingOverlay, isSimulationBlocked } from '../state/helpers/simulation_clock';
 
 /** Input is cleared on focus loss; dialogs and text fields never fly/fire the ship. */
 export function useGameInput() {
@@ -10,12 +11,14 @@ export function useGameInput() {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const element = e.target instanceof HTMLElement ? e.target : null;
-      if (element?.closest('input, textarea, select, button, [contenteditable="true"], [role="dialog"]')) return;
       const key = e.key.toLowerCase();
+      if (element?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) return;
+      if (element?.closest('button') && [' ', 'enter', 'tab'].includes(key)) return;
       const state = useGameStore.getState();
+      if (key === 'p' && !e.repeat && state.hasChosenStarter && !hasBlockingOverlay(state)) { clear(); state.togglePause(); return; }
+      if (isSimulationBlocked(state)) return;
       if (key === ' ' || key === 'tab') e.preventDefault();
       if (!e.repeat) {
-        if (key === 'p') { clear(); state.togglePause(); return; }
         if (key === 'e') { state.tryDock(); return; }
         if (key === 'q') { state.undock(); return; }
         if (key === 'm') { state.mine(); return; }

@@ -3,6 +3,7 @@ import type { Ship, NpcTrader } from '../../domain/types/world_types';
 import { WEAPON_UPGRADE_BONUSES, PROJECTILE_DESPAWN_TIME } from '../../domain/constants/weapon_constants';
 import { distance } from '../../shared/math/vec3';
 type Vec = [number, number, number];
+let projectileSequence = 0;
 
 export function getWeaponStats(weapon: ShipWeapon): ShipWeapon {
   return { ...weapon,
@@ -20,7 +21,7 @@ export function createProjectile(weapon: ShipWeapon, shooterPos: Vec, shooterVel
   const hitscan = stats.projectileSpeed === 0;
   const lifetime = hitscan ? 0.12 : Math.min(PROJECTILE_DESPAWN_TIME, stats.range / stats.projectileSpeed);
   return {
-    id: `proj_${Date.now()}_${Math.random().toString(36).slice(2)}`, ownerId, ownerType,
+    id: `proj_${++projectileSequence}`, ownerId, ownerType,
     position: [...shooterPos], previousPosition: [...shooterPos], direction,
     velocity: direction.map((v, i) => hitscan ? 0 : v * stats.projectileSpeed + shooterVel[i] * 0.5) as Vec,
     damage: stats.damage, lifetime, maxLifetime: lifetime, weaponKind: weapon.kind,
