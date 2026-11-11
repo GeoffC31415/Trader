@@ -57,6 +57,10 @@ test('fresh tutorial flies the fuel route, trades, completes, and reloads a chec
   await page.getByRole('button', { name: /tab journal Journal/ }).click();
   const journal = page.getByRole('region', { name: 'Commander journal' });
   await expect(journal.getByRole('heading', { name: 'Your system footprint', exact: true })).toBeVisible();
+  const journalLayer = await journal.evaluate(el => Number(getComputedStyle(el.closest('.ui-overlay')!).zIndex));
+  const worldLabelLayers = await page.locator('canvas').evaluate(canvas => [...canvas.parentElement!.parentElement!.querySelectorAll<HTMLElement>('div[style*="z-index"]')].map(el => Number(getComputedStyle(el).zIndex)).filter(Number.isFinite));
+  expect(worldLabelLayers.length).toBeGreaterThan(0);
+  expect(worldLabelLayers.every(layer => layer < journalLayer), 'Every scene label, including planet and belt names, must remain below the journal').toBe(true);
   await journal.getByRole('button', { name: /Trade ledger/ }).click();
   await expect(journal.getByRole('table', { name: 'Cumulative totals by goods' })).toContainText('Refined Fuel');
   await expect(journal.getByRole('table', { name: 'Cumulative totals by goods' })).toContainText('10 / 10');

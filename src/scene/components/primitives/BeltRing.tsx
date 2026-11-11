@@ -82,7 +82,7 @@ export function BeltRing({ position, radius, name, showAsteroids = true }: { pos
       {/* Scatter asteroid models - can be toggled for performance */}
       {showAsteroids && <AsteroidField radius={radius} />}
       
-      <Html center distanceFactor={12}><div style={{ fontSize: 12 }}>{name}</div></Html>
+      <Html center distanceFactor={12} zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}><div style={{ fontSize: 12 }}>{name}</div></Html>
     </group>
   );
 }
