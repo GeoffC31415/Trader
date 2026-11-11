@@ -52,7 +52,7 @@ test('fresh tutorial flies the fuel route, trades, completes, and reloads a chec
   await expect(page.getByText('Paused — deadlines and simulation frozen.')).toBeVisible();
   await expect(page.getByText(/Tutorial complete! You've completed your first contract/)).toBeVisible();
   expect(await creditText()).toBe(completedCredits);
-  await page.screenshot({ path: test.info().outputPath('tutorial-checkpoint.png') });
+  await page.screenshot({ path: test.info().outputPath('tutorial-checkpoint.png'), animations: 'disabled' });
   await page.getByRole('button', { name: 'Close tutorial', exact: true }).click();
   await page.getByRole('button', { name: /tab journal Journal/ }).click();
   const journal = page.getByRole('region', { name: 'Commander journal' });
@@ -66,7 +66,7 @@ test('fresh tutorial flies the fuel route, trades, completes, and reloads a chec
   await expect(journal.getByRole('table', { name: 'Cumulative totals by goods' })).toContainText('10 / 10');
   await journal.getByRole('button', { name: /Market observatory/ }).click();
   await expect(journal.getByRole('figure', { name: 'Historical board prices' })).toBeVisible();
-  await page.screenshot({ path: test.info().outputPath('journal-checkpoint.png') });
+  await page.screenshot({ path: test.info().outputPath('journal-checkpoint.png'), animations: 'disabled' });
   // Banking also runs against compiled production, using real UI and the same paused clock.
   await page.getByRole('button', { name: /tab market Market/ }).click();
   await page.getByRole('button', { name: 'Banking', exact: true }).click();
@@ -83,7 +83,7 @@ test('fresh tutorial flies the fuel route, trades, completes, and reloads a chec
   const assets = journal.getByRole('region', { name: 'Net asset value overview' });
   await expect(assets.getByRole('figure', { name: 'Net asset value over time' })).toBeVisible();
   await expect(assets.getByText('400 cr', { exact: true })).toBeVisible();
-  await page.screenshot({ path: test.info().outputPath('banked-assets-checkpoint.png') });
+  await page.screenshot({ path: test.info().outputPath('banked-assets-checkpoint.png'), animations: 'disabled' });
   expect(errors).toEqual([]);
   expect(failedAssets).toEqual([]);
   expect(modelRequests, 'Compatibility mode must not download unused detailed models').toEqual([]);
