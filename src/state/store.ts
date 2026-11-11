@@ -7,7 +7,8 @@ import { WEAPON_BASE_STATS, WEAPON_COSTS, WEAPON_UPGRADE_COSTS } from '../domain
 import { planets, stations as initialStations, belts } from './world';
 import { spawnNpcTraders } from './npc';
 import { distance } from '../shared/math/vec3';
-import { canDockAtStation } from '../systems/reputation/faction_system';
+import { canDockAtStation, applyReputationWithPropagation } from '../systems/reputation/faction_system';
+import { projectWorldEffects, stripPriceModifiers } from '../systems/missions/choice_system';
 import { initializeMissionArcs } from '../systems/missions/mission_generator';
 import { MISSION_TEMPLATES } from '../domain/constants/mission_constants';
 import { updatePhysics, applyThrust, setEngineTarget as engineTarget } from './modules/physics';
@@ -41,15 +42,23 @@ export const useGameStore = create<GameState>((set, get) => ({
     dt = Math.min(dt, 0.1);
     let s: GameState = { ...state, gameTime: state.gameTime + dt };
     s = settleMissions(s);
+    s = { ...s, ...projectWorldEffects(s) };
     let ship = updateCargoFreshness(updatePhysics(s.ship, dt), dt);
     const now = s.gameTime * 1000;
     const events = getActiveEvents(s.marketEvents ?? [], now);
-    let stations = jitterPrices(s.stations, dt, events);
+    let stations = jitterPrices(stripPriceModifiers(s.stations), dt);
     stations = updateStationProduction(updateStationConsumption(stations, dt), dt);
     const npc = updateNpcTraders(s.npcTraders, stations, ship, dt);
     stations = applyStockDeltas(stations, npc.stationStockDelta);
     const combat = updateCombat({ ...s, ship, stations, npcTraders: spawnHostileDefenders(npc.npcTraders, stations, ship.position, !!ship.dockedStationId), now }, dt);
+    for (const rep of combat.reputationChanges) stations = applyReputationWithPropagation(stations, rep.stationId, rep.delta);
     s = { ...s, ...combat, stations, marketEvents: events };
+    if (s.gameTime >= (s.nextMarketEventAt ?? 120)) {
+      const event = generateMarketEvent(stations);
+      if (event) s = notice({ ...s, marketEvents: [...events, { ...event, startedAt: now }] }, `${event.title}: ${event.description}`);
+      s = { ...s, nextMarketEventAt: s.gameTime + 300 + Math.random() * 300 };
+    }
+    s = { ...s, ...projectWorldEffects(s) };
     s = tickStoryMissions(s, dt, combat.missionNpcDestroyedEvents);
     if (s.ship.hp <= 0) {
       for (const m of s.missions.filter(m => m.status === 'active')) s = failMission(s, m.id, 'Ship disabled; insurance recovery');
@@ -69,6 +78,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!canDockAtStation(near)) return notice(s, 'Docking denied. Mission documents and research contacts can use a local liaison within 100m.', 'warning');
     s = { ...s, ship: { ...s.ship, dockedStationId: near.id, velocity: [0, 0, 0] }, dockIntroVisibleId: near.id };
     if (s.tutorialActive && s.tutorialStep === 'dock_city' && near.id === 'sol-city') s = { ...s, tutorialStep: 'accept_mission' };
+    if (s.tutorialActive && s.tutorialStep === 'goto_refinery' && near.id === 'sol-refinery') s = { ...s, tutorialStep: 'buy_fuel' };
     return dispatchMissionEvents(refreshMissions(s), [{ type: 'station_docked', stationId: near.id }]);
   }),
   undock: () => set(s => ({ ship: { ...s.ship, dockedStationId: undefined }, dockIntroVisibleId: undefined })),
@@ -88,9 +98,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     const s = settleMissions(input);
     if (!Number.isInteger(quantity)) return notice(s, 'Trade whole cargo units', 'warning');
     const contract = s.contracts?.find(c => c.status === 'accepted' && c.commodityId === commodityId);
-    const result = buyCommodity(s.ship, s.stations, s.npcTraders, s.avgCostByCommodity, commodityId, quantity, contract);
+    const assist = s.pendingAssist;
+    const multiplier = assist?.by === s.ship.dockedStationId && (assist?.type === 'discount' || assist?.type === 'waiver' || (assist?.type === 'refuel' && commodityId === 'refined_fuel')) ? assist.multiplier : undefined;
+    const result = buyCommodity(s.ship, s.stations, s.npcTraders, s.avgCostByCommodity, commodityId, quantity, contract, multiplier);
     if (!result) return notice(s, 'Purchase unavailable: check stock, credits, cargo space and required cargo equipment', 'warning');
     return dispatchMissionEvents({ ...s, ship: result.ship, stations: result.stations, npcTraders: result.npcTraders, avgCostByCommodity: result.avgCostByCommodity,
+      pendingAssist: multiplier !== undefined ? undefined : s.pendingAssist,
       tradeLog: [...s.tradeLog, result.trade].slice(-500), tutorialStep: s.tutorialActive && s.tutorialStep === 'buy_fuel' && commodityId === 'refined_fuel' ? 'deliver_fuel' : s.tutorialStep,
     }, [{ type: 'commodity_acquired', commodityId, quantity, stationId: s.ship.dockedStationId }]);
   }),

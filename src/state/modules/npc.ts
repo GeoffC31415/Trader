@@ -330,7 +330,7 @@ function findStabilizingRoute(
       if (item.canBuy === false) continue; // Station doesn't buy this
       
       const currentStock = (item.stock || 0) + (stationStockDelta[destStation.id]?.[commodityId] || 0);
-      const targetStock = item.stock || 50;
+      const targetStock = getTargetStock(destStation.type, commodityId);
       const ratio = currentStock / Math.max(1, targetStock);
       
       // Only consider if stock is below 60% (getting low)
@@ -341,7 +341,7 @@ function findStabilizingRoute(
       if (!srcItem || srcItem.canSell === false) continue;
       
       const srcStock = (srcItem.stock || 0) + (stationStockDelta[currentStation.id]?.[commodityId] || 0);
-      const srcTarget = srcItem.stock || 50;
+      const srcTarget = getTargetStock(currentStation.type, commodityId);
       const srcRatio = srcStock / Math.max(1, srcTarget);
       
       // Only supply if source has surplus (>80% stock)

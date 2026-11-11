@@ -9,6 +9,22 @@ import { applyMissionToProfile } from './politics_module';
 import { distance } from '../../shared/math/vec3';
 import { DETECTION_RADIUS, updateSuspicionLevel, shouldDetectShip } from '../../systems/missions/stealth_system';
 import { planNpcPath } from '../npc';
+import { computeTrustDeltas, setTrust, defaultAssistForStation, grantAssist, hasUnconsumedToken } from '../relationships';
+
+function applyTrust(s: GameState, mission: Mission): GameState {
+  const relationships = { ...s.relationships };
+  const tokens = [...(s.allyAssistTokens ?? [])];
+  for (const { by, delta } of computeTrustDeltas(mission.id, {})) {
+    const before = relationships[by];
+    const after = setTrust(before, delta, s.gameTime * 1000);
+    relationships[by] = after;
+    if ((before?.tier ?? 0) < 1 && after.tier >= 1 && !hasUnconsumedToken(tokens, by)) {
+      const preset = defaultAssistForStation(by);
+      tokens.push(grantAssist(by, preset.type, preset.description, s.gameTime * 1000));
+    }
+  }
+  return { ...s, relationships, allyAssistTokens: tokens };
+}
 import { createEscortState, generatePirateWave, addSpawnedPirateIds, checkWaveComplete, markWaveCompleted } from '../../systems/missions/escort_system';
 
 function replace(s: GameState, m: Mission): GameState { return { ...s, missions: s.missions.map(x => x.id === m.id ? m : x) }; }
@@ -49,7 +65,7 @@ export function settleMissions(input: GameState): GameState {
     if (failure.failed) { s = failMission(s, m.id, failure.reason!); continue; }
     if (!checkMissionCompletion(m)) continue;
     s = replace(s, { ...m, status: 'completed', interaction: undefined });
-    s = { ...s, ...applyMissionRewards(s, m) };
+    s = applyTrust({ ...s, ...applyMissionRewards(s, m) }, m);
     s = { ...s, ...applyChoicePermanentEffects(s, m.rewards.permanentEffects ?? []) };
     s = { ...s, ...applyMissionToProfile(s, m.id, null),
       missionArcs: s.missionArcs.map(a => a.id === m.arcId ? advanceMissionArc(a, m.id) : a),
@@ -139,7 +155,7 @@ export function chooseStoryPath(s: GameState, id: string, choiceId: string): Gam
   if (arc.choicesMade[`stage_${m.stage}_choice`]) return s;
   const completed: Mission = { ...m, status: 'completed', rewards: choice.rewards };
   s = replace(s, completed);
-  s = { ...s, ...applyMissionRewards(s, completed) };
+  s = applyTrust({ ...s, ...applyMissionRewards(s, completed) }, completed);
   s = { ...s, ...applyChoicePermanentEffects(s, choice.rewards.permanentEffects ?? []) };
   s = { ...s, ...applyMissionToProfile(s, id, choiceId), missionArcs: s.missionArcs.map(a => a.id === arc.id ? advanceMissionArc({ ...a, choicesMade: { ...a.choicesMade, [`stage_${m.stage}_choice`]: choiceId } }, id) : a) };
   return refreshMissions(s);

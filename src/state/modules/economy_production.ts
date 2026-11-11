@@ -26,7 +26,8 @@ export function updateStationProduction(stations: Station[], dt: number): Statio
   const stationsMeta = stations.map(s => ({ id: s.id, type: s.type, position: s.position }));
   
   return stations.map(station => {
-    const production = getProductionForStation(station.type);
+    const production = [...getProductionForStation(station.type)];
+    if (station.independentRefinery) production.push({ commodityId: 'refined_fuel', ratePerMinute: 12, maxStock: 300 });
     if (production.length === 0) return station; // No production for this station type
     
     const inv: StationInventory = { ...station.inventory };
@@ -42,7 +43,7 @@ export function updateStationProduction(stations: Station[], dt: number): Statio
       if (currentStock >= prod.maxStock) continue;
       
       // Produce based on rate per minute
-      const produced = prod.ratePerMinute * dtMinutes;
+      const produced = prod.ratePerMinute * dtMinutes * (station.productionMultiplier ?? 1);
       const newStock = Math.min(prod.maxStock, currentStock + produced);
       
       if (newStock !== currentStock) {

@@ -40,6 +40,11 @@ export type Station = {
   isClosed?: boolean; // Station is permanently closed
   // Character memory - tracks player interactions for dialogue reactivity
   characterMemory?: CharacterMemory;
+  productionMultiplier?: number;
+  fabricationMultiplier?: number;
+  fabricationDisabled?: boolean;
+  defenseStrength?: number;
+  independentRefinery?: boolean;
 };
 
 export type Planet = {
@@ -291,6 +296,9 @@ export type GameState = {
   }>;
   pirateAggressionMultiplier?: number;
   unlockedFeatures?: string[];
+  appliedEffects?: { id: string; appliedAt: number }[];
+  nextMarketEventAt?: number;
+  defenseCooldowns?: Record<string, number>;
   // Political compass - tracks player choices across mission arcs
   politicalProfile?: PlayerPoliticalProfile;
   // Combat state

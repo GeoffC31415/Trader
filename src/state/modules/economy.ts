@@ -237,9 +237,8 @@ export function jitterPrices(stations: Station[], dt: number, activeEvents?: any
       const category = commodity.category;
 
       // Apply market event multipliers
-      const eventMult = activeEvents && activeEvents.length > 0
-        ? getEventPriceMultiplier(activeEvents, st.id, k, category)
-        : 1.0;
+      // Active modifiers are projected once from unmodified prices, never compounded here.
+      const eventMult = 1;
 
       // Calculate jitter factors (small random variation ±10%)
       const factorBuy = 1 + (Math.random() * 2 - 1) * config.jitterFactor;
@@ -663,7 +662,9 @@ export function processCommodity(
   const station = stations.find(s => s.id === dockedStationId);
   if (!station) return null;
 
-  const recipe = findRecipeForStation(station.type, inputId);
+  if (station.fabricationDisabled) return null;
+  const originalRecipe = findRecipeForStation(station.type, inputId);
+  const recipe = originalRecipe ? { ...originalRecipe, inputPerOutput: originalRecipe.inputPerOutput * (station.fabricationMultiplier ?? 1) } : undefined;
   if (!recipe) return null;
 
   if (!ship.hasNavigationArray && (gatedCommodities as readonly string[]).includes(recipe.outputId))
@@ -678,7 +679,7 @@ export function processCommodity(
   if (outCount <= 0) return null;
 
   const newCargo = { ...ship.cargo };
-  newCargo[inputId] = have - outCount * recipe.inputPerOutput;
+  newCargo[inputId] = have - Math.ceil(outCount * recipe.inputPerOutput);
   newCargo[recipe.outputId] = (newCargo[recipe.outputId] || 0) + outCount;
 
   return { ...ship, cargo: newCargo };
