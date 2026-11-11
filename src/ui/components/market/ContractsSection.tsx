@@ -1,3 +1,4 @@
+import { useGameStore } from '../../../state';
 import type { Station } from '../../../domain/types/world_types';
 import type { Contract } from '../../../domain/types/world_types';
 import { stationTypeColors } from '../../utils/station_theme';
@@ -28,6 +29,7 @@ export function ContractsSection({
   onAbandonContract,
   onSetTrackedStation,
 }: ContractsSectionProps) {
+  const gameTime = useGameStore(s => s.gameTime);
   const colors = stationTypeColors[station.type];
   const factionId = getFactionForStation(station.id);
   const factionRep = factionId ? getFactionReputation(factionId, stations) : 0;
@@ -80,7 +82,7 @@ export function ContractsSection({
           fontSize: 12,
           opacity: 0.9,
         }}>
-          ℹ Accept delivery contracts for goods needed at this station. Rewards are guaranteed profitable.
+          ℹ Accept delivery contracts for goods needed at this station. Market prices can change; the listed completion bonus is fixed. Accepted contracts allow seven simulation minutes for delivery.
         </div>
 
         {stationContracts.length === 0 ? (
@@ -189,6 +191,7 @@ export function ContractsSection({
                           boxShadow: `0 0 10px ${progress >= 100 ? '#22c55e' : colors.glow}`,
                         }} />
                       </div>
+                      {c.expiresAt !== undefined && <div role="timer">Remaining: {Math.max(0, Math.ceil(c.expiresAt / 1000 - gameTime))} seconds</div>}
                       <div style={{ fontSize: 11, opacity: 0.7, fontFamily: 'monospace' }}>
                         DESTINATION: {destStation?.name || c.toId}
                       </div>

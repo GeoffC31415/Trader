@@ -28,11 +28,23 @@ export function createProjectile(weapon: ShipWeapon, shooterPos: Vec, shooterVel
   };
 }
 
-export function updateProjectile(p: Projectile, dt: number): Projectile {
+export function updateProjectile(p: Projectile, dt: number, targetPosition?: Vec): Projectile {
   if (p.hitscan) return { ...p, lifetime: p.lifetime - dt };
+  if (p.weaponKind === 'missile' && targetPosition) {
+    const speed = Math.hypot(...p.velocity);
+    const delta = targetPosition.map((v, i) => v - p.position[i]);
+    const length = Math.hypot(...delta);
+    if (length > 0 && speed > 0) {
+      const blend = Math.min(1, dt * (p.homingStrength ?? 3));
+      const direction = p.velocity.map((v, i) => v / speed * (1 - blend) + delta[i] / length * blend);
+      const magnitude = Math.hypot(...direction) || 1;
+      const velocity = direction.map(v => v / magnitude * speed) as Vec;
+      p = { ...p, velocity, direction: velocity.map(v => v / speed) as Vec };
+    }
+  }
   const remaining = Math.max(0, (p.range ?? Infinity) - (p.distanceTraveled ?? 0));
   const speed = Math.hypot(...p.velocity);
-  const step = Math.min(dt, remaining / Math.max(speed, 0.001));
+  const step = Math.min(dt, Math.max(0, p.lifetime), remaining / Math.max(speed, 0.001));
   return { ...p, previousPosition: [...p.position],
     position: p.position.map((v, i) => v + p.velocity[i] * step) as Vec,
     distanceTraveled: (p.distanceTraveled ?? 0) + speed * step,

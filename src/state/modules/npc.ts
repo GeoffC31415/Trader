@@ -542,6 +542,8 @@ export function applyStockDeltas(
         stock: nextStock,
         buy: newPrices.buy,
         sell: newPrices.sell,
+        unmodifiedBuy: newPrices.buy,
+        unmodifiedSell: newPrices.sell,
       };
     }
 

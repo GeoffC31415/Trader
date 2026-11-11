@@ -32,6 +32,8 @@ export function buildMissionCatalog(legacy: Record<string, MissionTemplate>): Re
     }
   }
   catalog.fabrication_wars_stage_3.deprecated = true;
+  catalog.greenfields_stage_1.advance = 7000;
+  catalog.greenfields_stage_1.description += ' A one-time 7,000 credit procurement grant covers the luxury cargo; the completion reward is separate.';
   for (const side of ['aurum', 'drydock']) {
     const t = catalog[`fabrication_wars_stage_2_${side}`];
     t.branch = side; t.advance = 4000;
@@ -61,7 +63,7 @@ export function buildMissionCatalog(legacy: Record<string, MissionTemplate>): Re
     const first = t.objectiveTemplates[0];
     wait.targetStation = first.target;
     wait.prerequisites = [first.id];
-    wait.description = 'Complete the covert operation (30 seconds; interruptions pause progress)';
+    wait.description = 'Complete the covert operation (30 seconds docked, or in silent running within 100m; interruptions pause progress)';
     for (const o of t.objectiveTemplates.slice(2)) o.prerequisites = [wait.id];
     t.objectiveTemplates.push({ id: 'remain_covert', type: 'avoid_detection', target: first.target, description: 'Avoid confirmed security detection during approach' });
   }

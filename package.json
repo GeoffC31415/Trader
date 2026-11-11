@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
+    "test:browser": "playwright test",
     "generate:icons": "node scripts/generate_commodity_icons.mjs",
     "generate:avatars": "node scripts/generate_avatars.mjs",
     "generate:ui": "node scripts/generate_ui_assets.mjs",
@@ -28,6 +29,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@playwright/test": "1.58.2",
     "@testing-library/react": "14.3.1",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",

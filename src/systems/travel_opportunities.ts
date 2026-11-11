@@ -1,4 +1,4 @@
-import type { GameState, TravelOpportunity } from '../domain/types/world_types';
+import type { GameState, TravelOpportunity, NpcTrader } from '../domain/types/world_types';
 import { canDockAtStation, applyReputationWithPropagation } from './reputation/faction_system';
 import { getTargetStock } from './economy/pricing';
 import { distance } from '../shared/math/vec3';
@@ -7,13 +7,18 @@ const notify = (s: GameState, message: string): GameState => ({ ...s, notificati
 
 function clearOpportunity(s: GameState): GameState {
   const tracking = s.opportunity !== undefined && s.opportunity.id === s.trackedStationId;
-  return { ...s, opportunity: undefined, trackedStationId: tracking ? undefined : s.trackedStationId,
+  const owned = new Set(s.opportunity?.kind === 'bounty' ? s.npcTraders.filter(n => n.missionId === s.opportunity!.id).map(n => n.id) : []);
+  return { ...s, opportunity: undefined, npcTraders: s.npcTraders.filter(n => !owned.has(n.id)), projectiles: s.projectiles.filter(p => !(s.opportunity?.kind === 'bounty' && p.missionId === s.opportunity.id) && !owned.has(p.ownerId)), trackedStationId: tracking ? undefined : s.trackedStationId,
     ship: tracking ? { ...s.ship, autopilot: false, cruise: false, cruiseSpool: 0 } : s.ship };
 }
 /** Optional, contextual detours, never an automatic interruption or mission requirement. */
-export function tickOpportunities(input: GameState, random = Math.random): GameState {
+export function tickOpportunities(input: GameState, random = Math.random, kills: { npcId: string }[] = []): GameState {
   let s = input;
   if (s.opportunity && s.gameTime >= s.opportunity.expiresAt) s = clearOpportunity(s);
+  if (s.opportunity?.kind === 'bounty' && kills.some(k => k.npcId === `${s.opportunity!.id}:pirate`)) {
+    const o = s.opportunity;
+    s = notify(clearOpportunity({ ...s, ship: { ...s.ship, credits: s.ship.credits + o.reward }, stations: applyReputationWithPropagation(s.stations, o.stationId, 3) }), `Bounty confirmed: ${o.reward} credits`);
+  }
   if (s.opportunity || s.gameTime < (s.nextOpportunityAt ?? 45) || s.ship.dockedStationId || s.ship.hp <= 0 || Math.hypot(...s.ship.velocity) < 2) return s;
   if (s.missions.some(m => m.status === 'active' && (m.type === 'combat' || m.type === 'escort'))) return s;
   const friendly = s.stations.filter(canDockAtStation).sort((a, b) => distance(a.position, s.ship.position) - distance(b.position, s.ship.position));
@@ -39,6 +44,7 @@ export function resolveOpportunity(input: GameState, action: 'complete' | 'decli
   if (!o || input.gameTime >= o.expiresAt) return clearOpportunity(input);
   if (action === 'decline') return clearOpportunity(input);
   if (action === 'relay') return notify(clearOpportunity(input), 'Coordinates relayed to local traffic. No payment or obligation.');
+  if (o.kind === 'bounty') return notify(input, 'Destroy the designated raider to claim this bounty; no remote payout');
   if (distance(input.ship.position, o.position) > 100) return notify(input, 'Approach within 100m to interact');
   if (o.kind === 'procurement' && input.ship.dockedStationId !== o.stationId) return notify(input, 'Dock at the requesting station to hand over cargo');
   const cargo = { ...input.ship.cargo };
@@ -60,4 +66,13 @@ export function resolveOpportunity(input: GameState, action: 'complete' | 'decli
     s = { ...s, npcTraders: [...s.npcTraders, pirate] };
   }
   return notify(s, o.risky ? 'Salvage recovered. The advertised raider threat is closing in!' : 'Opportunity completed; cargo and local supplies updated.');
+}
+
+export function requestBounty(s: GameState): GameState {
+  if (!s.unlockedFeatures?.includes('bounty_hunting') || s.ship.dockedStationId !== 'sol-city' || s.opportunity || s.gameTime < (s.nextBountyAt ?? 0) || s.missions.some(m => m.status === 'active' && (m.type === 'combat' || m.type === 'escort'))) return notify(s, 'Bounty terminal requires Sol City docking, the law accord, no combat assignment and a clear 180-second cooldown');
+  const station = s.stations.find(st => st.id === 'sol-city')!;
+  const position: [number, number, number] = [station.position[0] + 500, station.position[1], station.position[2]];
+  const opportunity: TravelOpportunity = { id: `bounty:${s.gameTime}`, kind: 'bounty', position, stationId: station.id, commodityId: '', quantity: 1, reward: 1000, expiresAt: s.gameTime + 180, risky: true };
+  const pirate: NpcTrader = { id: `${opportunity.id}:pirate`, missionId: opportunity.id, fromId: station.id, toId: station.id, position, velocity: [0, 0, 0], hp: 45, maxHp: 45, speed: 10, kind: 'clipper', role: 'raider', isHostile: true, isAggressive: true, isMissionTarget: true, despawnAt: opportunity.expiresAt };
+  return notify({ ...s, opportunity, npcTraders: [...s.npcTraders, pirate], nextBountyAt: s.gameTime + 180, nextOpportunityAt: s.gameTime + 180 }, 'Bounty issued: undock and destroy the marked raider within 180 simulation seconds for 1,000 credits');
 }

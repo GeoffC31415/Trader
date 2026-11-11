@@ -197,7 +197,7 @@ export type Contract = {
   unitSell?: number;
   rewardBonus?: number; // flat bonus on completion
   status: 'offered' | 'accepted' | 'completed' | 'failed';
-  expiresAt?: number; // epoch ms
+  expiresAt?: number; // simulation milliseconds
   // Mission metadata
   offeredById?: string; // station offering the mission
   requiredRep?: number; // min rep at offeredById to accept
@@ -226,7 +226,7 @@ export type AllyAssistToken = {
 
 export type TravelOpportunity = {
   id: string;
-  kind: 'salvage' | 'distress' | 'procurement';
+  kind: 'salvage' | 'distress' | 'procurement' | 'bounty';
   position: [number, number, number];
   stationId: string;
   commodityId: string;
@@ -244,6 +244,7 @@ export type GameState = {
   ship: Ship;
   gameTime: number;
   paused: boolean;
+  graphicsQuality: 'low' | 'medium' | 'high';
   selectedTargetId?: string;
   hasChosenStarter: boolean;
   isTestMode: boolean; // true when playing with test ship for dev/debug purposes
@@ -320,6 +321,7 @@ export type GameState = {
   defenseCooldowns?: Record<string, number>;
   opportunity?: TravelOpportunity;
   nextOpportunityAt?: number;
+  nextBountyAt?: number;
   // Political compass - tracks player choices across mission arcs
   politicalProfile?: PlayerPoliticalProfile;
   // Combat state
@@ -360,9 +362,11 @@ export type GameState = {
   toggleSilentRunning: () => void;
   toggleAutopilot: () => void;
   togglePause: () => void;
+  setGraphicsQuality: (quality: 'low' | 'medium' | 'high') => void;
   cycleTarget: () => void;
   saveGame: () => void;
   loadGame: () => void;
+  requestBounty: () => void;
   resolveOpportunity: (action: 'complete' | 'decline' | 'relay') => void;
   // Mission arc actions
   acceptMission: (missionId: string) => void;

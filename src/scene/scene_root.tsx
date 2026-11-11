@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { calculateLeadPosition } from '../systems/combat/weapon_systems';
 import { useGameStore } from '../state';
 import { Html, Sparkles } from '@react-three/drei';
 import type { StationType } from '../domain/types/economy_types';
@@ -114,6 +115,7 @@ function Projectiles() {
 
 function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; turnRight?: boolean }) {
   const ship = useGameStore(s => s.ship);
+  const lowDetail = useGameStore(s => s.graphicsQuality === 'low');
   const hasRig = ship.canMine;
   const hasNav = !!ship.hasNavigationArray;
   const groupRef = useRef<THREE.Group>(null);
@@ -135,6 +137,8 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
   });
   return (
     <group ref={groupRef} position={ship.position as any}>
+      {lowDetail && <mesh><boxGeometry args={[2, 1, 5]} /><meshStandardMaterial color="#e5ba58" /></mesh>}
+      {!lowDetail && <>
       {ship.kind === 'freighter' && (
         <FreighterModel power={power} hasRig={hasRig} />
       )}
@@ -153,6 +157,7 @@ function Ship({ turnLeft = false, turnRight = false }: { turnLeft?: boolean; tur
       {ship.kind === 'industrial_miner' && (
         <MinerModel power={power} />
       )}
+      </>}
       {/* Common nav dish */}
       {hasNav && (
         <group position={[1.5, 0.6, 1.2]} rotation={[0, Math.PI / 6, 0]}>
@@ -274,6 +279,7 @@ export function SceneRoot() {
   const isDragging = useRef<boolean>(false);
 
   const { pressed, lastFacingDir } = useGameInput();
+  const lowDetail = useGameStore(s => s.graphicsQuality === 'low');
 
   useFrame((_, delta) => {
     const dt = Math.min(delta, 0.05);
@@ -298,7 +304,7 @@ export function SceneRoot() {
       const destination = current.stations.find(st => st.id === current.trackedStationId) ?? (current.opportunity?.id === current.trackedStationId ? current.opportunity : undefined);
       if (destination) {
         dir.set(...destination.position).sub(new THREE.Vector3(...current.ship.position));
-        if (dir.length() < 55) { if (destination.id !== current.opportunity?.id) current.tryDock(); if (useGameStore.getState().ship.autopilot) current.toggleAutopilot(); dir.set(0, 0, 0); }
+        if (dir.length() < 55) { if (destination.id !== current.opportunity?.id || current.opportunity.kind === 'procurement') current.tryDock(); if (useGameStore.getState().ship.autopilot) current.toggleAutopilot(); dir.set(0, 0, 0); }
       }
     }
     if (dir.lengthSq() > 0) {
@@ -317,7 +323,7 @@ export function SceneRoot() {
       aimPlane.constant = -latest.ship.position[1];
       aimRay.setFromCamera(pointer, camera);
       const hit = aimRay.ray.intersectPlane(aimPlane, aim);
-      latest.fireWeapon(target?.position ?? (hit ? aim.toArray() as [number, number, number] : [latest.ship.position[0] + fwdPlanar.x * 800, latest.ship.position[1], latest.ship.position[2] + fwdPlanar.z * 800]));
+      latest.fireWeapon((target ? calculateLeadPosition(latest.ship.position, target.position, target.velocity ?? [0, 0, 0], latest.ship.weapon.projectileSpeed) : undefined) ?? (hit ? aim.toArray() as [number, number, number] : [latest.ship.position[0] + fwdPlanar.x * 800, latest.ship.position[1], latest.ship.position[2] + fwdPlanar.z * 800]));
     }
 
     // Camera follow: keep ship in lower center by offsetting camera behind and above
@@ -388,7 +394,7 @@ export function SceneRoot() {
       ))}
       {stations.map(s => (
         <group key={s.id}>
-          <StationVisual position={s.position} name={s.name} type={s.type} hideLabel={!!dockIntroVisibleId} />
+          {lowDetail ? <group position={s.position}><mesh><icosahedronGeometry args={[8, 0]} /><meshStandardMaterial color="#709bab" /></mesh>{!dockIntroVisibleId && <Html center distanceFactor={50}><div>{s.name}</div></Html>}</group> : <StationVisual position={s.position} name={s.name} type={s.type} hideLabel={!!dockIntroVisibleId} />}
           {/* Dock prompt when near */}
           {Math.hypot(
             ship.position[0]-s.position[0],
@@ -415,9 +421,9 @@ export function SceneRoot() {
       {npcTraders.filter(n => !n.isEscort).map(n => (
         <group key={n.id} position={n.position as any}>
           <mesh castShadow>
-            <sphereGeometry args={[0.6, 16, 16]} />
+            {n.role === 'turret' ? <boxGeometry args={[4, 4, 4]} /> : n.role === 'convoy' ? <boxGeometry args={[3, 2, 8]} /> : n.isHostile ? <coneGeometry args={[2, 5, 5]} /> : <sphereGeometry args={[0.6, 8, 8]} />}
             {/* Commodity color mapping via HSL from id hash for visual distinction; expensive goods slower already */}
-            <meshStandardMaterial color={new THREE.Color(colorFromCommodity(n.commodityId || 'fuel'))} metalness={0.2} roughness={0.6} />
+            <meshStandardMaterial color={new THREE.Color(n.isHostile ? '#ef5555' : n.isMissionEscort ? '#40de94' : colorFromCommodity(n.commodityId || 'fuel'))} metalness={0.2} roughness={0.6} />
           </mesh>
         </group>
       ))}

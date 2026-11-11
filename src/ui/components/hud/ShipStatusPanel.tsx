@@ -5,6 +5,8 @@ import { UIIcon } from '../ui_icon';
 import { SHIP_STATUS_PANEL_TOP_WITH_NAV, SHIP_STATUS_PANEL_TOP_WITHOUT_NAV, SHIP_STATUS_PANEL_RIGHT, SHIP_STATUS_PANEL_MIN_WIDTH } from '../../constants/layout_constants';
 import { formatNumber } from '../../utils/number_format';
 import { useGameStore } from '../../../state';
+import { MISSION_TEMPLATES } from '../../../domain/constants/mission_constants';
+import { StealthIndicator } from './StealthIndicator';
 
 interface ShipStatusPanelProps {
   ship: Ship;
@@ -34,6 +36,8 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
       borderRadius: 10,
       border: '2px solid rgba(59,130,246,0.3)',
       minWidth: SHIP_STATUS_PANEL_MIN_WIDTH,
+      maxHeight: 'calc(100vh - 400px)',
+      overflowY: 'auto',
       fontSize: 13,
       fontFamily: 'monospace',
       boxShadow: '0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
@@ -131,11 +135,16 @@ export function ShipStatusPanel({ ship, stations, contracts, hasNav }: ShipStatu
         </div>
       </div>
       
+      <StealthIndicator />
       <div style={{ marginTop: 12, display: 'grid', gap: 6 }}>
         <label>Hull {Math.ceil(ship.hp)}/{ship.maxHp}<progress aria-label="Hull" max={ship.maxHp} value={ship.hp} /></label>
         <label>Energy {Math.floor(ship.energy)}/{ship.maxEnergy}<progress aria-label="Weapon energy" max={ship.maxEnergy} value={ship.energy} /></label>
         <div>Weapon: {ship.weapon.kind} • Speed: {speed.toFixed(1)} m/s</div>
         {distance !== undefined && <div>{waypoint!.name}: {Math.ceil(distance)}m • ETA {speed > 1 ? `${Math.ceil(distance / speed)}s` : '—'}</div>}
+        {state.missions.filter(m => m.status === 'active' && m.type === 'escort').map(m => <div key={m.id}>
+          {m.title}: waves {[...state.escortStates.values()].find(e => e.missionId === m.id)?.wavesCompleted ?? 0}/{MISSION_TEMPLATES[m.id].waves ?? 0}
+          {state.npcTraders.filter(n => n.missionId === m.id && n.isMissionEscort).map(n => <label key={n.id} style={{ display: 'block' }}>Escort {Math.ceil(n.hp)}/{n.maxHp}<progress aria-label="Escort hull" max={n.maxHp} value={n.hp} /></label>)}
+        </div>)}
         {target && <div style={{ color: '#ffb48a' }}>Target: {target.role ?? 'ship'} • Hull {Math.ceil(target.hp)}/{target.maxHp}<br />Range {Math.round(Math.hypot(...target.position.map((v, i) => v - ship.position[i])))}m</div>}
         {!ship.dockedStationId && <>
           <button onClick={state.cycleTarget}>Target next (Tab)</button>

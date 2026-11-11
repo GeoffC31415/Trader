@@ -8,7 +8,7 @@ const schema = z.object({
   version: z.literal(1),
   data: z.object({
     gameTime: nonnegative,
-    opportunity: z.object({ id: z.string(), kind: z.enum(['distress', 'salvage', 'procurement']), position: vec, stationId: z.string(), commodityId: z.string(), quantity: nonnegative, reward: nonnegative, expiresAt: nonnegative, risky: z.boolean() }).optional(),
+    opportunity: z.object({ id: z.string(), kind: z.enum(['distress', 'salvage', 'procurement', 'bounty']), position: vec, stationId: z.string(), commodityId: z.string(), quantity: nonnegative, reward: nonnegative, expiresAt: nonnegative, risky: z.boolean() }).optional(),
     ship: z.object({ position: vec, velocity: vec, credits: nonnegative, cargo: z.record(nonnegative), maxCargo: nonnegative,
       hp: nonnegative, maxHp: nonnegative, energy: nonnegative, maxEnergy: nonnegative,
       kind: z.enum(['freighter', 'clipper', 'miner', 'heavy_freighter', 'racer', 'industrial_miner']),
@@ -26,7 +26,7 @@ const schema = z.object({
     escortStates: z.array(z.tuple([z.string(), z.object({ missionId: z.string(), escortNpcId: z.string(), escortHp: nonnegative, escortMaxHp: nonnegative, destinationStationId: z.string(), lastWaveTime: finite, hasReachedDestination: z.boolean(), waveCount: nonnegative, wavesCompleted: nonnegative, spawnedPirateIds: z.array(z.string()), currentWavePirateIds: z.array(z.string()) }).passthrough()])),
   }).passthrough(),
 });
-const keys = ['gameTime', 'ship', 'stations', 'missions', 'missionArcs', 'npcTraders', 'contracts', 'objectives', 'tradeLog', 'profitByCommodity', 'avgCostByCommodity', 'relationships', 'allyAssistTokens', 'politicalProfile', 'marketEvents', 'nextMarketEventAt', 'appliedEffects', 'unlockedFeatures', 'pirateAggressionMultiplier', 'hasChosenStarter', 'isTestMode', 'tutorialActive', 'tutorialStep', 'trackedStationId', 'defenseCooldowns', 'opportunity', 'nextOpportunityAt'] as const;
+const keys = ['gameTime', 'ship', 'stations', 'missions', 'missionArcs', 'npcTraders', 'contracts', 'objectives', 'tradeLog', 'profitByCommodity', 'avgCostByCommodity', 'relationships', 'allyAssistTokens', 'politicalProfile', 'marketEvents', 'nextMarketEventAt', 'appliedEffects', 'unlockedFeatures', 'pirateAggressionMultiplier', 'hasChosenStarter', 'isTestMode', 'tutorialActive', 'tutorialStep', 'trackedStationId', 'defenseCooldowns', 'opportunity', 'nextOpportunityAt', 'nextBountyAt', 'activeObjectiveId', 'pendingAssist', 'priceHistory', 'lastPriceSnapshotTime'] as const;
 export function serializeGame(s: GameState): string {
   const data = Object.fromEntries(keys.map(key => [key, s[key]]));
   return JSON.stringify({ version: 1, data: { ...data, stealthStates: [...s.stealthStates], escortStates: [...s.escortStates] } });
@@ -36,6 +36,7 @@ export function deserializeGame(text: string): Partial<GameState> {
   const values = Object.fromEntries(keys.filter(key => key in data).map(key => [key, data[key]]));
   return { ...values, stealthStates: new Map(data.stealthStates), escortStates: new Map(data.escortStates),
     paused: true, selectedTargetId: undefined, projectiles: [], npcAggression: {}, npcLastFireTimes: {}, lastFireTime: -Infinity,
+    notifications: [], missionIntroVisibleId: undefined, celebrationVisible: undefined,
     dockIntroVisibleId: undefined, missionCelebrationData: undefined, missionInstallState: undefined,
   } as Partial<GameState>;
 }

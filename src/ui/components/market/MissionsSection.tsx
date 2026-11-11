@@ -29,6 +29,7 @@ export function MissionsSection(props: MissionsSectionProps) {
         {m.timeLimit && <p>Time limit: {Math.ceil(m.timeLimit / 60)} simulation minutes (paused when game is paused).</p>}
         {MISSION_TEMPLATES[m.id].advance && <p>One-time procurement grant: {MISSION_TEMPLATES[m.id].advance!.toLocaleString()} credits.</p>}
         <p>Reward: {m.rewards.credits.toLocaleString()} credits</p>
+        {m.objectives.some(o => o.type === 'deliver' && !o.missionItem) && <small>Cargo is consumed at turn-in. The listed reward is gross; procurement grants are paid only once, including across retries.</small>}
         <button disabled={!!blocker} title={blocker} onClick={() => m.type === 'choice' ? props.onSetChoiceDialog(m) : props.onAcceptMission(m.id)}>{m.type === 'choice' ? 'Choose path' : 'Accept mission'}</button>
         {blocker && <p role="status">{blocker}</p>}
       </section>;
@@ -42,8 +43,9 @@ export function MissionsSection(props: MissionsSectionProps) {
       {m.objectives.map(o => {
         const ready = objectiveReady(m, o);
         const station = props.stations.find(st => st.id === (o.targetStation ?? (o.type === 'visit' ? o.target : undefined)));
-        const contact = !!station && distance(state.ship.position, station.position) <= 100 && (o.missionItem || o.type === 'visit');
+        const contact = !!station && distance(state.ship.position, station.position) <= 100 && (o.missionItem || o.type === 'visit' || (o.type === 'wait' && state.ship.silentRunning));
         const local = !!station && (state.ship.dockedStationId === station.id || contact);
+        const held = o.missionItem ? m.items?.[o.target ?? ''] ?? 0 : (o.basket ?? (o.target ? [o.target] : [])).reduce((n, id) => n + (state.ship.cargo[id] ?? 0) + state.npcTraders.filter(npc => npc.isEscort && npc.commodityId === id).reduce((q, npc) => q + (npc.escortCargoUsed ?? 0), 0), 0);
         const canInteract = local && ready && !o.completed && !o.failed && ['deliver', 'visit', 'wait'].includes(o.type);
         return <div key={o.id} style={{ padding: '6px 0', opacity: o.completed ? 0.6 : 1 }}>
           {o.failed ? '✗' : o.completed ? '✓' : '○'} {o.description} {o.quantity && o.quantity > 1 ? `(${Math.floor(o.current)}/${o.quantity})` : ''}
@@ -52,7 +54,7 @@ export function MissionsSection(props: MissionsSectionProps) {
           {canInteract && (o.type === 'wait' ? <>
             <button onClick={() => m.interaction ? state.stopInstallDevice() : state.startInstallDevice(m.id, o.id)}>{m.interaction ? 'Pause operation' : 'Begin / resume operation'}</button>
             <small> Automatically completes; leaving pauses progress. No precision hold required.</small>
-          </> : <button onClick={() => state.completeMissionObjective(m.id, o.id)}>{o.type === 'visit' ? 'Contact / acknowledge' : 'Hand over cargo / document'}</button>)}
+          </> : <button disabled={o.type === 'deliver' && held <= 0} title={o.type === 'deliver' && held <= 0 ? 'Acquire the required cargo or document first' : undefined} onClick={() => state.completeMissionObjective(m.id, o.id)}>{o.type === 'visit' ? 'Contact / acknowledge' : 'Hand over cargo / document'}</button>)}
         </div>;
       })}
       <button onClick={() => props.onAbandonMission(m.id)}>Abandon (retry available)</button>

@@ -81,7 +81,7 @@ export function updateCombat(
   }
 
   // Update projectiles
-  projectiles = projectiles.map(p => updateProjectile(p, dt));
+  projectiles = projectiles.map(p => updateProjectile(p, dt, npcTraders.find(n => n.id === p.targetId && n.hp > 0)?.position));
 
   const currentTime = state.now ?? Date.now();
   const damageEvents: Array<{
@@ -106,15 +106,16 @@ export function updateCombat(
   projectiles = projectiles.filter(p => (!projectilesToRemove.has(p.id) || p.hitscan) && p.lifetime > 0)
     .map(p => p.hitscan ? { ...p, resolved: true } : p);
 
+  const playerKills = new Set<string>();
   // Apply damage and update aggression
   for (const event of damageEvents) {
     if (event.targetType === 'player') {
       ship.hp = Math.max(0, ship.hp - event.damage);
-      // TODO: Add death/respawn logic for player later
     } else {
       // Damage to NPC
       npcTraders = npcTraders.map(npc => {
-        if (npc.id === event.targetId) {
+        if (npc.id === event.targetId && npc.hp > 0) {
+          if (event.sourceType === 'player' && event.damage >= npc.hp) playerKills.add(npc.id);
           const newHp = Math.max(0, npc.hp - event.damage);
 
           // Update aggression if hit by player
@@ -168,7 +169,7 @@ export function updateCombat(
     const target = escort ? { ...ship, position: escort.position, velocity: escort.velocity ?? [0, 0, 0] as [number, number, number], dockedStationId: undefined, silentRunning: false } : ship;
     if (shouldNpcFire(npc, npc.hp, target, aggressionState, lastFire, currentTime)) {
       const npcProjectile = npcFireAtPlayer(npc, target);
-      projectiles.push(npcProjectile);
+      projectiles.push({ ...npcProjectile, missionId: npc.missionId });
       npcLastFireTimes[npc.id] = currentTime;
     }
   }
@@ -178,7 +179,7 @@ export function updateCombat(
 
   for (const destroyed of destroyedNpcs) {
     // Track mission NPC destruction
-    if (destroyed.isMissionTarget && destroyed.missionId) {
+    if (playerKills.has(destroyed.id) && destroyed.isMissionTarget && destroyed.missionId) {
       missionNpcDestroyedEvents.push({
         npcId: destroyed.id,
         missionId: destroyed.missionId,
@@ -187,7 +188,7 @@ export function updateCombat(
     }
 
     // Apply reputation loss for kill
-    if (!destroyed.isHostile) {
+    if (playerKills.has(destroyed.id) && !destroyed.isHostile) {
       reputationChanges.push({ stationId: destroyed.fromId, delta: REP_LOSS_PER_NPC_KILL });
     }
 

@@ -90,7 +90,7 @@ export function ObjectiveHUD({
             {/* Progress bar */}
             <div style={{ marginTop: 8, background: 'rgba(255,255,255,0.1)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
               <div style={{
-                width: `${Math.min(100, (primaryMission.objectives.filter(o => o.completed).length / primaryMission.objectives.filter(o => !o.optional).length) * 100)}%`,
+                width: `${Math.min(100, (primaryMission.objectives.filter(o => o.completed).length / primaryMission.objectives.filter(o => !o.optional && o.type !== 'avoid_detection').length) * 100)}%`,
                 height: '100%',
                 background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)',
                 transition: 'width 0.3s ease',

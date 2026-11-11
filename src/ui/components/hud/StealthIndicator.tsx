@@ -3,18 +3,12 @@
 import { useMemo } from 'react';
 import { useGameStore } from '../../../state';
 import { DETECTION_RADIUS, DETECTION_THRESHOLD, calculateDistance } from '../../../systems/missions/stealth_system';
-import { 
-  SHIP_STATUS_PANEL_RIGHT, 
-  STEALTH_INDICATOR_TOP_WITH_NAV, 
-  STEALTH_INDICATOR_TOP_WITHOUT_NAV 
-} from '../../constants/layout_constants';
 
 export function StealthIndicator() {
   const ship = useGameStore(s => s.ship);
   const stations = useGameStore(s => s.stations);
   const missions = useGameStore(s => s.missions);
   const stealthStates = useGameStore(s => s.stealthStates);
-  const hasNav = useGameStore(s => !!s.ship.hasNavigationArray);
   
   // Find stealth-relevant data
   const stealthData = useMemo(() => {
@@ -88,15 +82,15 @@ export function StealthIndicator() {
   
   return (
     <div style={{
-      position: 'absolute',
-      top: hasNav ? STEALTH_INDICATOR_TOP_WITH_NAV : STEALTH_INDICATOR_TOP_WITHOUT_NAV,
-      right: SHIP_STATUS_PANEL_RIGHT,
+      position: 'relative',
+      marginTop: 10,
+      boxSizing: 'border-box',
+      width: '100%',
       background: 'linear-gradient(135deg, rgba(40, 15, 15, 0.95), rgba(30, 10, 10, 0.95))',
       backdropFilter: 'blur(8px)',
       border: '2px solid rgba(255, 100, 100, 0.4)',
       borderRadius: 10,
       padding: '12px 16px',
-      minWidth: 240,
       fontFamily: 'monospace',
       fontSize: 13,
       color: '#fff',

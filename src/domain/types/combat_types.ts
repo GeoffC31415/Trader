@@ -36,6 +36,7 @@ export type Projectile = {
   resolved?: boolean;
   // For homing missiles and explicit AI target selection
   targetId?: string;
+  missionId?: string;
   homingStrength?: number;
 };
 

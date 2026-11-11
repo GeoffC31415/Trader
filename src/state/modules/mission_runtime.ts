@@ -4,17 +4,21 @@ import { MISSION_TEMPLATES } from '../../domain/constants/mission_constants';
 import { createMissionFromTemplate, generateMissionsForStation, updateArcStatuses } from '../../systems/missions/mission_generator';
 import { checkMissionCompletion, checkMissionFailure, objectiveReady, updateMissionObjectives, type MissionEvent } from '../../systems/missions/mission_validator';
 import { advanceMissionArc, applyMissionRewards } from '../helpers/mission_helpers';
-import { applyChoicePermanentEffects } from '../../systems/missions/choice_system';
+import { applyChoicePermanentEffects, projectWorldEffects, stripPriceModifiers } from '../../systems/missions/choice_system';
+import { applyStockDeltas } from './npc';
+import { recordMissionHistory } from '../helpers/character_history';
+import { createNotification } from './notifications';
 import { applyMissionToProfile } from './politics_module';
 import { distance } from '../../shared/math/vec3';
 import { DETECTION_RADIUS, updateSuspicionLevel, shouldDetectShip } from '../../systems/missions/stealth_system';
 import { planNpcPath } from '../npc';
-import { computeTrustDeltas, setTrust, defaultAssistForStation, grantAssist, hasUnconsumedToken } from '../relationships';
+import { setTrust, defaultAssistForStation, grantAssist, hasUnconsumedToken } from '../relationships';
 
-function applyTrust(s: GameState, mission: Mission): GameState {
+function applyTrust(s: GameState, mission: Mission, choiceId?: string): GameState {
   const relationships = { ...s.relationships };
   const tokens = [...(s.allyAssistTokens ?? [])];
-  for (const { by, delta } of computeTrustDeltas(mission.id, {})) {
+  for (const [by, change] of Object.entries(mission.rewards.reputationChanges)) {
+    const delta = Math.sign(change);
     const before = relationships[by];
     const after = setTrust(before, delta, s.gameTime * 1000);
     relationships[by] = after;
@@ -23,7 +27,8 @@ function applyTrust(s: GameState, mission: Mission): GameState {
       tokens.push(grantAssist(by, preset.type, preset.description, s.gameTime * 1000));
     }
   }
-  return { ...s, relationships, allyAssistTokens: tokens };
+  return { ...s, relationships, allyAssistTokens: tokens, stations: recordMissionHistory(s.stations, mission, false, choiceId),
+    notifications: [...(s.notifications ?? []), createNotification('success', `${mission.title} completed: ${mission.rewards.credits.toLocaleString()} credits`, 8000)].slice(-30) }; 
 }
 import { createEscortState, generatePirateWave, addSpawnedPirateIds, checkWaveComplete, markWaveCompleted } from '../../systems/missions/escort_system';
 
@@ -32,7 +37,7 @@ export function cleanMission(s: GameState, id: string): GameState {
   const owned = new Set(s.npcTraders.filter(n => n.missionId === id).map(n => n.id));
   return { ...s,
     npcTraders: s.npcTraders.filter(n => !owned.has(n.id)),
-    projectiles: s.projectiles.filter(p => !owned.has(p.ownerId)),
+    projectiles: s.projectiles.filter(p => p.missionId !== id && !owned.has(p.ownerId)),
     stealthStates: new Map([...s.stealthStates].filter(([k]) => !k.startsWith(id + ':'))),
     escortStates: new Map([...s.escortStates].filter(([k]) => !k.startsWith(id + ':'))),
   };
@@ -40,6 +45,7 @@ export function cleanMission(s: GameState, id: string): GameState {
 export function failMission(s: GameState, id: string, reason: string, cancelled = false): GameState {
   const m = s.missions.find(m => m.id === id);
   if (!m || m.status !== 'active') return s;
+  s = { ...s, stations: recordMissionHistory(s.stations, m, true), notifications: [...(s.notifications ?? []), createNotification('warning', `${m.title}: ${reason}. Reset the attempt in the mission log to retry.`, 10000)].slice(-30) };
   return cleanMission(replace(s, { ...m, status: cancelled ? 'cancelled' : 'failed', failureReason: reason, interaction: undefined }), id);
 }
 export function refreshMissions(s: GameState): GameState {
@@ -155,7 +161,7 @@ export function chooseStoryPath(s: GameState, id: string, choiceId: string): Gam
   if (arc.choicesMade[`stage_${m.stage}_choice`]) return s;
   const completed: Mission = { ...m, status: 'completed', rewards: choice.rewards };
   s = replace(s, completed);
-  s = applyTrust({ ...s, ...applyMissionRewards(s, completed) }, completed);
+  s = applyTrust({ ...s, ...applyMissionRewards(s, completed) }, completed, choiceId);
   s = { ...s, ...applyChoicePermanentEffects(s, choice.rewards.permanentEffects ?? []) };
   s = { ...s, ...applyMissionToProfile(s, id, choiceId), missionArcs: s.missionArcs.map(a => a.id === arc.id ? advanceMissionArc({ ...a, choicesMade: { ...a.choicesMade, [`stage_${m.stage}_choice`]: choiceId } }, id) : a) };
   return refreshMissions(s);
@@ -170,7 +176,7 @@ export function interactMission(input: GameState, id: string, objectiveId: strin
   const stationId = o.targetStation ?? (o.type === 'visit' ? o.target : undefined);
   const station = s.stations.find(st => st.id === stationId);
   // Documents and research contacts remain accessible through a covert local liaison if docking is denied.
-  const remote = (o.missionItem || o.type === 'visit') && station && distance(s.ship.position, station.position) <= 100;
+  const remote = (o.missionItem || o.type === 'visit' || (o.type === 'wait' && s.ship.silentRunning)) && station && distance(s.ship.position, station.position) <= 100;
   if (!station || (s.ship.dockedStationId !== station.id && !remote)) return s;
   if (o.type === 'wait') return replace(s, { ...m, interaction: { objectiveId: o.id, elapsed: o.current } });
   if (o.type === 'visit') return dispatchMissionEvents(s, [{ type: 'station_docked', stationId: station.id }]);
@@ -181,11 +187,21 @@ export function interactMission(input: GameState, id: string, objectiveId: strin
     m = { ...m, items: { ...m.items, [o.target]: (m.items?.[o.target] ?? 0) - quantity } };
   } else {
     const cargo = { ...s.ship.cargo };
+    const stock: Record<string, number> = {};
+    let npcs = s.npcTraders;
     for (const item of o.basket ?? (o.target ? [o.target] : [])) {
-      const take = Math.min((o.quantity ?? 1) - o.current - quantity, cargo[item] ?? 0);
-      cargo[item] = (cargo[item] ?? 0) - take; quantity += take;
+      let needed = (o.quantity ?? 1) - o.current - quantity;
+      const take = Math.min(needed, cargo[item] ?? 0);
+      cargo[item] = (cargo[item] ?? 0) - take; quantity += take; stock[item] = take; needed -= take;
+      npcs = npcs.map(n => {
+        if (!n.isEscort || n.commodityId !== item || needed <= 0) return n;
+        const supplied = Math.min(needed, n.escortCargoUsed ?? 0);
+        quantity += supplied; stock[item] += supplied; needed -= supplied;
+        return { ...n, escortCargoUsed: (n.escortCargoUsed ?? 0) - supplied };
+      });
     }
-    s = { ...s, ship: { ...s.ship, cargo } };
+    s = { ...s, npcTraders: npcs, ship: { ...s.ship, cargo }, stations: applyStockDeltas(stripPriceModifiers(s.stations), { [station.id]: stock }) };
+    s = { ...s, ...projectWorldEffects(s) };
   }
   if (quantity <= 0) return s;
   m = { ...m, objectives: m.objectives.map(x => x.id === o.id ? { ...x, current: x.current + quantity, completed: x.current + quantity >= (x.quantity ?? 1) } : x) };
@@ -198,7 +214,8 @@ export function tickStoryMissions(input: GameState, dt: number, kills: { npcId: 
     let m = s.missions.find(x => x.id === snapshot.id)!;
     if (m.interaction) {
       const o = m.objectives.find(o => o.id === m.interaction!.objectiveId)!;
-      if (s.ship.dockedStationId === o.targetStation) s = dispatchMissionEvents(s, [{ type: 'time_elapsed', duration: dt, stationId: o.targetStation, objectiveId: o.id }]);
+      const local = s.stations.find(st => st.id === o.targetStation);
+      if (s.ship.dockedStationId === o.targetStation || (s.ship.silentRunning && local && distance(s.ship.position, local.position) <= 100)) s = dispatchMissionEvents(s, [{ type: 'time_elapsed', duration: dt, stationId: o.targetStation, objectiveId: o.id }]);
     }
     m = s.missions.find(x => x.id === snapshot.id)!;
     if (m.status !== 'active') continue;
