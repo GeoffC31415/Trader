@@ -42,6 +42,7 @@ export function updateNpcTraders(
   const escortNpcs = npcTraders.filter(n => n.isMissionEscort && n.hp > 0);
 
   const updatedNpcTraders = npcTraders.map((npc): NpcTrader => {
+    if (npc.role === 'turret' || (npc.isMissionEscort && (!npc.launched || npc.isDefendInPlace))) return npc;
     // Contract escorts follow the player ship in formation
     if (npc.isEscort) {
       return updateContractEscort(npc, playerShip, dt);

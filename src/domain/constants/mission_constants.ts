@@ -1,6 +1,7 @@
 // Mission arc definitions and templates
 
 import type { MissionTemplate, MissionArc } from '../types/mission_types';
+import { buildMissionCatalog } from '../../systems/missions/mission_catalog';
 
 // ============================================================================
 // Arc Definitions
@@ -72,7 +73,7 @@ export const MISSION_ARCS: Record<string, Omit<MissionArc, 'status' | 'currentSt
 // Mission Templates - Stage 1
 // ============================================================================
 
-export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
+const LEGACY_MISSION_TEMPLATES: Record<string, MissionTemplate> = {
   
   // ---------------------------------------------------------------------------
   // Arc 1: Greenfields Independence - Stage 1
@@ -1601,6 +1602,8 @@ export const MISSION_TEMPLATES: Record<string, MissionTemplate> = {
 // ============================================================================
 // Helper Functions
 // ============================================================================
+
+export const MISSION_TEMPLATES = buildMissionCatalog(LEGACY_MISSION_TEMPLATES);
 
 export function getArcById(arcId: string): Omit<MissionArc, 'status' | 'currentStage' | 'choicesMade' | 'completedMissions'> | undefined {
   return MISSION_ARCS[arcId];

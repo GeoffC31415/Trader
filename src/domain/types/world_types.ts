@@ -220,6 +220,7 @@ export type GameState = {
   belts: AsteroidBelt[];
   npcTraders: NpcTrader[];
   ship: Ship;
+  gameTime: number;
   hasChosenStarter: boolean;
   isTestMode: boolean; // true when playing with test ship for dev/debug purposes
   tutorialActive: boolean;
@@ -323,6 +324,9 @@ export type GameState = {
   generateContracts: (opts?: { limit?: number }) => void;
   acceptContract: (id: string) => void;
   abandonContract: (id: string) => void;
+  retryMission: (missionId: string) => void;
+  launchMission: (missionId: string) => void;
+  repairShip: () => void;
   // Mission arc actions
   acceptMission: (missionId: string) => void;
   abandonMission: (missionId: string) => void;

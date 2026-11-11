@@ -43,7 +43,7 @@ export interface CombatUpdateResult {
   npcAggression: Record<string, any>;
   npcLastFireTimes: Record<string, number>;
   reputationChanges: Array<{ stationId: string; delta: number }>;
-  missionNpcDestroyedEvents: Array<{ npcId: string; missionId?: string }>;
+  missionNpcDestroyedEvents: Array<{ npcId: string; missionId?: string; targetGroup?: string }>;
 }
 
 /**
@@ -72,7 +72,7 @@ export function updateCombat(
   const npcAggression = { ...state.npcAggression };
   const npcLastFireTimes = { ...state.npcLastFireTimes };
   const reputationChanges: Array<{ stationId: string; delta: number }> = [];
-  const missionNpcDestroyedEvents: Array<{ npcId: string; missionId?: string }> = [];
+  const missionNpcDestroyedEvents: Array<{ npcId: string; missionId?: string; targetGroup?: string }> = [];
 
   // Energy regeneration (only when not docked)
   if (!ship.dockedStationId) {
@@ -177,6 +177,7 @@ export function updateCombat(
       missionNpcDestroyedEvents.push({
         npcId: destroyed.id,
         missionId: destroyed.missionId,
+        targetGroup: destroyed.targetGroup,
       });
     }
 

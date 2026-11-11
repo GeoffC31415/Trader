@@ -33,6 +33,9 @@ export type MissionObjective = {
   completed: boolean;
   failed?: boolean; // true if this objective failed (e.g., escort destroyed)
   optional?: boolean;
+  prerequisites?: string[];
+  missionItem?: boolean;
+  basket?: string[];
 };
 
 export type MissionReward = {
@@ -58,6 +61,13 @@ export type Mission = {
   acceptedAt?: number; // game time when mission was accepted
   status: MissionStatus;
   choiceOptions?: MissionChoice[]; // for choice missions
+  attempt?: number;
+  items?: Record<string, number>;
+  failureReason?: string;
+  fundingGranted?: boolean;
+  interaction?: { objectiveId: string; elapsed: number };
+  launched?: boolean;
+  seenEvents?: string[];
 };
 
 export type MissionChoice = {
@@ -99,6 +109,12 @@ export type MissionTemplate = {
   timeLimit?: number;
   choiceOptions?: MissionChoice[];
   prerequisiteMissions?: string[]; // mission IDs that must be completed first
+  branch?: string;
+  requiredUpgrades?: string[];
+  advance?: number;
+  waves?: number;
+  survivorsRequired?: number;
+  deprecated?: boolean;
 };
 
 // Narrative rendering context captured at completion time
